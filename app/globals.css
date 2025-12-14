@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ghana-red: #CE1126;
+  --ghana-gold: #FCD116;
+  --ghana-green: #006B3F;
+  --methodist-blue: #003B5C;
+  --methodist-gold: #FFB81C;
+  --methodist-red: #CE1126;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');
+
+body {
+  font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9fafb;
+}
+
+.ghana-flag-border {
+  border-top: 4px solid var(--ghana-red);
+  border-bottom: 4px solid var(--ghana-green);
+  position: relative;
+}
+
+.ghana-flag-border::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--ghana-gold);
+  transform: translateY(2px);
+}
+
+.methodist-gradient {
+  background: linear-gradient(135deg, var(--methodist-blue) 0%, #004d7a 100%);
+}
+
+.card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.btn-primary {
+  @apply bg-methodist-blue hover:bg-blue-800 text-white font-semibold py-2 px-6 rounded-lg transition-colors;
+}
+
+.btn-secondary {
+  @apply bg-ghana-green hover:bg-green-800 text-white font-semibold py-2 px-6 rounded-lg transition-colors;
+}
+
+.input-field {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent;
+}
+
+.dashboard-card {
+  @apply bg-white rounded-lg shadow-lg p-6 hover:shadow-xl transition-shadow;
+}
+
+.grade-A {
+  @apply bg-green-100 text-green-800 font-bold;
+}
+
+.grade-B {
+  @apply bg-blue-100 text-blue-800 font-semibold;
+}
+
+.grade-C {
+  @apply bg-yellow-100 text-yellow-800 font-semibold;
+}
+
+.grade-D {
+  @apply bg-orange-100 text-orange-800;
+}
+
+.grade-E, .grade-F {
+  @apply bg-red-100 text-red-800;
+}
+
+/* Slideshow Animations */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.6s ease-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out;
+}
+
+.animate-zoom-in {
+  animation: zoom-in 0.4s ease-out;
+}
+
+/* Smooth Transitions for Images */
+img {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Hover Effects for Interactive Elements */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Progress Bar Animation for Slideshow */
+@keyframes progress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
