@@ -399,6 +399,13 @@ export default function ReportsPage() {
             <TrendingUp className="w-4 h-4 inline-block mr-2" />
             Subject Analysis
           </button>
+          <Link
+            href="/teacher/class-report"
+            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-orange-600 text-white hover:bg-orange-700 flex items-center gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            Class Broadsheet
+          </Link>
         </div>
 
         {/* Overview */}
