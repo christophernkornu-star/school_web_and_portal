@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /teacher/
+Disallow: /student/
+Disallow: /api/
+
+Sitemap: https://biriwamethodist.edu.gh/sitemap.xml
