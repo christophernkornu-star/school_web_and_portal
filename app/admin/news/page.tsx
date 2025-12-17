@@ -156,15 +156,15 @@ export default function AdminNewsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">News Management</h1>
-                <p className="text-sm text-gray-600">Create and manage school news</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800">News Management</h1>
+                <p className="text-xs md:text-sm text-gray-600">Create and manage school news</p>
               </div>
             </div>
             <button
@@ -180,7 +180,7 @@ export default function AdminNewsPage() {
                 })
                 setShowModal(true)
               }}
-              className="flex items-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700"
+              className="flex items-center justify-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 w-full md:w-auto"
             >
               <Plus className="w-5 h-5" />
               <span>Add News</span>
@@ -189,24 +189,24 @@ export default function AdminNewsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-xs md:text-sm">Total News</p>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">{news.length}</p>
+            <p className="text-lg md:text-2xl font-bold text-gray-800">{news.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-xs md:text-sm">Published</p>
-            <p className="text-xl md:text-2xl font-bold text-green-600">{news.filter(n => n.published).length}</p>
+            <p className="text-lg md:text-2xl font-bold text-green-600">{news.filter(n => n.published).length}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-xs md:text-sm">Drafts</p>
-            <p className="text-xl md:text-2xl font-bold text-yellow-600">{news.filter(n => !n.published).length}</p>
+            <p className="text-lg md:text-2xl font-bold text-yellow-600">{news.filter(n => !n.published).length}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-xs md:text-sm">This Month</p>
-            <p className="text-xl md:text-2xl font-bold text-blue-600">
+            <p className="text-lg md:text-2xl font-bold text-blue-600">
               {news.filter(n => new Date(n.created_at).getMonth() === new Date().getMonth()).length}
             </p>
           </div>
@@ -215,16 +215,16 @@ export default function AdminNewsPage() {
         {/* News List */}
         <div className="space-y-4">
           {news.map((newsItem) => (
-            <div key={newsItem.id} className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start space-x-4">
+            <div key={newsItem.id} className="bg-white rounded-lg shadow p-4 md:p-6 hover:shadow-md transition-shadow">
+              <div className="flex flex-col md:flex-row items-start gap-4">
                 {newsItem.featured_image && (
-                  <div className="w-32 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-full md:w-32 h-48 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                     <img src={newsItem.featured_image} alt={newsItem.title} className="w-full h-full object-cover" />
                   </div>
                 )}
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-base md:text-lg font-semibold text-gray-800">{newsItem.title}</h3>
+                <div className="flex-1 w-full">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <h3 className="text-base md:text-lg font-semibold text-gray-800 mr-2">{newsItem.title}</h3>
                     <span className={`px-2 py-1 text-[10px] md:text-xs font-semibold rounded-full ${
                       newsItem.published 
                         ? 'bg-green-100 text-green-800' 
@@ -239,7 +239,7 @@ export default function AdminNewsPage() {
                   <p className="text-gray-600 text-xs md:text-sm mb-3">{newsItem.summary || newsItem.content.substring(0, 150) + '...'}</p>
                   <p className="text-[10px] md:text-xs text-gray-500">Created: {new Date(newsItem.created_at).toLocaleString()}</p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 w-full md:w-auto justify-end mt-2 md:mt-0">
                   <button
                     onClick={() => togglePublish(newsItem)}
                     className={`p-2 rounded-lg ${
@@ -247,18 +247,21 @@ export default function AdminNewsPage() {
                         ? 'text-yellow-600 hover:bg-yellow-50' 
                         : 'text-green-600 hover:bg-green-50'
                     }`}
+                    title={newsItem.published ? "Unpublish" : "Publish"}
                   >
                     {newsItem.published ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                   <button
                     onClick={() => handleEdit(newsItem)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                    title="Edit"
                   >
                     <Edit className="w-5 h-5" />
                   </button>
                   <button
                     onClick={() => handleDelete(newsItem.id)}
                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                    title="Delete"
                   >
                     <Trash2 className="w-5 h-5" />
                   </button>

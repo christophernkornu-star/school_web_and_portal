@@ -524,56 +524,56 @@ export default function HomePage() {
       )}
 
       {/* School Statistics Dashboard */}
-      <section className="py-16 bg-white border-t-4 border-methodist-gold">
-        <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h3 className="text-4xl font-bold text-methodist-blue mb-3">
+      <section className="py-12 md:py-16 bg-white border-t-4 border-methodist-gold">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="text-center mb-8 md:mb-12">
+            <h3 className="text-2xl md:text-4xl font-bold text-methodist-blue mb-2 md:mb-3">
               {statsSettings.title}
             </h3>
-            <p className="text-gray-600 max-w-2xl mx-auto">
+            <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
               {statsSettings.subtitle}
             </p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
             {/* Years of Operation */}
-            <div className="bg-gradient-to-br from-methodist-blue to-blue-800 rounded-xl p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
-              <div className="text-5xl font-extrabold mb-2">{yearsOfOperation}+</div>
-              <div className="text-sm uppercase tracking-wider opacity-90">Years of Excellence</div>
+            <div className="bg-gradient-to-br from-methodist-blue to-blue-800 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{yearsOfOperation}+</div>
+              <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Years of Excellence</div>
             </div>
 
             {/* Student Count */}
-            <div className="bg-gradient-to-br from-ghana-green to-green-700 rounded-xl p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
-              <div className="text-5xl font-extrabold mb-2">{studentCount}</div>
-              <div className="text-sm uppercase tracking-wider opacity-90">Active Students</div>
+            <div className="bg-gradient-to-br from-ghana-green to-green-700 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{studentCount}</div>
+              <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Active Students</div>
             </div>
 
             {/* Teacher Count */}
-            <div className="bg-gradient-to-br from-methodist-gold to-yellow-600 rounded-xl p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
-              <div className="text-5xl font-extrabold mb-2">{teacherCount}</div>
-              <div className="text-sm uppercase tracking-wider opacity-90">Qualified Teachers</div>
+            <div className="bg-gradient-to-br from-methodist-gold to-yellow-600 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{teacherCount}</div>
+              <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Qualified Teachers</div>
             </div>
 
             {/* Pass Rate */}
-            <div className="bg-gradient-to-br from-ghana-red to-red-700 rounded-xl p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
-              <div className="text-5xl font-extrabold mb-2">{passRate}%</div>
-              <div className="text-sm uppercase tracking-wider opacity-90">Pass Rate</div>
+            <div className="bg-gradient-to-br from-ghana-red to-red-700 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{passRate}%</div>
+              <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Pass Rate</div>
             </div>
           </div>
 
           {/* Additional Stats Row */}
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-8">
-            <div className="bg-gray-50 rounded-lg p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
-              <div className="text-3xl font-bold text-methodist-blue mb-1">{statsSettings.teacherStudentRatio}</div>
-              <div className="text-sm text-gray-600">Teacher-Student Ratio</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto mt-6 md:mt-8">
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
+              <div className="text-2xl md:text-3xl font-bold text-methodist-blue mb-1">{statsSettings.teacherStudentRatio}</div>
+              <div className="text-xs md:text-sm text-gray-600">Teacher-Student Ratio</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
-              <div className="text-3xl font-bold text-methodist-blue mb-1">{statsSettings.beceParticipation}</div>
-              <div className="text-sm text-gray-600">BECE Participation</div>
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
+              <div className="text-2xl md:text-3xl font-bold text-methodist-blue mb-1">{statsSettings.beceParticipation}</div>
+              <div className="text-xs md:text-sm text-gray-600">BECE Participation</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
-              <div className="text-3xl font-bold text-methodist-blue mb-1">{statsSettings.gradeLevels}</div>
-              <div className="text-sm text-gray-600">Grade Levels (KG - Basic 9)</div>
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
+              <div className="text-2xl md:text-3xl font-bold text-methodist-blue mb-1">{statsSettings.gradeLevels}</div>
+              <div className="text-xs md:text-sm text-gray-600">Grade Levels (KG - Basic 9)</div>
             </div>
           </div>
         </div>
@@ -731,7 +731,7 @@ export default function HomePage() {
                 <div className="inline-block bg-ghana-red text-white px-4 py-2 rounded-full text-sm font-bold mb-3">
                   MISSION STATEMENT
                 </div>
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-700 leading-relaxed text-justify">
                   To provide relevant education and to offer the highest learning environment in which 
                   students irrespective of race, ethnic, and religious background are motivated and 
                   supported in order to achieve their full potential in their academic discipline and 
@@ -742,7 +742,7 @@ export default function HomePage() {
                 <div className="inline-block bg-ghana-red text-white px-4 py-2 rounded-full text-sm font-bold mb-3">
                   VISION STATEMENT
                 </div>
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-700 leading-relaxed text-justify">
                   To develop well rounded, confident and responsible individuals who aspire to 
                   achieve their full potential by providing a serene, happy, safe and supportive 
                   learning environment in which everyone is unique and all achievement are celebrated.

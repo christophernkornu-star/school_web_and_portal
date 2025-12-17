@@ -257,8 +257,8 @@ export default function TeachersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
                 <ArrowLeft className="w-6 h-6" />
@@ -268,19 +268,19 @@ export default function TeachersPage() {
                 <p className="text-xs md:text-sm text-gray-600">View and manage all teachers</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="bg-methodist-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                className="bg-methodist-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm md:text-base flex-1 md:flex-none justify-center"
               >
-                <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Upload CSV</span>
               </button>
               <Link 
                 href="/admin/teachers/add"
-                className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm md:text-base flex-1 md:flex-none justify-center"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Add Teacher</span>
               </Link>
             </div>
@@ -288,9 +288,9 @@ export default function TeachersPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Search */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
           <div className="relative">
             <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
             <input
@@ -304,7 +304,7 @@ export default function TeachersPage() {
         </div>
 
         {/* Teachers Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredTeachers.map((teacher) => (
             <div key={teacher.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
               <div className="flex items-start justify-between mb-4">

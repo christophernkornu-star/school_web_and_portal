@@ -267,8 +267,8 @@ export default function StudentsPage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
                 <ArrowLeft className="w-6 h-6" />
@@ -278,19 +278,19 @@ export default function StudentsPage() {
                 <p className="text-xs md:text-sm text-gray-600">View and manage all students</p>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 flex-1 md:flex-none text-sm md:text-base"
               >
-                <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Upload CSV</span>
               </button>
               <Link 
                 href="/admin/students/add"
-                className="bg-methodist-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                className="bg-methodist-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 flex-1 md:flex-none text-sm md:text-base"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Add Student</span>
               </Link>
             </div>
@@ -299,7 +299,7 @@ export default function StudentsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Message Alert */}
         {message.text && (
           <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
@@ -312,8 +312,8 @@ export default function StudentsPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="grid md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
               <input
@@ -337,16 +337,75 @@ export default function StudentsPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-center justify-end">
-              <span className="text-gray-600">
+            <div className="flex items-center justify-between md:justify-end">
+              <span className="text-gray-600 text-sm md:text-base">
                 <strong>{filteredStudents.length}</strong> students found
               </span>
             </div>
           </div>
         </div>
 
-        {/* Students Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {filteredStudents.map((student) => (
+            <div key={student.id} className="bg-white rounded-lg shadow p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-bold text-gray-900">{student.first_name} {student.last_name}</h3>
+                  <p className="text-sm text-gray-500">{student.student_id}</p>
+                </div>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {student.status}
+                </span>
+              </div>
+              
+              <div className="space-y-2 text-sm text-gray-600 mb-4">
+                <div className="flex justify-between">
+                  <span className="font-medium">Class:</span>
+                  <span>{student.classes?.name || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Gender:</span>
+                  <span>{student.gender}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Guardian:</span>
+                  <span>{student.guardian_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="font-medium">Phone:</span>
+                  <span>{student.guardian_phone}</span>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-3 border-t">
+                <Link 
+                  href={`/admin/students/${student.id}`} 
+                  className="flex items-center space-x-1 text-methodist-blue hover:text-blue-700 px-3 py-1.5 bg-blue-50 rounded-lg"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span className="text-sm">Edit</span>
+                </Link>
+                <button 
+                  onClick={() => {
+                    if (confirm(`Are you sure you want to delete ${student.first_name} ${student.last_name}?`)) {
+                      handleDeleteStudent(student.id, student.profile_id)
+                    }
+                  }}
+                  className="flex items-center space-x-1 text-red-600 hover:text-red-800 px-3 py-1.5 bg-red-50 rounded-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="text-sm">Delete</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
