@@ -30,7 +30,11 @@ export default function LoginPage() {
 
       if (signInError) {
         console.error('❌ Sign in error:', signInError)
-        setError(signInError.message || 'Invalid username or password')
+        if (signInError.message && signInError.message.includes('rate limit')) {
+          setError('Too many login attempts. Please wait a few minutes before trying again.')
+        } else {
+          setError(signInError.message || 'Invalid username or password')
+        }
         setLoading(false)
         return
       }

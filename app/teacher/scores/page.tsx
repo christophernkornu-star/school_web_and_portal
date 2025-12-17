@@ -3,7 +3,7 @@
 import { useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileText, Upload, Download, Users, AlertCircle, CheckCircle, XCircle, Filter, BookOpen, Camera, Grid, Calculator, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, FileText, Upload, Download, Users, AlertCircle, CheckCircle, XCircle, Filter, BookOpen, Camera, Grid, Calculator, Plus, Trash2, User } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -1897,13 +1897,74 @@ export default function ExamScoresPage() {
               {/* Ungraded Report */}
               {ungradedData.length > 0 ? (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="px-4 py-3 bg-gray-50 border-b">
+                  <div className="px-4 py-3 bg-gray-50 border-b flex justify-between items-center">
                     <h3 className="text-lg font-semibold text-gray-800">
                       Ungraded Subjects Report
                     </h3>
+                    <span className="text-sm text-gray-500">
+                      {ungradedData.length} students with missing grades
+                    </span>
                   </div>
-                  <div className="p-6 text-center text-gray-500">
-                    Select a class and term to view ungraded subjects.
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Student
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Missing Subjects
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Progress
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {ungradedData.map((item, index) => (
+                          <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                  <User className="h-5 w-5 text-gray-500" />
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {item.student.first_name} {item.student.last_name}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {item.student.student_id}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="flex flex-wrap gap-2">
+                                {item.missingSubjects.map((subject: any) => (
+                                  <span 
+                                    key={subject.id}
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                                  >
+                                    {subject.name}
+                                  </span>
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 max-w-[100px]">
+                                <div 
+                                  className="bg-blue-600 h-2.5 rounded-full" 
+                                  style={{ width: `${(item.gradedCount / item.totalSubjects) * 100}%` }}
+                                ></div>
+                              </div>
+                              <div className="text-xs text-gray-500 mt-1">
+                                {item.gradedCount} of {item.totalSubjects} graded
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               ) : (

@@ -75,7 +75,7 @@ export default function TermsPage() {
         .eq('is_current', true)
     }
 
-    const { error } = await supabase
+    const { data: newTerm, error } = await supabase
       .from('academic_terms')
       .insert({
         name: formData.name,
@@ -84,10 +84,52 @@ export default function TermsPage() {
         end_date: formData.end_date,
         is_current: formData.is_current
       })
+      .select()
+      .single()
 
     if (error) {
       setMessage({ type: 'error', text: error.message })
     } else {
+      if (formData.is_current && newTerm) {
+        // Update academic_settings
+        const { data: settingsData } = await supabase
+          .from('academic_settings')
+          .select('id')
+          .limit(1) as { data: any[] | null }
+
+        if (settingsData && settingsData.length > 0) {
+          await supabase
+            .from('academic_settings')
+            .update({ 
+              current_term: newTerm.name,
+              current_academic_year: newTerm.academic_year
+            })
+            .eq('id', settingsData[0].id)
+        }
+
+        // Update system_settings
+        const { data: systemSettings } = await supabase
+          .from('system_settings')
+          .select('id')
+          .eq('setting_key', 'current_term')
+          .maybeSingle()
+
+        if (systemSettings) {
+          await supabase
+            .from('system_settings')
+            .update({ setting_value: newTerm.id })
+            .eq('id', systemSettings.id)
+        } else {
+          await supabase
+            .from('system_settings')
+            .insert({ 
+              setting_key: 'current_term', 
+              setting_value: newTerm.id,
+              description: 'Current Academic Term ID'
+            })
+        }
+      }
+
       setMessage({ type: 'success', text: 'Term added successfully!' })
       setShowAddModal(false)
       resetForm()
@@ -122,6 +164,46 @@ export default function TermsPage() {
     if (error) {
       setMessage({ type: 'error', text: error.message })
     } else {
+      if (formData.is_current) {
+        // Update academic_settings
+        const { data: settingsData } = await supabase
+          .from('academic_settings')
+          .select('id')
+          .limit(1) as { data: any[] | null }
+
+        if (settingsData && settingsData.length > 0) {
+          await supabase
+            .from('academic_settings')
+            .update({ 
+              current_term: formData.name,
+              current_academic_year: formData.academic_year
+            })
+            .eq('id', settingsData[0].id)
+        }
+
+        // Update system_settings
+        const { data: systemSettings } = await supabase
+          .from('system_settings')
+          .select('id')
+          .eq('setting_key', 'current_term')
+          .maybeSingle()
+
+        if (systemSettings) {
+          await supabase
+            .from('system_settings')
+            .update({ setting_value: selectedTerm.id })
+            .eq('id', systemSettings.id)
+        } else {
+          await supabase
+            .from('system_settings')
+            .insert({ 
+              setting_key: 'current_term', 
+              setting_value: selectedTerm.id,
+              description: 'Current Academic Term ID'
+            })
+        }
+      }
+
       setMessage({ type: 'success', text: 'Term updated successfully!' })
       setShowEditModal(false)
       resetForm()
@@ -173,6 +255,29 @@ export default function TermsPage() {
           current_academic_year: term.academic_year
         })
         .eq('id', settingsData[0].id)
+    }
+
+    // Also update system_settings for other portals
+    const { data: systemSettings } = await supabase
+      .from('system_settings')
+      .select('id')
+      .eq('setting_key', 'current_term')
+      .maybeSingle()
+
+    if (systemSettings) {
+      await supabase
+        .from('system_settings')
+        .update({ setting_value: term.id })
+        .eq('id', systemSettings.id)
+    } else {
+      // Create if not exists
+      await supabase
+        .from('system_settings')
+        .insert({ 
+          setting_key: 'current_term', 
+          setting_value: term.id,
+          description: 'Current Academic Term ID'
+        })
     }
 
     loadTerms()
