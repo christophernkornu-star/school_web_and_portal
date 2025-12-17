@@ -18,7 +18,17 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?portal=admin', req.url))
     }
     
-    const role = session.user.user_metadata.role
+    let role = session.user.user_metadata.role
+    // Fallback: Check profile if metadata is missing
+    if (!role) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+      role = profile?.role
+    }
+
     if (role !== 'admin') {
       // Redirect to appropriate dashboard based on role
       if (role === 'teacher') return NextResponse.redirect(new URL('/teacher/dashboard', req.url))
@@ -33,7 +43,17 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?portal=teacher', req.url))
     }
     
-    const role = session.user.user_metadata.role
+    let role = session.user.user_metadata.role
+    // Fallback: Check profile if metadata is missing
+    if (!role) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+      role = profile?.role
+    }
+
     if (role !== 'teacher' && role !== 'admin') { // Allow admin to view teacher portal? Usually no, but maybe for debugging. Let's stick to strict.
       // Actually, let's keep it strict.
       if (role === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', req.url))
@@ -48,7 +68,16 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login?portal=student', req.url))
     }
     
-    const role = session.user.user_metadata.role
+    let role = session.user.user_metadata.role
+    // Fallback: Check profile if metadata is missing
+    if (!role) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single()
+      role = profile?.role
+    }
     if (role !== 'student') {
       if (role === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', req.url))
       if (role === 'teacher') return NextResponse.redirect(new URL('/teacher/dashboard', req.url))

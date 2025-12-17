@@ -46,6 +46,14 @@ export async function signInWithUsername(username: string, password: string) {
     }
   }
 
+  // Ensure user metadata has the role (crucial for middleware)
+  if (role && data.user && data.user.user_metadata?.role !== role) {
+    console.log('🔄 Updating user metadata with role:', role)
+    await browserSupabase.auth.updateUser({
+      data: { role: role }
+    })
+  }
+
   return { data, error: null, role }
 }
 
