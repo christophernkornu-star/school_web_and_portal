@@ -31,6 +31,36 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get class capacity and current count
+    const { data: classData, error: classError } = await supabaseAdmin
+      .from('classes')
+      .select('capacity')
+      .eq('id', classId)
+      .single()
+
+    if (classError || !classData) {
+      return NextResponse.json(
+        { error: 'Class not found' },
+        { status: 404 }
+      )
+    }
+
+    const { count: currentCount, error: countError } = await supabaseAdmin
+      .from('students')
+      .select('*', { count: 'exact', head: true })
+      .eq('class_id', classId)
+      .eq('status', 'active')
+
+    if (countError) {
+      return NextResponse.json(
+        { error: 'Failed to check class capacity' },
+        { status: 500 }
+      )
+    }
+
+    const capacity = classData.capacity
+    let currentStudentCount = currentCount || 0
+
     const results = {
       success: 0,
       failed: 0,
@@ -41,21 +71,66 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < students.length; i++) {
       const student = students[i]
 
+      // Trim inputs
+      if (student.first_name) student.first_name = student.first_name.trim()
+      if (student.last_name) student.last_name = student.last_name.trim()
+      if (student.middle_name) student.middle_name = student.middle_name.trim()
+
       try {
         // Validate required fields
-        if (!student.first_name || !student.last_name || !student.date_of_birth || 
-            !student.gender || !student.guardian_name || !student.guardian_phone) {
+        if (!student.first_name || !student.last_name || !student.date_of_birth || !student.gender) {
           results.failed++
           results.errors.push(`Row ${i + 2}: Missing required fields`)
           continue
         }
 
+        // Check for duplicates in the system (same name, middle name and DOB)
+        // We check for (Middle Name matches OR Middle Name is NULL) to handle cases where 
+        // a student was previously uploaded without a middle name (due to a bug or omission)
+        let duplicateQuery = supabaseAdmin
+          .from('students')
+          .select('id')
+          .ilike('first_name', student.first_name)
+          .ilike('last_name', student.last_name)
+          .eq('date_of_birth', student.date_of_birth)
+
+        if (student.middle_name) {
+          // If CSV has middle name, match if DB has same middle name OR DB has NULL
+          duplicateQuery = duplicateQuery.or(`middle_name.ilike.${student.middle_name},middle_name.is.null`)
+        } else {
+          // If CSV has no middle name, match if DB has NULL
+          duplicateQuery = duplicateQuery.is('middle_name', null)
+        }
+          
+        const { data: existingStudents } = await duplicateQuery
+          
+        if (existingStudents && existingStudents.length > 0) {
+           results.failed++
+           results.errors.push(`Row ${i + 2}: Student already exists in the system`)
+           continue
+        }
+
+        // Check capacity
+        if (currentStudentCount >= capacity) {
+           results.failed++
+           results.errors.push(`Row ${i + 2}: Class capacity reached (${capacity})`)
+           continue
+        }
+
         // Create user account or find existing one
-        // Generate unique email with timestamp and random string to avoid conflicts
-        const email = student.guardian_email || `student.${student.first_name.toLowerCase()}.${student.last_name.toLowerCase()}.${Date.now()}.${Math.random().toString(36).slice(-6)}@school.temp`
+        // Always generate a unique email for the student account to avoid conflicts with guardian emails
+        // The guardian_email will only be used for contact purposes in the students table
+        const email = `student.${student.first_name.toLowerCase()}.${student.last_name.toLowerCase()}.${Date.now()}.${Math.random().toString(36).slice(-6)}@school.temp`
         
-        // Password: firstname + date of birth (e.g., John2010-05-15)
-        const password = `${student.first_name}${student.date_of_birth}`
+        // Password: date of birth in DD-MM-YYYY format
+        let password = student.date_of_birth
+        if (password && password.includes('-')) {
+          const parts = password.split('-')
+          if (parts.length === 3 && parts[0].length === 4) {
+             // Convert YYYY-MM-DD to DD-MM-YYYY
+             password = `${parts[2]}-${parts[1]}-${parts[0]}`
+          }
+        }
 
         let authData: any = null
         let authError: any = null
@@ -101,11 +176,31 @@ export async function POST(request: NextRequest) {
         }
 
         // Create profile record
-        // Username: first 3 letters of lastname + first 3 letters of firstname (Ghanaian order)
-        const lastThree = student.last_name.substring(0, 3).toLowerCase()
-        const firstThree = student.first_name.substring(0, 3).toLowerCase()
-        const baseUsername = `${lastThree}${firstThree}`
-        const username = `${baseUsername}${Date.now()}` // Add timestamp to ensure uniqueness
+        // Username: first 3 letters of first name + last 3 letters of last name
+        const fName = student.first_name.trim().toLowerCase()
+        const lName = student.last_name.trim().toLowerCase()
+        
+        const firstPart = fName.substring(0, 3)
+        const lastPart = lName.length > 3 ? lName.slice(-3) : lName
+        
+        let username = `${firstPart}${lastPart}`
+        
+        // Ensure uniqueness by appending a counter only if necessary
+        let counter = 1
+        let isUnique = false
+        while (!isUnique) {
+          const { data: existing } = await supabaseAdmin
+            .from('profiles')
+            .select('username')
+            .eq('username', username)
+          
+          if (!existing || existing.length === 0) {
+            isUnique = true
+          } else {
+            username = `${firstPart}${lastPart}${counter}`
+            counter++
+          }
+        }
         
         const { error: profileError } = await supabaseAdmin
           .from('profiles')
@@ -132,6 +227,7 @@ export async function POST(request: NextRequest) {
         const studentData = {
           profile_id: authData.user.id,
           first_name: student.first_name,
+          middle_name: student.middle_name || null,
           last_name: student.last_name,
           date_of_birth: student.date_of_birth,
           gender: student.gender.charAt(0).toUpperCase() + student.gender.slice(1).toLowerCase(),
@@ -155,6 +251,7 @@ export async function POST(request: NextRequest) {
           await supabaseAdmin.auth.admin.deleteUser(authData.user.id)
         } else {
           results.success++
+          currentStudentCount++
         }
 
         // Add delay to avoid rate limits

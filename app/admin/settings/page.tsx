@@ -17,6 +17,12 @@ export default function SettingsPage() {
     currentTerm: '',
     systemStatus: 'Active'
   })
+  const [fixingUsernames, setFixingUsernames] = useState(false)
+  const [fixingPasswords, setFixingPasswords] = useState(false)
+  const [fixingDuplicates, setFixingDuplicates] = useState(false)
+  const [fixResult, setFixResult] = useState<{message: string, type: 'success' | 'error'} | null>(null)
+  const [passwordFixResult, setPasswordFixResult] = useState<{message: string, type: 'success' | 'error'} | null>(null)
+  const [duplicateFixResult, setDuplicateFixResult] = useState<{message: string, type: 'success' | 'error'} | null>(null)
 
   useEffect(() => {
     async function loadOverview() {
@@ -49,6 +55,91 @@ export default function SettingsPage() {
     }
     loadOverview()
   }, [router])
+
+  async function handleFixUsernames() {
+    if (!confirm('This will regenerate usernames for ALL students based on the new format (First 3 letters + Last 3 letters). Are you sure?')) {
+      return
+    }
+
+    setFixingUsernames(true)
+    setFixResult(null)
+
+    try {
+      const response = await fetch('/api/admin/fix-usernames')
+      const data = await response.json()
+
+      if (!response.ok) throw new Error(data.error || 'Failed to update usernames')
+
+      setFixResult({
+        message: `Success! Updated ${data.updated_count} students. Total processed: ${data.total_students}.`,
+        type: 'success'
+      })
+    } catch (error: any) {
+      setFixResult({
+        message: error.message || 'An error occurred',
+        type: 'error'
+      })
+    } finally {
+      setFixingUsernames(false)
+    }
+  }
+
+  async function handleFixPasswords() {
+    if (!confirm('This will reset ALL student passwords to their Date of Birth in DD-MM-YYYY format. This action cannot be undone. Are you sure?')) {
+      return
+    }
+
+    setFixingPasswords(true)
+    setPasswordFixResult(null)
+
+    try {
+      const response = await fetch('/api/admin/fix-passwords')
+      const data = await response.json()
+
+      if (!response.ok) throw new Error(data.error || 'Failed to update passwords')
+
+      setPasswordFixResult({
+        message: `Success! Updated ${data.updated_count} students. Total processed: ${data.total_students}.`,
+        type: 'success'
+      })
+    } catch (error: any) {
+      setPasswordFixResult({
+        message: error.message || 'An error occurred',
+        type: 'error'
+      })
+    } finally {
+      setFixingPasswords(false)
+    }
+  }
+
+  async function handleFixDuplicates() {
+    if (!confirm('This will search for and remove duplicate student records (same Name and DOB). It will keep the record with a Middle Name if available. Are you sure?')) {
+      return
+    }
+
+    setFixingDuplicates(true)
+    setDuplicateFixResult(null)
+
+    try {
+      const response = await fetch('/api/admin/fix-duplicates')
+      const data = await response.json()
+
+      if (!response.ok) throw new Error(data.error || 'Failed to remove duplicates')
+
+      setDuplicateFixResult({
+        message: `Success! Removed ${data.duplicates_found} duplicate records.`,
+        type: 'success'
+      })
+    } catch (error: any) {
+      setDuplicateFixResult({
+        message: error.message || 'An error occurred',
+        type: 'error'
+      })
+    } finally {
+      setFixingDuplicates(false)
+    }
+  }
+
   const settingsSections = [
     {
       title: 'School Information',
@@ -128,6 +219,73 @@ export default function SettingsPage() {
               </div>
             </Link>
           ))}
+        </div>
+
+        {/* Maintenance Section */}
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-bold text-gray-800 mb-4">System Maintenance</h2>
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-800">Fix Student Usernames</h3>
+                <p className="text-sm text-gray-600">Regenerate all student usernames to follow the format: First 3 letters + Last 3 letters (e.g., 'formah')</p>
+              </div>
+              <button
+                onClick={handleFixUsernames}
+                disabled={fixingUsernames}
+                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50 transition"
+              >
+                {fixingUsernames ? 'Processing...' : 'Run Fix'}
+              </button>
+            </div>
+            {fixResult && (
+              <div className={`mt-4 p-3 rounded ${fixResult.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {fixResult.message}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-800">Reset Student Passwords</h3>
+                <p className="text-sm text-gray-600">Reset all student passwords to their Date of Birth (DD-MM-YYYY)</p>
+              </div>
+              <button
+                onClick={handleFixPasswords}
+                disabled={fixingPasswords}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 transition"
+              >
+                {fixingPasswords ? 'Processing...' : 'Reset All'}
+              </button>
+            </div>
+            {passwordFixResult && (
+              <div className={`mt-4 p-3 rounded ${passwordFixResult.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {passwordFixResult.message}
+              </div>
+            )}
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-gray-800">Remove Duplicate Students</h3>
+                <p className="text-sm text-gray-600">Find and remove duplicate student records (keeps the one with Middle Name)</p>
+              </div>
+              <button
+                onClick={handleFixDuplicates}
+                disabled={fixingDuplicates}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 transition"
+              >
+                {fixingDuplicates ? 'Processing...' : 'Remove Duplicates'}
+              </button>
+            </div>
+            {duplicateFixResult && (
+              <div className={`mt-4 p-3 rounded ${duplicateFixResult.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                {duplicateFixResult.message}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Current Settings Overview */}

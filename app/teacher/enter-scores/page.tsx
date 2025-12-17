@@ -76,11 +76,23 @@ export default function EnterScores() {
   }
 
   const loadAssessments = async () => {
+    // Get class_subject_id first
+    const { data: classSubject } = await supabase
+      .from('class_subjects')
+      .select('id')
+      .eq('class_id', selectedClass)
+      .eq('subject_id', selectedSubject)
+      .maybeSingle()
+    
+    if (!classSubject) {
+      setAssessments([])
+      return
+    }
+
     const { data, error } = await supabase
       .from('assessments')
       .select('*, assessment_types(*)')
-      .eq('class_id', selectedClass)
-      .eq('subject_id', selectedSubject)
+      .eq('class_subject_id', classSubject.id)
       .eq('teacher_id', teacher?.id)
       .order('assessment_date', { ascending: false })
 
@@ -92,8 +104,25 @@ export default function EnterScores() {
   const handleScoreChange = (studentId: string, value: string) => {
     const numValue = parseFloat(value)
     if (!isNaN(numValue)) {
+      if (numValue > 10) {
+        alert('Score cannot be greater than 10')
+        return
+      }
       setScores({ ...scores, [studentId]: numValue })
+    } else if (value === '') {
+      const newScores = { ...scores }
+      delete newScores[studentId]
+      setScores(newScores)
     }
+  }
+
+  const calculateGrade = (total: number) => {
+    if (total >= 80) return 'A'
+    if (total >= 70) return 'B'
+    if (total >= 60) return 'C'
+    if (total >= 50) return 'D'
+    if (total >= 40) return 'E'
+    return 'F'
   }
 
   const handleSaveScores = async () => {
@@ -105,6 +134,7 @@ export default function EnterScores() {
     setSaving(true)
 
     try {
+      // 1. Save individual assessment scores
       const scoreEntries = Object.entries(scores).map(([studentId, score]) => ({
         assessment_id: selectedAssessment,
         student_id: studentId,
@@ -119,13 +149,107 @@ export default function EnterScores() {
         })
 
       if (error) {
-        alert('Error saving scores: ' + error.message)
-      } else {
-        alert('Scores saved successfully!')
-        setScores({})
+        throw error
       }
-    } catch (err) {
-      alert('An error occurred while saving scores')
+
+      // 2. Recalculate Class Scores for affected students
+      // Get term_id from the selected assessment
+      const { data: assessmentData } = await supabase
+        .from('assessments')
+        .select('term_id')
+        .eq('id', selectedAssessment)
+        .single()
+      
+      const termId = assessmentData?.term_id
+
+      if (termId) {
+        // Get class_subject_id first
+        const { data: classSubject } = await supabase
+          .from('class_subjects')
+          .select('id')
+          .eq('class_id', selectedClass)
+          .eq('subject_id', selectedSubject)
+          .maybeSingle()
+
+        if (classSubject) {
+          // Get all assessments for this class, subject, and term
+          const { data: termAssessments } = await supabase
+            .from('assessments')
+            .select('id')
+            .eq('class_subject_id', classSubject.id)
+            .eq('term_id', termId)
+
+          if (termAssessments && termAssessments.length > 0) {
+          const assessmentIds = termAssessments.map((a: any) => a.id)
+          const studentIds = Object.keys(scores)
+
+          // Process each student
+          await Promise.all(studentIds.map(async (studentId) => {
+            // Get all scores for this student in this term's assessments
+            const { data: studentScores } = await supabase
+              .from('student_scores')
+              .select('score')
+              .in('assessment_id', assessmentIds)
+              .eq('student_id', studentId)
+
+            if (studentScores) {
+              const totalScoreGotten = studentScores.reduce((sum: number, s: any) => sum + (s.score || 0), 0)
+              const numberOfAssessments = studentScores.length // Or termAssessments.length? "number of class scores recorded"
+              // User said: "number of class scores recorded * 10"
+              // This implies we count the scores actually recorded for the student, OR the total assessments available?
+              // "number of class scores recorded" usually means the count of entries.
+              
+              const expectedScore = numberOfAssessments * 10
+              
+              let calculatedClassScore = 0
+              if (expectedScore > 0) {
+                calculatedClassScore = (totalScoreGotten / expectedScore) * 40
+              }
+              
+              // Round to 2 decimal places
+              calculatedClassScore = Math.round(calculatedClassScore * 100) / 100
+
+              // Update scores table
+              // First get existing score to preserve exam_score
+              const { data: existingScore } = await supabase
+                .from('scores')
+                .select('*')
+                .eq('student_id', studentId)
+                .eq('subject_id', selectedSubject)
+                .eq('term_id', termId)
+                .single()
+
+              const examScore = existingScore?.exam_score || 0
+              const total = calculatedClassScore + examScore
+              const grade = calculateGrade(total)
+
+              await supabase
+                .from('scores')
+                .upsert({
+                  student_id: studentId,
+                  subject_id: selectedSubject,
+                  term_id: termId,
+                  teacher_id: teacher?.id,
+                  class_score: calculatedClassScore,
+                  exam_score: examScore,
+                  total: total,
+                  grade: grade,
+                  remarks: existingScore?.remarks || ''
+                }, {
+                  onConflict: 'student_id,subject_id,term_id'
+                })
+            }
+          }))
+        }
+       }
+      }
+
+      alert('Scores saved and class scores updated successfully!')
+      setScores({})
+      
+    } catch (err: any) {
+      console.error('Error saving scores:', err)
+      alert('An error occurred while saving scores: ' + err.message)
     }
 
     setSaving(false)

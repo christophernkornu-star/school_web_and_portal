@@ -296,16 +296,24 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700">
-              <ArrowLeft className="w-6 h-6" />
+        <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center gap-2">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 shrink-0">
+              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
             </Link>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800">Class Performance Reports</h1>
-              <p className="text-xs md:text-sm text-gray-600">Generate report cards and analyze class performance</p>
+              <h1 className="text-base md:text-2xl font-bold text-gray-800 leading-tight">Class Performance Reports</h1>
+              <p className="text-xs md:text-sm text-gray-600 hidden sm:block">Generate report cards and analyze class performance</p>
             </div>
           </div>
+          <Link 
+            href="/teacher/assessment-sheet" 
+            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shrink-0 text-xs md:text-base"
+          >
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Assessment Sheet</span>
+            <span className="sm:hidden">Sheet</span>
+          </Link>
         </div>
       </header>
 
@@ -357,10 +365,10 @@ export default function ReportsPage() {
         </div>
 
         {/* View Toggle */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setView('overview')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
               view === 'overview'
                 ? 'bg-ghana-green text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -371,7 +379,7 @@ export default function ReportsPage() {
           </button>
           <button
             onClick={() => setView('students')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
               view === 'students'
                 ? 'bg-ghana-green text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -382,7 +390,7 @@ export default function ReportsPage() {
           </button>
           <button
             onClick={() => setView('subjects')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+            className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
               view === 'subjects'
                 ? 'bg-ghana-green text-white'
                 : 'bg-white text-gray-700 hover:bg-gray-100'
@@ -501,18 +509,18 @@ export default function ReportsPage() {
         {view === 'students' && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             {/* Bulk Actions Bar */}
-            <div className="bg-gray-50 px-6 py-3 border-b flex items-center justify-between">
+            <div className="bg-gray-50 px-4 md:px-6 py-3 border-b flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="flex items-center gap-4">
                 <button
                   onClick={toggleSelectAll}
                   className="flex items-center gap-2 text-xs md:text-sm text-gray-600 hover:text-gray-800"
                 >
-                  {selectedStudents.length === students.length ? (
+                  {selectedStudents.length === students.length && students.length > 0 ? (
                     <CheckSquare className="w-5 h-5 text-ghana-green" />
                   ) : (
                     <Square className="w-5 h-5" />
                   )}
-                  {selectedStudents.length === students.length ? 'Deselect All' : 'Select All'}
+                  {selectedStudents.length === students.length && students.length > 0 ? 'Deselect All' : 'Select All'}
                 </button>
                 {selectedStudents.length > 0 && (
                   <span className="text-xs md:text-sm text-gray-500">
@@ -524,7 +532,7 @@ export default function ReportsPage() {
                 <button
                   onClick={generateBulkReportCards}
                   disabled={bulkGenerating}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-xs md:text-sm font-medium"
+                  className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-xs md:text-sm font-medium"
                 >
                   {bulkGenerating ? (
                     <>
@@ -540,7 +548,70 @@ export default function ReportsPage() {
                 </button>
               )}
             </div>
-            <div className="overflow-x-auto">
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-200">
+              {students.map((student) => (
+                <div key={student.id} className={`p-4 ${selectedStudents.includes(student.id) ? 'bg-green-50' : 'bg-white'}`}>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => toggleStudentSelection(student.id)}>
+                        {selectedStudents.includes(student.id) ? (
+                          <CheckSquare className="w-5 h-5 text-ghana-green" />
+                        ) : (
+                          <Square className="w-5 h-5 text-gray-400" />
+                        )}
+                      </button>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">{student.profiles?.full_name}</h3>
+                        <p className="text-xs text-gray-500">ID: {student.student_id}</p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+                      {student.position}{getOrdinalSuffix(student.position || 0)}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-gray-50 p-2 rounded">
+                      <p className="text-xs text-gray-500 mb-1">Average Score</p>
+                      <p className={`text-lg font-bold ${getPerformanceColor(student.averageScore || 0).split(' ')[0]}`}>
+                        {student.averageScore}%
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 p-2 rounded">
+                      <p className="text-xs text-gray-500 mb-1">Performance</p>
+                      <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getPerformanceColor(student.averageScore || 0)}`}>
+                        {(student.averageScore || 0) >= 80 ? 'Excellent' :
+                         (student.averageScore || 0) >= 60 ? 'Good' :
+                         (student.averageScore || 0) >= 40 ? 'Average' : 'Needs Help'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => generateStudentReportCard(student.id)}
+                    disabled={generatingPDF && selectedStudentId === student.id}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
+                  >
+                    {generatingPDF && selectedStudentId === student.id ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-4 h-4" />
+                        View Report Card
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-ghana-green text-white">
                   <tr>
@@ -630,7 +701,47 @@ export default function ReportsPage() {
               <h3 className="text-base md:text-lg font-semibold text-gray-800">Subject Performance Analysis</h3>
               <p className="text-xs md:text-sm text-gray-600 mt-1">Identify which subjects need more attention</p>
             </div>
-            <div className="overflow-x-auto">
+
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-200">
+              {subjectAnalysis.map((subject, index) => (
+                <div key={index} className="p-4 bg-white">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-semibold text-gray-900">{subject.subject}</h4>
+                    <span className={`text-lg font-bold ${getPerformanceColor(subject.average).split(' ')[0]}`}>
+                      {subject.average}%
+                    </span>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          subject.average >= 80 ? 'bg-green-600' :
+                          subject.average >= 60 ? 'bg-blue-600' :
+                          subject.average >= 40 ? 'bg-yellow-600' : 'bg-red-600'
+                        }`}
+                        style={{ width: `${subject.average}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex justify-between p-2 bg-green-50 rounded">
+                      <span className="text-gray-600">Highest</span>
+                      <span className="font-bold text-green-600">{subject.highest}%</span>
+                    </div>
+                    <div className="flex justify-between p-2 bg-red-50 rounded">
+                      <span className="text-gray-600">Lowest</span>
+                      <span className="font-bold text-red-600">{subject.lowest}%</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>

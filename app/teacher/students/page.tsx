@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, Trash2, Phone, Mail, KeyRound, CheckSquare, Square } from 'lucide-react'
+import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, Trash2, Phone, Mail, KeyRound, CheckSquare, Square, ArrowUpDown } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -17,6 +17,7 @@ export default function MyStudentsPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedClass, setSelectedClass] = useState('all')
+  const [sortBy, setSortBy] = useState('name_asc')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; student: any | null }>({ show: false, student: null })
   const [deleting, setDeleting] = useState(false)
@@ -105,6 +106,46 @@ export default function MyStudentsPage() {
     const matchesClass = selectedClass === 'all' || student.class_id === selectedClass
 
     return matchesSearch && matchesClass
+  }).sort((a, b) => {
+    if (sortBy === 'name_asc') {
+      const nameA = `${a.last_name} ${a.first_name}`.toLowerCase()
+      const nameB = `${b.last_name} ${b.first_name}`.toLowerCase()
+      return nameA.localeCompare(nameB)
+    }
+    if (sortBy === 'name_desc') {
+      const nameA = `${a.last_name} ${a.first_name}`.toLowerCase()
+      const nameB = `${b.last_name} ${b.first_name}`.toLowerCase()
+      return nameB.localeCompare(nameA)
+    }
+    if (sortBy === 'id_asc') {
+      return (a.student_id || '').localeCompare(b.student_id || '')
+    }
+    if (sortBy === 'id_desc') {
+      return (b.student_id || '').localeCompare(a.student_id || '')
+    }
+    if (sortBy === 'gender_male') {
+      // Sort by gender (Male first), then by name
+      const genderA = (a.gender || '').toLowerCase()
+      const genderB = (b.gender || '').toLowerCase()
+      if (genderA !== genderB) {
+        return genderA === 'male' ? -1 : 1
+      }
+      const nameA = `${a.last_name} ${a.first_name}`.toLowerCase()
+      const nameB = `${b.last_name} ${b.first_name}`.toLowerCase()
+      return nameA.localeCompare(nameB)
+    }
+    if (sortBy === 'gender_female') {
+      // Sort by gender (Female first), then by name
+      const genderA = (a.gender || '').toLowerCase()
+      const genderB = (b.gender || '').toLowerCase()
+      if (genderA !== genderB) {
+        return genderA === 'female' ? -1 : 1
+      }
+      const nameA = `${a.last_name} ${a.first_name}`.toLowerCase()
+      const nameB = `${b.last_name} ${b.first_name}`.toLowerCase()
+      return nameA.localeCompare(nameB)
+    }
+    return 0
   })
 
   function getResetCredentials(student: any) {
@@ -339,7 +380,7 @@ export default function MyStudentsPage() {
         {teacherClasses.length > 0 && (
           <>
             <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-4 md:mb-6">
-              <div className="grid md:grid-cols-2 gap-3 md:gap-4">
+              <div className="grid md:grid-cols-3 gap-3 md:gap-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
                   <input
@@ -363,6 +404,21 @@ export default function MyStudentsPage() {
                         {cls.class_name}
                       </option>
                     ))}
+                  </select>
+                </div>
+                <div className="relative">
+                  <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
+                  >
+                    <option value="name_asc">Name (A-Z)</option>
+                    <option value="name_desc">Name (Z-A)</option>
+                    <option value="id_asc">Student ID (Asc)</option>
+                    <option value="id_desc">Student ID (Desc)</option>
+                    <option value="gender_male">Gender (Male First)</option>
+                    <option value="gender_female">Gender (Female First)</option>
                   </select>
                 </div>
               </div>

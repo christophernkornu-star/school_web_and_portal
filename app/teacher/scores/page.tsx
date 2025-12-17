@@ -928,9 +928,17 @@ export default function ExamScoresPage() {
       // Fill
       data?.forEach((score: any) => {
         if (scoresMap[score.student_id]) {
+            // Convert exam score from 60-basis to 100-basis for display
+            let displayExamScore = ''
+            if (score.exam_score !== null && score.exam_score !== undefined) {
+                // (Score / 60) * 100
+                const val = (parseFloat(score.exam_score) / 60) * 100
+                displayExamScore = Math.round(val * 100) / 100 + '' // Round to 2 decimal places
+            }
+
             scoresMap[score.student_id][score.subject_id] = {
                 class_score: score.class_score?.toString() || '',
-                exam_score: score.exam_score?.toString() || '',
+                exam_score: displayExamScore,
                 id: score.id
             }
         }
@@ -1001,11 +1009,13 @@ export default function ExamScoresPage() {
             const scoreData = studentScores[subjectId]
             
             const classScore = parseFloat(scoreData.class_score)
-            const examScore = parseFloat(scoreData.exam_score)
+            // Convert input exam score (100-basis) to stored score (60-basis)
+            const inputExamScore = parseFloat(scoreData.exam_score)
+            const storedExamScore = !isNaN(inputExamScore) ? (inputExamScore / 100) * 60 : NaN
             
             // Only save if at least one score is present or we are updating an existing record
-            if (!isNaN(classScore) || !isNaN(examScore) || scoreData.id) {
-                const total = (isNaN(classScore) ? 0 : classScore) + (isNaN(examScore) ? 0 : examScore)
+            if (!isNaN(classScore) || !isNaN(storedExamScore) || scoreData.id) {
+                const total = (isNaN(classScore) ? 0 : classScore) + (isNaN(storedExamScore) ? 0 : storedExamScore)
                 const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
                 const { grade, remark } = calculateGradeAndRemark(total, className)
 
@@ -1015,7 +1025,7 @@ export default function ExamScoresPage() {
                     subject_id: subjectId,
                     term_id: selectedTerm,
                     class_score: isNaN(classScore) ? 0 : classScore,
-                    exam_score: isNaN(examScore) ? 0 : examScore,
+                    exam_score: isNaN(storedExamScore) ? 0 : storedExamScore,
                     total: total,
                     grade,
                     remarks: remark,
@@ -2059,7 +2069,7 @@ export default function ExamScoresPage() {
                             {selectedSubjects.map(subjectId => (
                                 <Fragment key={subjectId}>
                                     <th key={`${subjectId}-class`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-20 bg-gray-50">Class (40%)</th>
-                                    <th key={`${subjectId}-exam`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-20 bg-gray-50">Exam (60%)</th>
+                                    <th key={`${subjectId}-exam`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-20 bg-gray-50">Exam (100%)</th>
                                     <th key={`${subjectId}-total`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-16 bg-gray-50">Total</th>
                                     <th key={`${subjectId}-grade`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-16 border-r bg-gray-50">Grade</th>
                                 </Fragment>
@@ -2083,7 +2093,8 @@ export default function ExamScoresPage() {
                                     const scores = gridScores[student.id]?.[subjectId] || { class_score: '', exam_score: '' }
                                     const classScore = parseFloat(scores.class_score) || 0
                                     const examScore = parseFloat(scores.exam_score) || 0
-                                    const total = classScore + examScore
+                                    // Calculate total: Class + (Exam * 0.6)
+                                    const total = classScore + (examScore * 0.6)
                                     const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
                                     const { grade } = calculateGradeAndRemark(total, className)
                                     const hasData = scores.class_score || scores.exam_score
@@ -2105,7 +2116,7 @@ export default function ExamScoresPage() {
                                                 <input
                                                     type="number"
                                                     min="0"
-                                                    max="60"
+                                                    max="100"
                                                     step="0.1"
                                                     value={scores.exam_score}
                                                     onChange={(e) => handleGridScoreChange(student.id, subjectId, 'exam_score', e.target.value)}

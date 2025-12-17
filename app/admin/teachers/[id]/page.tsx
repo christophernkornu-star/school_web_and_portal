@@ -662,14 +662,28 @@ export default function EditTeacherPage() {
                   return (
                     <div key={index} className="flex items-center space-x-4">
                       <select
+                        value={assignment.class_id}
+                        onChange={(e) => updateSubjectAssignment(index, 'class_id', e.target.value)}
+                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                      >
+                        <option value="">Select Class</option>
+                        {assignedClasses
+                          .filter(classId => teachingModels[classId] === 'subject_teacher')
+                          .map(classId => {
+                            const cls = classes.find(c => c.id === classId)
+                            return cls ? <option key={cls.id} value={cls.id}>{cls.name}</option> : null
+                          })}
+                      </select>
+                      <select
                         value={assignment.subject_id}
                         onChange={(e) => updateSubjectAssignment(index, 'subject_id', e.target.value)}
                         className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                        disabled={!assignment.class_id}
                       >
                         <option value="">Select Subject</option>
                         {subjects
                           .filter(subject => {
-                            if (!assignedClass) return true
+                            if (!assignedClass) return false
                             
                             // Determine target level from class
                             let targetLevel = ''
@@ -694,19 +708,6 @@ export default function EditTeacherPage() {
                           .map(subject => (
                           <option key={subject.id} value={subject.id}>{subject.name}</option>
                         ))}
-                      </select>
-                      <select
-                        value={assignment.class_id}
-                        onChange={(e) => updateSubjectAssignment(index, 'class_id', e.target.value)}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                      >
-                        <option value="">Select Class</option>
-                        {assignedClasses
-                          .filter(classId => teachingModels[classId] === 'subject_teacher')
-                          .map(classId => {
-                            const cls = classes.find(c => c.id === classId)
-                            return cls ? <option key={cls.id} value={cls.id}>{cls.name}</option> : null
-                          })}
                       </select>
                       {isSubjectTeacherClass && (
                         <label className="flex items-center space-x-2 px-3 py-2 bg-gray-50 border rounded cursor-pointer">

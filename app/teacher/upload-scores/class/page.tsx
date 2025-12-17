@@ -3,7 +3,7 @@
 import { useState, useEffect, Fragment, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileText, Upload, Camera, AlertCircle, CheckCircle, Grid } from 'lucide-react'
+import { ArrowLeft, FileText, Upload, AlertCircle, CheckCircle, Grid } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -38,7 +38,7 @@ function ClassScoresContent() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
   const searchParams = useSearchParams()
-  const method = searchParams.get('method') || 'manual'
+  const method = searchParams.get('method') || 'grid'
 
   const [loading, setLoading] = useState(true)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
@@ -51,15 +51,15 @@ function ClassScoresContent() {
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
   const [selectedTerm, setSelectedTerm] = useState('')
-  const [selectedStudent, setSelectedStudent] = useState('')
+
   const [currentTermName, setCurrentTermName] = useState('')
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   
-  const [classScore, setClassScore] = useState('')
+
   const [csvFile, setCsvFile] = useState<File | null>(null)
   
   // Grid view state
-  const [activeTab, setActiveTab] = useState<'manual' | 'csv' | 'grid'>('manual')
+  const [activeTab, setActiveTab] = useState<'csv' | 'grid'>('grid')
   const [gridScores, setGridScores] = useState<Record<string, Record<string, { current_score: number, add_score: string, exam_score: number, id?: string }>>>({})
   const [gridSaving, setGridSaving] = useState(false)
   const [gridLoading, setGridLoading] = useState(false)
@@ -74,8 +74,7 @@ function ClassScoresContent() {
 
   useEffect(() => {
     if (method === 'csv') setActiveTab('csv')
-    else if (method === 'grid') setActiveTab('grid')
-    else setActiveTab('manual')
+    else setActiveTab('grid')
   }, [method])
 
   useEffect(() => {
@@ -281,6 +280,13 @@ function ClassScoresContent() {
   }
 
   function handleGridScoreChange(studentId: string, subjectId: string, value: string) {
+    // Immediate validation
+    const numVal = parseFloat(value)
+    if (!isNaN(numVal) && numVal > 10) {
+        alert("Score cannot exceed 10")
+        return // Do not update state
+    }
+
     setGridScores(prev => ({
       ...prev,
       [studentId]: {
@@ -307,8 +313,10 @@ function ClassScoresContent() {
       
       const subjectsTaught = access.subjects_taught || []
 
-      const updates: any[] = []
-      
+      // Group changes by subject
+      const changesBySubject: Record<string, { studentId: string, score: number }[]> = {}
+      const validationErrors: string[] = []
+
       Array.from(gridChanges).forEach(studentId => {
         const studentScores = gridScores[studentId]
         if (!studentScores) return
@@ -332,39 +340,169 @@ function ClassScoresContent() {
             
             // Only save if we have a valid score to add
             if (!isNaN(addScore)) {
-                // Convert the raw input (0-100) to weighted score (0-40)
-                const weightedAdd = convertClassScore(addScore)
-                const newClassScore = (scoreData.current_score || 0) + weightedAdd
-                const total = newClassScore + (scoreData.exam_score || 0)
-                const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
-                const { grade, remark } = calculateGradeAndRemark(total, className)
-                
-                updates.push({
-                    id: scoreData.id,
-                    student_id: studentId,
-                    subject_id: subjectId,
-                    term_id: selectedTerm,
-                    class_score: newClassScore,
-                    exam_score: scoreData.exam_score || 0,
-                    total: total,
-                    grade,
-                    remarks: remark,
-                    teacher_id: teacher!.id
-                })
+                // Validate score (must be <= 10)
+                if (addScore > 10) {
+                    const student = students.find(s => s.id === studentId)
+                    const subject = subjects.find(s => s.id === subjectId)
+                    validationErrors.push(`${student?.first_name} ${student?.last_name} - ${subject?.name}: Score ${addScore} exceeds limit of 10`)
+                } else {
+                    if (!changesBySubject[subjectId]) {
+                        changesBySubject[subjectId] = []
+                    }
+                    changesBySubject[subjectId].push({ studentId, score: addScore })
+                }
             }
         })
       })
 
-      if (updates.length === 0) {
+      if (validationErrors.length > 0) {
+          setError(`Validation Error:\n${validationErrors.join('\n')}`)
           setGridSaving(false)
           return
       }
 
-      const { error } = await supabase
-        .from('scores')
-        .upsert(updates.map(({ id, ...rest }) => ({ ...rest, id: id || undefined })))
-      
-      if (error) throw error
+      // Process each subject
+      for (const subjectId of Object.keys(changesBySubject)) {
+          const updates = changesBySubject[subjectId]
+          if (updates.length === 0) continue
+
+          // 1. Create Assessment
+          // First get class_subject_id
+          const { data: classSubject, error: csError } = await supabase
+            .from('class_subjects')
+            .select('id')
+            .eq('class_id', selectedClass)
+            .eq('subject_id', subjectId)
+            .maybeSingle()
+          
+          if (csError) throw csError
+          
+          // If no class_subject exists, we might need to create one or handle error
+          // For now, assume it exists or try to find it via other means if needed
+          // But schema requires class_subject_id for assessments
+          
+          let classSubjectId = classSubject?.id
+          
+          if (!classSubjectId) {
+             // Try to find academic year from term
+             const { data: termData } = await supabase
+                .from('academic_terms')
+                .select('academic_year')
+                .eq('id', selectedTerm)
+                .single()
+             
+             if (termData) {
+                 // Check if we can create it or if it exists with different criteria
+                 // For now, let's try to insert if missing (auto-create relationship)
+                 const { data: newCS, error: createError } = await supabase
+                    .from('class_subjects')
+                    .insert({
+                        class_id: selectedClass,
+                        subject_id: subjectId,
+                        academic_year: termData.academic_year
+                    })
+                    .select()
+                    .single()
+                 
+                 if (createError) {
+                     console.error('Error creating class_subject:', createError)
+                     throw new Error(`Subject not assigned to this class. Please contact admin.`)
+                 }
+                 classSubjectId = newCS.id
+             } else {
+                 throw new Error('Could not determine academic year for class subject.')
+             }
+          }
+
+          const { data: assessment, error: assessmentError } = await supabase
+            .from('assessments')
+            .insert({
+                class_subject_id: classSubjectId,
+                term_id: selectedTerm,
+                assessment_type: 'class_work',
+                title: `Grid Entry - ${new Date().toLocaleString()}`,
+                max_score: 10,
+                assessment_date: new Date().toISOString()
+            })
+            .select()
+            .single()
+          
+          if (assessmentError) throw assessmentError
+
+          // 2. Insert Student Scores
+          const scoreInserts = updates.map(u => ({
+              assessment_id: assessment.id,
+              student_id: u.studentId,
+              score: u.score,
+              entered_by: teacher!.id
+          }))
+
+          const { error: scoreError } = await supabase
+            .from('student_scores')
+            .insert(scoreInserts)
+          
+          if (scoreError) throw scoreError
+
+          // 3. Recalculate Class Scores for these students
+          // Need to find assessments via class_subject_id
+          const { data: termAssessments } = await supabase
+            .from('assessments')
+            .select('id')
+            .eq('class_subject_id', classSubjectId)
+            .eq('term_id', selectedTerm)
+          
+          const assessmentIds = termAssessments?.map((a: any) => a.id) || []
+
+          for (const update of updates) {
+              const { data: studentScores } = await supabase
+                  .from('student_scores')
+                  .select('score')
+                  .in('assessment_id', assessmentIds)
+                  .eq('student_id', update.studentId)
+              
+              if (studentScores) {
+                  const totalScoreGotten = studentScores.reduce((sum: number, s: any) => sum + (s.score || 0), 0)
+                  const numberOfAssessments = studentScores.length
+                  const expectedScore = numberOfAssessments * 10
+                  
+                  let calculatedClassScore = 0
+                  if (expectedScore > 0) {
+                      calculatedClassScore = (totalScoreGotten / expectedScore) * 40
+                  }
+                  calculatedClassScore = Math.round(calculatedClassScore * 100) / 100
+
+                  // Update scores table
+                  const { data: existingScore } = await supabase
+                    .from('scores')
+                    .select('*')
+                    .eq('student_id', update.studentId)
+                    .eq('subject_id', subjectId)
+                    .eq('term_id', selectedTerm)
+                    .maybeSingle()
+                  
+                  const examScore = existingScore?.exam_score || 0
+                  const total = calculatedClassScore + examScore
+                  const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
+                  const { grade, remark } = calculateGradeAndRemark(total, className)
+
+                  await supabase
+                    .from('scores')
+                    .upsert({
+                        student_id: update.studentId,
+                        subject_id: subjectId,
+                        term_id: selectedTerm,
+                        teacher_id: teacher!.id,
+                        class_score: calculatedClassScore,
+                        exam_score: examScore,
+                        total: total,
+                        grade,
+                        remarks: remark
+                    }, {
+                        onConflict: 'student_id,subject_id,term_id'
+                    })
+              }
+          }
+      }
 
       setGridChanges(new Set())
       loadGridScores()
@@ -409,137 +547,9 @@ function ClassScoresContent() {
     }
   }
 
-  function validateManualForm(): boolean {
-    const errors: Record<string, string> = {}
 
-    if (!selectedClass) errors.class = 'Please select a class'
-    if (!selectedSubject) errors.subject = 'Please select a subject'
-    if (!selectedTerm) errors.term = 'Please select a term'
-    if (!selectedStudent) errors.student = 'Please select a student'
-    
-    const score = parseFloat(classScore)
 
-    if (!classScore) {
-      errors.class_score = 'Class score is required'
-    } else if (isNaN(score) || score < 0 || score > 100) {
-      errors.class_score = 'Class score must be between 0 and 100'
-    }
 
-    setFormErrors(errors)
-    return Object.keys(errors).length === 0
-  }
-
-  async function handleManualSubmit(e: React.FormEvent) {
-    e.preventDefault()
-
-    if (!validateManualForm()) return
-
-    setSubmitting(true)
-    setSubmitSuccess(false)
-
-    try {
-      const classAccess = teacherClasses.find(c => c.class_id === selectedClass)
-      if (!classAccess) throw new Error('No access to this class')
-
-      const fullAccess = await getTeacherClassAccess(teacher!.profile_id)
-      const access = fullAccess.find(c => c.class_id === selectedClass)
-      
-      if (!access) throw new Error('No access to this class')
-
-      // SIMPLIFIED PERMISSION CHECK:
-      // Class teachers (is_class_teacher = true) can ALWAYS edit scores for their class
-      const isClassTeacher = Boolean(access.is_class_teacher)
-      
-      // If class teacher OR has edit all permission, allow editing - no further checks needed
-      if (!isClassTeacher && !access.can_edit_all_subjects) {
-        // Not a class teacher and doesn't have edit all permission
-        // Check if they're assigned to this specific subject
-        const subjectsTaught = access.subjects_taught || []
-        
-        // The RPC returns subject names as strings, not objects with subject_id
-        // So we need to match by subject name instead
-        const selectedSubjectData = subjects.find(s => s.id === selectedSubject)
-        const selectedSubjectName = selectedSubjectData?.name || ''
-        
-        const subjectsTaughtMatches = subjectsTaught.some((s: any) => {
-          if (typeof s === 'string') {
-            // RPC returns subject names as strings
-            return s === selectedSubjectName
-          }
-          // Fallback: check by subject_id if it's an object
-          return String(s.subject_id) === String(selectedSubject)
-        })
-        
-        if (!subjectsTaughtMatches) {
-          throw new Error('You are not assigned to teach this subject')
-        }
-      }
-
-      const inputScore = parseFloat(classScore)
-      const convertedClassScore = convertClassScore(inputScore)
-
-      // Check if score already exists
-      const { data: existingScore } = await supabase
-        .from('scores')
-        .select('*')
-        .eq('student_id', selectedStudent)
-        .eq('subject_id', selectedSubject)
-        .eq('term_id', selectedTerm)
-        .maybeSingle() as { data: any }
-
-      if (existingScore) {
-        // Update existing score - only update class_score and recalculate total
-        const examScore = existingScore.exam_score || 0
-        const newTotal = convertedClassScore + examScore
-        const gradeData = calculateGradeAndRemark(newTotal, classAccess.class_name)
-
-        const { error: updateError } = await supabase
-          .from('scores')
-          .update({
-            class_score: convertedClassScore,
-            total: newTotal,
-            grade: gradeData.grade,
-            remarks: gradeData.remark,
-            teacher_id: teacher!.id
-          })
-          .eq('id', existingScore.id)
-
-        if (updateError) throw updateError
-      } else {
-        // Insert new score with only class_score
-        const total = convertedClassScore
-        const gradeData = calculateGradeAndRemark(total, classAccess.class_name)
-
-        const { error: insertError } = await supabase
-          .from('scores')
-          .insert({
-            student_id: selectedStudent,
-            subject_id: selectedSubject,
-            term_id: selectedTerm,
-            class_score: convertedClassScore,
-            exam_score: 0,
-            total: total,
-            grade: gradeData.grade,
-            remarks: gradeData.remark,
-            teacher_id: teacher!.id
-          })
-
-        if (insertError) throw insertError
-      }
-
-      setSubmitSuccess(true)
-      setClassScore('')
-      setSelectedStudent('')
-      setFormErrors({})
-
-      setTimeout(() => setSubmitSuccess(false), 5000)
-    } catch (error: any) {
-      console.error('Error submitting score:', error)
-      setFormErrors({ submit: error.message || 'Failed to submit score' })
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   async function downloadTemplate() {
     if (!selectedClass) {
@@ -672,11 +682,79 @@ function ClassScoresContent() {
         return
       }
 
+      // Create assessments for detected subjects
+      const assessmentMap: Record<string, string> = {}
+      const classSubjectMap: Record<string, string> = {}
+
+      for (const subject of detectedSubjects) {
+        // Get class_subject_id first
+        const { data: classSubject, error: csError } = await supabase
+          .from('class_subjects')
+          .select('id')
+          .eq('class_id', selectedClass)
+          .eq('subject_id', subject.id)
+          .maybeSingle()
+        
+        if (csError) throw csError
+
+        let classSubjectId = classSubject?.id
+
+        if (!classSubjectId) {
+             // Try to find academic year from term
+             const { data: termData } = await supabase
+                .from('academic_terms')
+                .select('academic_year')
+                .eq('id', selectedTerm)
+                .single()
+             
+             if (termData) {
+                 const { data: newCS, error: createError } = await supabase
+                    .from('class_subjects')
+                    .insert({
+                        class_id: selectedClass,
+                        subject_id: subject.id,
+                        academic_year: termData.academic_year
+                    })
+                    .select()
+                    .single()
+                 
+                 if (createError) {
+                     console.error('Error creating class_subject:', createError)
+                     throw new Error(`Subject ${subject.name} not assigned to this class.`)
+                 }
+                 classSubjectId = newCS.id
+             } else {
+                 throw new Error('Could not determine academic year for class subject.')
+             }
+        }
+        
+        classSubjectMap[subject.id] = classSubjectId
+
+        const { data: assessment, error: assessmentError } = await supabase
+          .from('assessments')
+          .insert({
+            class_subject_id: classSubjectId,
+            term_id: selectedTerm,
+            teacher_id: teacher!.id,
+            assessment_type: 'class_work',
+            title: `CSV Upload - ${new Date().toLocaleString()}`,
+            max_score: 10,
+            assessment_date: new Date().toISOString()
+          })
+          .select()
+          .single()
+          
+        if (assessmentError) throw assessmentError
+        assessmentMap[subject.id] = assessment.id
+      }
+
       const results = {
         success: 0,
         failed: 0,
         errors: [] as string[]
       }
+
+      const classAccess = teacherClasses.find(c => c.class_id === selectedClass)
 
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim())
@@ -716,60 +794,89 @@ function ClassScoresContent() {
 
           if (isNaN(classScoreValue)) continue
 
-          if (classScoreValue < 0 || classScoreValue > 100) {
+          if (classScoreValue < 0 || classScoreValue > 10) {
             results.failed++
-            results.errors.push(`Row ${i + 1}, ${subject.name}: Invalid class score (must be 0-100)`)
+            results.errors.push(`Row ${i + 1}, ${subject.name}: Invalid class score (must be 0-10)`)
             continue
           }
 
-          const convertedClassScore = convertClassScore(classScoreValue)
+          // Insert into student_scores
+          const { error: scoreError } = await supabase
+            .from('student_scores')
+            .insert({
+              assessment_id: assessmentMap[subject.id],
+              student_id: studentData.id,
+              score: classScoreValue,
+              entered_by: teacher!.id
+            })
 
-          // Check if score exists
-          const { data: existingScore } = await supabase
-            .from('scores')
-            .select('*')
-            .eq('student_id', studentData.id)
-            .eq('subject_id', subject.id)
+          if (scoreError) {
+            results.failed++
+            results.errors.push(`Row ${i + 1}, ${subject.name}: ${scoreError.message}`)
+            continue
+          }
+
+          // Recalculate Class Score
+          const { data: termAssessments } = await supabase
+            .from('assessments')
+            .select('id')
+            .eq('class_subject_id', classSubjectMap[subject.id])
             .eq('term_id', selectedTerm)
-            .maybeSingle() as { data: any }
 
-          if (existingScore) {
-            const examScore = existingScore.exam_score || 0
-            const newTotal = convertedClassScore + examScore
+          if (termAssessments && termAssessments.length > 0) {
+            const assessmentIds = termAssessments.map((a: any) => a.id)
+            
+            const { data: studentScores } = await supabase
+              .from('student_scores')
+              .select('score')
+              .in('assessment_id', assessmentIds)
+              .eq('student_id', studentData.id)
 
-            const { error } = await supabase
-              .from('scores')
-              .update({
-                class_score: convertedClassScore,
-                total: newTotal,
-                teacher_id: teacher!.id
-              })
-              .eq('id', existingScore.id)
+            if (studentScores) {
+              const totalScoreGotten = studentScores.reduce((sum: number, s: any) => sum + (s.score || 0), 0)
+              const numberOfAssessments = studentScores.length
+              const expectedScore = numberOfAssessments * 10
+              
+              let calculatedClassScore = 0
+              if (expectedScore > 0) {
+                calculatedClassScore = (totalScoreGotten / expectedScore) * 40
+              }
+              
+              calculatedClassScore = Math.round(calculatedClassScore * 100) / 100
 
-            if (error) {
-              results.failed++
-              results.errors.push(`Row ${i + 1}, ${subject.name}: ${error.message}`)
-            } else {
-              results.success++
-            }
-          } else {
-            const { error } = await supabase
-              .from('scores')
-              .insert({
-                student_id: studentData.id,
-                subject_id: subject.id,
-                term_id: selectedTerm,
-                class_score: convertedClassScore,
-                exam_score: 0,
-                total: convertedClassScore,
-                teacher_id: teacher!.id
-              })
+              const { data: existingScore } = await supabase
+                .from('scores')
+                .select('*')
+                .eq('student_id', studentData.id)
+                .eq('subject_id', subject.id)
+                .eq('term_id', selectedTerm)
+                .maybeSingle() as { data: any }
 
-            if (error) {
-              results.failed++
-              results.errors.push(`Row ${i + 1}, ${subject.name}: ${error.message}`)
-            } else {
-              results.success++
+              const examScore = existingScore?.exam_score || 0
+              const total = calculatedClassScore + examScore
+              const gradeData = calculateGradeAndRemark(total, classAccess?.class_name || '')
+
+              const { error: updateError } = await supabase
+                .from('scores')
+                .upsert({
+                  student_id: studentData.id,
+                  subject_id: subject.id,
+                  term_id: selectedTerm,
+                  teacher_id: teacher!.id,
+                  class_score: calculatedClassScore,
+                  exam_score: examScore,
+                  total: total,
+                  grade: gradeData.grade,
+                  remarks: gradeData.remark
+                }, {
+                  onConflict: 'student_id,subject_id,term_id'
+                })
+
+              if (updateError) {
+                 console.error('Error updating score:', updateError)
+              } else {
+                 results.success++
+              }
             }
           }
         }
@@ -816,11 +923,11 @@ function ClassScoresContent() {
         {/* Method Tabs */}
         <div className="flex space-x-2 mb-6">
           <Link
-            href="/teacher/upload-scores/class?method=manual"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'manual' ? 'bg-ghana-green text-white' : 'bg-white text-gray-700'}`}
+            href="/teacher/upload-scores/class?method=grid"
+            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'grid' ? 'bg-ghana-green text-white' : 'bg-white text-gray-700'}`}
           >
-            <FileText className="w-4 h-4 inline mr-2" />
-            Manual
+            <Grid className="w-4 h-4 inline mr-2" />
+            Spreadsheet View
           </Link>
           <Link
             href="/teacher/upload-scores/class?method=csv"
@@ -828,20 +935,6 @@ function ClassScoresContent() {
           >
             <Upload className="w-4 h-4 inline mr-2" />
             CSV
-          </Link>
-          <Link
-            href="/teacher/upload-scores/class?method=ocr"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'ocr' ? 'bg-ghana-green text-white' : 'bg-white text-gray-700'}`}
-          >
-            <Camera className="w-4 h-4 inline mr-2" />
-            OCR
-          </Link>
-          <Link
-            href="/teacher/upload-scores/class?method=grid"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'grid' ? 'bg-ghana-green text-white' : 'bg-white text-gray-700'}`}
-          >
-            <Grid className="w-4 h-4 inline mr-2" />
-            Spreadsheet View
           </Link>
         </div>
 
@@ -962,7 +1055,7 @@ function ClassScoresContent() {
                                             {selectedSubjects.map(subjectId => (
                                                 <Fragment key={subjectId}>
                                                     <th key={`${subjectId}-current`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-24 bg-gray-50">Current (40%)</th>
-                                                    <th key={`${subjectId}-add`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-24 border-r bg-gray-50">Add (0-100)</th>
+                                                    <th key={`${subjectId}-add`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-24 border-r bg-gray-50">Add (0-10)</th>
                                                 </Fragment>
                                             ))}
                                         </tr>
@@ -990,10 +1083,17 @@ function ClassScoresContent() {
                                                                     <input
                                                                         type="number"
                                                                         min="0"
-                                                                        max="100"
+                                                                        max="10"
                                                                         step="0.1"
                                                                         value={scores.add_score}
-                                                                        onChange={(e) => handleGridScoreChange(student.id, subjectId, e.target.value)}
+                                                                        onChange={(e) => {
+                                                                            const val = parseFloat(e.target.value);
+                                                                            if (val > 10) {
+                                                                                alert("Score cannot exceed 10");
+                                                                                return;
+                                                                            }
+                                                                            handleGridScoreChange(student.id, subjectId, e.target.value)
+                                                                        }}
                                                                         className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm"
                                                                         placeholder="+"
                                                                     />
@@ -1019,107 +1119,7 @@ function ClassScoresContent() {
             </div>
           )}
 
-          {method === 'manual' && (
-            <form onSubmit={handleManualSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class *</label>
-                  <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
-                  >
-                    <option value="">Select class</option>
-                    {teacherClasses.map(cls => (
-                      <option key={cls.class_id} value={cls.class_id}>{cls.class_name}</option>
-                    ))}
-                  </select>
-                  {formErrors.class && <p className="text-red-600 text-xs md:text-sm mt-1">{formErrors.class}</p>}
-                </div>
 
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Subject *</label>
-                  <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
-                    disabled={!selectedClass}
-                  >
-                    <option value="">Select subject</option>
-                    {filteredSubjects.map(subject => (
-                      <option key={subject.id} value={subject.id}>{subject.name}</option>
-                    ))}
-                  </select>
-                  {formErrors.subject && <p className="text-red-600 text-xs md:text-sm mt-1">{formErrors.subject}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Student *</label>
-                  <select
-                    value={selectedStudent}
-                    onChange={(e) => setSelectedStudent(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
-                    disabled={!selectedClass}
-                  >
-                    <option value="">Select student</option>
-                    {students.map(student => (
-                      <option key={student.id} value={student.id}>
-                        {student.first_name} {student.last_name}
-                      </option>
-                    ))}
-                  </select>
-                  {formErrors.student && <p className="text-red-600 text-xs md:text-sm mt-1">{formErrors.student}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class Score (0-100) *</label>
-                  <input
-                    type="number"
-                    value={classScore}
-                    onChange={(e) => setClassScore(e.target.value)}
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
-                    placeholder="Enter score (e.g., 85)"
-                  />
-                  {formErrors.class_score && <p className="text-red-600 text-xs md:text-sm mt-1">{formErrors.class_score}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Term</label>
-                  <input
-                    type="text"
-                    value={currentTermName}
-                    disabled
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-xs md:text-sm"
-                  />
-                </div>
-
-                {formErrors.submit && (
-                  <div className="flex items-center space-x-2 text-red-600 text-xs md:text-sm">
-                    <AlertCircle className="w-4 h-4" />
-                    <p>{formErrors.submit}</p>
-                  </div>
-                )}
-
-                {submitSuccess && (
-                  <div className="flex items-center space-x-2 text-green-600 text-xs md:text-sm">
-                    <CheckCircle className="w-4 h-4" />
-                    <p>Class score submitted successfully!</p>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full bg-ghana-green text-white py-3 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 text-xs md:text-sm"
-                >
-                  {submitting ? 'Submitting...' : 'Submit Class Score'}
-                </button>
-              </div>
-            </form>
-          )}
 
           {method === 'csv' && (
             <div className="space-y-4">
@@ -1229,18 +1229,7 @@ function ClassScoresContent() {
             </div>
           )}
 
-          {method === 'ocr' && (
-            <div className="text-center py-8">
-              <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 text-xs md:text-sm">OCR feature coming soon</p>
-              <Link
-                href="/teacher/scores/ocr"
-                className="text-ghana-green hover:underline mt-2 inline-block text-xs md:text-sm"
-              >
-                Or use existing OCR page →
-              </Link>
-            </div>
-          )}
+
         </div>
       </div>
     </div>

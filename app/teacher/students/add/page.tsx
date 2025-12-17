@@ -123,12 +123,8 @@ export default function AddStudentPage() {
     if (!manualFormData.class_id) {
       errors.class_id = 'Class is required'
     }
-    if (!manualFormData.guardian_name.trim()) {
-      errors.guardian_name = 'Guardian name is required'
-    }
-    if (!manualFormData.guardian_phone.trim()) {
-      errors.guardian_phone = 'Guardian phone is required'
-    } else if (!/^[\d\s\-+()]+$/.test(manualFormData.guardian_phone)) {
+    // Guardian info is now optional
+    if (manualFormData.guardian_phone && !/^[\d\s\-+()]+$/.test(manualFormData.guardian_phone)) {
       errors.guardian_phone = 'Please enter a valid phone number'
     }
     if (manualFormData.guardian_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(manualFormData.guardian_email)) {
@@ -174,8 +170,8 @@ export default function AddStudentPage() {
             last_name: manualFormData.last_name.trim(),
             date_of_birth: manualFormData.date_of_birth,
             gender: manualFormData.gender,
-            guardian_name: manualFormData.guardian_name.trim(),
-            guardian_phone: manualFormData.guardian_phone.trim(),
+            guardian_name: manualFormData.guardian_name.trim() || null,
+            guardian_phone: manualFormData.guardian_phone.trim() || null,
             guardian_email: manualFormData.guardian_email.trim() || null
           }],
           classId: manualFormData.class_id
@@ -213,6 +209,33 @@ export default function AddStudentPage() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function parseDate(dateStr: string): string | null {
+    if (!dateStr) return null
+    
+    // Try YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr
+    
+    // Try DD/MM/YYYY or DD-MM-YYYY
+    const ddmmyyyy = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+    if (ddmmyyyy) {
+      const day = ddmmyyyy[1].padStart(2, '0')
+      const month = ddmmyyyy[2].padStart(2, '0')
+      const year = ddmmyyyy[3]
+      return `${year}-${month}-${day}`
+    }
+
+    // Try DD/MM/YY or DD-MM-YY (assume 20xx)
+    const ddmmyy = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/)
+    if (ddmmyy) {
+      const day = ddmmyy[1].padStart(2, '0')
+      const month = ddmmyy[2].padStart(2, '0')
+      const year = '20' + ddmmyy[3]
+      return `${year}-${month}-${day}`
+    }
+
+    return null
   }
 
   async function handleCsvUpload() {
@@ -265,14 +288,13 @@ export default function AddStudentPage() {
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
       
       // Validate required headers
-      const requiredHeaders = ['first_name', 'last_name', 'date_of_birth', 'gender', 'guardian_name', 'guardian_phone']
+      const requiredHeaders = ['first_name', 'last_name', 'date_of_birth', 'gender']
       const missingHeaders = requiredHeaders.filter(h => 
         !headers.some(header => 
           header === h || 
           (h === 'first_name' && header === 'firstname') ||
           (h === 'last_name' && header === 'lastname') ||
-          (h === 'date_of_birth' && header === 'dob') ||
-          (h === 'guardian_phone' && header === 'phone')
+          (h === 'date_of_birth' && header === 'dob')
         )
       )
       
@@ -296,23 +318,33 @@ export default function AddStudentPage() {
             case 'firstname':
               student.first_name = value
               break
+            case 'middle_name':
+            case 'middlename':
+              student.middle_name = value || null
+              break
             case 'last_name':
             case 'lastname':
               student.last_name = value
               break
             case 'date_of_birth':
             case 'dob':
-              student.date_of_birth = value
+              const parsedDate = parseDate(value)
+              if (parsedDate) {
+                student.date_of_birth = parsedDate
+              } else {
+                // Keep original to show error if invalid
+                student.date_of_birth = value
+              }
               break
             case 'gender':
               student.gender = value.toLowerCase()
               break
             case 'guardian_name':
-              student.guardian_name = value
+              student.guardian_name = value || null
               break
             case 'guardian_phone':
             case 'phone':
-              student.guardian_phone = value
+              student.guardian_phone = value || null
               break
             case 'guardian_email':
             case 'email':
@@ -350,11 +382,8 @@ export default function AddStudentPage() {
       
       if (results.success > 0) {
         setCsvFile(null)
-        setSelectedClassId('')
-        // Show success message and redirect after 2 seconds
-        setTimeout(() => {
-          router.push('/teacher/students')
-        }, 2000)
+        // We keep the selected class ID so they can upload more if needed
+        // And we don't redirect automatically so they can see the logs
       }
     } catch (error: any) {
       console.error('Error processing CSV:', error)
@@ -366,9 +395,9 @@ export default function AddStudentPage() {
   }
 
   function downloadTemplate() {
-    const template = `first_name,last_name,date_of_birth,gender,guardian_name,guardian_phone,guardian_email
-John,Doe,2010-05-15,male,Jane Doe,0241234567,jane@email.com
-Mary,Smith,2016-03-20,female,Bob Smith,0207654321,bob@example.com`
+    const template = `first_name,middle_name,last_name,date_of_birth,gender,guardian_name,guardian_phone,guardian_email
+John,,Doe,2010-05-15,male,Jane Doe,0241234567,jane@email.com
+Mary,Ann,Smith,2016-03-20,female,,,`
     
     const blob = new Blob([template], { type: 'text/csv' })
     const url = window.URL.createObjectURL(blob)
@@ -767,8 +796,8 @@ Mary,Smith,2016-03-20,female,Bob Smith,0207654321,bob@example.com`
                   </h3>
                   <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside ml-7">
                     <li>Download the template file to see the required format</li>
-                    <li>Required columns: first_name, last_name, date_of_birth, gender, guardian_name, guardian_phone</li>
-                    <li>Optional columns: guardian_email</li>
+                    <li>Required columns: first_name, last_name, date_of_birth, gender</li>
+                    <li>Optional columns: middle_name, guardian_name, guardian_phone, guardian_email</li>
                     <li>Gender should be "male" or "female"</li>
                     <li>Date format: YYYY-MM-DD (e.g., 2015-05-15)</li>
                     <li>Maximum file size: 5MB</li>

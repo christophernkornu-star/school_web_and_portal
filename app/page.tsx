@@ -610,12 +610,12 @@ export default function HomePage() {
             {/* Methodist Church Ghana */}
             <div className="bg-white rounded-xl p-10 shadow-lg text-center hover:shadow-2xl transition-all duration-300 border-2 border-gray-100 hover:border-methodist-blue transform hover:scale-105">
               <div className="w-40 h-40 mx-auto mb-6 flex items-center justify-center bg-methodist-blue rounded-full p-2">
-                <div className="bg-white rounded-full w-full h-full flex items-center justify-center">
-                  <svg className="w-20 h-20 text-methodist-blue" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 10 12 6.16-1.26 10-6.45 10-12V7l-10-5zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                    <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
-                    <path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                  </svg>
+                <div className="bg-white rounded-full w-full h-full flex items-center justify-center overflow-hidden">
+                  <img 
+                    src="/chuch-logo.png" 
+                    alt="Methodist Church Ghana Logo" 
+                    className="w-full h-full object-contain p-2"
+                  />
                 </div>
               </div>
               <h4 className="font-bold text-gray-800 mb-2 text-lg">Methodist Church Ghana</h4>
