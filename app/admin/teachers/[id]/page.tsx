@@ -152,33 +152,37 @@ export default function EditTeacherPage() {
     setSaving(true)
 
     try {
-      // Update teacher record
-      const { error: teacherError } = await supabase
-        .from('teachers')
-        .update({
-          first_name: formData.first_name,
-          last_name: formData.last_name,
+      // Get current user for auth check
+      const user = await getCurrentUser()
+
+      // Call API to update teacher and profile (bypassing RLS for profile update)
+      const response = await fetch('/api/admin/update-teacher', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teacherId,
+          profileId: teacher.profile_id,
+          requesterId: user?.id,
+          firstName: formData.first_name,
+          lastName: formData.last_name,
           phone: formData.phone,
           specialization: formData.specialization,
           qualification: formData.qualification,
-          hire_date: formData.hire_date,
+          hireDate: formData.hire_date,
           status: formData.status,
-        })
-        .eq('teacher_id', teacherId)
-
-      if (teacherError) throw teacherError
-
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
           username: formData.username,
           email: formData.email,
-          full_name: `${formData.first_name} ${formData.last_name}`,
-        })
-        .eq('id', teacher.profile_id)
+        }),
+      })
 
-      if (profileError) throw profileError
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to update teacher')
+      }
+
       // Validate: Check if any class already has a class teacher (excluding current teacher)
       if (classTeacherFor.length > 0) {
         const { data: existingClassTeachers, error: checkError } = (await supabase
