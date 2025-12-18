@@ -36,6 +36,25 @@ export async function signInWithUsername(username: string, password: string) {
 
   // Get role from profile or derive from username
   let role = profileData?.role || null
+
+  // If no role found yet, try to get it from user metadata
+  if (!role && data.user?.user_metadata?.role) {
+    role = data.user.user_metadata.role
+  }
+
+  // If still no role, try fetching profile again with authenticated user
+  if (!role && data.user) {
+    const { data: userProfile } = await browserSupabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single()
+    
+    if (userProfile) {
+      role = userProfile.role
+    }
+  }
+
   if (!role) {
     if (username.startsWith('admin.')) {
       role = 'admin'
