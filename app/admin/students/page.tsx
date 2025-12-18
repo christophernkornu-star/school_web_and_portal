@@ -56,20 +56,18 @@ export default function StudentsPage() {
 
   const handleDeleteStudent = async (studentId: string, profileId: string) => {
     try {
-      // Delete student record
-      const { error: studentError } = await supabase
-        .from('students')
-        .delete()
-        .eq('id', studentId)
+      const response = await fetch('/api/admin/delete-student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ studentId }),
+      })
 
-      if (studentError) throw studentError
+      const data = await response.json()
 
-      // Delete profile
-      if (profileId) {
-        await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', profileId)
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete student')
       }
 
       setMessage({ type: 'success', text: 'Student deleted successfully!' })

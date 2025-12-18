@@ -133,21 +133,18 @@ export default function EditStudentPage() {
     setMessage({ type: '', text: '' })
 
     try {
-      // Delete the student record (profile will be kept for audit purposes)
-      const { error } = await supabase
-        .from('students')
-        .delete()
-        .eq('id', studentId)
+      const response = await fetch('/api/admin/delete-student', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ studentId }),
+      })
 
-      if (error) throw error
+      const data = await response.json()
 
-      // Optionally delete the profile and auth user
-      if (student?.profile_id) {
-        // Delete profile (this should cascade to auth.users via trigger or manually)
-        await supabase
-          .from('profiles')
-          .delete()
-          .eq('id', student.profile_id)
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete student')
       }
 
       setMessage({ type: 'success', text: 'Student deleted successfully!' })
