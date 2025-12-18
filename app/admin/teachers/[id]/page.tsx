@@ -99,7 +99,9 @@ export default function EditTeacherPage() {
       // Determine teaching model for each class
       const models: Record<string, string> = {}
       classesData.forEach((cls: any) => {
-        if (['Basic 1', 'Basic 2', 'Basic 3'].includes(cls.level)) {
+        if (['KG 1', 'KG 2'].includes(cls.level)) {
+          models[cls.id] = 'class_teacher'
+        } else if (['Basic 1', 'Basic 2', 'Basic 3'].includes(cls.level)) {
           models[cls.id] = 'class_teacher'
         } else if (['Basic 4', 'Basic 5', 'Basic 6'].includes(cls.level)) {
           models[cls.id] = settingData?.setting_value || 'class_teacher'
@@ -363,7 +365,7 @@ export default function EditTeacherPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Link href="/admin/teachers" className="text-ghana-green hover:text-green-700">
                 <ArrowLeft className="w-6 h-6" />
@@ -377,7 +379,7 @@ export default function EditTeacherPage() {
             </div>
             <button
               onClick={handleDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
+              className="w-full md:w-auto justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
             >
               <Trash2 className="w-4 h-4" />
               <span>Delete Teacher</span>
@@ -506,6 +508,40 @@ export default function EditTeacherPage() {
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Assigned Classes</h2>
             <div className="space-y-4">
+              {/* Kindergarten */}
+              {classes.filter(c => ['KG 1', 'KG 2'].includes(c.level)).length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-pink-700 mb-2 flex items-center">
+                    Kindergarten (KG 1-2)
+                    <span className="ml-2 px-2 py-0.5 bg-pink-100 text-pink-700 text-xs rounded">Class Teacher Model</span>
+                  </h3>
+                  <p className="text-xs text-gray-600 mb-3">One teacher teaches all subjects. Automatically assigned all subjects when selected.</p>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    {classes.filter(c => ['KG 1', 'KG 2'].includes(c.level)).map(cls => (
+                      <label
+                        key={cls.id}
+                        className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-pink-50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={assignedClasses.includes(cls.id)}
+                          onChange={() => {
+                            toggleClassAssignment(cls.id)
+                            if (!assignedClasses.includes(cls.id)) {
+                              setClassTeacherFor([...classTeacherFor, cls.id])
+                            } else {
+                              setClassTeacherFor(classTeacherFor.filter(id => id !== cls.id))
+                            }
+                          }}
+                          className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
+                        />
+                        <span className="text-gray-700">{cls.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Lower Primary */}
               {classes.filter(c => ['Basic 1', 'Basic 2', 'Basic 3'].includes(c.level)).length > 0 && (
                 <div>
@@ -660,11 +696,11 @@ export default function EditTeacherPage() {
                   const isSubjectTeacherClass = assignedClass && teachingModels[assignedClass.id] === 'subject_teacher'
                   
                   return (
-                    <div key={index} className="flex items-center space-x-4">
+                    <div key={index} className="flex flex-col md:flex-row md:items-center space-y-2 md:space-y-0 md:space-x-4 p-4 border rounded-lg md:border-0 md:p-0 bg-gray-50 md:bg-transparent">
                       <select
                         value={assignment.class_id}
                         onChange={(e) => updateSubjectAssignment(index, 'class_id', e.target.value)}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                        className="w-full md:flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                       >
                         <option value="">Select Class</option>
                         {assignedClasses
@@ -677,7 +713,7 @@ export default function EditTeacherPage() {
                       <select
                         value={assignment.subject_id}
                         onChange={(e) => updateSubjectAssignment(index, 'subject_id', e.target.value)}
-                        className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                        className="w-full md:flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                         disabled={!assignment.class_id}
                       >
                         <option value="">Select Subject</option>
@@ -687,7 +723,8 @@ export default function EditTeacherPage() {
                             
                             // Determine target level from class
                             let targetLevel = ''
-                            if (['Basic 1', 'Basic 2', 'Basic 3'].includes(assignedClass.level)) targetLevel = 'lower_primary'
+                            if (['KG 1', 'KG 2'].includes(assignedClass.level)) targetLevel = 'kindergarten'
+                            else if (['Basic 1', 'Basic 2', 'Basic 3'].includes(assignedClass.level)) targetLevel = 'lower_primary'
                             else if (['Basic 4', 'Basic 5', 'Basic 6'].includes(assignedClass.level)) targetLevel = 'upper_primary'
                             else if (['JHS 1', 'JHS 2', 'JHS 3'].includes(assignedClass.level)) targetLevel = 'jhs'
                             
@@ -723,7 +760,7 @@ export default function EditTeacherPage() {
                       <button
                         type="button"
                         onClick={() => removeSubjectAssignment(index)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        className="self-end md:self-auto p-2 text-red-600 hover:bg-red-50 rounded-lg"
                       >
                         <X className="w-5 h-5" />
                       </button>
