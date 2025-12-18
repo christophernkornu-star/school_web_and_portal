@@ -23,6 +23,7 @@ export default function EditStudentPage() {
 
   const [formData, setFormData] = useState({
     first_name: '',
+    middle_name: '',
     last_name: '',
     date_of_birth: '',
     gender: 'Male',
@@ -71,6 +72,7 @@ export default function EditStudentPage() {
     setStudent(studentData)
     setFormData({
       first_name: studentData.first_name,
+      middle_name: studentData.middle_name || '',
       last_name: studentData.last_name,
       date_of_birth: studentData.date_of_birth,
       gender: studentData.gender,
@@ -95,6 +97,7 @@ export default function EditStudentPage() {
         .from('students')
         .update({
           first_name: formData.first_name,
+          middle_name: formData.middle_name || null,
           last_name: formData.last_name,
           date_of_birth: formData.date_of_birth,
           gender: formData.gender,
@@ -113,7 +116,7 @@ export default function EditStudentPage() {
         await supabase
           .from('profiles')
           .update({
-            full_name: `${formData.first_name} ${formData.last_name}`
+            full_name: `${formData.first_name} ${formData.middle_name ? formData.middle_name + ' ' : ''}${formData.last_name}`
           })
           .eq('id', student.profile_id)
       }
@@ -192,7 +195,7 @@ export default function EditStudentPage() {
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Edit Student</h1>
                 <p className="text-xs md:text-sm text-gray-600">
-                  {student.student_id} - {student.first_name} {student.last_name}
+                  {student.student_id} - {student.first_name} {student.middle_name ? student.middle_name + ' ' : ''}{student.last_name}
                 </p>
               </div>
             </div>
@@ -251,6 +254,15 @@ export default function EditStudentPage() {
                   required
                   value={formData.first_name}
                   onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                <input
+                  type="text"
+                  value={formData.middle_name}
+                  onChange={(e) => setFormData({ ...formData, middle_name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent"
                 />
               </div>
@@ -379,41 +391,41 @@ export default function EditStudentPage() {
             </button>
           </div>
         </form>
-      </main>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Delete Student</h3>
-            <p className="text-gray-600 mb-2">
-              Are you sure you want to delete <strong>{student.first_name} {student.last_name}</strong> ({student.student_id})?
-            </p>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-              <p className="text-red-800 text-sm">
-                ⚠️ This will permanently delete the student's account and all associated data including scores, attendance records, and more. This action cannot be undone.
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Delete Student</h3>
+              <p className="text-gray-600 mb-2">
+                Are you sure you want to delete <strong>{student.first_name} {student.last_name}</strong> ({student.student_id})?
               </p>
-            </div>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-800 text-sm">
+                  ⚠️ This will permanently delete the student's account and all associated data including scores, attendance records, and more. This action cannot be undone.
+                </p>
+              </div>
 
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                disabled={deleting}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? 'Deleting...' : 'Delete Student'}
-              </button>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleting}
+                  className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                >
+                  {deleting ? 'Deleting...' : 'Delete Student'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </main>
     </div>
   )
 }

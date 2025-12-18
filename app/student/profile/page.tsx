@@ -9,6 +9,7 @@ interface StudentProfile {
   id: string
   student_id: string
   first_name: string
+  middle_name: string | null
   last_name: string
   date_of_birth: string
   gender: string
@@ -274,7 +275,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <h2 className="text-lg md:text-2xl font-bold">
-                  {profile.last_name} {profile.first_name}
+                  {profile.last_name} {profile.first_name} {profile.middle_name || ''}
                 </h2>
                 <p className="text-blue-100 mt-1">Student ID: {profile.student_id}</p>
                 <p className="text-blue-100">
@@ -293,7 +294,7 @@ export default function ProfilePage() {
                 <div>
                   <p className="text-xs md:text-sm text-gray-600">Full Name</p>
                   <p className="font-medium text-sm md:text-base text-gray-900">
-                    {profile.last_name} {profile.first_name}
+                    {profile.last_name} {profile.first_name} {profile.middle_name || ''}
                   </p>
                 </div>
               </div>

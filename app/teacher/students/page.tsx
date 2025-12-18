@@ -100,6 +100,7 @@ export default function MyStudentsPage() {
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
       student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (student.middle_name && student.middle_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.student_id.toLowerCase().includes(searchTerm.toLowerCase())
     
@@ -532,7 +533,7 @@ export default function MyStudentsPage() {
                       </div>
                       <div>
                         <h3 className="font-bold text-base md:text-lg text-gray-800 truncate">
-                          {student.last_name} {student.first_name}
+                          {student.last_name} {student.first_name} {student.middle_name || ''}
                         </h3>
                         <p className="text-xs md:text-sm text-gray-500">{student.student_id}</p>
                         <div className="mt-2 md:mt-3 space-y-1">
@@ -626,7 +627,7 @@ export default function MyStudentsPage() {
                               </div>
                               <div className="ml-2 md:ml-4">
                                 <div className="text-xs md:text-sm font-medium text-gray-900">
-                                  {student.last_name} {student.first_name}
+                                  {student.last_name} {student.first_name} {student.middle_name || ''}
                                 </div>
                                 <div className="md:hidden text-xs text-gray-500 mt-0.5">
                                   {student.student_id}

@@ -20,6 +20,7 @@ export default function EditStudentPage() {
   const [teacherClasses, setTeacherClasses] = useState<any[]>([])
   const [formData, setFormData] = useState({
     first_name: '',
+    middle_name: '',
     last_name: '',
     date_of_birth: '',
     gender: '',
@@ -74,6 +75,7 @@ export default function EditStudentPage() {
 
         setFormData({
           first_name: student.first_name || '',
+          middle_name: student.middle_name || '',
           last_name: student.last_name || '',
           date_of_birth: student.date_of_birth || '',
           gender: student.gender || '',
@@ -120,6 +122,7 @@ export default function EditStudentPage() {
         .from('students')
         .update({
           first_name: formData.first_name.trim(),
+          middle_name: formData.middle_name.trim() || null,
           last_name: formData.last_name.trim(),
           date_of_birth: formData.date_of_birth,
           gender: formData.gender,
@@ -204,6 +207,18 @@ export default function EditStudentPage() {
                 {formErrors.first_name && (
                   <p className="text-red-500 text-xs mt-1">{formErrors.first_name}</p>
                 )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Middle Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.middle_name}
+                  onChange={(e) => setFormData({...formData, middle_name: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                />
               </div>
 
               <div>

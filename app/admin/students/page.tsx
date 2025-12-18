@@ -82,6 +82,7 @@ export default function StudentsPage() {
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
       student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (student.middle_name && student.middle_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
       student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.student_id.toLowerCase().includes(searchTerm.toLowerCase())
     
@@ -182,7 +183,7 @@ export default function StudentsPage() {
             <div key={student.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-bold text-gray-900 text-lg">{student.first_name} {student.last_name}</h3>
+                  <h3 className="font-bold text-gray-900 text-lg">{student.first_name} {student.middle_name ? `${student.middle_name} ` : ''}{student.last_name}</h3>
                   <p className="text-sm text-gray-500 font-mono">{student.student_id}</p>
                 </div>
                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -257,7 +258,7 @@ export default function StudentsPage() {
                       {student.student_id}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{student.first_name} {student.last_name}</div>
+                      <div className="text-sm font-medium text-gray-900">{student.first_name} {student.middle_name ? `${student.middle_name} ` : ''}{student.last_name}</div>
                       <div className="text-sm text-gray-500">{student.profiles?.email}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
