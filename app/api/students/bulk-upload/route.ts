@@ -232,8 +232,8 @@ export async function POST(request: NextRequest) {
           date_of_birth: student.date_of_birth,
           gender: student.gender.charAt(0).toUpperCase() + student.gender.slice(1).toLowerCase(),
           class_id: classId,
-          guardian_name: student.guardian_name,
-          guardian_phone: student.guardian_phone,
+          guardian_name: student.guardian_name || 'Not Provided',
+          guardian_phone: student.guardian_phone || 'Not Provided',
           guardian_email: student.guardian_email || null,
           admission_date: new Date().toISOString().split('T')[0],
           status: 'active'

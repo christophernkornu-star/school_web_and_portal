@@ -288,13 +288,12 @@ export default function AddStudentPage() {
       const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
       
       // Validate required headers
-      const requiredHeaders = ['first_name', 'last_name', 'date_of_birth', 'gender']
+      const requiredHeaders = ['first_name', 'last_name', 'gender']
       const missingHeaders = requiredHeaders.filter(h => 
         !headers.some(header => 
           header === h || 
           (h === 'first_name' && header === 'firstname') ||
-          (h === 'last_name' && header === 'lastname') ||
-          (h === 'date_of_birth' && header === 'dob')
+          (h === 'last_name' && header === 'lastname')
         )
       )
       
@@ -305,7 +304,7 @@ export default function AddStudentPage() {
       }
 
       // Parse all students from CSV
-      const studentsData = []
+      const studentsData: any[] = []
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim())
         
@@ -332,8 +331,8 @@ export default function AddStudentPage() {
               if (parsedDate) {
                 student.date_of_birth = parsedDate
               } else {
-                // Keep original to show error if invalid
-                student.date_of_birth = value
+                // If invalid or empty, leave as undefined/null to be filled later
+                student.date_of_birth = null
               }
               break
             case 'gender':
@@ -357,6 +356,36 @@ export default function AddStudentPage() {
           studentsData.push(student)
         }
       }
+
+      // Auto-generate missing DOBs based on other students
+      const validDobYears = studentsData
+        .map(s => s.date_of_birth ? new Date(s.date_of_birth).getFullYear() : null)
+        .filter(y => y !== null) as number[]
+
+      let defaultYear = new Date().getFullYear() - 10 // Fallback default
+      
+      if (validDobYears.length > 0) {
+        // Find mode year
+        const frequency: Record<number, number> = {}
+        let maxFreq = 0
+        let mode = validDobYears[0]
+        
+        for (const year of validDobYears) {
+          frequency[year] = (frequency[year] || 0) + 1
+          if (frequency[year] > maxFreq) {
+            maxFreq = frequency[year]
+            mode = year
+          }
+        }
+        defaultYear = mode
+      }
+
+      // Apply default DOB to missing ones
+      studentsData.forEach(student => {
+        if (!student.date_of_birth) {
+          student.date_of_birth = `${defaultYear}-01-01`
+        }
+      })
 
       // Send to API for bulk upload with admin privileges
       const response = await fetch('/api/students/bulk-upload', {

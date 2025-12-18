@@ -264,31 +264,31 @@ export default function StudentsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
+      <header className="bg-white shadow sticky top-0 z-10">
+        <div className="container mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+              <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700 flex-shrink-0">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Student Management</h1>
-                <p className="text-xs md:text-sm text-gray-600">View and manage all students</p>
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Student Management</h1>
+                <p className="text-xs sm:text-sm text-gray-600">View and manage all students</p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 flex-1 md:flex-none text-sm md:text-base"
+                className="bg-ghana-green text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 flex-1 sm:flex-none text-sm whitespace-nowrap"
               >
-                <Upload className="w-4 h-4 md:w-5 md:h-5" />
+                <Upload className="w-4 h-4" />
                 <span>Upload CSV</span>
               </button>
               <Link 
                 href="/admin/students/add"
-                className="bg-methodist-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 flex-1 md:flex-none text-sm md:text-base"
+                className="bg-methodist-blue text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 flex-1 sm:flex-none text-sm whitespace-nowrap"
               >
-                <Plus className="w-4 h-4 md:w-5 md:h-5" />
+                <Plus className="w-4 h-4" />
                 <span>Add Student</span>
               </Link>
             </div>
@@ -310,20 +310,20 @@ export default function StudentsPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+        <div className="bg-white rounded-lg shadow p-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name or student ID..."
+                placeholder="Search by name or ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent"
               />
             </div>
-            <div className="relative">
-              <Filter className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            <div className="relative md:w-64">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <select
                 value={classFilter}
                 onChange={(e) => setClassFilter(e.target.value)}
@@ -335,22 +335,22 @@ export default function StudentsPage() {
                 ))}
               </select>
             </div>
-            <div className="flex items-center justify-between md:justify-end">
-              <span className="text-gray-600 text-sm md:text-base">
-                <strong>{filteredStudents.length}</strong> students found
+            <div className="flex items-center justify-end md:w-auto">
+              <span className="text-gray-600 text-sm bg-gray-100 px-3 py-2 rounded-lg whitespace-nowrap">
+                <strong>{filteredStudents.length}</strong> students
               </span>
             </div>
           </div>
         </div>
 
         {/* Mobile Card View */}
-        <div className="md:hidden space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
           {filteredStudents.map((student) => (
-            <div key={student.id} className="bg-white rounded-lg shadow p-4">
+            <div key={student.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-bold text-gray-900">{student.first_name} {student.last_name}</h3>
-                  <p className="text-sm text-gray-500">{student.student_id}</p>
+                  <h3 className="font-bold text-gray-900 text-lg">{student.first_name} {student.last_name}</h3>
+                  <p className="text-sm text-gray-500 font-mono">{student.student_id}</p>
                 </div>
                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                   student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
@@ -359,32 +359,32 @@ export default function StudentsPage() {
                 </span>
               </div>
               
-              <div className="space-y-2 text-sm text-gray-600 mb-4">
-                <div className="flex justify-between">
-                  <span className="font-medium">Class:</span>
-                  <span>{student.classes?.name || 'N/A'}</span>
+              <div className="space-y-2 text-sm text-gray-600 mb-4 flex-grow">
+                <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                  <span className="font-medium text-gray-500">Class</span>
+                  <span className="font-semibold text-gray-900">{student.classes?.name || 'N/A'}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Gender:</span>
+                <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                  <span className="font-medium text-gray-500">Gender</span>
                   <span>{student.gender}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Guardian:</span>
-                  <span>{student.guardian_name}</span>
+                <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                  <span className="font-medium text-gray-500">Guardian</span>
+                  <span className="text-right truncate max-w-[150px]">{student.guardian_name}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="font-medium">Phone:</span>
-                  <span>{student.guardian_phone}</span>
+                <div className="flex justify-between items-center py-1">
+                  <span className="font-medium text-gray-500">Phone</span>
+                  <span className="font-mono">{student.guardian_phone}</span>
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-3 border-t">
+              <div className="grid grid-cols-2 gap-3 pt-3 border-t mt-auto">
                 <Link 
                   href={`/admin/students/${student.id}`} 
-                  className="flex items-center space-x-1 text-methodist-blue hover:text-blue-700 px-3 py-1.5 bg-blue-50 rounded-lg"
+                  className="flex items-center justify-center space-x-2 text-methodist-blue hover:bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 transition-colors"
                 >
                   <Edit className="w-4 h-4" />
-                  <span className="text-sm">Edit</span>
+                  <span className="text-sm font-medium">Edit</span>
                 </Link>
                 <button 
                   onClick={() => {
@@ -392,10 +392,10 @@ export default function StudentsPage() {
                       handleDeleteStudent(student.id, student.profile_id)
                     }
                   }}
-                  className="flex items-center space-x-1 text-red-600 hover:text-red-800 px-3 py-1.5 bg-red-50 rounded-lg"
+                  className="flex items-center justify-center space-x-2 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-red-200 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span className="text-sm">Delete</span>
+                  <span className="text-sm font-medium">Delete</span>
                 </button>
               </div>
             </div>
