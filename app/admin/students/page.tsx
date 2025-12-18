@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Upload, Download, Check, AlertCircle } from 'lucide-react'
+import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { createUserAction } from '@/app/actions/create-user'
@@ -16,9 +16,6 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [classFilter, setClassFilter] = useState('all')
   const [classes, setClasses] = useState<any[]>([])
-  const [showUploadModal, setShowUploadModal] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [uploadMessage, setUploadMessage] = useState('')
   const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
@@ -78,166 +75,9 @@ export default function StudentsPage() {
     }
   }
 
-  const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
 
-    setUploading(true)
-    setUploadMessage('')
-    try {
-      const text = await file.text()
-      const lines = text.split('\n').filter(line => line.trim())
-      const headers = lines[0].split(',').map(h => h.trim())
-      
-      // Define valid columns for students table
-      const validColumns = [
-        'first_name', 'last_name', 'date_of_birth', 'gender', 'class_name',
-        'guardian_name', 'guardian_phone', 'guardian_email', 'admission_date', 
-        'password', 'email'
-      ]
-      
-      let successCount = 0
-      let errorCount = 0
-      const totalRecords = lines.length - 1
 
-      setUploadMessage(`Processing 0 of ${totalRecords} students...`)
 
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim())
-        const student: any = {}
-        headers.forEach((header, index) => {
-          // Only include valid columns
-          if (validColumns.includes(header)) {
-            student[header] = values[index]
-          }
-        })
-
-        try {
-          // Validate required fields
-          const requiredFields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'class_name', 'guardian_name', 'guardian_phone']
-          const missingFields = requiredFields.filter(field => !student[field] || student[field] === '')
-          
-          if (missingFields.length > 0) {
-            console.error(`Row ${i + 1}: Missing required fields: ${missingFields.join(', ')}`)
-            errorCount++
-            setUploadMessage(`Row ${i + 1}: Missing required fields: ${missingFields.join(', ')}`)
-            continue
-          }
-
-          // Find class by name
-          const { data: classData } = await supabase
-            .from('classes')
-            .select('id')
-            .eq('name', student.class_name)
-            .single() as { data: any }
-
-          if (!classData) {
-            console.error(`Row ${i + 1}: Class "${student.class_name}" not found`)
-            errorCount++
-            setUploadMessage(`Row ${i + 1}: Class "${student.class_name}" not found`)
-            continue
-          }
-
-          // Sanitize names for email/username (remove spaces and special characters)
-          const sanitizedFirst = student.first_name.toLowerCase().replace(/[^a-z0-9]/g, '')
-          const sanitizedLast = student.last_name.toLowerCase().replace(/[^a-z0-9]/g, '')
-          
-          // Create auth user
-          const email = student.email || `${sanitizedFirst}.${sanitizedLast}@student.biriwa.edu.gh`
-          const username = `${sanitizedFirst}.${sanitizedLast}`
-          const password = student.password || 'Student123!'
-
-          let user = null
-          try {
-            const result = await createUserAction({
-              email,
-              password,
-              username,
-              full_name: `${student.first_name} ${student.last_name}`,
-              role: 'student'
-            })
-            user = result.user
-          } catch (err) {
-            console.error('Error creating user:', err)
-          }
-
-          if (!user) {
-            errorCount++
-            setUploadMessage(`Processing ${i} of ${totalRecords} students... (${errorCount} failed)`)
-            // Add delay to avoid rate limiting on next attempt
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            continue
-          }
-
-          // Create or update profile (upsert in case profile was auto-created)
-          await supabase.from('profiles').upsert({
-            id: user.id,
-            email,
-            username,
-            full_name: `${student.first_name} ${student.last_name}`,
-            role: 'student'
-          }, {
-            onConflict: 'id'
-          })
-
-          // Create student record (student_id will auto-generate)
-          const { error: studentError } = await supabase.from('students').insert({
-            profile_id: user.id,
-            first_name: student.first_name,
-            last_name: student.last_name,
-            date_of_birth: student.date_of_birth,
-            gender: student.gender,
-            class_id: classData.id,
-            guardian_name: student.guardian_name,
-            guardian_phone: student.guardian_phone,
-            guardian_email: student.guardian_email || null,
-            admission_date: student.admission_date || new Date().toISOString().split('T')[0],
-            status: 'active'
-          })
-
-          if (studentError) {
-            console.error('Student insert error:', studentError)
-            errorCount++
-            setUploadMessage(`Processing ${i} of ${totalRecords} students... Error: ${studentError.message}`)
-            continue
-          }
-
-          successCount++
-          setUploadMessage(`Processing ${i} of ${totalRecords} students... (${successCount} successful)`)
-          
-          // Add 2-second delay between each account creation to avoid rate limiting
-          if (i < lines.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 2000))
-          }
-        } catch (err: any) {
-          console.error('Error creating student:', err)
-          errorCount++
-          setUploadMessage(`Processing ${i} of ${totalRecords} students... Error: ${err?.message || 'Unknown error'}`)
-        }
-      }
-
-      setUploadMessage(`✅ Upload complete! ${successCount} students created successfully. ${errorCount > 0 ? `${errorCount} failed.` : ''}`)
-      setTimeout(() => {
-        setShowUploadModal(false)
-        window.location.reload()
-      }, 2000)
-    } catch (err) {
-      console.error('CSV parsing error:', err)
-      setUploadMessage('Error parsing CSV file. Please check the format.')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const downloadCSVTemplate = () => {
-    const template = 'first_name,last_name,date_of_birth,gender,class_name,guardian_name,guardian_phone,guardian_email,admission_date,password\nKwame,Mensah,2014-05-20,Male,Basic 4,Mr. Emmanuel Mensah,+233244567890,parent@email.com,2024-01-15,Student123!\n'
-    const blob = new Blob([template], { type: 'text/csv' })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'students_template.csv'
-    a.click()
-  }
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
@@ -277,13 +117,6 @@ export default function StudentsPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 w-full sm:w-auto">
-              <button
-                onClick={() => setShowUploadModal(true)}
-                className="bg-ghana-green text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 flex-1 sm:flex-none text-sm whitespace-nowrap"
-              >
-                <Upload className="w-4 h-4" />
-                <span>Upload CSV</span>
-              </button>
               <Link 
                 href="/admin/students/add"
                 className="bg-methodist-blue text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 flex-1 sm:flex-none text-sm whitespace-nowrap"
@@ -487,62 +320,6 @@ export default function StudentsPage() {
           </div>
         )}
       </main>
-
-      {/* CSV Upload Modal */}
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" suppressHydrationWarning>
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Upload Students CSV</h3>
-            
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-3">
-                Upload a CSV file with student information. Required columns: first_name, last_name, date_of_birth, gender, class_name, guardian_name, guardian_phone, guardian_email, admission_date, password
-              </p>
-              
-              <button
-                onClick={downloadCSVTemplate}
-                className="text-sm text-methodist-blue hover:underline flex items-center space-x-1 mb-4"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download CSV Template</span>
-              </button>
-
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleCSVUpload}
-                disabled={uploading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue"
-              />
-            </div>
-
-            {uploadMessage && (
-              <div className={`p-3 rounded-lg mb-4 ${
-                uploadMessage.includes('Successfully') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-              }`}>
-                <p className="text-sm">{uploadMessage}</p>
-              </div>
-            )}
-
-            {uploading && (
-              <div className="flex items-center justify-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-methodist-blue"></div>
-                <span className="ml-3 text-gray-600">Processing CSV...</span>
-              </div>
-            )}
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowUploadModal(false)}
-                disabled={uploading}
-                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
