@@ -10,6 +10,9 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 interface Student {
   id: string
   student_id: string
+  first_name?: string
+  middle_name?: string
+  last_name?: string
   profiles: { full_name: string }
   averageScore?: number
   totalScore?: number
@@ -112,6 +115,7 @@ export default function ReportsPage() {
           id,
           student_id,
           first_name,
+          middle_name,
           last_name,
           profile_id,
           profiles!students_profile_id_fkey(full_name),
@@ -144,6 +148,9 @@ export default function ReportsPage() {
         return {
           id: student.id,
           student_id: student.student_id,
+          first_name: student.first_name,
+          middle_name: student.middle_name,
+          last_name: student.last_name,
           profiles: student.profiles || { full_name: '' },
           totalScore,
           averageScore: Math.round(averageScore * 10) / 10,
@@ -495,7 +502,9 @@ export default function ReportsPage() {
                   {students.filter(s => (s.averageScore || 0) < 40).map(student => (
                     <div key={student.id} className="bg-white p-3 rounded flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-gray-800 text-sm md:text-base">{student.profiles?.full_name}</p>
+                        <p className="font-medium text-gray-800 text-sm md:text-base">
+                          {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
+                        </p>
                         <p className="text-xs md:text-sm text-gray-600">Average: {student.averageScore}%</p>
                       </div>
                       <button
@@ -570,7 +579,9 @@ export default function ReportsPage() {
                         )}
                       </button>
                       <div>
-                        <h3 className="font-semibold text-gray-900">{student.profiles?.full_name}</h3>
+                        <h3 className="font-semibold text-gray-900">
+                          {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
+                        </h3>
                         <p className="text-xs text-gray-500">ID: {student.student_id}</p>
                       </div>
                     </div>
@@ -660,7 +671,7 @@ export default function ReportsPage() {
                         {student.student_id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-700">
-                        {student.profiles?.full_name}
+                        {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <span className={`text-base md:text-lg font-bold ${getPerformanceColor(student.averageScore || 0).split(' ')[0]}`}>
