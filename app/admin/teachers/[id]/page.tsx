@@ -513,7 +513,7 @@ export default function EditTeacherPage() {
             <h2 className="text-lg font-bold text-gray-800 mb-4">Assigned Classes</h2>
             <div className="space-y-4">
               {/* Kindergarten */}
-              {classes.filter(c => ['KG 1', 'KG 2'].includes(c.level)).length > 0 && (
+              {classes.filter(c => c.level === 'kindergarten').length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-pink-700 mb-2 flex items-center">
                     Kindergarten (KG 1-2)
@@ -521,7 +521,7 @@ export default function EditTeacherPage() {
                   </h3>
                   <p className="text-xs text-gray-600 mb-3">One teacher teaches all subjects. Automatically assigned all subjects when selected.</p>
                   <div className="grid md:grid-cols-3 gap-4">
-                    {classes.filter(c => ['KG 1', 'KG 2'].includes(c.level)).map(cls => (
+                    {classes.filter(c => c.level === 'kindergarten').map(cls => (
                       <label
                         key={cls.id}
                         className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-pink-50"
@@ -547,7 +547,7 @@ export default function EditTeacherPage() {
               )}
 
               {/* Lower Primary */}
-              {classes.filter(c => ['Basic 1', 'Basic 2', 'Basic 3'].includes(c.level)).length > 0 && (
+              {classes.filter(c => c.level === 'lower_primary').length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-blue-700 mb-2 flex items-center">
                     Lower Primary (Basic 1-3)
@@ -555,7 +555,7 @@ export default function EditTeacherPage() {
                   </h3>
                   <p className="text-xs text-gray-600 mb-3">One teacher teaches all subjects. Automatically assigned all subjects when selected.</p>
                   <div className="grid md:grid-cols-3 gap-4">
-                    {classes.filter(c => ['Basic 1', 'Basic 2', 'Basic 3'].includes(c.level)).map(cls => (
+                    {classes.filter(c => c.level === 'lower_primary').map(cls => (
                       <label
                         key={cls.id}
                         className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-blue-50"
@@ -581,7 +581,7 @@ export default function EditTeacherPage() {
               )}
 
               {/* Upper Primary */}
-              {classes.filter(c => ['Basic 4', 'Basic 5', 'Basic 6'].includes(c.level)).length > 0 && (
+              {classes.filter(c => c.level === 'upper_primary').length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-green-700 mb-2 flex items-center">
                     Upper Primary (Basic 4-6)
@@ -595,7 +595,7 @@ export default function EditTeacherPage() {
                       : 'Multiple teachers teach specific subjects. Check "Class Teacher" for the main teacher.'}
                   </p>
                   <div className="space-y-3">
-                    {classes.filter(c => ['Basic 4', 'Basic 5', 'Basic 6'].includes(c.level)).map(cls => (
+                    {classes.filter(c => c.level === 'upper_primary').map(cls => (
                       <div key={cls.id} className="flex items-center space-x-4 p-3 border rounded-lg">
                         <label className="flex items-center space-x-3 cursor-pointer flex-1">
                           <input
@@ -633,7 +633,7 @@ export default function EditTeacherPage() {
               )}
 
               {/* JHS */}
-              {classes.filter(c => ['JHS 1', 'JHS 2', 'JHS 3'].includes(c.level)).length > 0 && (
+              {classes.filter(c => c.level === 'jhs').length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-purple-700 mb-2 flex items-center">
                     Junior High School (JHS 1-3)
@@ -641,7 +641,7 @@ export default function EditTeacherPage() {
                   </h3>
                   <p className="text-xs text-gray-600 mb-3">Multiple teachers teach specific subjects. Check "Class Teacher" for the main teacher.</p>
                   <div className="space-y-3">
-                    {classes.filter(c => ['JHS 1', 'JHS 2', 'JHS 3'].includes(c.level)).map(cls => (
+                    {classes.filter(c => c.level === 'jhs').map(cls => (
                       <div key={cls.id} className="flex items-center space-x-4 p-3 border rounded-lg">
                         <label className="flex items-center space-x-3 cursor-pointer flex-1">
                           <input
@@ -726,11 +726,7 @@ export default function EditTeacherPage() {
                             if (!assignedClass) return false
                             
                             // Determine target level from class
-                            let targetLevel = ''
-                            if (['KG 1', 'KG 2'].includes(assignedClass.level)) targetLevel = 'kindergarten'
-                            else if (['Basic 1', 'Basic 2', 'Basic 3'].includes(assignedClass.level)) targetLevel = 'lower_primary'
-                            else if (['Basic 4', 'Basic 5', 'Basic 6'].includes(assignedClass.level)) targetLevel = 'upper_primary'
-                            else if (['JHS 1', 'JHS 2', 'JHS 3'].includes(assignedClass.level)) targetLevel = 'jhs'
+                            const targetLevel = assignedClass.level
                             
                             if (!targetLevel) return true
                             
