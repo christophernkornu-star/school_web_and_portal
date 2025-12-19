@@ -530,7 +530,7 @@ export default function TeacherStudentReportPage() {
     const methodistLogo = methodistLogoBase64 || ''
 
     // Get student name from profiles or construct from first/last name
-    const studentName = student.profiles?.full_name || `${student.last_name || ''} ${student.first_name || ''}`
+    const studentName = `${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`
     const className = student.classes?.name || student.classes?.class_name || ''
 
     // Determine promotion status

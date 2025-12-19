@@ -359,6 +359,7 @@ export default function ReportCardPage() {
           id,
           student_id,
           first_name,
+          middle_name,
           last_name,
           gender,
           date_of_birth,
@@ -1107,7 +1108,7 @@ export default function ReportCardPage() {
           <!-- Student Information -->
           <div class="student-info-grid">
             <div class="info-row">
-              <div class="info-cell"><span class="info-label">NAME:</span><span class="info-value">${studentInfo?.last_name} ${studentInfo?.first_name}</span></div>
+              <div class="info-cell"><span class="info-label">NAME:</span><span class="info-value">${studentInfo?.last_name} ${studentInfo?.middle_name ? studentInfo.middle_name + ' ' : ''}${studentInfo?.first_name}</span></div>
               <div class="info-cell"><span class="info-label">TERM:</span><span class="info-value">${report.termName}</span></div>
             </div>
             <div class="info-row">

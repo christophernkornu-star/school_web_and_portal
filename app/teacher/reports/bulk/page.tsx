@@ -411,7 +411,7 @@ function BulkReportCardsContent() {
     }
 
     const generateSingleReport = (report: StudentReportData): string => {
-      const studentName = report.student.profiles?.full_name || `${report.student.last_name || ''} ${report.student.first_name || ''}`
+      const studentName = `${report.student.last_name || ''} ${report.student.middle_name ? report.student.middle_name + ' ' : ''}${report.student.first_name || ''}`
       const className = report.student.classes?.name || ''
 
       return `
