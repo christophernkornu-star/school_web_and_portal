@@ -45,15 +45,6 @@ export default function ClassesPage() {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
-  // Valid level values based on database constraint
-  const levelOptions = [
-    'KG 1', 'KG 2',
-    'Basic 1', 'Basic 2', 'Basic 3',
-    'Basic 4', 'Basic 5', 'Basic 6',
-    'Basic 7', 'Basic 8', 'Basic 9',
-    'JHS 1', 'JHS 2', 'JHS 3'
-  ]
-
   const [formData, setFormData] = useState({
     name: '',
     level: 'Basic 1',
