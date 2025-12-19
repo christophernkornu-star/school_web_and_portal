@@ -150,7 +150,7 @@ export default function GeneralSettings() {
 
       // Update system_settings with the term ID
       if (termId) {
-        await supabase
+        const { error: sysError } = await supabase
           .from('system_settings')
           .upsert({
             setting_key: 'current_term',
@@ -158,6 +158,11 @@ export default function GeneralSettings() {
             description: 'Current Academic Term ID',
             updated_at: new Date().toISOString(),
           }, { onConflict: 'setting_key' })
+
+        if (sysError) {
+          console.error('System settings update error:', sysError)
+          throw new Error('Failed to sync current term to system settings.')
+        }
           
         // Also ensure is_current flag is set correctly in academic_terms
         await supabase
@@ -169,6 +174,9 @@ export default function GeneralSettings() {
           .from('academic_terms')
           .update({ is_current: true })
           .eq('id', termId)
+      } else {
+        console.warn('Could not find or create term ID for sync.')
+        throw new Error('Could not find or create the specified academic term.')
       }
 
       // 2. Update system_settings for teaching model
