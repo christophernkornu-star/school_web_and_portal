@@ -13,6 +13,7 @@ export default function AcademicYearTransition() {
   const [loading, setLoading] = useState(true)
   const [transitioning, setTransitioning] = useState(false)
   const [currentAcademicYear, setCurrentAcademicYear] = useState('')
+  const [currentTerm, setCurrentTerm] = useState('')
   const [newAcademicYear, setNewAcademicYear] = useState('')
   const [passingAverage, setPassingAverage] = useState(30)
   const [transitionResult, setTransitionResult] = useState<any>(null)
@@ -30,7 +31,7 @@ export default function AcademicYearTransition() {
       const { data: settingsData } = await supabase
         .from('system_settings')
         .select('setting_key, setting_value')
-        .in('setting_key', ['current_academic_year', 'promotion_passing_average'])
+        .in('setting_key', ['current_academic_year', 'promotion_passing_average', 'current_term'])
 
       const settingsMap = new Map<string, string>(settingsData?.map((s: any) => [s.setting_key, s.setting_value]) || [])
       
@@ -44,6 +45,20 @@ export default function AcademicYearTransition() {
         setNewAcademicYear(`${nextStartYear}/${nextStartYear + 1}`)
       }
 
+      const termId = settingsMap.get('current_term')
+      if (termId) {
+        // Fetch term name
+        const { data: termData } = await supabase
+            .from('academic_terms')
+            .select('name')
+            .eq('id', termId)
+            .single()
+        
+        if (termData) {
+            setCurrentTerm(termData.name)
+        }
+      }
+
       const savedAverage = settingsMap.get('promotion_passing_average')
       if (savedAverage) {
         setPassingAverage(parseFloat(savedAverage))
@@ -53,6 +68,8 @@ export default function AcademicYearTransition() {
     }
     loadSettings()
   }, [router])
+
+  const isTerm3 = currentTerm.toLowerCase().includes('third') || currentTerm.toLowerCase().includes('term 3')
 
   const handleTransition = async () => {
     if (!newAcademicYear.match(/^\d{4}\/\d{4}$/)) {
@@ -245,7 +262,7 @@ export default function AcademicYearTransition() {
 
           <button
             onClick={handleTransition}
-            disabled={transitioning || !newAcademicYear}
+            disabled={transitioning || !newAcademicYear || !isTerm3}
             className="w-full bg-methodist-blue text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
           >
             {transitioning ? (
@@ -260,6 +277,15 @@ export default function AcademicYearTransition() {
               </>
             )}
           </button>
+          
+          {!isTerm3 && (
+            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md flex items-start space-x-2">
+              <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-yellow-800">
+                Academic Year Transition can only be executed during the Third Term. Current term is: <strong>{currentTerm || 'Unknown'}</strong>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Transition Results */}

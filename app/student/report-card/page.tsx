@@ -263,13 +263,13 @@ function getPromotionStatusText(report: ReportCardData): string {
   if (report.promotionDecision) {
     switch (report.promotionDecision) {
       case 'promoted':
-        return 'PROMOTED TO NEXT CLASS'
+        return 'Promoted'
       case 'repeated':
-        return 'TO REPEAT CLASS'
+        return 'Repeated'
       case 'graduated':
-        return 'GRADUATED'
+        return 'Graduated'
       case 'pending':
-        return 'PENDING DECISION'
+        return 'Pending Decision'
       default:
         return ''
     }
@@ -281,10 +281,10 @@ function getPromotionStatusText(report: ReportCardData): string {
   }
   
   // Auto-calculate based on average for Third Term when no decision recorded
+  // Using 30% as the default passing average as requested
   const avg = report.averageScore || 0
-  if (avg >= 50) return 'PROMOTED TO NEXT CLASS'
-  if (avg >= 40) return 'PROMOTED ON TRIAL'
-  return 'TO REPEAT CLASS'
+  if (avg >= 30) return 'Promoted'
+  return 'Repeated'
 }
 
 export default function ReportCardPage() {
