@@ -587,7 +587,7 @@ export default function ExamScoresPage() {
           grade: gradeData.grade,
           remarks: gradeData.remark,
           teacher_id: teacher.id
-        })
+        }, { onConflict: 'student_id, subject_id, term_id' })
 
       if (error) throw error
 
@@ -928,6 +928,12 @@ export default function ExamScoresPage() {
       // Fill
       data?.forEach((score: any) => {
         if (scoresMap[score.student_id]) {
+            // Class score is raw (max 40)
+            let displayClassScore = ''
+            if (score.class_score !== null && score.class_score !== undefined) {
+                displayClassScore = score.class_score.toString()
+            }
+
             // Convert exam score from 60-basis to 100-basis for display
             let displayExamScore = ''
             if (score.exam_score !== null && score.exam_score !== undefined) {
@@ -937,7 +943,7 @@ export default function ExamScoresPage() {
             }
 
             scoresMap[score.student_id][score.subject_id] = {
-                class_score: score.class_score?.toString() || '',
+                class_score: displayClassScore,
                 exam_score: displayExamScore,
                 id: score.id
             }
@@ -954,6 +960,40 @@ export default function ExamScoresPage() {
   }
 
   function handleGridScoreChange(studentId: string, subjectId: string, field: 'class_score' | 'exam_score', value: string) {
+    // Allow empty string
+    if (value === '') {
+        setGridScores(prev => ({
+          ...prev,
+          [studentId]: {
+            ...prev[studentId],
+            [subjectId]: {
+                ...prev[studentId][subjectId],
+                [field]: value
+            }
+          }
+        }))
+        setGridChanges(prev => new Set(prev).add(studentId))
+        return
+    }
+
+    const numVal = parseFloat(value)
+    
+    // Check if valid number
+    if (isNaN(numVal)) return 
+
+    // Check ranges
+    if (field === 'class_score') {
+        if (numVal < 0 || numVal > 40) {
+            // Invalid class score - ignore input
+            return
+        }
+    } else if (field === 'exam_score') {
+        if (numVal < 0 || numVal > 100) {
+            // Invalid exam score - ignore input
+            return
+        }
+    }
+
     setGridScores(prev => ({
       ...prev,
       [studentId]: {
@@ -1008,14 +1048,17 @@ export default function ExamScoresPage() {
 
             const scoreData = studentScores[subjectId]
             
-            const classScore = parseFloat(scoreData.class_score)
+            // Class score is raw (max 40)
+            const inputClassScore = parseFloat(scoreData.class_score)
+            const storedClassScore = !isNaN(inputClassScore) ? inputClassScore : NaN
+
             // Convert input exam score (100-basis) to stored score (60-basis)
             const inputExamScore = parseFloat(scoreData.exam_score)
-            const storedExamScore = !isNaN(inputExamScore) ? (inputExamScore / 100) * 60 : NaN
+            const storedExamScore = !isNaN(inputExamScore) ? Math.round((inputExamScore / 100) * 60 * 100) / 100 : NaN
             
             // Only save if at least one score is present or we are updating an existing record
-            if (!isNaN(classScore) || !isNaN(storedExamScore) || scoreData.id) {
-                const total = (isNaN(classScore) ? 0 : classScore) + (isNaN(storedExamScore) ? 0 : storedExamScore)
+            if (!isNaN(storedClassScore) || !isNaN(storedExamScore) || scoreData.id) {
+                const total = (isNaN(storedClassScore) ? 0 : storedClassScore) + (isNaN(storedExamScore) ? 0 : storedExamScore)
                 const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
                 const { grade, remark } = calculateGradeAndRemark(total, className)
 
@@ -1024,7 +1067,7 @@ export default function ExamScoresPage() {
                     student_id: studentId,
                     subject_id: subjectId,
                     term_id: selectedTerm,
-                    class_score: isNaN(classScore) ? 0 : classScore,
+                    class_score: isNaN(storedClassScore) ? 0 : storedClassScore,
                     exam_score: isNaN(storedExamScore) ? 0 : storedExamScore,
                     total: total,
                     grade,
@@ -1042,7 +1085,10 @@ export default function ExamScoresPage() {
 
       const { error } = await supabase
         .from('scores')
-        .upsert(updates.map(({ id, ...rest }) => ({ ...rest, id: id || undefined })))
+        .upsert(
+          updates.map(({ id, ...rest }) => rest),
+          { onConflict: 'student_id, subject_id, term_id' }
+        )
       
       if (error) throw error
 
