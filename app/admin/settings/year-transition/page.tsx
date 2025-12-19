@@ -103,7 +103,7 @@ export default function AcademicYearTransition() {
         .select('id')
         .eq('academic_year', newAcademicYear)
         .eq('name', 'First Term')
-        .single() as { data: any }
+        .maybeSingle() as { data: any }
 
       if (firstTerm) {
         await supabase
@@ -113,6 +113,8 @@ export default function AcademicYearTransition() {
             updated_at: new Date().toISOString()
           })
           .eq('setting_key', 'current_term')
+      } else {
+        console.warn('First Term for new academic year not found. Please create it manually.')
       }
 
       setTransitionResult(data[0])
