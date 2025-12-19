@@ -268,8 +268,8 @@ export default function AssessmentSheetPage() {
       'INFORMATION AND COMMUNICATION TECHNOLOGY': 'I.C.T',
       'BASIC DESIGN AND TECHNOLOGY': 'B.D.T',
       'GHANAIAN LANGUAGE': 'GH. LANG',
-      'CAREER TECHNOLOGY': 'CAREER TECH',
-      'CREATIVE ARTS': 'CREATIVE ARTS',
+      'CAREER TECHNOLOGY': 'C. TECH',
+      'CREATIVE ARTS': 'C.A.D',
       'OUR WORLD OUR PEOPLE': 'O.W.O.P',
       'PHYSICAL EDUCATION': 'P.E',
       'COMPUTING': 'COMPUTING',
@@ -290,8 +290,8 @@ export default function AssessmentSheetPage() {
     if (upperName.includes('INFORMATION')) return 'I.C.T'
     if (upperName.includes('DESIGN')) return 'B.D.T'
     if (upperName.includes('GHANAIAN')) return 'GH. LANG'
-    if (upperName.includes('CAREER')) return 'CAREER TECH'
-    if (upperName.includes('CREATIVE')) return 'CREATIVE ARTS'
+    if (upperName.includes('CAREER')) return 'C. TECH'
+    if (upperName.includes('CREATIVE')) return 'C.A.D'
     if (upperName.includes('WORLD')) return 'O.W.O.P'
     if (upperName.includes('PHYSICAL')) return 'P.E'
     
