@@ -49,10 +49,28 @@ export default function GeneralSettings() {
 
       const systemSettingsMap = new Map(systemSettingsData?.map((s: any) => [s.setting_key, s.setting_value]) || [])
 
+      // Check if we have a current term ID in system settings (source of truth for other portals)
+      const currentTermId = systemSettingsMap.get('current_term')
+      let currentTermName = academicSettings?.current_term || ''
+      let currentAcademicYear = academicSettings?.current_academic_year || ''
+
+      if (currentTermId) {
+        const { data: termData } = await supabase
+          .from('academic_terms')
+          .select('name, academic_year')
+          .eq('id', currentTermId)
+          .single()
+        
+        if (termData) {
+          currentTermName = termData.name
+          currentAcademicYear = termData.academic_year
+        }
+      }
+
       if (academicSettings) {
         setFormData({
-          current_academic_year: academicSettings.current_academic_year || '',
-          current_term: academicSettings.current_term || '',
+          current_academic_year: currentAcademicYear,
+          current_term: currentTermName,
           term_start_date: academicSettings.term_start_date || '',
           term_end_date: academicSettings.term_end_date || '',
           next_term_starts: academicSettings.next_term_starts || '',
@@ -97,6 +115,61 @@ export default function GeneralSettings() {
         .neq('id', '00000000-0000-0000-0000-000000000000') // Update all rows (should be only one)
 
       if (academicError) throw new Error('Failed to update academic settings: ' + academicError.message)
+
+      // 1.5 Sync system_settings (current_term ID)
+      // Find the term ID for the selected name and year
+      const { data: existingTerm } = await supabase
+        .from('academic_terms')
+        .select('id')
+        .eq('name', formData.current_term)
+        .eq('academic_year', formData.current_academic_year)
+        .maybeSingle()
+
+      let termId = existingTerm?.id
+
+      // If term doesn't exist, create it
+      if (!termId && formData.current_term && formData.current_academic_year) {
+        const { data: newTerm, error: createTermError } = await supabase
+          .from('academic_terms')
+          .insert({
+            name: formData.current_term,
+            academic_year: formData.current_academic_year,
+            start_date: formData.term_start_date || new Date().toISOString().split('T')[0],
+            end_date: formData.term_end_date || new Date().toISOString().split('T')[0],
+            is_current: true
+          })
+          .select('id')
+          .single()
+        
+        if (createTermError) {
+          console.error('Error creating term:', createTermError)
+        } else {
+          termId = newTerm.id
+        }
+      }
+
+      // Update system_settings with the term ID
+      if (termId) {
+        await supabase
+          .from('system_settings')
+          .upsert({
+            setting_key: 'current_term',
+            setting_value: termId,
+            description: 'Current Academic Term ID',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'setting_key' })
+          
+        // Also ensure is_current flag is set correctly in academic_terms
+        await supabase
+          .from('academic_terms')
+          .update({ is_current: false })
+          .neq('id', termId)
+          
+        await supabase
+          .from('academic_terms')
+          .update({ is_current: true })
+          .eq('id', termId)
+      }
 
       // 2. Update system_settings for teaching model
       const { error: modelError } = await supabase
