@@ -11,6 +11,7 @@ interface Student {
   id: string
   first_name: string
   last_name: string
+  middle_name?: string
   gender: string
 }
 
@@ -135,7 +136,7 @@ export default function AssessmentSheetPage() {
       
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
-        .select('id, first_name, last_name, gender')
+        .select('id, first_name, last_name, middle_name, gender')
         .eq('class_id', selectedClass)
         .eq('status', 'active')
         .order('first_name')
@@ -255,6 +256,49 @@ export default function AssessmentSheetPage() {
     }
   }
 
+  const getShortSubjectName = (name: string) => {
+    const map: { [key: string]: string } = {
+      'MATHEMATICS': 'MATHS',
+      'ENGLISH LANGUAGE': 'ENGLISH',
+      'INTEGRATED SCIENCE': 'SCIENCE',
+      'SOCIAL STUDIES': 'SOCIAL',
+      'RELIGIOUS & MORAL EDUCATION': 'R.M.E',
+      'RELIGIOUS AND MORAL EDUCATION': 'R.M.E',
+      'INFORMATION & COMMUNICATION TECHNOLOGY': 'I.C.T',
+      'INFORMATION AND COMMUNICATION TECHNOLOGY': 'I.C.T',
+      'BASIC DESIGN AND TECHNOLOGY': 'B.D.T',
+      'GHANAIAN LANGUAGE': 'GH. LANG',
+      'CAREER TECHNOLOGY': 'CAREER TECH',
+      'CREATIVE ARTS': 'CREATIVE ARTS',
+      'OUR WORLD OUR PEOPLE': 'O.W.O.P',
+      'PHYSICAL EDUCATION': 'P.E',
+      'COMPUTING': 'COMPUTING',
+      'HISTORY': 'HISTORY',
+      'FRENCH': 'FRENCH'
+    }
+    
+    const upperName = name.toUpperCase()
+    // Check exact match first
+    if (map[upperName]) return map[upperName]
+    
+    // Check partial matches
+    if (upperName.includes('MATHEMATICS')) return 'MATHS'
+    if (upperName.includes('ENGLISH')) return 'ENGLISH'
+    if (upperName.includes('SCIENCE')) return 'SCIENCE'
+    if (upperName.includes('SOCIAL')) return 'SOCIAL'
+    if (upperName.includes('RELIGIOUS')) return 'R.M.E'
+    if (upperName.includes('INFORMATION')) return 'I.C.T'
+    if (upperName.includes('DESIGN')) return 'B.D.T'
+    if (upperName.includes('GHANAIAN')) return 'GH. LANG'
+    if (upperName.includes('CAREER')) return 'CAREER TECH'
+    if (upperName.includes('CREATIVE')) return 'CREATIVE ARTS'
+    if (upperName.includes('WORLD')) return 'O.W.O.P'
+    if (upperName.includes('PHYSICAL')) return 'P.E'
+    
+    // Default: return first word or abbreviation
+    return name.split(' ')[0].substring(0, 8).toUpperCase()
+  }
+
   if (loading) {
     return <div className="p-8 text-center">Loading...</div>
   }
@@ -361,7 +405,7 @@ export default function AssessmentSheetPage() {
                     <th className="border border-black p-1 text-left min-w-[150px]" rowSpan={2}>STUDENT NAME</th>
                     {sheetData.subjects.map(subject => (
                       <th key={subject.id} className="border border-black p-1 text-center" colSpan={3}>
-                        {subject.name}
+                        {getShortSubjectName(subject.name)}
                       </th>
                     ))}
                     <th className="border border-black p-1 w-12 text-center" rowSpan={2}>AVG</th>
@@ -382,7 +426,7 @@ export default function AssessmentSheetPage() {
                     <tr key={student.student.id} className="hover:bg-gray-50">
                       <td className="border border-black p-1 text-center">{index + 1}</td>
                       <td className="border border-black p-1 font-medium">
-                        {student.student.last_name} {student.student.first_name}
+                        {student.student.last_name} {student.student.middle_name ? student.student.middle_name + ' ' : ''}{student.student.first_name}
                       </td>
                       {sheetData.subjects.map(subject => {
                         const score = student.scores[subject.id]
