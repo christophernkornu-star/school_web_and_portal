@@ -339,6 +339,7 @@ export default function SubjectsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">-- Select Level --</option>
+                  <option value="kindergarten">Kindergarten (KG 1 - 2)</option>
                   <option value="lower_primary">Lower Primary (Basic 1-3)</option>
                   <option value="upper_primary">Upper Primary (Basic 4-6)</option>
                   <option value="jhs">Junior High School (JHS 1-3)</option>
@@ -422,6 +423,7 @@ export default function SubjectsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 >
                   <option value="">-- Select Level --</option>
+                  <option value="kindergarten">Kindergarten (KG 1 - 2)</option>
                   <option value="lower_primary">Lower Primary (Basic 1-3)</option>
                   <option value="upper_primary">Upper Primary (Basic 4-6)</option>
                   <option value="jhs">Junior High School (JHS 1-3)</option>
