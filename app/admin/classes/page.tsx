@@ -129,24 +129,28 @@ export default function ClassesPage() {
     setSaving(true)
     setMessage({ type: '', text: '' })
 
-    if (!formData.name) {
-      setMessage({ type: 'error', text: 'Please enter a class name' })
-      setSaving(false)
-      return
+    // Map category to level enum
+    const categoryToLevel: Record<string, string> = {
+      'Kindergarten': 'kindergarten',
+      'Lower Primary': 'lower_primary',
+      'Upper Primary': 'upper_primary',
+      'Junior High': 'jhs'
     }
+
+    const dbLevel = categoryToLevel[formData.category] || 'lower_primary'
 
     const { error } = await supabase
       .from('classes')
-      .insert({
+      .insert([{
         name: formData.name,
-        level: formData.level,
+        level: dbLevel, // Use mapped level
         category: formData.category,
         description: formData.description,
         capacity: formData.capacity
-      })
+      }])
 
     if (error) {
-      if (error.message.includes('duplicate')) {
+      if (error.code === '23505') {
         setMessage({ type: 'error', text: 'A class with this name already exists' })
       } else {
         setMessage({ type: 'error', text: error.message })
@@ -165,11 +169,21 @@ export default function ClassesPage() {
     setSaving(true)
     setMessage({ type: '', text: '' })
 
+    // Map category to level enum
+    const categoryToLevel: Record<string, string> = {
+      'Kindergarten': 'kindergarten',
+      'Lower Primary': 'lower_primary',
+      'Upper Primary': 'upper_primary',
+      'Junior High': 'jhs'
+    }
+
+    const dbLevel = categoryToLevel[formData.category] || 'lower_primary'
+
     const { error } = await supabase
       .from('classes')
       .update({
         name: formData.name,
-        level: formData.level,
+        level: dbLevel, // Use mapped level
         category: formData.category,
         description: formData.description,
         capacity: formData.capacity
@@ -448,18 +462,6 @@ export default function ClassesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
-                  <select
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    {levelOptions.map(level => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
                   <input
                     type="number"
@@ -470,19 +472,18 @@ export default function ClassesPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
@@ -545,18 +546,6 @@ export default function ClassesPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Level</label>
-                  <select
-                    value={formData.level}
-                    onChange={(e) => setFormData({ ...formData, level: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  >
-                    {levelOptions.map(level => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
                   <input
                     type="number"
@@ -567,19 +556,18 @@ export default function ClassesPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  >
+                    {categories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
