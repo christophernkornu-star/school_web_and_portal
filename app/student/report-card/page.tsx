@@ -507,6 +507,9 @@ export default function ReportCardPage() {
           const classScores = rankingsData.scores || []
           const totalClassSize = rankingsData.totalClassSize || 1
           
+          // Store total class size for display
+          report.totalClassSize = totalClassSize
+
           console.log('All scores fetched:', classScores?.length)
           console.log('Class students with scores:', totalClassSize)
 
@@ -528,9 +531,6 @@ export default function ReportCardPage() {
             // Find current student's position
             const position = sortedStudents.findIndex(([sid]) => sid === student.id) + 1
             report.position = position > 0 ? position : null
-            
-            // Store total class size for display
-            report.totalClassSize = totalClassSize
             
             console.log('Position calculated:', position, 'out of', totalClassSize)
 

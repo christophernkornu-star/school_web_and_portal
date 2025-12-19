@@ -263,10 +263,16 @@ export default function AdminStudentReportPage() {
       if (studentError || !studentData) {
         console.error('Error loading student:', studentError)
         alert('Student not found')
-        router.push('/admin/reports/student')
+        router.push('/admin/reports')
         return
       }
       setStudent(studentData)
+
+      // Get total class size (number on roll)
+      const { count: classSize } = await supabase
+        .from('students')
+        .select('id', { count: 'exact', head: true })
+        .eq('class_id', studentData.class_id)
 
       // Get scores for this student and term
       const { data: scoresData } = await supabase
@@ -393,7 +399,7 @@ export default function AdminStudentReportPage() {
         totalDays: termData?.total_days || 0,
         averageScore: Math.round(averageScore * 10) / 10,
         position: position > 0 ? position : null,
-        totalClassSize: averages.length,
+        totalClassSize: classSize || averages.length,
         aggregate
       })
 

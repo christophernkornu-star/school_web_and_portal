@@ -265,6 +265,12 @@ export default function TeacherStudentReportPage() {
       }
       setStudent(studentData)
 
+      // Get total class size (number on roll)
+      const { count: classSize } = await supabase
+        .from('students')
+        .select('id', { count: 'exact', head: true })
+        .eq('class_id', studentData.class_id)
+
       // Get scores for this student and term
       const { data: scoresData } = await supabase
         .from('scores')
@@ -390,7 +396,7 @@ export default function TeacherStudentReportPage() {
         totalDays: termData?.total_days || 0,
         averageScore: Math.round(averageScore * 10) / 10,
         position: position > 0 ? position : null,
-        totalClassSize: averages.length,
+        totalClassSize: classSize || averages.length,
         aggregate
       })
 

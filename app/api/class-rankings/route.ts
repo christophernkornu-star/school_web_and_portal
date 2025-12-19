@@ -40,8 +40,10 @@ export async function GET(request: Request) {
   }
   
   // Calculate class size
+  // Use the total number of students in the class (Number on Roll), 
+  // not just those who have scores
+  const totalClassSize = students.length
   const uniqueStudents = [...new Set(scores.map(s => s.student_id))]
-  const totalClassSize = uniqueStudents.length
   
   // Return the scores data
   return NextResponse.json({

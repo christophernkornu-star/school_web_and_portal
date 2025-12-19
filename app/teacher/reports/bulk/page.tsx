@@ -238,6 +238,12 @@ function BulkReportCardsContent() {
 
         if (!student) continue
 
+        // Get class size (number on roll)
+        const { count: classSize } = await supabase
+          .from('students')
+          .select('id', { count: 'exact', head: true })
+          .eq('class_id', student.class_id)
+
         // Get scores for this student
         const { data: scoresData } = await supabase
           .from('scores')
@@ -284,7 +290,7 @@ function BulkReportCardsContent() {
           totalDays: termData?.total_days || 0,
           averageScore: Math.round(averageScore * 10) / 10,
           position: positionMap[studentId] || null,
-          totalClassSize: averages.length,
+          totalClassSize: classSize || averages.length,
           remarks: {
             attitude: getAutoRemark('attitude', averageScore, attendancePercentage),
             interest: getAutoRemark('interest', averageScore, attendancePercentage),
