@@ -163,6 +163,21 @@ export default function GeneralSettings() {
           console.error('System settings update error:', sysError)
           throw new Error('Failed to sync current term to system settings.')
         }
+
+        // Sync current_academic_year to system_settings as well
+        const { error: yearError } = await supabase
+          .from('system_settings')
+          .upsert({
+            setting_key: 'current_academic_year',
+            setting_value: formData.current_academic_year,
+            description: 'Current academic year',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'setting_key' })
+
+        if (yearError) {
+          console.error('System settings year update error:', yearError)
+          // Not throwing here to avoid blocking the whole save if just this fails, but good to log
+        }
           
         // Also ensure is_current flag is set correctly in academic_terms
         await supabase
