@@ -99,16 +99,21 @@ export default function EditTeacherPage() {
       // Determine teaching model for each class
       const models: Record<string, string> = {}
       classesData.forEach((cls: any) => {
-        if (['KG 1', 'KG 2'].includes(cls.level)) {
+        if (cls.level === 'kindergarten') {
           models[cls.id] = 'class_teacher'
-        } else if (['Basic 1', 'Basic 2', 'Basic 3'].includes(cls.level)) {
+        } else if (cls.level === 'lower_primary') {
           models[cls.id] = 'class_teacher'
-        } else if (['Basic 4', 'Basic 5', 'Basic 6'].includes(cls.level)) {
+        } else if (cls.level === 'upper_primary') {
           models[cls.id] = settingData?.setting_value || 'class_teacher'
-        } else if (['JHS 1', 'JHS 2', 'JHS 3'].includes(cls.level)) {
+        } else if (cls.level === 'jhs') {
           models[cls.id] = 'subject_teacher'
         } else {
-          models[cls.id] = 'class_teacher'
+          // Fallback for old data
+          if (['KG 1', 'KG 2'].includes(cls.level)) models[cls.id] = 'class_teacher'
+          else if (['Basic 1', 'Basic 2', 'Basic 3'].includes(cls.level)) models[cls.id] = 'class_teacher'
+          else if (['Basic 4', 'Basic 5', 'Basic 6'].includes(cls.level)) models[cls.id] = settingData?.setting_value || 'class_teacher'
+          else if (['JHS 1', 'JHS 2', 'JHS 3'].includes(cls.level)) models[cls.id] = 'subject_teacher'
+          else models[cls.id] = 'class_teacher'
         }
       })
       setTeachingModels(models)
@@ -238,18 +243,32 @@ export default function EditTeacherPage() {
       // Auto-assign all subjects for class teacher model
       for (const class_id of assignedClasses) {
         const model = teachingModels[class_id]
-        if (model === 'class_teacher' && classTeacherFor.includes(class_id)) {
+        // For KG, ALWAYS treat as class teacher model regardless of explicit setting
+        const classInfo = classes.find(c => c.id === class_id)
+        const isKG = classInfo && (classInfo.level === 'kindergarten' || ['KG 1', 'KG 2'].includes(classInfo.level))
+        
+        if (isKG || (model === 'class_teacher' && classTeacherFor.includes(class_id))) {
           // Get all subjects for this class level
-          const classInfo = classes.find(c => c.id === class_id)
           if (classInfo) {
             // For class teachers, they teach all subjects
-            const allSubjectInserts = subjects.map(subject => ({
+            // Filter subjects appropriate for this class level
+            const relevantSubjects = subjects.filter(subject => {
+              if (subject.level) return subject.level === classInfo.level
+              // Fallback logic
+              if (isKG) return true // Assign all subjects if no level specified, or refine this
+              return true
+            })
+
+            const allSubjectInserts = relevantSubjects.map(subject => ({
               teacher_id: teacher.id,
               subject_id: subject.id,
               class_id: class_id,
               can_edit: true,
             }))
-            await supabase.from('teacher_subject_assignments').insert(allSubjectInserts)
+            
+            if (allSubjectInserts.length > 0) {
+               await supabase.from('teacher_subject_assignments').insert(allSubjectInserts)
+            }
           }
         }
       }
