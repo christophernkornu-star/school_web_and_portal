@@ -547,10 +547,11 @@ export default function TeacherStudentReportPage() {
       
       if (!isThirdTerm) return ''
       
+      // If we have explicit promotion status from DB, use it (TODO: Fetch this)
+      // For now, use the logic requested: Promoted if >= 30, Repeated if < 30
       const avg = reportData.averageScore || 0
-      if (avg >= 50) return 'PROMOTED TO NEXT CLASS'
-      if (avg >= 40) return 'PROMOTED ON TRIAL'
-      return 'TO REPEAT CLASS'
+      if (avg >= 30) return 'PROMOTED'
+      return 'REPEATED'
     }
 
     return `

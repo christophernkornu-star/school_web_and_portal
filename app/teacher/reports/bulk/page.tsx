@@ -411,9 +411,8 @@ function BulkReportCardsContent() {
       
       if (!isThirdTerm) return ''
       
-      if (avgScore >= 50) return 'PROMOTED TO NEXT CLASS'
-      if (avgScore >= 40) return 'PROMOTED ON TRIAL'
-      return 'TO REPEAT CLASS'
+      if (avgScore >= 30) return 'PROMOTED'
+      return 'REPEATED'
     }
 
     const generateSingleReport = (report: StudentReportData): string => {
