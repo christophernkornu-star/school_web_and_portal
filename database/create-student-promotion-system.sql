@@ -243,6 +243,7 @@ CREATE POLICY admins_manage_history ON promotion_history
 
 -- Drop existing functions to ensure clean replacement
 DROP FUNCTION IF EXISTS calculate_student_promotion_metrics(UUID, VARCHAR);
+DROP FUNCTION IF EXISTS calculate_student_promotion_metrics(UUID, TEXT);
 DROP FUNCTION IF EXISTS generate_promotion_recommendations(UUID, VARCHAR, UUID);
 DROP FUNCTION IF EXISTS execute_academic_year_transition(VARCHAR, VARCHAR);
 DROP FUNCTION IF EXISTS execute_teacher_promotion_decision(UUID, VARCHAR, UUID, BOOLEAN, TEXT);
@@ -380,7 +381,7 @@ BEGIN
       metrics.meets_criteria
     FROM students s
     LEFT JOIN class_progression cp ON cp.current_class_id = s.class_id
-    CROSS JOIN LATERAL calculate_student_promotion_metrics(s.id, p_old_academic_year) AS metrics
+    CROSS JOIN LATERAL calculate_student_promotion_metrics(s.id, p_old_academic_year::VARCHAR) AS metrics
     WHERE s.status = 'active'
   LOOP
     BEGIN
