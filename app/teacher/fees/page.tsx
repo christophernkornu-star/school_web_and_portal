@@ -2,11 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { format } from 'date-fns'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { 
   DollarSign, Users, Calendar, Search, Plus, FileText, 
-  CheckCircle, AlertCircle, ChevronDown, Loader2, CreditCard
+  CheckCircle, AlertCircle, ChevronDown, Loader2, CreditCard, FileBarChart
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default function TeacherFeesPage() {
   const router = useRouter()
@@ -55,14 +59,25 @@ export default function TeacherFeesPage() {
         return
       }
 
-      // Fetch classes
-      const { data: classesData } = await supabase
-        .from('classes')
-        .select('id, name')
-        .order('name')
+      let classesData: any[] = []
 
-      setClasses(classesData || [])
-      if (classesData && classesData.length > 0) {
+      if (profile.role === 'teacher') {
+        // For teachers, only show classes where they are the class teacher
+        const classAccess = await getTeacherClassAccess(user.id)
+        classesData = classAccess
+          .filter(c => c.is_class_teacher)
+          .map(c => ({ id: c.class_id, name: c.class_name }))
+      } else {
+        // For admins and head teachers, show all classes
+        const { data } = await supabase
+          .from('classes')
+          .select('id, name')
+          .order('name')
+        classesData = data || []
+      }
+
+      setClasses(classesData)
+      if (classesData.length > 0) {
         setSelectedClass(classesData[0].id)
       }
     } catch (error) {
@@ -116,9 +131,13 @@ export default function TeacherFeesPage() {
 
           const { data: paymentsData } = await supabase
             .from('fee_payments')
-            .select('*')
+            .select(`
+              *,
+              profiles:recorded_by (full_name)
+            `)
             .in('student_id', studentIds)
             .in('fee_structure_id', feeIds)
+            .order('created_at', { ascending: false })
 
           setPayments(paymentsData || [])
         } else {
@@ -213,6 +232,15 @@ export default function TeacherFeesPage() {
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+
+            {selectedClass && (
+              <Link href={`/teacher/fees/statement?classId=${selectedClass}`}>
+                <Button variant="outline" className="gap-2 h-10">
+                  <FileBarChart className="h-4 w-4" />
+                  <span className="hidden sm:inline">Statement</span>
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -257,6 +285,7 @@ export default function TeacherFeesPage() {
 
         {/* Main Content */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          
           <div className="p-4 md:p-6 border-b border-gray-200 flex flex-col md:flex-row justify-between gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
@@ -354,96 +383,166 @@ export default function TeacherFeesPage() {
 
       {/* Payment Modal */}
       {showPaymentModal && selectedStudent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden">
-            <div className="p-4 md:p-6 border-b border-gray-200">
-              <h3 className="text-base md:text-lg font-bold text-gray-900">Record Payment</h3>
-              <p className="text-xs md:text-sm text-gray-500">
-                For {selectedStudent.last_name} {selectedStudent.first_name} ({selectedStudent.student_id})
-              </p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8 flex flex-col max-h-[90vh]">
+            <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center shrink-0">
+              <div>
+                <h3 className="text-base md:text-lg font-bold text-gray-900">Manage Payments</h3>
+                <p className="text-xs md:text-sm text-gray-500">
+                  {selectedStudent.last_name} {selectedStudent.first_name} ({selectedStudent.student_id})
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={() => setShowPaymentModal(false)}
+                  className="text-gray-400 hover:text-gray-600 p-2"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             </div>
             
-            <form onSubmit={handlePaymentSubmit} className="p-4 md:p-6 space-y-4">
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Fee Type</label>
-                <select
-                  required
-                  value={paymentForm.fee_structure_id}
-                  onChange={(e) => setPaymentForm({...paymentForm, fee_structure_id: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs md:text-sm"
-                >
-                  <option value="">Select Fee</option>
-                  {feeStructures.map(fee => (
-                    <option key={fee.id} value={fee.id}>
-                      {fee.fee_types?.name} (GH₵ {fee.amount})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <div className="overflow-y-auto p-4 md:p-6 space-y-8">
+              {/* New Payment Form */}
+              <section>
+                <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Plus className="w-4 h-4" /> Record New Payment
+                </h4>
+                <form onSubmit={handlePaymentSubmit} className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Fee Type</label>
+                      <select
+                        required
+                        value={paymentForm.fee_structure_id}
+                        onChange={(e) => setPaymentForm({...paymentForm, fee_structure_id: e.target.value})}
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      >
+                        <option value="">Select Fee</option>
+                        {feeStructures.map(fee => (
+                          <option key={fee.id} value={fee.id}>
+                            {fee.fee_types?.name} (GH₵ {fee.amount})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Amount (GH₵)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  required
-                  value={paymentForm.amount_paid}
-                  onChange={(e) => setPaymentForm({...paymentForm, amount_paid: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs md:text-sm"
-                />
-              </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Amount (GH₵)</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={paymentForm.amount_paid}
+                        onChange={(e) => setPaymentForm({...paymentForm, amount_paid: e.target.value})}
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      />
+                    </div>
 
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Payment Method</label>
-                <select
-                  value={paymentForm.payment_method}
-                  onChange={(e) => setPaymentForm({...paymentForm, payment_method: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs md:text-sm"
-                >
-                  <option value="Cash">Cash</option>
-                  <option value="Mobile Money">Mobile Money</option>
-                  <option value="Bank Deposit">Bank Deposit</option>
-                  <option value="Cheque">Cheque</option>
-                </select>
-              </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Payment Method</label>
+                      <select
+                        value={paymentForm.payment_method}
+                        onChange={(e) => setPaymentForm({...paymentForm, payment_method: e.target.value})}
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      >
+                        <option value="Cash">Cash</option>
+                        <option value="Mobile Money">Mobile Money</option>
+                        <option value="Bank Deposit">Bank Deposit</option>
+                        <option value="Cheque">Cheque</option>
+                      </select>
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">Remarks (Optional)</label>
-                <textarea
-                  value={paymentForm.remarks}
-                  onChange={(e) => setPaymentForm({...paymentForm, remarks: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs md:text-sm"
-                  rows={3}
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Remarks (Optional)</label>
+                    <textarea
+                      value={paymentForm.remarks}
+                      onChange={(e) => setPaymentForm({...paymentForm, remarks: e.target.value})}
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      rows={2}
+                    />
+                  </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-xs md:text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2 text-xs md:text-sm"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-3 h-3 md:w-4 md:h-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="w-3 h-3 md:w-4 md:h-4" />
-                      Save Payment
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4" />
+                          Save Payment
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {/* Payment History */}
+              <section>
+                <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Payment History
+                </h4>
+                <div className="overflow-x-auto border rounded-lg">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-500 font-medium">
+                      <tr>
+                        <th className="px-4 py-2 whitespace-nowrap">Date</th>
+                        <th className="px-4 py-2 whitespace-nowrap">Fee Type</th>
+                        <th className="px-4 py-2 whitespace-nowrap">Amount</th>
+                        <th className="px-4 py-2 whitespace-nowrap">Method</th>
+                        <th className="px-4 py-2 whitespace-nowrap">Recorded By</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {payments.filter(p => p.student_id === selectedStudent.id).length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                            No payments recorded yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        payments
+                          .filter(p => p.student_id === selectedStudent.id)
+                          .map(payment => {
+                            const feeType = feeStructures.find(f => f.id === payment.fee_structure_id)?.fee_types?.name || 'Unknown Fee'
+                            return (
+                              <tr key={payment.id} className="hover:bg-gray-50">
+                                <td className="px-4 py-2 whitespace-nowrap text-gray-600">
+                                  {payment.payment_date ? format(new Date(payment.payment_date), 'MMM dd, yyyy') : '-'}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900">
+                                  {feeType}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-green-600 font-medium">
+                                  GH₵ {payment.amount_paid}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-gray-600">
+                                  {payment.payment_method}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-gray-500 text-xs">
+                                  {payment.profiles?.full_name || 'Unknown'}
+                                </td>
+                              </tr>
+                            )
+                          })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       )}
