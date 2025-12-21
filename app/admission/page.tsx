@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Send, CheckCircle } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -8,6 +8,7 @@ import SiteHeader from '@/components/SiteHeader'
 
 export default function AdmissionPage() {
   const supabase = getSupabaseBrowserClient()
+  const [classes, setClasses] = useState<any[]>([])
   const [formData, setFormData] = useState({
     applicant_name: '',
     date_of_birth: '',
@@ -21,6 +22,26 @@ export default function AdmissionPage() {
   })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    async function loadClasses() {
+      const { data } = await supabase
+        .from('classes')
+        .select('id, name')
+        .order('name')
+      
+      if (data) {
+        // Sort classes naturally (Basic 1, Basic 2, ..., JHS 1, etc.)
+        const sorted = data.sort((a, b) => {
+          const aNum = parseInt(a.name.replace(/\D/g, '')) || 0
+          const bNum = parseInt(b.name.replace(/\D/g, '')) || 0
+          return aNum - bNum
+        })
+        setClasses(sorted)
+      }
+    }
+    loadClasses()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -149,15 +170,11 @@ export default function AdmissionPage() {
                         className="input-field"
                       >
                         <option value="">Select Class</option>
-                        <option value="Basic 1">Basic 1</option>
-                        <option value="Basic 2">Basic 2</option>
-                        <option value="Basic 3">Basic 3</option>
-                        <option value="Basic 4">Basic 4</option>
-                        <option value="Basic 5">Basic 5</option>
-                        <option value="Basic 6">Basic 6</option>
-                        <option value="Basic 7">Basic 7</option>
-                        <option value="Basic 8">Basic 8</option>
-                        <option value="Basic 9">Basic 9</option>
+                        {classes.map((cls) => (
+                          <option key={cls.id} value={cls.id}>
+                            {cls.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>

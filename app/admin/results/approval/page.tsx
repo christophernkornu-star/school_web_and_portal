@@ -159,8 +159,8 @@ export default function ResultsApprovalPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="grid md:grid-cols-3 gap-4 items-end">
+        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
               <select
@@ -189,11 +189,11 @@ export default function ResultsApprovalPage() {
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end md:justify-start">
               <button
                 onClick={handleSave}
                 disabled={saving || !students.some(s => s.isDirty)}
-                className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full md:w-auto flex items-center justify-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Save className="w-5 h-5" />
                 <span>{saving ? 'Saving...' : 'Save Changes'}</span>
@@ -204,80 +204,82 @@ export default function ResultsApprovalPage() {
 
         {selectedClass && (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason for Withholding</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
-                  <tr key={student.id} className={student.results_withheld ? 'bg-red-50' : ''}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {student.first_name} {student.last_name}
-                          </div>
-                          <div className="text-sm text-gray-500">{student.student_id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        student.results_withheld 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {student.results_withheld ? 'Withheld' : 'Released'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="text"
-                        value={student.withheld_reason}
-                        onChange={(e) => handleReasonChange(student.id, e.target.value)}
-                        placeholder="Reason (e.g. Fees owing)"
-                        disabled={!student.results_withheld}
-                        className="w-full px-3 py-1 border border-gray-300 rounded text-sm disabled:bg-gray-100 disabled:text-gray-400"
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => handleToggleWithheld(student.id, student.results_withheld)}
-                        className={`flex items-center space-x-1 ${
-                          student.results_withheld 
-                            ? 'text-green-600 hover:text-green-900' 
-                            : 'text-red-600 hover:text-red-900'
-                        }`}
-                      >
-                        {student.results_withheld ? (
-                          <>
-                            <Unlock className="w-4 h-4" />
-                            <span>Release</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-4 h-4" />
-                            <span>Withhold</span>
-                          </>
-                        )}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-                {filteredStudents.length === 0 && (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
-                      No students found
-                    </td>
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">Reason for Withholding</th>
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredStudents.map((student) => (
+                    <tr key={student.id} className={student.results_withheld ? 'bg-red-50' : ''}>
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {student.first_name} {student.last_name}
+                            </div>
+                            <div className="text-xs md:text-sm text-gray-500">{student.student_id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          student.results_withheld 
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-green-100 text-green-800'
+                        }`}>
+                          {student.results_withheld ? 'Withheld' : 'Released'}
+                        </span>
+                      </td>
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                        <input
+                          type="text"
+                          value={student.withheld_reason}
+                          onChange={(e) => handleReasonChange(student.id, e.target.value)}
+                          placeholder="Reason (e.g. Fees owing)"
+                          disabled={!student.results_withheld}
+                          className="w-full px-3 py-1 border border-gray-300 rounded text-sm disabled:bg-gray-100 disabled:text-gray-400"
+                        />
+                      </td>
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <button
+                          onClick={() => handleToggleWithheld(student.id, student.results_withheld)}
+                          className={`flex items-center space-x-1 ${
+                            student.results_withheld 
+                              ? 'text-green-600 hover:text-green-900' 
+                              : 'text-red-600 hover:text-red-900'
+                          }`}
+                        >
+                          {student.results_withheld ? (
+                            <>
+                              <Unlock className="w-4 h-4" />
+                              <span className="hidden md:inline">Release</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock className="w-4 h-4" />
+                              <span className="hidden md:inline">Withhold</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {filteredStudents.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                        No students found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

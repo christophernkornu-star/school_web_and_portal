@@ -8,7 +8,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { 
   DollarSign, Users, Calendar, Search, Plus, FileText, 
-  CheckCircle, AlertCircle, ChevronDown, Loader2, CreditCard, FileBarChart
+  CheckCircle, AlertCircle, ChevronDown, Loader2, CreditCard, FileBarChart, ArrowLeft
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -214,12 +214,17 @@ export default function TeacherFeesPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
-              Fee Collection
-            </h1>
-            <p className="text-xs md:text-sm lg:text-base text-gray-600">Manage and record student fee payments</p>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <ArrowLeft className="w-6 h-6" />
+            </Button>
+            <div>
+              <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
+                Fee Collection
+              </h1>
+              <p className="text-xs md:text-sm lg:text-base text-gray-600">Manage and record student fee payments</p>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
