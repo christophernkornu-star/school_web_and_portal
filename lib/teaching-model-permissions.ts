@@ -220,8 +220,8 @@ export async function getTeacherPermissions(teacherUUID: string): Promise<Teache
     
     let subjectPermissions: TeacherPermissions['subjects'] = []
     
-    if (classAssignment.teaching_model === 'class_teacher') {
-      // Class teacher model: Can view and edit all subjects
+    // If teacher is Class Teacher (regardless of teaching model), they get full access
+    if (classAssignment.is_class_teacher) {
       subjectPermissions = (allSubjects || []).map(subject => ({
         subject_id: subject.id,
         subject_name: subject.name,
@@ -229,27 +229,13 @@ export async function getTeacherPermissions(teacherUUID: string): Promise<Teache
         can_edit: true,
       }))
     } else {
-      // Subject teacher model
-      if (classAssignment.is_class_teacher) {
-        // Class teacher in subject model: Can view all, edit only assigned
-        subjectPermissions = (allSubjects || []).map(subject => {
-          const assignment = classSubjects.find(s => s.subject_id === subject.id)
-          return {
-            subject_id: subject.id,
-            subject_name: subject.name,
-            can_view: true,
-            can_edit: assignment ? assignment.can_edit : false,
-          }
-        })
-      } else {
-        // Regular subject teacher: Can only view/edit assigned subjects
-        subjectPermissions = classSubjects.map(assignment => ({
-          subject_id: assignment.subject_id,
-          subject_name: assignment.subject_name,
-          can_view: true,
-          can_edit: assignment.can_edit,
-        }))
-      }
+      // Regular subject teacher: Can only view/edit assigned subjects
+      subjectPermissions = classSubjects.map(assignment => ({
+        subject_id: assignment.subject_id,
+        subject_name: assignment.subject_name,
+        can_view: true,
+        can_edit: assignment.can_edit,
+      }))
     }
     
     permissions.push({

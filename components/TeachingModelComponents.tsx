@@ -14,20 +14,11 @@ export function TeachingModelBadge({ model, isClassTeacher, size = 'md' }: Teach
     lg: 'text-base px-4 py-2',
   }
   
-  if (model === 'class_teacher') {
+  if (isClassTeacher) {
     return (
       <span className={`${sizeClasses[size]} bg-blue-100 text-blue-700 rounded-full font-medium flex items-center space-x-1`}>
         <BookOpen className="w-3 h-3" />
         <span>Class Teacher</span>
-      </span>
-    )
-  }
-  
-  if (isClassTeacher) {
-    return (
-      <span className={`${sizeClasses[size]} bg-yellow-100 text-yellow-700 rounded-full font-medium flex items-center space-x-1`}>
-        <Users className="w-3 h-3" />
-        <span>Class Teacher (Subject Model)</span>
       </span>
     )
   }
@@ -95,7 +86,7 @@ export function ClassPermissionCard({
         <div className="flex items-center space-x-2">
           <BookOpen className="w-4 h-4 text-gray-400" />
           <span>
-            {teachingModel === 'class_teacher' 
+            {isClassTeacher 
               ? 'All subjects (full access)'
               : `${subjectCount} subject${subjectCount !== 1 ? 's' : ''} assigned`}
           </span>

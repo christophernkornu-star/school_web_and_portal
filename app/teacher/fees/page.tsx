@@ -310,7 +310,7 @@ export default function TeacherFeesPage() {
                       <span className="text-gray-400">GH₵ {fee.amount}</span>
                     </th>
                   ))}
-                  <th className="px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -360,13 +360,13 @@ export default function TeacherFeesPage() {
                           </td>
                         )
                       })}
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-center">
                         <button
                           onClick={() => {
                             setSelectedStudent(student)
                             setShowPaymentModal(true)
                           }}
-                          className="text-green-600 hover:text-green-900 font-medium text-xs md:text-sm flex items-center justify-end gap-1"
+                          className="text-green-600 hover:text-green-900 font-medium text-xs md:text-sm flex items-center justify-center gap-1 mx-auto"
                         >
                           <Plus className="w-3 h-3 md:w-4 md:h-4" />
                           Record Payment
