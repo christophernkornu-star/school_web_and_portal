@@ -32,7 +32,7 @@ export default function AdmissionPage() {
       
       if (data) {
         // Sort classes naturally (Basic 1, Basic 2, ..., JHS 1, etc.)
-        const sorted = data.sort((a, b) => {
+        const sorted = data.sort((a: any, b: any) => {
           const aNum = parseInt(a.name.replace(/\D/g, '')) || 0
           const bNum = parseInt(b.name.replace(/\D/g, '')) || 0
           return aNum - bNum
