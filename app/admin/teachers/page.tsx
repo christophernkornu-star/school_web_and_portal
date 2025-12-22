@@ -314,15 +314,19 @@ export default function TeachersPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-base md:text-lg text-gray-800">
-                      {teacher.first_name} {teacher.last_name}
+                      {teacher.first_name} {teacher.middle_name ? teacher.middle_name + ' ' : ''}{teacher.last_name}
                     </h3>
                     <p className="text-xs md:text-sm text-gray-500">{teacher.teacher_id}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-1 text-[10px] md:text-xs font-semibold rounded-full ${
-                  teacher.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  teacher.status === 'active' ? 'bg-green-100 text-green-800' : 
+                  teacher.status === 'on_leave' ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
                 }`}>
-                  {teacher.status}
+                  {teacher.status === 'on_leave' ? 'On Leave' : 
+                   teacher.status === 'transferred' ? 'Transferred' :
+                   teacher.status.charAt(0).toUpperCase() + teacher.status.slice(1)}
                 </span>
               </div>
 
@@ -419,7 +423,7 @@ export default function TeachersPage() {
             ) : (
               <>
                 <p className="text-gray-600 mb-2">
-                  Are you sure you want to reset the password for <span className="font-semibold">{resetPasswordModal.teacher?.first_name} {resetPasswordModal.teacher?.last_name}</span>?
+                  Are you sure you want to reset the password for <span className="font-semibold">{resetPasswordModal.teacher?.first_name} {resetPasswordModal.teacher?.middle_name ? resetPasswordModal.teacher.middle_name + ' ' : ''}{resetPasswordModal.teacher?.last_name}</span>?
                 </p>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
                   <p className="text-sm text-blue-800">

@@ -65,6 +65,27 @@ export async function signInWithUsername(username: string, password: string) {
     }
   }
 
+  // Check if user is a teacher and if they are active
+  if (role === 'teacher') {
+    const { data: teacherData } = await browserSupabase
+      .from('teachers')
+      .select('status')
+      .eq('profile_id', data.user.id)
+      .single()
+    
+    if (teacherData) {
+      if (teacherData.status === 'inactive' || teacherData.status === 'transferred') {
+        console.log('❌ Teacher account is inactive or transferred')
+        await browserSupabase.auth.signOut()
+        return { 
+          data: null, 
+          error: { message: 'Your account is inactive. Please contact the administrator.' }, 
+          role: null 
+        }
+      }
+    }
+  }
+
   // Ensure user metadata has the role (crucial for middleware)
   if (role && data.user && data.user.user_metadata?.role !== role) {
     console.log('🔄 Updating user metadata with role:', role)

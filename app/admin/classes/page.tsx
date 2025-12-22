@@ -94,15 +94,33 @@ export default function ClassesPage() {
     // Load class teachers from teacher_class_assignments
     const { data: classTeachersData } = await supabase
       .from('teacher_class_assignments')
-      .select('class_id, teacher_id')
+      .select(`
+        class_id, 
+        teacher_id,
+        teachers!inner (
+          status
+        )
+      `)
       .eq('is_class_teacher', true) as { data: any[] | null }
 
     if (classesData) {
       const classesWithInfo = classesData.map((cls: any) => {
-        const classTeacherAssignment = classTeachersData?.find((ct: any) => ct.class_id === cls.id)
+        // Find active class teacher assignment
+        const classTeacherAssignment = classTeachersData?.find((ct: any) => 
+          ct.class_id === cls.id && 
+          ct.teachers?.status === 'active'
+        )
+        
+        // Note: teachersData only contains active teachers, so we can match by ID
+        // But wait, teachersData uses 'id' (UUID) but classTeachersData uses 'teacher_id' (UUID)
+        // Let's check if teachersData uses UUID 'id' or string 'teacher_id'.
+        // The select was: .select('id, teacher_id, first_name, last_name')
+        // teacher_class_assignments uses UUID teacher_id.
+        
         const classTeacher = classTeacherAssignment 
-          ? teachersData?.find((t: any) => t.teacher_id === classTeacherAssignment.teacher_id)
+          ? teachersData?.find((t: any) => t.id === classTeacherAssignment.teacher_id)
           : null
+          
         return {
           ...cls,
           student_count: studentCounts.get(cls.id) || 0,

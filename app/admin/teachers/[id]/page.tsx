@@ -26,6 +26,7 @@ export default function EditTeacherPage() {
   
   const [formData, setFormData] = useState({
     first_name: '',
+    middle_name: '',
     last_name: '',
     phone: '',
     specialization: '',
@@ -65,6 +66,7 @@ export default function EditTeacherPage() {
       setTeacher(teacherData)
       setFormData({
         first_name: teacherData.first_name || '',
+        middle_name: teacherData.middle_name || '',
         last_name: teacherData.last_name || '',
         phone: teacherData.phone || '',
         specialization: teacherData.specialization || '',
@@ -93,11 +95,12 @@ export default function EditTeacherPage() {
       .select('*')
       .order('level')) as { data: any[] | null }
     
+    let models: Record<string, string> = {}
+
     if (classesData) {
       setClasses(classesData)
       
       // Determine teaching model for each class
-      const models: Record<string, string> = {}
       classesData.forEach((cls: any) => {
         if (cls.level === 'kindergarten') {
           models[cls.id] = 'class_teacher'
@@ -135,7 +138,18 @@ export default function EditTeacherPage() {
       
       if (classAssignments) {
         setAssignedClasses(classAssignments.map((a: any) => a.class_id))
-        setClassTeacherFor(classAssignments.filter((a: any) => a.is_class_teacher).map((a: any) => a.class_id))
+        
+        // Determine class teacher status
+        // Auto-fix: If model is class_teacher, ensure they are marked as class teacher
+        const ctIds = classAssignments
+          .filter((a: any) => {
+            if (a.is_class_teacher) return true
+            if (models[a.class_id] === 'class_teacher') return true
+            return false
+          })
+          .map((a: any) => a.class_id)
+          
+        setClassTeacherFor(ctIds)
       }
 
       // Load assigned subjects (use teacher UUID id from teacherData)
@@ -171,6 +185,7 @@ export default function EditTeacherPage() {
           profileId: teacher.profile_id,
           requesterId: user?.id,
           firstName: formData.first_name,
+          middleName: formData.middle_name,
           lastName: formData.last_name,
           phone: formData.phone,
           specialization: formData.specialization,
@@ -192,19 +207,30 @@ export default function EditTeacherPage() {
       if (classTeacherFor.length > 0) {
         const { data: existingClassTeachers, error: checkError } = (await supabase
           .from('teacher_class_assignments')
-          .select('class_id, teacher_id')
+          .select(`
+            class_id, 
+            teacher_id,
+            teachers!inner (
+              status
+            )
+          `)
           .in('class_id', classTeacherFor)
           .eq('is_class_teacher', true)
           .neq('teacher_id', teacher.id)) as { data: any[] | null; error: any }
 
         if (checkError) throw checkError
 
-        if (existingClassTeachers && existingClassTeachers.length > 0) {
-          const conflictClasses = existingClassTeachers.map((ct: any) => {
+        // Filter out teachers who are 'on_leave' - they don't count as conflicts
+        const activeConflicts = existingClassTeachers?.filter((ct: any) => 
+          ct.teachers?.status !== 'on_leave' && ct.teachers?.status !== 'inactive' && ct.teachers?.status !== 'transferred'
+        ) || []
+
+        if (activeConflicts.length > 0) {
+          const conflictClasses = activeConflicts.map((ct: any) => {
             const className = classes.find((c: any) => c.id === ct.class_id)?.name || 'Unknown'
             return className
           })
-          throw new Error(`Cannot assign as class teacher. The following classes already have a class teacher: ${conflictClasses.join(', ')}. Please remove the existing class teacher first.`)
+          throw new Error(`Cannot assign as class teacher. The following classes already have an active class teacher: ${conflictClasses.join(', ')}. Please remove the existing class teacher first.`)
         }
       }
 
@@ -337,11 +363,22 @@ export default function EditTeacherPage() {
   }
 
   function toggleClassAssignment(classId: string) {
-    setAssignedClasses(prev =>
-      prev.includes(classId)
-        ? prev.filter(id => id !== classId)
-        : [...prev, classId]
-    )
+    const isAssigned = assignedClasses.includes(classId)
+    const model = teachingModels[classId]
+    
+    if (isAssigned) {
+      // Removing assignment
+      setAssignedClasses(prev => prev.filter(id => id !== classId))
+      // Also remove from classTeacherFor
+      setClassTeacherFor(prev => prev.filter(id => id !== classId))
+    } else {
+      // Adding assignment
+      setAssignedClasses(prev => [...prev, classId])
+      // If class teacher model, automatically mark as class teacher
+      if (model === 'class_teacher') {
+        setClassTeacherFor(prev => [...prev, classId])
+      }
+    }
   }
 
   function addSubjectAssignment() {
@@ -396,7 +433,7 @@ export default function EditTeacherPage() {
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Edit Teacher</h1>
                 <p className="text-xs md:text-sm text-gray-600">
-                  {teacher.staff_id} - {teacher.first_name} {teacher.last_name}
+                  {teacher.staff_id} - {teacher.first_name} {teacher.middle_name ? teacher.middle_name + ' ' : ''}{teacher.last_name}
                 </p>
               </div>
             </div>
@@ -424,6 +461,15 @@ export default function EditTeacherPage() {
                   required
                   value={formData.first_name}
                   onChange={(e) => setFormData({...formData, first_name: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                <input
+                  type="text"
+                  value={formData.middle_name}
+                  onChange={(e) => setFormData({...formData, middle_name: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                 />
               </div>
@@ -485,6 +531,7 @@ export default function EditTeacherPage() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="on_leave">On Leave</option>
+                  <option value="transferred">Transferred</option>
                 </select>
               </div>
             </div>

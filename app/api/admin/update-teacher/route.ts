@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
       profileId,
       requesterId,
       firstName,
+      middleName,
       lastName,
       phone,
       specialization,
@@ -51,6 +52,7 @@ export async function POST(request: NextRequest) {
       .from('teachers')
       .update({
         first_name: firstName,
+        middle_name: middleName || null,
         last_name: lastName,
         phone: phone,
         specialization: specialization,
@@ -63,12 +65,16 @@ export async function POST(request: NextRequest) {
     if (teacherError) throw teacherError
 
     // Update profile
+    const fullName = middleName 
+      ? `${firstName} ${middleName} ${lastName}`
+      : `${firstName} ${lastName}`
+
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .update({
         username: username,
         email: email,
-        full_name: `${firstName} ${lastName}`,
+        full_name: fullName,
       })
       .eq('id', profileId)
 

@@ -447,7 +447,7 @@ export default function TeacherDashboard() {
         <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white rounded-lg p-8 mb-8 shadow-lg">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">
-              Welcome, {profile?.full_name || 'Teacher'}!
+              Welcome, {teacher?.first_name} {teacher?.middle_name ? `${teacher.middle_name} ` : ''}{teacher?.last_name}!
             </h2>
             <p className="text-blue-100 text-sm md:text-base">
               Teacher ID: {teacher?.teacher_id} | {teacher?.specialization || 'General Education'}
