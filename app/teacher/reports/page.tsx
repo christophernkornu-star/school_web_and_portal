@@ -219,9 +219,9 @@ export default function ReportsPage() {
     setSelectedStudentId(studentId)
     
     try {
-      // Open the student's report card page in a new window
+      // Open the student's report card page
       const reportCardUrl = `/teacher/reports/student/${studentId}?term=${selectedTerm}`
-      window.open(reportCardUrl, '_blank')
+      router.push(reportCardUrl)
     } catch (error) {
       console.error('Error generating report card:', error)
       alert('Failed to generate report card')
@@ -261,7 +261,7 @@ export default function ReportsPage() {
     try {
       // Open a single window with all report cards for printing
       const reportUrl = `/teacher/reports/bulk?students=${selectedStudents.join(',')}&term=${selectedTerm}`
-      window.open(reportUrl, '_blank')
+      router.push(reportUrl)
     } catch (error) {
       console.error('Error generating bulk report cards:', error)
       alert('Failed to generate report cards')

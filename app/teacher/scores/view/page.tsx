@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Edit2, Save, X, Filter, Download, Eye, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Edit2, Save, X, Filter, Download, Eye, AlertCircle, Trash2 } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -41,6 +41,7 @@ export default function ViewScoresPage() {
   })
   const [saving, setSaving] = useState(false)
   const [filterText, setFilterText] = useState('')
+  const [canDelete, setCanDelete] = useState(false)
 
   useEffect(() => {
     loadInitialData()
@@ -66,6 +67,16 @@ export default function ViewScoresPage() {
         return
       }
       setTeacher(teacherData)
+
+      // Check delete permission
+      const { data: settingsData } = await supabase
+        .from('security_settings')
+        .select('allow_teacher_delete_scores')
+        .maybeSingle()
+      
+      if (settingsData) {
+        setCanDelete(settingsData.allow_teacher_delete_scores)
+      }
 
       const { data: assignmentsData, error: assignmentsError } = await getTeacherAssignments(teacherData.id) as { data: any[] | null, error: any }
       
@@ -295,6 +306,24 @@ export default function ViewScoresPage() {
       alert('Failed to save score')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDelete = async (scoreId: string) => {
+    if (!confirm('Are you sure you want to delete this score? This action cannot be undone.')) return
+
+    try {
+      const { error } = await supabase
+        .from('scores')
+        .delete()
+        .eq('id', scoreId)
+
+      if (error) throw error
+
+      setScores(prev => prev.filter(s => s.id !== scoreId))
+    } catch (error) {
+      console.error('Error deleting score:', error)
+      alert('Failed to delete score')
     }
   }
 
@@ -647,13 +676,24 @@ export default function ViewScoresPage() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <button
-                              onClick={() => startEdit(score)}
-                              className="p-1 text-blue-600 hover:text-blue-800"
-                              title="Edit"
-                            >
-                              <Edit2 className="w-5 h-5" />
-                            </button>
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => startEdit(score)}
+                                className="p-1 text-blue-600 hover:text-blue-800"
+                                title="Edit"
+                              >
+                                <Edit2 className="w-5 h-5" />
+                              </button>
+                              {canDelete && (
+                                <button
+                                  onClick={() => handleDelete(score.id)}
+                                  className="p-1 text-red-600 hover:text-red-800"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </>
                       )}

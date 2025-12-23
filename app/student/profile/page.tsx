@@ -38,6 +38,7 @@ export default function ProfilePage() {
   const [changingPassword, setChangingPassword] = useState(false)
   const [profile, setProfile] = useState<StudentProfile | null>(null)
   const [editMode, setEditMode] = useState(false)
+  const [canEditProfile, setCanEditProfile] = useState(false)
   
   // Editable fields
   const [phone, setPhone] = useState('')
@@ -88,6 +89,17 @@ export default function ProfilePage() {
         `)
         .eq('profile_id', user.id)
         .maybeSingle()
+
+      // Check system settings for profile editing permission
+      const { data: settingsData } = await supabase
+        .from('security_settings')
+        .select('allow_student_profile_edit')
+        .maybeSingle()
+      
+      if (settingsData) {
+        setCanEditProfile(settingsData.allow_student_profile_edit)
+      }
+
       const student = studentResult.data as any
       const error = studentResult.error
 
@@ -347,7 +359,7 @@ export default function ProfilePage() {
           <div className="p-4 md:p-8 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base md:text-lg font-semibold text-gray-800">Contact Information</h3>
-              {!editMode && (
+              {!editMode && canEditProfile && (
                 <button
                   onClick={() => setEditMode(true)
                   }
