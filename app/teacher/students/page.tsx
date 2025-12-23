@@ -19,18 +19,26 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
   onSelect: () => void
 }) {
   const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchStartY, setTouchStartY] = useState<number | null>(null)
   const [touchEnd, setTouchEnd] = useState<number | null>(null)
   const [offset, setOffset] = useState(0)
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
   const [isLongPress, setIsLongPress] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
 
   // Minimum swipe distance
   const minSwipeDistance = 50
+  const dragThreshold = 10
 
   const onTouchStart = (e: React.TouchEvent) => {
+    // Ignore touches on links
+    if ((e.target as HTMLElement).closest('a')) return
+
     setTouchEnd(null)
     setTouchStart(e.targetTouches[0].clientX)
+    setTouchStartY(e.targetTouches[0].clientY)
     setIsLongPress(false)
+    setIsDragging(false)
     
     // Start long press timer
     const timer = setTimeout(() => {
@@ -51,24 +59,47 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
   }
 
   const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX)
-    
-    // Cancel long press if moved
-    if (longPressTimer) {
-      clearTimeout(longPressTimer)
-      setLongPressTimer(null)
+    if (touchStart === null || touchStartY === null) return
+
+    const currentX = e.targetTouches[0].clientX
+    const currentY = e.targetTouches[0].clientY
+    const deltaX = currentX - touchStart
+    const deltaY = currentY - touchStartY
+
+    // If vertical scroll is dominant, ignore horizontal swipe
+    if (Math.abs(deltaY) > Math.abs(deltaX)) {
+        return
     }
 
-    if (touchStart !== null && !selectionMode) {
-      const currentOffset = e.targetTouches[0].clientX - touchStart
+    setTouchEnd(currentX)
+    
+    // Cancel long press if moved beyond threshold
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        if (longPressTimer) {
+            clearTimeout(longPressTimer)
+            setLongPressTimer(null)
+        }
+    }
+
+    if (!selectionMode && canManage) {
+      // Dead zone check
+      if (Math.abs(deltaX) < dragThreshold) return
+
+      setIsDragging(true)
+
       // Limit drag visual feedback
-      if (currentOffset < -120) setOffset(-120) // Limit left swipe
-      else if (currentOffset > 120) setOffset(120) // Limit right swipe
-      else setOffset(currentOffset)
+      if (deltaX < -120) setOffset(-120) // Limit left swipe
+      else if (deltaX > 120) setOffset(120) // Limit right swipe
+      else setOffset(deltaX)
     }
   }
 
-  const onTouchEnd = () => {
+  const onTouchEnd = (e: React.TouchEvent) => {
+    // Ignore touches on links
+    if ((e.target as HTMLElement).closest('a')) return
+
+    setIsDragging(false)
+
     if (longPressTimer) {
       clearTimeout(longPressTimer)
       setLongPressTimer(null)
@@ -77,11 +108,25 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
     if (isLongPress) {
         setIsLongPress(false)
         setTouchStart(null)
+        setTouchStartY(null)
         return
     }
 
-    if (!touchStart || !touchEnd) {
-        // Tap without move
+    // If we don't have a start point, we can't calculate distance
+    if (touchStart === null || touchStartY === null) {
+        setTouchStart(null)
+        setTouchStartY(null)
+        setTouchEnd(null)
+        return
+    }
+
+    const currentX = e.changedTouches[0].clientX
+    const currentY = e.changedTouches[0].clientY
+    const deltaX = Math.abs(currentX - touchStart)
+    const deltaY = Math.abs(currentY - touchStartY)
+
+    // Check if it was a tap (minimal movement)
+    if (deltaX < dragThreshold && deltaY < dragThreshold) {
         if (offset === 0 && canManage) {
             if (selectionMode) {
                 onSelect()
@@ -90,32 +135,28 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
             }
         }
         else setOffset(0) // Close if open
-        return
+    } else {
+        // It was a move (scroll or swipe)
+        if (!selectionMode && canManage) {
+             // Only consider it a swipe if horizontal movement is dominant and significant
+             if (deltaX > deltaY && deltaX > minSwipeDistance) {
+                 const signedDistance = touchStart - currentX
+                 if (signedDistance > minSwipeDistance) {
+                     setOffset(-100) // Left swipe -> Delete
+                 } else if (signedDistance < -minSwipeDistance) {
+                     setOffset(100) // Right swipe -> Reset
+                 } else {
+                     setOffset(0)
+                 }
+             } else {
+                 // Vertical scroll or insignificant swipe -> reset
+                 setOffset(0)
+             }
+        }
     }
     
-    if (selectionMode) return
-
-    const distance = touchStart - touchEnd
-    const isLeftSwipe = distance > minSwipeDistance
-    const isRightSwipe = distance < -minSwipeDistance
-
-    if (isLeftSwipe && canManage) {
-      setOffset(-100) // Reveal Delete (Right side)
-    } else if (isRightSwipe && canManage) {
-      setOffset(100) // Reveal Reset (Left side)
-    } else {
-      // Snap back or treat as click if movement was tiny
-      if (Math.abs(touchStart - touchEnd) < 10 && offset === 0 && canManage) {
-          if (selectionMode) {
-              onSelect()
-          } else {
-              onEdit()
-          }
-      } else {
-          setOffset(0)
-      }
-    }
     setTouchStart(null)
+    setTouchStartY(null)
     setTouchEnd(null)
   }
 
@@ -161,7 +202,7 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
 
       {/* Foreground Card */}
       <div 
-        className={`bg-white p-4 md:p-6 relative z-20 transition-transform duration-300 ease-out h-full ${canManage ? 'cursor-pointer hover:bg-gray-50' : ''} ${selected ? 'bg-green-50' : ''}`}
+        className={`bg-white p-4 md:p-6 relative z-20 h-full ${canManage ? 'cursor-pointer hover:bg-gray-50' : ''} ${selected ? 'bg-green-50' : ''} ${isDragging ? 'transition-none' : 'transition-transform duration-300 ease-out'}`}
         style={{ transform: `translateX(${offset}px)` }}
         onTouchStart={canManage ? onTouchStart : undefined}
         onTouchMove={canManage ? onTouchMove : undefined}
