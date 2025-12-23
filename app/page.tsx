@@ -315,22 +315,22 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="methodist-gradient text-white py-20">
+      <section className="methodist-gradient text-white py-12 md:py-20">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-5xl font-bold mb-4">
+          <h2 className="text-3xl md:text-5xl font-bold mb-4 leading-tight">
             Discipline with Hardwork
           </h2>
-          <p className="text-xl mb-4 text-gray-200">
+          <p className="text-lg md:text-xl mb-4 text-gray-200">
             Nurturing Young Minds for a Bright Future
           </p>
-          <p className="text-lg mb-8 text-gray-300">
+          <p className="text-base md:text-lg mb-8 text-gray-300 max-w-2xl mx-auto">
             Providing relevant, quality, and accessible education in the heart of Biriwa, Central Region, Ghana
           </p>
-          <div className="flex justify-center space-x-4">
-            <Link href="/admission" className="bg-ghana-gold text-methodist-blue font-bold py-3 px-8 rounded-lg hover:bg-yellow-300 transition-colors">
+          <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-4">
+            <Link href="/admission" className="bg-ghana-gold text-methodist-blue font-bold py-3 px-8 rounded-lg hover:bg-yellow-300 transition-colors w-full md:w-auto">
               Apply for Admission
             </Link>
-            <Link href="/about" className="bg-white text-methodist-blue font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors">
+            <Link href="/about" className="bg-white text-methodist-blue font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors w-full md:w-auto">
               Learn More
             </Link>
           </div>
@@ -535,43 +535,43 @@ export default function HomePage() {
             </p>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
             {/* Years of Operation */}
-            <div className="bg-gradient-to-br from-methodist-blue to-blue-800 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-methodist-blue to-blue-800 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform flex flex-col justify-center h-full">
               <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{yearsOfOperation}+</div>
               <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Years of Excellence</div>
             </div>
 
             {/* Student Count */}
-            <div className="bg-gradient-to-br from-ghana-green to-green-700 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-ghana-green to-green-700 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform flex flex-col justify-center h-full">
               <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{studentCount}</div>
               <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Active Students</div>
             </div>
 
             {/* Teacher Count */}
-            <div className="bg-gradient-to-br from-methodist-gold to-yellow-600 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-methodist-gold to-yellow-600 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform flex flex-col justify-center h-full">
               <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{teacherCount}</div>
               <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Qualified Teachers</div>
             </div>
 
             {/* Pass Rate */}
-            <div className="bg-gradient-to-br from-ghana-red to-red-700 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform">
+            <div className="bg-gradient-to-br from-ghana-red to-red-700 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform flex flex-col justify-center h-full">
               <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{passRate}%</div>
               <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Pass Rate</div>
             </div>
           </div>
 
           {/* Additional Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto mt-6 md:mt-8">
-            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto mt-6 md:mt-8">
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors flex flex-col justify-center h-full">
               <div className="text-2xl md:text-3xl font-bold text-methodist-blue mb-1">{statsSettings.teacherStudentRatio}</div>
               <div className="text-xs md:text-sm text-gray-600">Teacher-Student Ratio</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors flex flex-col justify-center h-full">
               <div className="text-2xl md:text-3xl font-bold text-methodist-blue mb-1">{statsSettings.beceParticipation}</div>
               <div className="text-xs md:text-sm text-gray-600">BECE Participation</div>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors">
+            <div className="bg-gray-50 rounded-lg p-4 md:p-6 text-center border-2 border-gray-200 hover:border-methodist-blue transition-colors flex flex-col justify-center h-full sm:col-span-2 lg:col-span-1">
               <div className="text-2xl md:text-3xl font-bold text-methodist-blue mb-1">{statsSettings.gradeLevels}</div>
               <div className="text-xs md:text-sm text-gray-600">Grade Levels (KG - Basic 9)</div>
             </div>
@@ -706,11 +706,11 @@ export default function HomePage() {
               <h3 className="text-3xl font-bold mb-4 text-methodist-blue">
                 About Our School
               </h3>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 mb-4 text-justify">
                 Biriwa Methodist 'C' Basic School is one of the leading basic educational institutions in the Central Region of Ghana,
                 committed to providing quality education from KG 1 through to Basic 9.
               </p>
-              <p className="text-gray-700 mb-4">
+              <p className="text-gray-700 mb-4 text-justify">
                 Guided by our motto <span className="font-bold text-methodist-blue">"Discipline with Hardwork"</span>, 
                 we combine academic excellence with moral education, preparing students for success in their
                 future academic pursuits and as responsible citizens of Ghana.
@@ -843,34 +843,34 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="methodist-gradient text-white py-12">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center md:text-left">
-            <div>
-              <h5 className="font-bold text-lg mb-4">Contact Us</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 text-center lg:text-left">
+            <div className="flex flex-col items-center lg:items-start">
+              <h5 className="font-bold text-lg mb-4 border-b-2 border-ghana-gold pb-2 inline-block lg:block">Contact Us</h5>
               <p className="text-gray-300 text-sm mb-2">Biriwa, Central Region</p>
               <p className="text-gray-300 text-sm mb-2">Ghana</p>
               <p className="text-gray-300 text-sm mb-2">Phone: +233 24 393 0752</p>
               <p className="text-gray-300 text-sm">Email: info@biriwamethodist.edu.gh</p>
             </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4">Quick Links</h5>
+            <div className="flex flex-col items-center lg:items-start">
+              <h5 className="font-bold text-lg mb-4 border-b-2 border-ghana-gold pb-2 inline-block lg:block">Quick Links</h5>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/about" className="text-gray-300 hover:text-ghana-gold">About Us</Link></li>
-                <li><Link href="/admission" className="text-gray-300 hover:text-ghana-gold">Admissions</Link></li>
-                <li><Link href="/events" className="text-gray-300 hover:text-ghana-gold">Events</Link></li>
-                <li><Link href="/gallery" className="text-gray-300 hover:text-ghana-gold">Gallery</Link></li>
+                <li><Link href="/about" className="text-gray-300 hover:text-ghana-gold transition-colors">About Us</Link></li>
+                <li><Link href="/admission" className="text-gray-300 hover:text-ghana-gold transition-colors">Admissions</Link></li>
+                <li><Link href="/events" className="text-gray-300 hover:text-ghana-gold transition-colors">Events</Link></li>
+                <li><Link href="/gallery" className="text-gray-300 hover:text-ghana-gold transition-colors">Gallery</Link></li>
               </ul>
             </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4">Portals</h5>
+            <div className="flex flex-col items-center lg:items-start">
+              <h5 className="font-bold text-lg mb-4 border-b-2 border-ghana-gold pb-2 inline-block lg:block">Portals</h5>
               <ul className="space-y-2 text-sm">
-                <li><Link href="/login?portal=student" className="text-gray-300 hover:text-ghana-gold">Student Portal</Link></li>
-                <li><Link href="/login?portal=teacher" className="text-gray-300 hover:text-ghana-gold">Teacher Portal</Link></li>
+                <li><Link href="/login?portal=student" className="text-gray-300 hover:text-ghana-gold transition-colors">Student Portal</Link></li>
+                <li><Link href="/login?portal=teacher" className="text-gray-300 hover:text-ghana-gold transition-colors">Teacher Portal</Link></li>
                {/* <li><Link href="/login?portal=admin" className="text-gray-300 hover:text-ghana-gold">Admin Portal</Link></li> */}
               </ul>
             </div>
-            <div>
-              <h5 className="font-bold text-lg mb-4">Connect With Us</h5>
-              <div className="flex justify-center md:justify-start space-x-4 mb-4">
+            <div className="flex flex-col items-center lg:items-start">
+              <h5 className="font-bold text-lg mb-4 border-b-2 border-ghana-gold pb-2 inline-block lg:block">Connect With Us</h5>
+              <div className="flex justify-center lg:justify-start space-x-4 mb-4">
                 <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="text-gray-300 hover:text-ghana-gold transition-colors">
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

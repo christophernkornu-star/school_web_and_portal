@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -80,9 +81,9 @@ export default function LoginPage() {
         {/* Main Header */}
         <div className="bg-white shadow-lg border-b-4 border-methodist-gold">
           <nav className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-8">
               {/* Logo and School Name */}
-              <Link href="/" className="flex items-center space-x-5 group ml-8">
+              <Link href="/" className="flex items-center space-x-5 group">
               <div className="relative">
                 <div className="absolute inset-0 bg-methodist-gold rounded-full blur-md opacity-30"></div>
                 <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-full p-2.5 shadow-xl ring-4 ring-methodist-gold ring-opacity-20 group-hover:ring-opacity-40 transition-all">
@@ -96,19 +97,19 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="text-center space-y-1">
-                <h1 className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-methodist-blue to-blue-800 bg-clip-text text-transparent tracking-tight group-hover:from-blue-800 group-hover:to-methodist-blue transition-all">
-                  BIRIWA METHODIST 'C' BASIC SCHOOL
+                <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold bg-gradient-to-r from-methodist-blue to-blue-800 bg-clip-text text-transparent tracking-tight group-hover:from-blue-800 group-hover:to-methodist-blue transition-all">
+                  Biriwa Methodist 'C' Basic School
                 </h1>
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="h-0.5 w-8 bg-methodist-gold"></div>
-                  <p className="text-sm text-gray-600 font-semibold tracking-wide">School Management System</p>
-                  <div className="h-0.5 w-8 bg-methodist-gold"></div>
+                <div className="flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2">
+                  <div className="hidden md:block h-0.5 w-8 bg-methodist-gold"></div>
+                  <p className="text-xs md:text-sm text-gray-600 font-semibold tracking-wide uppercase">School Management System</p>
+                  <div className="hidden md:block h-0.5 w-8 bg-methodist-gold"></div>
                 </div>
               </div>
               </Link>
               
               {/* Navigation Menu */}
-              <div className="flex items-center space-x-6 mr-8">
+              <div className="flex items-center space-x-6">
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex items-center space-x-6">
                   <Link href="/" className="group relative text-gray-700 font-semibold transition-all duration-200 pb-1">
@@ -269,6 +270,20 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="h-4 w-4 text-methodist-blue focus:ring-methodist-blue border-gray-300 rounded cursor-pointer"
+                />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 cursor-pointer">
+                  Remember me
+                </label>
               </div>
             </div>
 

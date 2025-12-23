@@ -87,11 +87,14 @@ export default function StudentDashboard() {
 
   async function loadAnnouncements() {
     try {
+      const now = new Date().toISOString()
       // Get announcements - try with target_audience first, fallback to all published
+      // Also filter out expired announcements
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
         .eq('published', true)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
         .order('created_at', { ascending: false })
         .limit(5) as { data: any[] | null, error: any }
 
@@ -313,47 +316,62 @@ export default function StudentDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="ghana-flag-border bg-white shadow-md">
-        <nav className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-3">
-              <GraduationCap className="w-10 h-10 text-methodist-blue" />
-              <div>
-                <h1 className="text-xl font-bold text-methodist-blue">
-                  Biriwa Methodist 'C' Basic School
-                </h1>
-                <p className="text-xs text-gray-600">Student Portal</p>
-              </div>
-            </Link>
-            <button
-              onClick={handleLogout}
-              className="flex items-center space-x-2 text-gray-700 hover:text-red-600"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
+      <header className="sticky top-0 z-50 relative overflow-hidden">
+        {/* Ghana Flag Border */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-ghana-red via-ghana-gold to-ghana-green"></div>
+        
+        {/* Main Header */}
+        <div className="bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-yellow-700">
+          <nav className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/" className="flex items-center space-x-3">
+                <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-methodist-blue" />
+                <div>
+                  <h1 className="text-base md:text-xl font-bold text-methodist-blue">
+                    Biriwa Methodist 'C' Basic School
+                  </h1>
+                  <p className="text-[10px] md:text-xs text-methodist-blue font-semibold">Student Portal</p>
+                </div>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 bg-ghana-red text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-red-700 transition-colors shadow-md font-semibold text-xs md:text-sm"
+              >
+                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+                <span>Logout</span>
+              </button>
           </div>
         </nav>
-      </header>
+      </div>
+      
+      {/* Bottom Accent Line */}
+      <div className="h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"></div>
+    </header>
 
       {/* Main Content */}
       <main className="container mx-auto px-6 py-8">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-methodist-blue to-blue-700 text-white rounded-lg p-6 md:p-8 mb-8">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-br from-methodist-blue to-blue-900 text-white rounded-2xl p-6 md:p-10 mb-8 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-methodist-gold opacity-10 rounded-full blur-3xl"></div>
+          
+          <div className="relative z-10 flex items-center justify-between">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-2">
-                Welcome back, {student?.last_name && student?.first_name 
-                  ? `${student.last_name} ${student.first_name}` 
-                  : profile?.full_name || 'Student'}!
+              <h2 className="text-2xl md:text-4xl font-bold mb-2 tracking-tight">
+                Welcome back, {student ? `${student.first_name} ${student.last_name}` : 'Student'}!
               </h2>
-              <p className="text-blue-100 text-sm md:text-base">
-                <span className="font-semibold">Student ID:</span> {student?.student_id || 'Loading...'} | <span className="font-semibold">Class:</span> {student?.classes?.name || 'Loading...'}
+              <p className="text-blue-100 text-sm md:text-base font-medium opacity-90">
+                <span className="inline-block bg-blue-800/50 px-3 py-1 rounded-full text-xs md:text-sm backdrop-blur-sm border border-blue-700/50 mr-2">
+                  ID: {student?.student_id || '...'}
+                </span>
+                <span className="inline-block bg-blue-800/50 px-3 py-1 rounded-full text-xs md:text-sm backdrop-blur-sm border border-blue-700/50">
+                  Class: {student?.classes?.name || '...'}
+                </span>
               </p>
             </div>
             <div className="hidden md:block">
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center">
-                <User className="w-16 h-16 text-methodist-blue" />
+              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-inner">
+                <User className="w-10 h-10 text-white" />
               </div>
             </div>
           </div>
@@ -361,14 +379,14 @@ export default function StudentDashboard() {
 
         {/* Withheld Banner */}
         {student?.results_withheld && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg">
+          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg shadow-sm">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <FileText className="h-5 w-5 text-red-500" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800">Results Withheld</h3>
-                <div className="mt-2 text-sm text-red-700">
+                <h3 className="text-sm font-bold text-red-800">Results Withheld</h3>
+                <div className="mt-1 text-sm text-red-700">
                   <p>
                     Your results have been withheld by the administration. 
                     {student.withheld_reason ? ` Reason: ${student.withheld_reason}` : ' Please contact the school office for more information.'}
@@ -381,177 +399,184 @@ export default function StudentDashboard() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-4 md:p-6">
-            <div className="flex flex-col md:flex-row items-center md:justify-between gap-2">
-              <div className="text-center md:text-left">
-                <p className="text-gray-600 text-xs md:text-sm">Current Term</p>
-                <p className="text-lg md:text-2xl font-bold text-methodist-blue">{stats.currentTerm}</p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="bg-blue-50 p-2.5 rounded-lg group-hover:bg-blue-100 transition-colors">
+                <Calendar className="w-5 h-5 text-methodist-blue" />
               </div>
-              <Calendar className="w-8 h-8 md:w-10 md:h-10 text-blue-200" />
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Term</span>
+            </div>
+            <div>
+              <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.currentTerm}</p>
+              <p className="text-xs text-gray-500 mt-1">Current Academic Term</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 md:p-6">
-            <div className="flex flex-col md:flex-row items-center md:justify-between gap-2">
-              <div className="text-center md:text-left">
-                <p className="text-gray-600 text-xs md:text-sm">Attendance</p>
-                <p className="text-lg md:text-2xl font-bold text-green-600">
-                  {stats.attendance}
-                </p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="bg-green-50 p-2.5 rounded-lg group-hover:bg-green-100 transition-colors">
+                <BarChart3 className="w-5 h-5 text-ghana-green" />
               </div>
-              <BarChart3 className="w-8 h-8 md:w-10 md:h-10 text-green-200" />
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Attendance</span>
+            </div>
+            <div>
+              <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.attendance}</p>
+              <p className="text-xs text-gray-500 mt-1">Days Present / Total</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 md:p-6">
-            <div className="flex flex-col md:flex-row items-center md:justify-between gap-2">
-              <div className="text-center md:text-left">
-                <p className="text-gray-600 text-xs md:text-sm">Average Score</p>
-                <p className="text-lg md:text-2xl font-bold text-purple-600">
-                  {student?.results_withheld ? '---' : (stats.averageScore > 0 ? `${stats.averageScore}%` : 'No Data')}
-                </p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="bg-purple-50 p-2.5 rounded-lg group-hover:bg-purple-100 transition-colors">
+                <BookOpen className="w-5 h-5 text-purple-600" />
               </div>
-              <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-purple-200" />
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Avg. Score</span>
+            </div>
+            <div>
+              <p className="text-xl md:text-2xl font-bold text-gray-800">
+                {student?.results_withheld ? '---' : (stats.averageScore > 0 ? `${stats.averageScore}%` : 'No Data')}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Across all subjects</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4 md:p-6">
-            <div className="flex flex-col md:flex-row items-center md:justify-between gap-2">
-              <div className="text-center md:text-left">
-                <p className="text-gray-600 text-xs md:text-sm">Class Position</p>
-                <p className="text-lg md:text-2xl font-bold text-yellow-600">
-                  {student?.results_withheld ? '---' : stats.classPosition}
-                </p>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+            <div className="flex justify-between items-start mb-2">
+              <div className="bg-yellow-50 p-2.5 rounded-lg group-hover:bg-yellow-100 transition-colors">
+                <FileText className="w-5 h-5 text-yellow-600" />
               </div>
-              <FileText className="w-8 h-8 md:w-10 md:h-10 text-yellow-200" />
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Position</span>
+            </div>
+            <div>
+              <p className="text-xl md:text-2xl font-bold text-gray-800">
+                {student?.results_withheld ? '---' : stats.classPosition}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Class Ranking</p>
             </div>
           </div>
         </div>
 
         {/* Quick Actions */}
+        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+          <span className="w-1 h-6 bg-methodist-blue rounded-full mr-2"></span>
+          Quick Actions
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <Link href="/student/report-card" className="dashboard-card group hover:shadow-md transition-all duration-200">
-            <div className="flex items-center space-x-4 p-4 bg-white rounded-lg shadow border border-transparent hover:border-green-100">
-              <div className="bg-green-100 p-3 md:p-4 rounded-lg group-hover:bg-green-200 transition-colors">
-                <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-ghana-green" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base md:text-lg text-gray-800">Results</h3>
-                <p className="text-xs md:text-sm text-gray-600">Check your exam scores and grades</p>
-              </div>
+          <Link href="/student/report-card" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-green-200 transition-all duration-300 flex items-start space-x-4">
+            <div className="bg-green-50 p-3 rounded-xl group-hover:bg-green-100 transition-colors">
+              <BookOpen className="w-6 h-6 text-ghana-green" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 group-hover:text-ghana-green transition-colors">Results</h3>
+              <p className="text-sm text-gray-500 mt-1 leading-tight">Check your exam scores and grades</p>
             </div>
           </Link>
 
-          <Link href="/student/attendance" className="dashboard-card group hover:shadow-md transition-all duration-200">
-            <div className="flex items-center space-x-4 p-4 bg-white rounded-lg shadow border border-transparent hover:border-purple-100">
-              <div className="bg-purple-100 p-3 md:p-4 rounded-lg group-hover:bg-purple-200 transition-colors">
-                <Calendar className="w-6 h-6 md:w-8 md:h-8 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base md:text-lg text-gray-800">Attendance</h3>
-                <p className="text-xs md:text-sm text-gray-600">View attendance records</p>
-              </div>
+          <Link href="/student/attendance" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-purple-200 transition-all duration-300 flex items-start space-x-4">
+            <div className="bg-purple-50 p-3 rounded-xl group-hover:bg-purple-100 transition-colors">
+              <Calendar className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 group-hover:text-purple-600 transition-colors">Attendance</h3>
+              <p className="text-sm text-gray-500 mt-1 leading-tight">View attendance records</p>
             </div>
           </Link>
 
-          <Link href="/student/performance" className="dashboard-card group hover:shadow-md transition-all duration-200">
-            <div className="flex items-center space-x-4 p-4 bg-white rounded-lg shadow border border-transparent hover:border-yellow-100">
-              <div className="bg-yellow-100 p-3 md:p-4 rounded-lg group-hover:bg-yellow-200 transition-colors">
-                <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-yellow-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base md:text-lg text-gray-800">Performance Trends</h3>
-                <p className="text-xs md:text-sm text-gray-600">Track your academic progress</p>
-              </div>
+          <Link href="/student/performance" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-yellow-200 transition-all duration-300 flex items-start space-x-4">
+            <div className="bg-yellow-50 p-3 rounded-xl group-hover:bg-yellow-100 transition-colors">
+              <BarChart3 className="w-6 h-6 text-yellow-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 group-hover:text-yellow-600 transition-colors">Performance</h3>
+              <p className="text-sm text-gray-500 mt-1 leading-tight">Track your academic progress</p>
             </div>
           </Link>
 
           {allowCumulativeDownload ? (
-            <Link href="/student/cumulative" className="dashboard-card group hover:shadow-md transition-all duration-200">
-              <div className="flex items-center space-x-4 p-4 bg-white rounded-lg shadow border border-transparent hover:border-orange-100">
-                <div className="bg-orange-100 p-3 md:p-4 rounded-lg group-hover:bg-orange-200 transition-colors">
-                  <FileText className="w-6 h-6 md:w-8 md:h-8 text-orange-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base md:text-lg text-gray-800">Cumulative Record</h3>
-                  <p className="text-xs md:text-sm text-gray-600">View full academic history</p>
-                </div>
+            <Link href="/student/cumulative" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-orange-200 transition-all duration-300 flex items-start space-x-4">
+              <div className="bg-orange-50 p-3 rounded-xl group-hover:bg-orange-100 transition-colors">
+                <FileText className="w-6 h-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-800 group-hover:text-orange-600 transition-colors">Cumulative Record</h3>
+                <p className="text-sm text-gray-500 mt-1 leading-tight">View full academic history</p>
               </div>
             </Link>
           ) : (
-            <div className="dashboard-card opacity-60 cursor-not-allowed">
-              <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg shadow border border-transparent">
-                <div className="bg-gray-200 p-3 md:p-4 rounded-lg">
-                  <FileText className="w-6 h-6 md:w-8 md:h-8 text-gray-400" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base md:text-lg text-gray-500 flex items-center gap-2">
-                    Cumulative Record
-                    <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">Locked</span>
-                  </h3>
-                  <p className="text-xs md:text-sm text-gray-500">Available when released by admin</p>
-                </div>
+            <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 flex items-start space-x-4 opacity-75 cursor-not-allowed relative overflow-hidden">
+              <div className="bg-gray-200 p-3 rounded-xl">
+                <FileText className="w-6 h-6 text-gray-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-500 flex items-center gap-2">
+                  Cumulative Record
+                  <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full uppercase tracking-wide font-semibold">Locked</span>
+                </h3>
+                <p className="text-sm text-gray-500 mt-1 leading-tight">Available when released by admin</p>
               </div>
             </div>
           )}
 
-
-
-          <Link href="/student/profile" className="dashboard-card group hover:shadow-md transition-all duration-200">
-            <div className="flex items-center space-x-4 p-4 bg-white rounded-lg shadow border border-transparent hover:border-indigo-100">
-              <div className="bg-indigo-100 p-3 md:p-4 rounded-lg group-hover:bg-indigo-200 transition-colors">
-                <User className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base md:text-lg text-gray-800">My Profile</h3>
-                <p className="text-xs md:text-sm text-gray-600">Update your information</p>
-              </div>
+          <Link href="/student/profile" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex items-start space-x-4">
+            <div className="bg-indigo-50 p-3 rounded-xl group-hover:bg-indigo-100 transition-colors">
+              <User className="w-6 h-6 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">My Profile</h3>
+              <p className="text-sm text-gray-500 mt-1 leading-tight">Update your information</p>
             </div>
           </Link>
         </div>
 
         {/* Recent Announcements */}
-        <div className="mt-8 bg-white rounded-lg shadow p-4 md:p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Megaphone className="w-5 h-5 md:w-6 md:h-6 text-methodist-blue" />
-            <h3 className="text-lg md:text-xl font-bold text-gray-800">Recent Announcements</h3>
-          </div>
-          <div className="space-y-4">
+        <div className="mt-10">
+          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <span className="w-1 h-6 bg-methodist-gold rounded-full mr-2"></span>
+            Recent Announcements
+          </h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             {announcements.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Bell className="w-10 h-10 md:w-12 md:h-12 mx-auto mb-3 text-gray-300" />
-                <p className="text-sm md:text-base">No announcements at this time</p>
-                <p className="text-xs md:text-sm">Check back later for updates from your school</p>
+              <div className="text-center py-12 text-gray-500">
+                <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Bell className="w-8 h-8 text-gray-300" />
+                </div>
+                <p className="text-base font-medium text-gray-600">No announcements at this time</p>
+                <p className="text-sm text-gray-400 mt-1">Check back later for updates from your school</p>
               </div>
             ) : (
-              announcements.map((announcement) => (
-                <div 
-                  key={announcement.id} 
-                  className={`border-l-4 pl-4 py-3 rounded-r-lg ${
-                    announcement.priority === 'urgent' 
-                      ? 'border-red-500 bg-red-50' 
-                      : announcement.priority === 'high'
-                      ? 'border-orange-500 bg-orange-50'
-                      : announcement.category === 'academic'
-                      ? 'border-methodist-blue bg-blue-50'
-                      : 'border-ghana-green bg-green-50'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <h4 className="font-semibold text-gray-800">{announcement.title}</h4>
-                    {announcement.priority === 'urgent' && (
-                      <span className="text-xs bg-red-500 text-white px-2 py-1 rounded-full">Urgent</span>
-                    )}
-                    {announcement.priority === 'high' && (
-                      <span className="text-xs bg-orange-500 text-white px-2 py-1 rounded-full">Important</span>
-                    )}
+              <div className="divide-y divide-gray-100">
+                {announcements.map((announcement) => (
+                  <div 
+                    key={announcement.id} 
+                    className="p-5 hover:bg-gray-50 transition-colors duration-200"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {announcement.priority === 'urgent' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            Urgent
+                          </span>
+                        )}
+                        {announcement.priority === 'high' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+                            Important
+                          </span>
+                        )}
+                        {announcement.category === 'academic' && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            Academic
+                          </span>
+                        )}
+                        <h4 className="font-bold text-gray-800 text-base">{announcement.title}</h4>
+                      </div>
+                      <span className="text-xs text-gray-400 whitespace-nowrap ml-4">
+                        {formatTimeAgo(announcement.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 leading-relaxed">{announcement.content}</p>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1 line-clamp-2">{announcement.content}</p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    {formatTimeAgo(announcement.created_at)}
-                  </p>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </div>

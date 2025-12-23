@@ -131,7 +131,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -139,40 +139,40 @@ export default function AdminDashboard() {
                 <p className="text-2xl md:text-3xl font-bold text-blue-600">{stats.totalStudents}</p>
                 <p className="text-[10px] md:text-xs text-green-600 mt-1">Active</p>
               </div>
-              <Users className="w-12 h-12 text-blue-200" />
+              <Users className="w-10 h-10 md:w-12 md:h-12 text-blue-200" />
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Total Teachers</p>
-                <p className="text-3xl font-bold text-ghana-green">{stats.totalTeachers}</p>
-                <p className="text-xs text-green-600 mt-1">Active</p>
+                <p className="text-gray-600 text-xs md:text-sm">Total Teachers</p>
+                <p className="text-2xl md:text-3xl font-bold text-ghana-green">{stats.totalTeachers}</p>
+                <p className="text-[10px] md:text-xs text-green-600 mt-1">Active</p>
               </div>
-              <GraduationCap className="w-12 h-12 text-green-200" />
+              <GraduationCap className="w-10 h-10 md:w-12 md:h-12 text-green-200" />
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Total Classes</p>
-                <p className="text-3xl font-bold text-purple-600">{stats.totalClasses}</p>
-                <p className="text-xs text-gray-500 mt-1">KG & Basic (1-9)</p>
+                <p className="text-gray-600 text-xs md:text-sm">Total Classes</p>
+                <p className="text-2xl md:text-3xl font-bold text-purple-600">{stats.totalClasses}</p>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-1">KG & Basic (1-9)</p>
               </div>
-              <Building2 className="w-12 h-12 text-purple-200" />
+              <Building2 className="w-10 h-10 md:w-12 md:h-12 text-purple-200" />
             </div>
           </div>
 
           <Link href="/admin/admissions" className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Pending Admissions</p>
-                <p className="text-3xl font-bold text-orange-600">{stats.pendingAdmissions}</p>
-                <p className="text-xs text-orange-600 mt-1 font-medium">Click to review →</p>
+                <p className="text-gray-600 text-xs md:text-sm">Pending Admissions</p>
+                <p className="text-2xl md:text-3xl font-bold text-orange-600">{stats.pendingAdmissions}</p>
+                <p className="text-[10px] md:text-xs text-orange-600 mt-1 font-medium">Click to review →</p>
               </div>
-              <FileText className="w-12 h-12 text-orange-200" />
+              <FileText className="w-10 h-10 md:w-12 md:h-12 text-orange-200" />
             </div>
           </Link>
         </div>

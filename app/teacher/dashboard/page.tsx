@@ -541,89 +541,61 @@ export default function TeacherDashboard() {
           <BarChart3 className="w-6 h-6 mr-2 text-methodist-gold" />
           Quick Actions
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <Link href="/teacher/manage-scores" className="dashboard-card">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="bg-blue-100 p-2 md:p-4 rounded-lg">
-                <FileText className="w-5 h-5 md:w-8 md:h-8 text-blue-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs md:text-lg text-gray-800">Manage Scores</h3>
-                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">Assessments, Exams & Grades</p>
-              </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+          <Link href="/teacher/manage-scores" className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 group">
+            <div className="bg-blue-50 p-4 rounded-full mb-3 group-hover:bg-blue-100 transition-colors">
+              <FileText className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
             </div>
+            <h3 className="font-bold text-sm md:text-base text-gray-800 mb-1">Manage Scores</h3>
+            <p className="text-xs text-gray-500">Assessments & Grades</p>
           </Link>
 
-          <Link href="/teacher/students" className="dashboard-card">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="bg-green-100 p-2 md:p-4 rounded-lg">
-                <Users className="w-5 h-5 md:w-8 md:h-8 text-ghana-green" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs md:text-lg text-gray-800">My Students</h3>
-                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">View student information</p>
-              </div>
+          <Link href="/teacher/students" className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 group">
+            <div className="bg-green-50 p-4 rounded-full mb-3 group-hover:bg-green-100 transition-colors">
+              <Users className="w-6 h-6 md:w-8 md:h-8 text-ghana-green" />
             </div>
+            <h3 className="font-bold text-sm md:text-base text-gray-800 mb-1">My Students</h3>
+            <p className="text-xs text-gray-500">View student list</p>
           </Link>
 
-          <Link href="/teacher/performance" className="dashboard-card">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="bg-purple-100 p-2 md:p-4 rounded-lg">
-                <BarChart3 className="w-5 h-5 md:w-8 md:h-8 text-purple-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs md:text-lg text-gray-800">Performance Analytics</h3>
-                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">Track student progress</p>
-              </div>
+          <Link href="/teacher/performance" className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 group">
+            <div className="bg-purple-50 p-4 rounded-full mb-3 group-hover:bg-purple-100 transition-colors">
+              <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-purple-600" />
             </div>
+            <h3 className="font-bold text-sm md:text-base text-gray-800 mb-1">Analytics</h3>
+            <p className="text-xs text-gray-500">Track progress</p>
           </Link>
 
-          <Link href="/teacher/promotions" className="dashboard-card">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="bg-indigo-100 p-2 md:p-4 rounded-lg">
-                <TrendingUp className="w-5 h-5 md:w-8 md:h-8 text-indigo-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs md:text-lg text-gray-800">Student Promotions</h3>
-                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">End-of-year promotion decisions</p>
-              </div>
+          <Link href="/teacher/promotions" className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 group">
+            <div className="bg-indigo-50 p-4 rounded-full mb-3 group-hover:bg-indigo-100 transition-colors">
+              <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
             </div>
+            <h3 className="font-bold text-sm md:text-base text-gray-800 mb-1">Promotions</h3>
+            <p className="text-xs text-gray-500">End-of-year decisions</p>
           </Link>
 
-          <Link href="/teacher/attendance" className="dashboard-card">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="bg-yellow-100 p-2 md:p-4 rounded-lg">
-                <Calendar className="w-5 h-5 md:w-8 md:h-8 text-yellow-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs md:text-lg text-gray-800">Mark Attendance</h3>
-                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">Record student attendance</p>
-              </div>
+          <Link href="/teacher/attendance" className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 group">
+            <div className="bg-yellow-50 p-4 rounded-full mb-3 group-hover:bg-yellow-100 transition-colors">
+              <Calendar className="w-6 h-6 md:w-8 md:h-8 text-yellow-600" />
             </div>
+            <h3 className="font-bold text-sm md:text-base text-gray-800 mb-1">Attendance</h3>
+            <p className="text-xs text-gray-500">Mark daily register</p>
           </Link>
 
-          <Link href="/teacher/reports" className="dashboard-card">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="bg-indigo-100 p-2 md:p-4 rounded-lg">
-                <FileText className="w-5 h-5 md:w-8 md:h-8 text-indigo-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs md:text-lg text-gray-800">Generate Reports</h3>
-                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">Class performance reports</p>
-              </div>
+          <Link href="/teacher/reports" className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 group">
+            <div className="bg-orange-50 p-4 rounded-full mb-3 group-hover:bg-orange-100 transition-colors">
+              <Printer className="w-6 h-6 md:w-8 md:h-8 text-orange-600" />
             </div>
+            <h3 className="font-bold text-sm md:text-base text-gray-800 mb-1">Reports</h3>
+            <p className="text-xs text-gray-500">Generate reports</p>
           </Link>
 
-          <Link href="/teacher/fees" className="dashboard-card">
-            <div className="flex items-center space-x-2 md:space-x-4">
-              <div className="bg-green-100 p-2 md:p-4 rounded-lg">
-                <DollarSign className="w-5 h-5 md:w-8 md:h-8 text-green-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-xs md:text-lg text-gray-800">Fee Collection</h3>
-                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">Record student payments</p>
-              </div>
+          <Link href="/teacher/fees" className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 group">
+            <div className="bg-teal-50 p-4 rounded-full mb-3 group-hover:bg-teal-100 transition-colors">
+              <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-teal-600" />
             </div>
+            <h3 className="font-bold text-sm md:text-base text-gray-800 mb-1">Fees</h3>
+            <p className="text-xs text-gray-500">Collection & Records</p>
           </Link>
         </div>
 
