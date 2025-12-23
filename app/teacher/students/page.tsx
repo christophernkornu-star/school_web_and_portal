@@ -8,6 +8,234 @@ import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 
+function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, selected, selectionMode, onSelect }: { 
+  student: any, 
+  canManage: boolean, 
+  onEdit: () => void, 
+  onResetPassword: () => void, 
+  onDelete: () => void,
+  selected: boolean,
+  selectionMode: boolean,
+  onSelect: () => void
+}) {
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [touchEnd, setTouchEnd] = useState<number | null>(null)
+  const [offset, setOffset] = useState(0)
+  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
+  const [isLongPress, setIsLongPress] = useState(false)
+
+  // Minimum swipe distance
+  const minSwipeDistance = 50
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null)
+    setTouchStart(e.targetTouches[0].clientX)
+    setIsLongPress(false)
+    
+    // Start long press timer
+    const timer = setTimeout(() => {
+      if (canManage) {
+        // Try to vibrate if supported
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try {
+                navigator.vibrate(50);
+            } catch (e) {
+                // Ignore vibration errors
+            }
+        }
+        setIsLongPress(true)
+        onSelect()
+      }
+    }, 500)
+    setLongPressTimer(timer)
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX)
+    
+    // Cancel long press if moved
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+
+    if (touchStart !== null && !selectionMode) {
+      const currentOffset = e.targetTouches[0].clientX - touchStart
+      // Limit drag visual feedback
+      if (currentOffset < -120) setOffset(-120) // Limit left swipe
+      else if (currentOffset > 120) setOffset(120) // Limit right swipe
+      else setOffset(currentOffset)
+    }
+  }
+
+  const onTouchEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      setLongPressTimer(null)
+    }
+
+    if (isLongPress) {
+        setIsLongPress(false)
+        setTouchStart(null)
+        return
+    }
+
+    if (!touchStart || !touchEnd) {
+        // Tap without move
+        if (offset === 0 && canManage) {
+            if (selectionMode) {
+                onSelect()
+            } else {
+                onEdit()
+            }
+        }
+        else setOffset(0) // Close if open
+        return
+    }
+    
+    if (selectionMode) return
+
+    const distance = touchStart - touchEnd
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+
+    if (isLeftSwipe && canManage) {
+      setOffset(-100) // Reveal Delete (Right side)
+    } else if (isRightSwipe && canManage) {
+      setOffset(100) // Reveal Reset (Left side)
+    } else {
+      // Snap back or treat as click if movement was tiny
+      if (Math.abs(touchStart - touchEnd) < 10 && offset === 0 && canManage) {
+          if (selectionMode) {
+              onSelect()
+          } else {
+              onEdit()
+          }
+      } else {
+          setOffset(0)
+      }
+    }
+    setTouchStart(null)
+    setTouchEnd(null)
+  }
+
+  // For mouse users (desktop)
+  const onClick = (e: React.MouseEvent) => {
+      if (canManage) {
+          if (e.ctrlKey || e.metaKey || selectionMode) {
+              onSelect()
+          } else if (offset === 0) {
+              onEdit()
+          } else {
+              setOffset(0)
+          }
+      }
+  }
+
+  return (
+    <div className={`relative overflow-hidden rounded-lg shadow mb-4 md:mb-0 h-full select-none transition-all duration-200 ${selected ? 'ring-2 ring-ghana-green bg-green-50' : ''}`}>
+      {/* Background Actions */}
+      <div className="absolute inset-0 flex items-center justify-between">
+        {/* Left Action (Reset Password) - Revealed on Right Swipe */}
+        <div className={`flex items-center justify-start w-full h-full bg-yellow-100 absolute left-0 top-0 transition-opacity duration-300 ${offset > 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
+            <button 
+                onClick={(e) => { e.stopPropagation(); onResetPassword(); setOffset(0); }}
+                className="pl-6 pr-4 h-full flex items-center space-x-2 text-yellow-700 font-medium w-1/2"
+            >
+                <KeyRound className="w-5 h-5" />
+                <span>Reset</span>
+            </button>
+        </div>
+
+        {/* Right Action (Delete) - Revealed on Left Swipe */}
+        <div className={`flex items-center justify-end w-full h-full bg-red-100 absolute right-0 top-0 transition-opacity duration-300 ${offset < 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
+            <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(); setOffset(0); }}
+                className="pl-4 pr-6 h-full flex items-center justify-end space-x-2 text-red-700 font-medium w-1/2"
+            >
+                <span>Delete</span>
+                <Trash2 className="w-5 h-5" />
+            </button>
+        </div>
+      </div>
+
+      {/* Foreground Card */}
+      <div 
+        className={`bg-white p-4 md:p-6 relative z-20 transition-transform duration-300 ease-out h-full ${canManage ? 'cursor-pointer hover:bg-gray-50' : ''} ${selected ? 'bg-green-50' : ''}`}
+        style={{ transform: `translateX(${offset}px)` }}
+        onTouchStart={canManage ? onTouchStart : undefined}
+        onTouchMove={canManage ? onTouchMove : undefined}
+        onTouchEnd={canManage ? onTouchEnd : undefined}
+        onClick={onClick}
+      >
+        {/* Selection Checkbox (Visible in selection mode) */}
+        {selectionMode && (
+            <div className="absolute top-4 right-4 z-30">
+                {selected ? (
+                    <CheckSquare className="w-6 h-6 text-ghana-green" />
+                ) : (
+                    <Square className="w-6 h-6 text-gray-300" />
+                )}
+            </div>
+        )}
+
+        <div className="flex items-start justify-between mb-3">
+            <div className="bg-ghana-green bg-opacity-10 p-3 md:p-4 rounded-full flex-shrink-0">
+                <GraduationCap className="w-6 h-6 md:w-8 md:h-8 text-ghana-green" />
+            </div>
+            {/* Desktop Actions (Visible only on md+) */}
+            {canManage && !selectionMode && (
+                <div className="hidden md:flex space-x-1 md:space-x-2">
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onResetPassword(); }}
+                        className="p-1.5 md:p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                        title="Reset password"
+                    >
+                        <KeyRound className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+                        className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Delete student"
+                    >
+                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                    </button>
+                </div>
+            )}
+        </div>
+        <div>
+            <h3 className="font-bold text-base md:text-lg text-gray-800 truncate pr-8">
+                {student.last_name} {student.first_name} {student.middle_name || ''}
+            </h3>
+            <p className="text-xs md:text-sm text-gray-500">{student.student_id}</p>
+            <div className="mt-2 md:mt-3 space-y-1">
+                <p className="text-xs md:text-sm text-ghana-green font-medium">{student.classes?.name || 'No Class'}</p>
+                {student.guardian_name && (
+                <p className="text-xs text-gray-600 truncate">Guardian: {student.guardian_name}</p>
+                )}
+                {student.guardian_phone && (
+                <a 
+                    href={`tel:${student.guardian_phone}`}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center space-x-1 text-xs text-gray-500 hover:text-ghana-green transition-colors"
+                >
+                    <Phone className="w-3 h-3" />
+                    <span>{student.guardian_phone}</span>
+                </a>
+                )}
+                {student.guardian_email && (
+                <div className="flex items-center space-x-1 text-xs text-gray-500">
+                    <Mail className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate">{student.guardian_email}</span>
+                </div>
+                )}
+            </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function MyStudentsPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
@@ -27,6 +255,32 @@ export default function MyStudentsPage() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkDeleteModal, setBulkDeleteModal] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [selectionMode, setSelectionMode] = useState(false)
+  const [bulkResetPasswordModal, setBulkResetPasswordModal] = useState(false)
+  const [bulkResetting, setBulkResetting] = useState(false)
+
+  const toggleSelection = (studentId: string) => {
+    if (selectedStudents.includes(studentId)) {
+      const newSelected = selectedStudents.filter(id => id !== studentId)
+      setSelectedStudents(newSelected)
+      if (newSelected.length === 0) {
+        setSelectionMode(false)
+      }
+    } else {
+      setSelectedStudents([...selectedStudents, studentId])
+      setSelectionMode(true)
+    }
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedStudents.length === filteredStudents.length) {
+      setSelectedStudents([])
+      setSelectionMode(false)
+    } else {
+      setSelectedStudents(filteredStudents.map(s => s.id))
+      setSelectionMode(true)
+    }
+  }
 
   // Check if teacher can manage students (only class teachers can)
   const canManageStudentsInClass = (classId: string) => {
@@ -254,22 +508,6 @@ export default function MyStudentsPage() {
     }
   }
 
-  function toggleStudentSelection(studentId: string) {
-    setSelectedStudents(prev => 
-      prev.includes(studentId) 
-        ? prev.filter(id => id !== studentId)
-        : [...prev, studentId]
-    )
-  }
-
-  function toggleSelectAll() {
-    if (selectedStudents.length === filteredStudents.length) {
-      setSelectedStudents([])
-    } else {
-      setSelectedStudents(filteredStudents.map(s => s.id))
-    }
-  }
-
   async function handleBulkDelete() {
     if (selectedStudents.length === 0) return
 
@@ -293,38 +531,70 @@ export default function MyStudentsPage() {
     }
   }
 
+  async function handleBulkResetPassword() {
+    if (selectedStudents.length === 0) return
+
+    setBulkResetting(true)
+    try {
+      // Get current user's ID
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      const studentsToReset = students.filter(s => selectedStudents.includes(s.id))
+      
+      let successCount = 0
+      let failCount = 0
+
+      for (const student of studentsToReset) {
+        try {
+            const { username: newUsername, password: newPassword } = getResetCredentials(student)
+            
+            // Get the student's profile_id
+            const { data: studentData, error: studentError } = await supabase
+                .from('students')
+                .select('profile_id')
+                .eq('id', student.id)
+                .single()
+
+            if (studentError || !studentData?.profile_id) {
+                failCount++
+                continue
+            }
+
+            const response = await fetch('/api/admin/reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                userId: studentData.profile_id,
+                newPassword: newPassword,
+                newUsername: newUsername,
+                requesterId: user?.id
+                })
+            })
+
+            if (response.ok) successCount++
+            else failCount++
+        } catch (e) {
+            failCount++
+        }
+      }
+
+      alert(`Password reset complete.\nSuccessful: ${successCount}\nFailed: ${failCount}`)
+      setSelectedStudents([])
+      setSelectionMode(false)
+      setBulkResetPasswordModal(false)
+    } catch (err: any) {
+      alert('Failed to reset passwords: ' + err.message)
+    } finally {
+      setBulkResetting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading students...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center bg-white rounded-lg shadow-lg p-8">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <div className="space-y-3">
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full bg-ghana-green text-white px-6 py-3 rounded-lg hover:bg-green-700"
-            >
-              Reload Page
-            </button>
-            <Link
-              href="/teacher/dashboard"
-              className="block w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300"
-            >
-              Back to Dashboard
-            </Link>
-          </div>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-ghana-green mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading students...</p>
         </div>
       </div>
     )
@@ -332,8 +602,39 @@ export default function MyStudentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+      <header className="bg-white shadow sticky top-0 z-30">
         <div className="container mx-auto px-4 md:px-6 py-4">
+          {selectionMode ? (
+            <div className="flex items-center justify-between w-full">
+                <div className="flex items-center space-x-4">
+                    <button onClick={() => { setSelectionMode(false); setSelectedStudents([]); }} className="text-gray-500 hover:text-gray-700">
+                        <ArrowLeft className="w-6 h-6" />
+                    </button>
+                    <span className="font-bold text-blue-800 text-lg">{selectedStudents.length} Selected</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                    {/* Bulk Actions */}
+                    {selectedStudents.length > 0 && (
+                        <>
+                            <button 
+                                onClick={() => setBulkResetPasswordModal(true)}
+                                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+                                title="Reset Passwords"
+                            >
+                                <KeyRound className="w-5 h-5" />
+                            </button>
+                            <button 
+                                onClick={() => setBulkDeleteModal(true)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                title="Delete Selected"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                        </>
+                    )}
+                </div>
+            </div>
+          ) : (
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
               <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 flex-shrink-0">
@@ -356,6 +657,7 @@ export default function MyStudentsPage() {
               </Link>
             )}
           </div>
+          )}
         </div>
       </header>
 
@@ -425,34 +727,7 @@ export default function MyStudentsPage() {
               </div>
             </div>
 
-            {/* Bulk Actions Bar */}
-            {isClassTeacher && selectedStudents.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 md:p-4 mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Trash2 className="w-4 h-4 md:w-5 md:h-5 text-red-600" />
-                    <span className="text-xs md:text-sm font-medium text-gray-800">
-                      {selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''} selected
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => setSelectedStudents([])}
-                      className="px-3 py-1.5 text-xs md:text-sm text-gray-600 hover:text-gray-800"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => setBulkDeleteModal(true)}
-                      className="px-4 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs md:text-sm font-medium flex items-center space-x-2"
-                    >
-                      <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                      <span>Delete Selected</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Bulk Actions Bar - Removed as it's now in the header */}
 
             {/* Summary and View Toggle */}
             <div className="bg-white rounded-lg shadow p-3 md:p-4 mb-4 md:mb-6">
@@ -467,7 +742,7 @@ export default function MyStudentsPage() {
                   <div className="text-xs md:text-sm text-gray-600">
                     Total: <span className="font-semibold">{students.length}</span> student{students.length !== 1 ? 's' : ''}
                   </div>
-                  <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                  <div className="hidden md:flex border border-gray-300 rounded-lg overflow-hidden">
                     <button
                       onClick={() => setViewMode('grid')}
                       className={`px-2 md:px-3 py-1.5 flex items-center space-x-1 ${
@@ -495,67 +770,39 @@ export default function MyStudentsPage() {
               </div>
             </div>
 
+            {/* Select All Bar (Mobile) */}
+            {selectionMode && (
+                <div className="bg-white rounded-lg shadow p-3 mb-4 flex items-center space-x-3 md:hidden">
+                    <button 
+                        onClick={toggleSelectAll}
+                        className="flex items-center space-x-2 text-gray-800 font-medium w-full"
+                    >
+                        {selectedStudents.length === filteredStudents.length ? (
+                            <CheckSquare className="w-5 h-5 text-ghana-green" />
+                        ) : (
+                            <Square className="w-5 h-5 text-gray-400" />
+                        )}
+                        <span>Select All</span>
+                    </button>
+                </div>
+            )}
+
             {/* Students Grid/List View */}
             {filteredStudents.length > 0 ? (
               viewMode === 'grid' ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {filteredStudents.map((student) => (
-                    <div key={student.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-4 md:p-6">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="bg-ghana-green bg-opacity-10 p-3 md:p-4 rounded-full flex-shrink-0">
-                          <GraduationCap className="w-6 h-6 md:w-8 md:h-8 text-ghana-green" />
-                        </div>
-                        {canManageStudentsInClass(student.class_id) && (
-                          <div className="flex space-x-1 md:space-x-2">
-                            <Link
-                              href={`/teacher/students/edit/${student.id}`}
-                              className="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                              title="Edit student"
-                            >
-                              <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                            </Link>
-                            <button
-                              onClick={() => setResetPasswordModal({ show: true, student })}
-                              className="p-1.5 md:p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
-                              title="Reset password"
-                            >
-                              <KeyRound className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeleteModal({ show: true, student })}
-                              className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                              title="Delete student"
-                            >
-                              <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-base md:text-lg text-gray-800 truncate">
-                          {student.last_name} {student.first_name} {student.middle_name || ''}
-                        </h3>
-                        <p className="text-xs md:text-sm text-gray-500">{student.student_id}</p>
-                        <div className="mt-2 md:mt-3 space-y-1">
-                          <p className="text-xs md:text-sm text-ghana-green font-medium">{student.classes?.name || 'No Class'}</p>
-                          {student.guardian_name && (
-                            <p className="text-xs text-gray-600 truncate">Guardian: {student.guardian_name}</p>
-                          )}
-                          {student.guardian_phone && (
-                            <div className="flex items-center space-x-1 text-xs text-gray-500">
-                              <Phone className="w-3 h-3" />
-                              <span>{student.guardian_phone}</span>
-                            </div>
-                          )}
-                          {student.guardian_email && (
-                            <div className="flex items-center space-x-1 text-xs text-gray-500">
-                              <Mail className="w-3 h-3 flex-shrink-0" />
-                              <span className="truncate">{student.guardian_email}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                    <StudentCard
+                      key={student.id}
+                      student={student}
+                      canManage={canManageStudentsInClass(student.class_id)}
+                      onEdit={() => router.push(`/teacher/students/edit/${student.id}`)}
+                      onResetPassword={() => setResetPasswordModal({ show: true, student })}
+                      onDelete={() => setDeleteModal({ show: true, student })}
+                      selected={selectedStudents.includes(student.id)}
+                      selectionMode={selectionMode}
+                      onSelect={() => toggleSelection(student.id)}
+                    />
                   ))}
                 </div>
               ) : (
@@ -587,11 +834,11 @@ export default function MyStudentsPage() {
                         <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
                           Class
                         </th>
-                        <th className="hidden md:table-cell px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                          Guardian
+                        <th className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider">Guardian</div>
                         </th>
-                        <th className="hidden lg:table-cell px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                          Contact
+                        <th className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
+                          <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider">Contact</div>
                         </th>
                         <th className="px-3 md:px-6 py-2 md:py-3 text-right text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
                           Actions
@@ -604,7 +851,7 @@ export default function MyStudentsPage() {
                           {isClassTeacher && canManageStudentsInClass(student.class_id) && (
                             <td className="px-3 md:px-4 py-3 md:py-4">
                               <button
-                                onClick={() => toggleStudentSelection(student.id)}
+                                onClick={() => toggleSelection(student.id)}
                                 className="flex items-center justify-center"
                               >
                                 {selectedStudents.includes(student.id) ? (
@@ -747,6 +994,9 @@ export default function MyStudentsPage() {
                   Are you sure you want to reset the password for <span className="font-semibold">{resetPasswordModal.student?.last_name} {resetPasswordModal.student?.first_name}</span>?
                 </p>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                  <p className="text-xs md:text-sm text-blue-800 mb-1">
+                    <span className="font-semibold">New Username:</span> {getResetCredentials(resetPasswordModal.student).username}
+                  </p>
                   <p className="text-xs md:text-sm text-blue-800">
                     <span className="font-semibold">New Password:</span> {getResetCredentials(resetPasswordModal.student).password}
                   </p>
@@ -864,6 +1114,49 @@ export default function MyStudentsPage() {
                   <>
                     <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
                     <span>Delete {selectedStudents.length} Student{selectedStudents.length > 1 ? 's' : ''}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Reset Password Confirmation Modal */}
+      {bulkResetPasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 md:p-6">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="bg-yellow-100 p-2 md:p-3 rounded-full">
+                <KeyRound className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900">Reset Password for Selected Students</h3>
+            </div>
+            <p className="text-gray-600 mb-6 text-xs md:text-sm">
+              Are you sure you want to reset the passwords for <span className="font-semibold">{selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''}</span>? This action cannot be undone.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setBulkResetPasswordModal(false)}
+                disabled={bulkResetting}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs md:text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkResetPassword}
+                disabled={bulkResetting}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 flex items-center space-x-2 text-xs md:text-sm"
+              >
+                {bulkResetting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
+                    <span>Resetting...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="w-3 h-3 md:w-4 md:h-4" />
+                    <span>Reset Password</span>
                   </>
                 )}
               </button>

@@ -543,19 +543,13 @@ export default function TeacherDashboard() {
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
           <Link href="/teacher/manage-scores" className="dashboard-card">
-            <div className="flex flex-col space-y-3">
-              <div className="flex items-center space-x-2 md:space-x-4">
-                <div className="bg-blue-100 p-2 md:p-4 rounded-lg">
-                  <FileText className="w-5 h-5 md:w-8 md:h-8 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-xs md:text-lg text-gray-800">Manage Scores</h3>
-                  <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">Assessments, Exams & Grades</p>
-                </div>
+            <div className="flex items-center space-x-2 md:space-x-4">
+              <div className="bg-blue-100 p-2 md:p-4 rounded-lg">
+                <FileText className="w-5 h-5 md:w-8 md:h-8 text-blue-600" />
               </div>
-              <div className="flex items-center space-x-2 pl-2 pt-2 border-t border-gray-100">
-                <CheckCircle className="w-3 h-3 md:w-4 md:h-4 text-ghana-green" />
-                <span className="text-[10px] md:text-xs text-ghana-green font-medium">Unified Score Management</span>
+              <div>
+                <h3 className="font-bold text-xs md:text-lg text-gray-800">Manage Scores</h3>
+                <p className="text-[10px] md:text-sm text-gray-600 hidden md:block">Assessments, Exams & Grades</p>
               </div>
             </div>
           </Link>

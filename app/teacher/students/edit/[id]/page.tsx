@@ -29,6 +29,11 @@ export default function EditStudentPage() {
     guardian_phone: '',
     guardian_email: ''
   })
+  const [accountInfo, setAccountInfo] = useState({
+    username: '',
+    email: '',
+    student_id: ''
+  })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -55,7 +60,13 @@ export default function EditStudentPage() {
         // Load student data
         const { data: student, error: studentError } = (await supabase
           .from('students')
-          .select('*')
+          .select(`
+            *,
+            profiles:profile_id (
+              username,
+              email
+            )
+          `)
           .eq('id', studentId)
           .single()) as { data: any; error: any }
 
@@ -84,6 +95,20 @@ export default function EditStudentPage() {
           guardian_phone: student.guardian_phone || '',
           guardian_email: student.guardian_email || ''
         })
+
+        if (student.profiles) {
+          setAccountInfo({
+            username: student.profiles.username || '',
+            email: student.profiles.email || '',
+            student_id: student.student_id || ''
+          })
+        } else {
+          setAccountInfo({
+            username: '',
+            email: '',
+            student_id: student.student_id || ''
+          })
+        }
 
         setLoading(false)
       } catch (err: any) {
@@ -191,6 +216,46 @@ export default function EditStudentPage() {
       <main className="container mx-auto px-6 py-8">
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+            {/* Account Information */}
+            <div className="border-b pb-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">Account Information</h3>
+              <div className="grid md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Student ID
+                  </label>
+                  <input
+                    type="text"
+                    value={accountInfo.student_id}
+                    readOnly
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Username
+                  </label>
+                  <input
+                    type="text"
+                    value={accountInfo.username}
+                    readOnly
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Student Email
+                  </label>
+                  <input
+                    type="text"
+                    value={accountInfo.email || 'N/A'}
+                    readOnly
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -332,7 +397,7 @@ export default function EditStudentPage() {
                 )}
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Guardian Email
                 </label>
