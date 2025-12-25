@@ -8,6 +8,7 @@ export default function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(false)
 
   useEffect(() => {
     // Check if already in standalone mode
@@ -58,6 +59,19 @@ export default function PWAInstallPrompt() {
 
   if (isStandalone || !showPrompt) return null
 
+  if (isMinimized) {
+    return (
+      <button
+        onClick={() => setIsMinimized(false)}
+        className="fixed bottom-4 right-4 z-50 bg-methodist-blue text-white px-4 py-3 rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 flex items-center gap-2"
+        title="Install App"
+      >
+        <Download className="w-5 h-5" />
+        <span className="font-semibold text-sm">Install App</span>
+      </button>
+    )
+  }
+
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-10 fade-in duration-500">
       <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-4 relative overflow-hidden">
@@ -77,7 +91,7 @@ export default function PWAInstallPrompt() {
               </div>
             </div>
             <button 
-              onClick={() => setShowPrompt(false)}
+              onClick={() => setIsMinimized(true)}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-5 h-5" />
@@ -101,12 +115,20 @@ export default function PWAInstallPrompt() {
               </ol>
             </div>
           ) : (
-            <button
-              onClick={handleInstallClick}
-              className="w-full bg-methodist-blue text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-800 transition-colors shadow-md active:transform active:scale-95"
-            >
-              Install Now
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsMinimized(true)}
+                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm"
+              >
+                Later
+              </button>
+              <button
+                onClick={handleInstallClick}
+                className="flex-1 bg-methodist-blue text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-800 transition-colors shadow-md active:transform active:scale-95"
+              >
+                Install Now
+              </button>
+            </div>
           )}
         </div>
       </div>
