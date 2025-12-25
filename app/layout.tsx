@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   keywords: 'Biriwa Methodist, Ghana School, School Management System, Student Portal, Teacher Portal',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
+    icon: '/icon.png',
     apple: '/apple-touch-icon.png',
   },
 }
