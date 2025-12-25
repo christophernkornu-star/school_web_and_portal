@@ -8,12 +8,17 @@ export default function PWAInstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false)
   const [isIOS, setIsIOS] = useState(false)
   const [isStandalone, setIsStandalone] = useState(false)
-  const [isMinimized, setIsMinimized] = useState(false)
 
   useEffect(() => {
     // Check if already in standalone mode
     if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
       setIsStandalone(true)
+    }
+
+    // Check session storage
+    const hasSeenPrompt = sessionStorage.getItem('pwaPromptShown')
+    if (hasSeenPrompt) {
+      return // Don't show if already seen in this session
     }
 
     // Detect iOS
@@ -25,8 +30,8 @@ export default function PWAInstallPrompt() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault()
       setDeferredPrompt(e)
-      // Only show if not already installed
-      if (!window.matchMedia('(display-mode: standalone)').matches) {
+      // Only show if not already installed and not seen in session
+      if (!window.matchMedia('(display-mode: standalone)').matches && !sessionStorage.getItem('pwaPromptShown')) {
         setShowPrompt(true)
       }
     }
@@ -35,8 +40,6 @@ export default function PWAInstallPrompt() {
 
     // Show iOS prompt if not standalone
     if (isIosDevice && !window.matchMedia('(display-mode: standalone)').matches) {
-      // Check if user has dismissed it recently (optional, but user asked for "constantly")
-      // For "constantly", we just show it.
       setShowPrompt(true)
     }
 
@@ -44,6 +47,11 @@ export default function PWAInstallPrompt() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
   }, [])
+
+  const handleDismiss = () => {
+    setShowPrompt(false)
+    sessionStorage.setItem('pwaPromptShown', 'true')
+  }
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return
@@ -54,23 +62,11 @@ export default function PWAInstallPrompt() {
     if (outcome === 'accepted') {
       setDeferredPrompt(null)
       setShowPrompt(false)
+      sessionStorage.setItem('pwaPromptShown', 'true')
     }
   }
 
   if (isStandalone || !showPrompt) return null
-
-  if (isMinimized) {
-    return (
-      <button
-        onClick={() => setIsMinimized(false)}
-        className="fixed bottom-4 right-4 z-50 bg-methodist-blue text-white px-4 py-3 rounded-full shadow-lg hover:bg-blue-800 transition-all duration-300 animate-in fade-in slide-in-from-bottom-4 flex items-center gap-2"
-        title="Install App"
-      >
-        <Download className="w-5 h-5" />
-        <span className="font-semibold text-sm">Install App</span>
-      </button>
-    )
-  }
 
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-10 fade-in duration-500">
@@ -91,7 +87,7 @@ export default function PWAInstallPrompt() {
               </div>
             </div>
             <button 
-              onClick={() => setIsMinimized(true)}
+              onClick={handleDismiss}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
               <X className="w-5 h-5" />
@@ -113,20 +109,27 @@ export default function PWAInstallPrompt() {
                 </li>
                 <li>Scroll down and tap "Add to Home Screen"</li>
               </ol>
+              <button 
+                onClick={handleDismiss}
+                className="mt-3 w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-sm"
+              >
+                Close
+              </button>
             </div>
           ) : (
             <div className="flex gap-3">
               <button
-                onClick={() => setIsMinimized(true)}
+                onClick={handleDismiss}
                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors text-sm"
               >
                 Later
               </button>
               <button
                 onClick={handleInstallClick}
-                className="flex-1 bg-methodist-blue text-white py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-800 transition-colors shadow-md active:transform active:scale-95"
+                className="flex-1 px-4 py-2 bg-methodist-blue text-white rounded-lg font-semibold hover:bg-blue-800 transition-colors text-sm flex items-center justify-center gap-2"
               >
-                Install Now
+                <Download className="w-4 h-4" />
+                Install
               </button>
             </div>
           )}

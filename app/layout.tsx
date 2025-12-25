@@ -2,6 +2,7 @@ import './globals.css'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import InactivityHandler from '@/components/InactivityHandler'
+import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -32,6 +33,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <InactivityHandler />
+        <PWAInstallPrompt />
         {children}
       </body>
     </html>
