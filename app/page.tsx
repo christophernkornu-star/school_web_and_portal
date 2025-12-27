@@ -445,13 +445,13 @@ export default function HomePage() {
       {latestNews.length > 0 && (
         <section className="py-16 bg-gray-50">
           <div className="container mx-auto px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-3xl font-bold text-methodist-blue">Latest News</h3>
-              <Link href="/news" className="text-ghana-green hover:text-green-700 font-semibold">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 sm:mb-8 gap-4 sm:gap-0">
+              <h3 className="text-2xl md:text-3xl font-bold text-methodist-blue">Latest News</h3>
+              <Link href="/news" className="text-ghana-green hover:text-green-700 font-semibold text-sm md:text-base">
                 View All →
               </Link>
             </div>
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {latestNews.map((news) => (
                 <div 
                   key={news.id} 
@@ -464,7 +464,7 @@ export default function HomePage() {
                         src={news.featured_image}
                         alt={news.title}
                         fill
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-cover"
                       />
                     </div>
