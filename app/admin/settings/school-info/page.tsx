@@ -24,6 +24,7 @@ export default function SchoolInfoSettings() {
     principal_email: '',
     principal_phone: '',
     founded_year: '',
+    school_hours: '',
   })
 
   useEffect(() => {
@@ -53,6 +54,7 @@ export default function SchoolInfoSettings() {
           principal_email: data.principal_email || '',
           principal_phone: data.principal_phone || '',
           founded_year: data.founded_year?.toString() || '',
+          school_hours: data.school_hours || 'Monday - Friday: 7:30 AM - 3:00 PM',
         })
       }
 
@@ -197,6 +199,16 @@ export default function SchoolInfoSettings() {
                   placeholder="e.g., 1950"
                   min="1800"
                   max={new Date().getFullYear()}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">School Hours</label>
+                <input
+                  type="text"
+                  value={formData.school_hours}
+                  onChange={(e) => setFormData({...formData, school_hours: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                  placeholder="e.g., Monday - Friday: 7:30 AM - 3:00 PM"
                 />
               </div>
             </div>
