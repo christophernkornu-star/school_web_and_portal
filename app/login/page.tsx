@@ -88,7 +88,7 @@ export default function LoginPage() {
                 <div className="absolute inset-0 bg-methodist-gold rounded-full blur-md opacity-30"></div>
                 <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-full p-2.5 shadow-xl ring-4 ring-methodist-gold ring-opacity-20 group-hover:ring-opacity-40 transition-all">
                   <Image
-                    src="/icons/school crest.png"
+                    src="/school_crest.png"
                     alt="Biriwa Methodist 'C' Basic School"
                     width={80}
                     height={80}
@@ -190,7 +190,7 @@ export default function LoginPage() {
           <div className="text-center">
             <div className="inline-flex items-center justify-center mb-6 bg-white rounded-full p-3 shadow-xl border-4 border-methodist-gold">
               <Image
-                src="/icons/school crest.png"
+                src="/school_crest.png"
                 alt="Biriwa Methodist School Crest"
                 width={140}
                 height={140}

@@ -23,6 +23,7 @@ export default function HomePage() {
   const [passRate, setPassRate] = useState(0)
   const [yearsOfOperation, setYearsOfOperation] = useState(0)
   const [selectedNews, setSelectedNews] = useState<any>(null)
+  const [schoolHours, setSchoolHours] = useState('Monday - Friday: 7:30 AM - 3:00 PM')
   const [statsSettings, setStatsSettings] = useState({
     title: 'Our Impact in Numbers',
     subtitle: 'Building excellence in education for over six decades',
@@ -48,6 +49,16 @@ export default function HomePage() {
       .limit(3)
     
     if (news) setLatestNews(news)
+
+    // Fetch school settings
+    const { data: schoolSettings } = await supabase
+      .from('school_settings')
+      .select('school_hours')
+      .single()
+    
+    if (schoolSettings?.school_hours) {
+      setSchoolHours(schoolSettings.school_hours)
+    }
 
     // Fetch latest events
     const { data: events } = await supabase
@@ -201,7 +212,7 @@ export default function HomePage() {
                   <div className="absolute inset-0 bg-white rounded-full blur-md opacity-30"></div>
                   <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-full p-1.5 sm:p-2 lg:p-2.5 shadow-xl ring-2 sm:ring-4 ring-white ring-opacity-30">
                     <Image
-                      src="/icons/school crest.png"
+                      src="/school_crest.png"
                       alt="Biriwa Methodist School Crest"
                       width={50}
                       height={50}
@@ -887,8 +898,7 @@ export default function HomePage() {
                   </svg>
                 </a>
               </div>
-              <p className="text-gray-300 text-sm mb-2">Monday - Friday</p>
-              <p className="text-gray-300 text-sm">7:30 AM - 3:00 PM</p>
+              <p className="text-gray-300 text-sm whitespace-pre-line">{schoolHours}</p>
             </div>
           </div>
           <div className="border-t border-gray-600 mt-8 pt-6 text-center text-sm text-gray-300">

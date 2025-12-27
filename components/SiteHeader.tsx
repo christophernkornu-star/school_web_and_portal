@@ -24,7 +24,7 @@ export default function SiteHeader() {
                 <div className="absolute inset-0 bg-white rounded-full blur-md opacity-30"></div>
                 <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-full p-1.5 sm:p-2 lg:p-2.5 shadow-xl ring-2 sm:ring-4 ring-white ring-opacity-30">
                   <Image
-                    src="/icons/school crest.png"
+                    src="/school_crest.png"
                     alt="Biriwa Methodist School Crest"
                     width={50}
                     height={50}

@@ -32,8 +32,9 @@ export default function PWAInstallPrompt() {
       e.preventDefault()
       setDeferredPrompt(e)
       
-      // Only show if not already installed and not seen in session
-      if (!window.matchMedia('(display-mode: standalone)').matches && !sessionStorage.getItem('pwaPromptShown')) {
+      // Only show if not already installed
+      // Removed sessionStorage check for debugging
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
         setShowPrompt(true)
       }
     }
@@ -41,7 +42,7 @@ export default function PWAInstallPrompt() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
     // Show iOS prompt if not standalone and not seen
-    if (isIosDevice && !window.matchMedia('(display-mode: standalone)').matches && !hasSeenPrompt) {
+    if (isIosDevice && !window.matchMedia('(display-mode: standalone)').matches) {
       setShowPrompt(true)
     }
 
@@ -52,7 +53,7 @@ export default function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false)
-    sessionStorage.setItem('pwaPromptShown', 'true')
+    // sessionStorage.setItem('pwaPromptShown', 'true') // Disabled for debugging
   }
 
   const handleInstallClick = async () => {
@@ -64,7 +65,7 @@ export default function PWAInstallPrompt() {
     if (outcome === 'accepted') {
       setDeferredPrompt(null)
       setShowPrompt(false)
-      sessionStorage.setItem('pwaPromptShown', 'true')
+      // sessionStorage.setItem('pwaPromptShown', 'true') // Disabled for debugging
     }
   }
 
