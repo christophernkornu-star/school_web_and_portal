@@ -11,25 +11,27 @@ export default function PWAInstallPrompt() {
 
   useEffect(() => {
     // Check if already in standalone mode
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+    if (typeof window !== 'undefined' && (
+        window.matchMedia('(display-mode: standalone)').matches || 
+        (window.navigator as any).standalone
+      )) {
       setIsStandalone(true)
     }
 
     // Check session storage
-    const hasSeenPrompt = sessionStorage.getItem('pwaPromptShown')
-    if (hasSeenPrompt) {
-      return // Don't show if already seen in this session
-    }
-
+    const hasSeenPrompt = typeof window !== 'undefined' ? sessionStorage.getItem('pwaPromptShown') : null
+    
     // Detect iOS
-    const userAgent = window.navigator.userAgent.toLowerCase()
+    const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent.toLowerCase() : ''
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent)
     setIsIOS(isIosDevice)
 
     // Handle beforeinstallprompt for Android/Desktop
     const handleBeforeInstallPrompt = (e: Event) => {
+      console.log('PWA: beforeinstallprompt fired')
       e.preventDefault()
       setDeferredPrompt(e)
+      
       // Only show if not already installed and not seen in session
       if (!window.matchMedia('(display-mode: standalone)').matches && !sessionStorage.getItem('pwaPromptShown')) {
         setShowPrompt(true)
@@ -38,8 +40,8 @@ export default function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
-    // Show iOS prompt if not standalone
-    if (isIosDevice && !window.matchMedia('(display-mode: standalone)').matches) {
+    // Show iOS prompt if not standalone and not seen
+    if (isIosDevice && !window.matchMedia('(display-mode: standalone)').matches && !hasSeenPrompt) {
       setShowPrompt(true)
     }
 
