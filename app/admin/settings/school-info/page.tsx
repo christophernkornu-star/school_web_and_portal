@@ -54,7 +54,7 @@ export default function SchoolInfoSettings() {
           principal_email: data.principal_email || '',
           principal_phone: data.principal_phone || '',
           founded_year: data.founded_year?.toString() || '',
-          school_hours: data.school_hours || 'Monday - Friday: 7:30 AM - 3:00 PM',
+          school_hours: data.school_hours || 'Monday - Friday:\n7:30 AM - 3:00 PM',
         })
       }
 

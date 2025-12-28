@@ -23,7 +23,7 @@ export default function HomePage() {
   const [passRate, setPassRate] = useState(0)
   const [yearsOfOperation, setYearsOfOperation] = useState(0)
   const [selectedNews, setSelectedNews] = useState<any>(null)
-  const [schoolHours, setSchoolHours] = useState('Monday - Friday: 7:30 AM - 3:00 PM')
+  const [schoolHours, setSchoolHours] = useState('Monday - Friday:\n7:30 AM - 3:00 PM')
   const [statsSettings, setStatsSettings] = useState({
     title: 'Our Impact in Numbers',
     subtitle: 'Building excellence in education for over six decades',
