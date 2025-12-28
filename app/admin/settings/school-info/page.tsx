@@ -203,10 +203,10 @@ export default function SchoolInfoSettings() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">School Hours</label>
-                <input
-                  type="text"
+                <textarea
                   value={formData.school_hours}
                   onChange={(e) => setFormData({...formData, school_hours: e.target.value})}
+                  rows={3}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                   placeholder="e.g., Monday - Friday: 7:30 AM - 3:00 PM"
                 />
