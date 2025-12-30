@@ -60,7 +60,7 @@ export default function SiteHeader() {
                   <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-900 transition-all duration-300 ${pathname === '/about' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </Link>
                 <Link href="/events" className="group relative text-sm xl:text-base font-bold transition-all duration-200 pb-1 whitespace-nowrap drop-shadow-lg">
-                  <span className={`transition-colors ${pathname === '/events' ? 'text-blue-900' : 'text-white group-hover:text-blue-900'}`}>Academic</span>
+                  <span className={`transition-colors ${pathname === '/events' ? 'text-blue-900' : 'text-white group-hover:text-blue-900'}`}>Events</span>
                   <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-900 transition-all duration-300 ${pathname === '/events' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </Link>
                 <Link href="/admission" className="group relative text-sm xl:text-base font-bold transition-all duration-200 pb-1 whitespace-nowrap drop-shadow-lg">
@@ -118,7 +118,7 @@ export default function SiteHeader() {
             </Link>
             <Link href="/events" className={`block font-bold py-2 px-4 rounded-lg transition-all duration-200 ${pathname === '/events' ? 'bg-blue-900 text-white' : 'text-methodist-blue hover:bg-ghana-gold hover:text-white'}`}
               onClick={() => setMobileMenuOpen(false)}>
-              Academic
+              Events
             </Link>
             <Link href="/admission" className={`block font-bold py-2 px-4 rounded-lg transition-all duration-200 ${pathname === '/admission' ? 'bg-blue-900 text-white' : 'text-methodist-blue hover:bg-ghana-gold hover:text-white'}`}
               onClick={() => setMobileMenuOpen(false)}>
