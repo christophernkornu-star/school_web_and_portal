@@ -60,7 +60,7 @@ function ClassScoresContent() {
   
   // Grid view state
   const [activeTab, setActiveTab] = useState<'csv' | 'grid'>('grid')
-  const [gridScores, setGridScores] = useState<Record<string, Record<string, { current_score: number, add_score: string, exam_score: number, id?: string }>>>({})
+  const [gridScores, setGridScores] = useState<Record<string, Record<string, { current_score: number, add_score: string, exam_score: number, id?: string, assessments_count?: number, total_assessments?: number }>>>({})
   const [gridSaving, setGridSaving] = useState(false)
   const [gridLoading, setGridLoading] = useState(false)
   const [gridChanges, setGridChanges] = useState<Set<string>>(new Set())
@@ -248,20 +248,66 @@ function ClassScoresContent() {
 
       if (error) throw error
 
-      const scoresMap: Record<string, Record<string, { current_score: number, add_score: string, exam_score: number, id?: string }>> = {}
+      const scoresMap: Record<string, Record<string, { current_score: number, add_score: string, exam_score: number, id?: string, assessments_count?: number, total_assessments?: number }>> = {}
       
       // Initialize
       students.forEach(student => {
         scoresMap[student.id] = {}
         selectedSubjects.forEach(subjectId => {
-            scoresMap[student.id][subjectId] = { current_score: 0, add_score: '', exam_score: 0 }
+            scoresMap[student.id][subjectId] = { current_score: 0, add_score: '', exam_score: 0, assessments_count: 0, total_assessments: 0 }
         })
       })
+
+      // Fetch assessment info for each subject
+      for (const subjectId of selectedSubjects) {
+          // Get class_subject_id
+          const { data: classSubject } = await supabase
+            .from('class_subjects')
+            .select('id')
+            .eq('class_id', selectedClass)
+            .eq('subject_id', subjectId)
+            .maybeSingle()
+          
+          if (classSubject) {
+              // Get assessments
+              const { data: assessments } = await supabase
+                .from('assessments')
+                .select('id')
+                .eq('class_subject_id', classSubject.id)
+                .eq('term_id', selectedTerm)
+              
+              const assessmentIds = assessments?.map(a => a.id) || []
+              const totalAssessments = assessmentIds.length
+
+              if (totalAssessments > 0) {
+                  // Get student participation counts
+                  const { data: participation } = await supabase
+                    .from('student_scores')
+                    .select('student_id')
+                    .in('assessment_id', assessmentIds)
+                  
+                  // Count per student
+                  const studentCounts: Record<string, number> = {}
+                  participation?.forEach((p: any) => {
+                      studentCounts[p.student_id] = (studentCounts[p.student_id] || 0) + 1
+                  })
+
+                  // Update scoresMap
+                  students.forEach(student => {
+                      if (scoresMap[student.id][subjectId]) {
+                          scoresMap[student.id][subjectId].total_assessments = totalAssessments
+                          scoresMap[student.id][subjectId].assessments_count = studentCounts[student.id] || 0
+                      }
+                  })
+              }
+          }
+      }
 
       // Fill
       data?.forEach((score: any) => {
         if (scoresMap[score.student_id]) {
             scoresMap[score.student_id][score.subject_id] = {
+                ...scoresMap[score.student_id][score.subject_id],
                 current_score: score.class_score || 0,
                 add_score: '',
                 exam_score: score.exam_score || 0,
@@ -1044,9 +1090,16 @@ function ClassScoresContent() {
                                             </th>
                                             {selectedSubjects.map(subjectId => {
                                                 const subject = filteredSubjects.find(s => s.id === subjectId)
+                                                const firstStudentId = students[0]?.id
+                                                const totalAssessments = gridScores[firstStudentId]?.[subjectId]?.total_assessments || 0
                                                 return (
                                                     <th key={subjectId} colSpan={2} className="px-6 py-2 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-r bg-gray-100">
-                                                        {subject?.name || 'Unknown'}
+                                                        <div>{subject?.name || 'Unknown'}</div>
+                                                        {totalAssessments > 0 && (
+                                                            <div className="text-[10px] text-gray-500 font-normal mt-0.5">
+                                                                {totalAssessments} Assessments
+                                                            </div>
+                                                        )}
                                                     </th>
                                                 )
                                             })}
@@ -1072,12 +1125,28 @@ function ClassScoresContent() {
                                                     </td>
                                                     {selectedSubjects.map(subjectId => {
                                                         const scores = gridScores[student.id]?.[subjectId] || { current_score: 0, add_score: '' }
+                                                        const showWarning = scores.total_assessments && scores.assessments_count !== undefined && scores.assessments_count < scores.total_assessments
+                                                        
                                                         return (
                                                             <Fragment key={subjectId}>
-                                                                <td key={`${subjectId}-current`} className="px-2 py-4 whitespace-nowrap text-center">
+                                                                <td key={`${subjectId}-current`} className="px-2 py-4 whitespace-nowrap text-center relative group">
                                                                     <span className="text-sm font-medium text-gray-700">
                                                                         {scores.current_score.toFixed(1)}
                                                                     </span>
+                                                                    {showWarning ? (
+                                                                        <div 
+                                                                            className="absolute top-1 right-1 cursor-help"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                alert(`Assessment Check:\nStudent has taken ${scores.assessments_count} out of ${scores.total_assessments} assessments recorded for this subject.`);
+                                                                            }}
+                                                                        >
+                                                                            <AlertCircle className="w-3 h-3 text-amber-500" />
+                                                                            <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-50 shadow-lg">
+                                                                                Taken: {scores.assessments_count}/{scores.total_assessments}
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : null}
                                                                 </td>
                                                                 <td key={`${subjectId}-add`} className="px-2 py-4 whitespace-nowrap text-center border-r">
                                                                     <input
