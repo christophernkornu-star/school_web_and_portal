@@ -269,14 +269,15 @@ DECLARE
   v_meets_criteria BOOLEAN;
   v_recommendation VARCHAR;
 BEGIN
-  -- Calculate average score across all subjects for all scores in database
-  -- We'll use all scores for the student regardless of term filtering for now
+  -- Calculate average score across all subjects for the specific academic year
   WITH student_scores AS (
     SELECT 
-      COUNT(DISTINCT subject_id) as subject_count,
-      AVG(total) as avg_score -- Average of all scores
-    FROM scores
-    WHERE student_id = p_student_id
+      COUNT(DISTINCT s.subject_id) as subject_count,
+      AVG(s.total) as avg_score
+    FROM scores s
+    JOIN academic_terms t ON s.term_id = t.id
+    WHERE s.student_id = p_student_id
+    AND t.academic_year = p_academic_year
   )
   SELECT 
     COALESCE(subject_count, 0),

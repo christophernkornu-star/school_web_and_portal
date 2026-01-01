@@ -89,28 +89,27 @@ export default function PromotionsPage() {
         .select('*')
         .eq('academic_year', currentYear) as { data: PromotionRecord[] | null }
 
-      // Load term 3 scores for calculating averages
+      // Load all terms for calculating averages
       const { data: termsData } = await supabase
         .from('academic_terms')
         .select('id')
-        .eq('academic_year', currentYear)
-        .ilike('name', '%3%') as { data: any[] | null }
+        .eq('academic_year', currentYear) as { data: any[] | null }
 
-      const term3Id = termsData?.[0]?.id
+      const termIds = termsData?.map(t => t.id) || []
 
       let scoresMap: {[key: string]: number} = {}
-      if (term3Id) {
+      if (termIds.length > 0) {
         const { data: scoresData } = await supabase
           .from('scores')
-          .select('student_id, score')
-          .eq('term_id', term3Id) as { data: any[] | null }
+          .select('student_id, total')
+          .in('term_id', termIds) as { data: any[] | null }
 
         if (scoresData) {
           // Calculate average per student
           const studentScores: {[key: string]: number[]} = {}
           scoresData.forEach(s => {
             if (!studentScores[s.student_id]) studentScores[s.student_id] = []
-            studentScores[s.student_id].push(s.score)
+            studentScores[s.student_id].push(s.total)
           })
           
           Object.keys(studentScores).forEach(studentId => {
@@ -420,7 +419,7 @@ export default function PromotionsPage() {
                         />
                       </th>
                       <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Student</th>
-                      <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Term 3 Avg</th>
+                      <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Year Avg</th>
                       <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Promotion Status</th>
                       <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Remarks</th>
                       <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Action</th>
