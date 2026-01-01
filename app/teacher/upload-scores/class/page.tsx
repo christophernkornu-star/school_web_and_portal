@@ -276,7 +276,7 @@ function ClassScoresContent() {
                 .eq('class_subject_id', classSubject.id)
                 .eq('term_id', selectedTerm)
               
-              const assessmentIds = assessments?.map(a => a.id) || []
+              const assessmentIds = assessments?.map((a: { id: string }) => a.id) || []
               const totalAssessments = assessmentIds.length
 
               if (totalAssessments > 0) {
