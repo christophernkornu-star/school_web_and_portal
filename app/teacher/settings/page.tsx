@@ -13,6 +13,7 @@ export default function TeacherSettingsPage() {
   
   const [loading, setLoading] = useState(true)
   const [darkMode, setDarkMode] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const [passwordData, setPasswordData] = useState({
     newPassword: '',
     confirmPassword: ''
@@ -22,10 +23,6 @@ export default function TeacherSettingsPage() {
 
   useEffect(() => {
     checkUser()
-    // Check initial theme
-    if (document.documentElement.classList.contains('dark')) {
-      setDarkMode(true)
-    }
   }, [])
 
   async function checkUser() {
@@ -34,18 +31,65 @@ export default function TeacherSettingsPage() {
       router.push('/login?portal=teacher')
       return
     }
+    setUserId(user.id)
+
+    // Fetch profile theme preference
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('theme')
+        .eq('id', user.id)
+        .single()
+
+      if (profile?.theme) {
+        const isDark = profile.theme === 'dark'
+        setDarkMode(isDark)
+        
+        // Sync with DOM and localStorage
+        if (isDark) {
+          document.documentElement.classList.add('dark')
+          localStorage.theme = 'dark'
+        } else {
+          document.documentElement.classList.remove('dark')
+          localStorage.theme = 'light'
+        }
+      } else {
+        // Fallback to current system/local state if no DB preference
+        if (document.documentElement.classList.contains('dark')) {
+          setDarkMode(true)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching theme:', error)
+    }
+
     setLoading(false)
   }
 
-  const toggleDarkMode = () => {
-    if (darkMode) {
-      document.documentElement.classList.remove('dark')
-      localStorage.theme = 'light'
-      setDarkMode(false)
-    } else {
+  const toggleDarkMode = async () => {
+    const newMode = !darkMode
+    const newTheme = newMode ? 'dark' : 'light'
+    
+    // Optimistic UI update
+    setDarkMode(newMode)
+    if (newMode) {
       document.documentElement.classList.add('dark')
       localStorage.theme = 'dark'
-      setDarkMode(true)
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.theme = 'light'
+    }
+
+    // Persist to database
+    if (userId) {
+      try {
+        await supabase
+          .from('profiles')
+          .update({ theme: newTheme })
+          .eq('id', userId)
+      } catch (error) {
+        console.error('Error saving theme preference:', error)
+      }
     }
   }
 
