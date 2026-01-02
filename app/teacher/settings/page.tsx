@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Moon, Sun, Lock, Save, AlertCircle, Check } from 'lucide-react'
+import { ArrowLeft, Moon, Sun, Lock, Save, AlertCircle, Check, User, GraduationCap } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getCurrentUser } from '@/lib/auth'
 
@@ -14,6 +14,14 @@ export default function TeacherSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [darkMode, setDarkMode] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [teacherId, setTeacherId] = useState<string | null>(null)
+  const [profileData, setProfileData] = useState({
+    first_name: '',
+    middle_name: '',
+    last_name: '',
+    qualification: '',
+    specialization: ''
+  })
   const [passwordData, setPasswordData] = useState({
     newPassword: '',
     confirmPassword: ''
@@ -32,6 +40,28 @@ export default function TeacherSettingsPage() {
       return
     }
     setUserId(user.id)
+
+    // Fetch teacher profile data
+    try {
+      const { data: teacher } = await supabase
+        .from('teachers')
+        .select('id, first_name, middle_name, last_name, qualification, specialization')
+        .eq('profile_id', user.id)
+        .single()
+
+      if (teacher) {
+        setTeacherId(teacher.id)
+        setProfileData({
+          first_name: teacher.first_name || '',
+          middle_name: teacher.middle_name || '',
+          last_name: teacher.last_name || '',
+          qualification: teacher.qualification || '',
+          specialization: teacher.specialization || ''
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching teacher data:', error)
+    }
 
     // Fetch profile theme preference
     try {
@@ -90,6 +120,32 @@ export default function TeacherSettingsPage() {
       } catch (error) {
         console.error('Error saving theme preference:', error)
       }
+    }
+  }
+
+  const handleProfileUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setMessage({ type: '', text: '' })
+    setSaving(true)
+
+    try {
+      if (!teacherId) throw new Error('Teacher profile not found')
+      const { error } = await supabase
+        .from('teachers')
+        .update({
+          qualification: profileData.qualification,
+          specialization: profileData.specialization
+        })
+        .eq('id', teacherId)
+
+      if (error) throw error
+
+      setMessage({ type: 'success', text: 'Profile updated successfully' })
+    } catch (error: any) {
+      console.error('Error updating profile:', error)
+      setMessage({ type: 'error', text: error.message || 'Failed to update profile' })
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -179,6 +235,115 @@ export default function TeacherSettingsPage() {
                 />
               </button>
             </div>
+          </div>
+
+          {/* Profile Information Card */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-200">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
+              <User className="w-5 h-5 mr-2" />
+              Profile Information
+            </h2>
+            <form onSubmit={handleProfileUpdate} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.first_name}
+                    readOnly
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                    placeholder="First Name"
+                    title="Contact admin to change name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.middle_name}
+                    readOnly
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                    placeholder="Middle Name"
+                    title="Contact admin to change middle name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={profileData.last_name}
+                    readOnly
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                    placeholder="Last Name"
+                    title="Contact admin to change name"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-md font-medium text-gray-900 dark:text-white mb-3 flex items-center mt-6">
+                  <GraduationCap className="w-4 h-4 mr-2" />
+                  Academic Data
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Qualification
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.qualification}
+                      onChange={(e) => setProfileData({ ...profileData, qualification: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="e.g. B.Ed. Mathematics"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Specialization
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.specialization}
+                      onChange={(e) => setProfileData({ ...profileData, specialization: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"
+                      placeholder="e.g. Mathematics & Science"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {saving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Saving Profile...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      <span>Save Profile</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
 
           {/* Security Card */}
