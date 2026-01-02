@@ -316,20 +316,20 @@ export default function AssessmentSheetPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 print:p-0 print:bg-white">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 print:p-0 print:bg-white transition-colors duration-200">
       {/* No Print Section: Controls */}
       <div className="max-w-[1400px] mx-auto mb-8 print:hidden">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 rounded-full">
-              <ArrowLeft className="w-6 h-6" />
+            <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
+              <ArrowLeft className="w-6 h-6 text-gray-800 dark:text-gray-200" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">Class Assessment Sheet</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Class Assessment Sheet</h1>
           </div>
           {sheetData && (
             <button 
               onClick={() => window.print()}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Printer className="w-5 h-5" />
               Print Sheet
@@ -337,13 +337,13 @@ export default function AssessmentSheetPage() {
           )}
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-wrap gap-4 items-end">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-end transition-colors">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Class</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Class</label>
             <select 
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 min-w-[200px]"
+              className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 min-w-[200px] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-colors"
             >
               <option value="">-- Select Class --</option>
               {classes.map(c => (
@@ -353,11 +353,11 @@ export default function AssessmentSheetPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Term</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Term</label>
             <select 
               value={selectedTerm}
               onChange={(e) => setSelectedTerm(e.target.value)}
-              className="border border-gray-300 rounded-md px-3 py-2 min-w-[200px]"
+              className="border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 min-w-[200px] bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 outline-none transition-colors"
             >
               <option value="">-- Select Term --</option>
               {terms.map(t => (
@@ -369,7 +369,7 @@ export default function AssessmentSheetPage() {
           <button
             onClick={generateSheet}
             disabled={!selectedClass || !selectedTerm || generating}
-            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {generating ? 'Generating...' : 'Generate Sheet'}
           </button>
@@ -378,17 +378,17 @@ export default function AssessmentSheetPage() {
 
       {/* Print Section: The Sheet */}
       {sheetData && (
-        <div className="bg-white shadow-lg print:shadow-none mx-auto overflow-x-auto print:overflow-visible">
-          <div className="assessment-sheet p-4 min-w-[1000px] relative">
+        <div className="bg-white dark:bg-gray-800 shadow-lg print:shadow-none mx-auto overflow-x-auto print:overflow-visible transition-colors duration-200">
+          <div className="assessment-sheet p-4 min-w-[1000px] relative text-black dark:text-gray-100">
             
             {/* Watermark */}
-            <div className="watermark fixed inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.03]">
+            <div className="watermark fixed inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.03] dark:opacity-[0.1]">
                <img src="/school_crest.png" alt="" className="w-[500px] h-[500px] object-contain" />
             </div>
 
             <div className="relative z-10">
               {/* Header */}
-              <div className="text-center mb-4 border-b-2 border-black pb-2">
+              <div className="text-center mb-4 border-b-2 border-black dark:border-gray-400 pb-2">
                 <h1 className="text-xl font-bold uppercase font-serif mb-1">BIRIWA METHODIST SCHOOL</h1>
                 <h2 className="text-lg font-bold uppercase mb-1">ASSESSMENT SHEET</h2>
                 <div className="flex justify-center gap-8 text-sm font-semibold">
@@ -398,48 +398,48 @@ export default function AssessmentSheetPage() {
               </div>
 
               {/* Table */}
-              <table className="w-full border-collapse border border-black text-xs">
+              <table className="w-full border-collapse border border-black dark:border-gray-400 text-xs">
                 <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-black p-1 w-8 text-center" rowSpan={2}>SN</th>
-                    <th className="border border-black p-1 text-left min-w-[150px]" rowSpan={2}>STUDENT NAME</th>
+                  <tr className="bg-gray-100 dark:bg-gray-700">
+                    <th className="border border-black dark:border-gray-400 p-1 w-8 text-center" rowSpan={2}>SN</th>
+                    <th className="border border-black dark:border-gray-400 p-1 text-left min-w-[150px]" rowSpan={2}>STUDENT NAME</th>
                     {sheetData.subjects.map(subject => (
-                      <th key={subject.id} className="border border-black p-1 text-center" colSpan={3}>
+                      <th key={subject.id} className="border border-black dark:border-gray-400 p-1 text-center" colSpan={3}>
                         {getShortSubjectName(subject.name)}
                       </th>
                     ))}
-                    <th className="border border-black p-1 w-12 text-center" rowSpan={2}>AVG</th>
-                    <th className="border border-black p-1 w-10 text-center" rowSpan={2}>POS</th>
+                    <th className="border border-black dark:border-gray-400 p-1 w-12 text-center" rowSpan={2}>AVG</th>
+                    <th className="border border-black dark:border-gray-400 p-1 w-10 text-center" rowSpan={2}>POS</th>
                   </tr>
-                  <tr className="bg-gray-50">
+                  <tr className="bg-gray-50 dark:bg-gray-700/50">
                     {sheetData.subjects.map(subject => (
                       <Fragment key={`sub-header-${subject.id}`}>
-                        <th className="border border-black p-0.5 text-center w-8 text-[10px]">CLS</th>
-                        <th className="border border-black p-0.5 text-center w-8 text-[10px]">EXM</th>
-                        <th className="border border-black p-0.5 text-center w-8 text-[10px] bg-gray-100">TOT</th>
+                        <th className="border border-black dark:border-gray-400 p-0.5 text-center w-8 text-[10px]">CLS</th>
+                        <th className="border border-black dark:border-gray-400 p-0.5 text-center w-8 text-[10px]">EXM</th>
+                        <th className="border border-black dark:border-gray-400 p-0.5 text-center w-8 text-[10px] bg-gray-100 dark:bg-gray-600">TOT</th>
                       </Fragment>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {sheetData.students.map((student, index) => (
-                    <tr key={student.student.id} className="hover:bg-gray-50">
-                      <td className="border border-black p-1 text-center">{index + 1}</td>
-                      <td className="border border-black p-1 font-medium">
+                    <tr key={student.student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+                      <td className="border border-black dark:border-gray-400 p-1 text-center">{index + 1}</td>
+                      <td className="border border-black dark:border-gray-400 p-1 font-medium">
                         {student.student.last_name} {student.student.middle_name ? student.student.middle_name + ' ' : ''}{student.student.first_name}
                       </td>
                       {sheetData.subjects.map(subject => {
                         const score = student.scores[subject.id]
                         return (
                           <Fragment key={`${student.student.id}-${subject.id}`}>
-                            <td className="border border-black p-1 text-center text-gray-600">{score.class}</td>
-                            <td className="border border-black p-1 text-center font-medium">{score.exam}</td>
-                            <td className="border border-black p-1 text-center font-bold bg-gray-50">{score.total}</td>
+                            <td className="border border-black dark:border-gray-400 p-1 text-center text-gray-600 dark:text-gray-400">{score.class}</td>
+                            <td className="border border-black dark:border-gray-400 p-1 text-center font-medium">{score.exam}</td>
+                            <td className="border border-black dark:border-gray-400 p-1 text-center font-bold bg-gray-50 dark:bg-gray-700/30">{score.total}</td>
                           </Fragment>
                         )
                       })}
-                      <td className="border border-black p-1 text-center font-bold bg-gray-50">{student.average}</td>
-                      <td className="border border-black p-1 text-center font-bold">{student.position}</td>
+                      <td className="border border-black dark:border-gray-400 p-1 text-center font-bold bg-gray-50 dark:bg-gray-700/30">{student.average}</td>
+                      <td className="border border-black dark:border-gray-400 p-1 text-center font-bold">{student.position}</td>
                     </tr>
                   ))}
                 </tbody>

@@ -530,7 +530,7 @@ export default function AttendancePage() {
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-sm dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm dark:bg-gray-700 dark:text-white"
                 >
                   <option value="name">Name (A-Z)</option>
                   <option value="boys-first">Boys First</option>
@@ -614,7 +614,6 @@ export default function AttendancePage() {
                 <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">#</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Student ID</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Gender</th>
                     <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Days Present</th>
@@ -631,9 +630,6 @@ export default function AttendancePage() {
                       }`}>
                         <td className="px-6 py-4 text-xs md:text-sm font-bold text-gray-500 dark:text-gray-400">
                           {index + 1}
-                        </td>
-                        <td className="px-6 py-4 text-xs md:text-sm font-medium text-gray-900 dark:text-white">
-                          {student.student_id}
                         </td>
                         <td className="px-6 py-4 text-xs md:text-sm text-gray-900 dark:text-white">
                           {student.last_name} {student.first_name}

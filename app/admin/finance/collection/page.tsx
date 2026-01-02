@@ -191,185 +191,199 @@ export default function FeeCollectionPage() {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-12 gap-8">
-          {/* Left Sidebar: Class & Student Selection */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Class Selector */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Select Class</label>
-              <select
-                value={selectedClassId}
-                onChange={(e) => {
-                  setSelectedClassId(e.target.value)
-                  setSelectedStudent(null)
-                }}
-                className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="">-- Choose Class --</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Student List */}
-            {selectedClassId && (
-              <div className="bg-white rounded-lg shadow flex flex-col h-[400px] lg:h-[600px]">
-                <div className="p-4 border-b">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search student..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 border rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-purple-500"
-                    />
-                  </div>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2">
-                  {filteredStudents.map(student => (
-                    <button
-                      key={student.id}
-                      onClick={() => setSelectedStudent(student)}
-                      className={`w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-colors ${
-                        selectedStudent?.id === student.id 
-                          ? 'bg-purple-50 border-purple-200 border' 
-                          : 'hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="bg-gray-100 p-2 rounded-full">
-                        <User className="w-4 h-4 text-gray-600" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-800 text-xs md:text-base">{student.last_name} {student.first_name}</div>
-                        <div className="text-[10px] md:text-xs text-gray-500">{student.student_id}</div>
-                      </div>
-                      {selectedStudent?.id === student.id && (
-                        <ChevronRight className="w-4 h-4 text-purple-600 ml-auto" />
-                      )}
-                    </button>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-100px)]">
+          {/* Sidebar */}
+          <div className={`lg:col-span-4 xl:col-span-3 flex flex-col gap-4 h-full overflow-hidden ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
+            <div className="bg-white p-4 rounded-lg shadow space-y-4">
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => {
+                    setSelectedClassId(e.target.value)
+                    setSelectedStudent(null)
+                  }}
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">-- Choose Class --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
-                  {filteredStudents.length === 0 && (
-                    <div className="text-center py-8 text-gray-500 text-xs md:text-sm">No students found</div>
-                  )}
-                </div>
+                </select>
               </div>
-            )}
-          </div>
 
-          {/* Right Content: Financial Details */}
-          <div className="lg:col-span-8">
-            {selectedStudent ? (
-              <div className="space-y-6">
-                {/* Student Header */}
-                <div className="bg-white rounded-lg shadow p-6 flex justify-between items-center">
-                  <div>
-                    <h2 className="text-lg md:text-xl font-bold text-gray-800">
-                      {selectedStudent.last_name} {selectedStudent.first_name}
-                    </h2>
-                    <p className="text-xs md:text-base text-gray-600">{selectedStudent.student_id} • {selectedStudent.gender}</p>
+              {/* Student List */}
+              {selectedClassId && (
+                <div className="bg-white rounded-lg shadow flex flex-col h-[400px] lg:h-[600px]">
+                  <div className="p-4 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search student..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-9 pr-4 py-2 border rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setShowPaymentModal(true)}
-                    className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-sm text-xs md:text-base"
-                  >
-                    <DollarSign className="w-5 h-5" />
-                    Record Payment
-                  </button>
-                </div>
-
-                {/* Outstanding Fees */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="px-6 py-4 border-b bg-gray-50">
-                    <h3 className="font-bold text-gray-800 text-xs md:text-base">Fee Status</h3>
-                  </div>
-                  <div className="divide-y">
-                    {studentFees.map(fee => {
-                      const balance = getFeeBalance(fee.id, fee.amount)
-                      return (
-                        <div key={fee.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 gap-4">
-                          <div>
-                            <div className="font-medium text-gray-900 text-xs md:text-base">{fee.fee_types?.name}</div>
-                            <div className="text-[10px] md:text-sm text-gray-500">
-                              {fee.academic_terms?.name} ({fee.academic_year})
-                            </div>
-                          </div>
-                          <div className="text-left sm:text-right">
-                            <div className="text-[10px] md:text-sm text-gray-500">Total: GH₵ {fee.amount}</div>
-                            <div className={`font-bold text-xs md:text-base ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                              {balance > 0 ? `Owing: GH₵ ${balance.toFixed(2)}` : 'Fully Paid'}
-                            </div>
-                          </div>
+                  <div className="flex-1 overflow-y-auto p-2">
+                    {filteredStudents.map(student => (
+                      <button
+                        key={student.id}
+                        onClick={() => setSelectedStudent(student)}
+                        className={`w-full text-left p-3 rounded-lg flex items-center space-x-3 transition-colors ${
+                          selectedStudent?.id === student.id 
+                            ? 'bg-purple-50 border-purple-200 border' 
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="bg-gray-100 p-2 rounded-full">
+                          <User className="w-4 h-4 text-gray-600" />
                         </div>
-                      )
-                    })}
-                    {studentFees.length === 0 && (
-                      <div className="p-8 text-center text-gray-500">
-                        No fees assigned to this class yet.
-                      </div>
+                        <div>
+                          <div className="font-medium text-gray-800 text-xs md:text-base">{student.last_name} {student.first_name}</div>
+                          <div className="text-[10px] md:text-xs text-gray-500">{student.student_id}</div>
+                        </div>
+                        {selectedStudent?.id === student.id && (
+                          <ChevronRight className="w-4 h-4 text-purple-600 ml-auto" />
+                        )}
+                      </button>
+                    ))}
+                    {filteredStudents.length === 0 && (
+                      <div className="text-center py-8 text-gray-500 text-xs md:text-sm">No students found</div>
                     )}
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
 
-                {/* Payment History */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="px-6 py-4 border-b bg-gray-50">
-                    <h3 className="font-bold text-gray-800 text-sm md:text-base">Payment History</h3>
+          {/* Main Content */}
+          <div className={`lg:col-span-8 xl:col-span-9 h-full overflow-y-auto pb-20 ${selectedStudent ? 'block' : 'hidden lg:block'}`}>
+            <div className="h-full">
+              {selectedStudent ? (
+                <div className="space-y-6">
+                  {/* Mobile Back Button */}
+                  <button 
+                    onClick={() => setSelectedStudent(null)}
+                    className="lg:hidden flex items-center text-gray-600 hover:text-gray-900 mb-2"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to List
+                  </button>
+
+                  {/* Student Header */}
+                  <div className="bg-white p-6 rounded-lg shadow">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                      <div>
+                        <h2 className="text-lg md:text-xl font-bold text-gray-800">
+                          {selectedStudent.last_name} {selectedStudent.first_name}
+                        </h2>
+                        <p className="text-xs md:text-base text-gray-600">{selectedStudent.student_id} • {selectedStudent.gender}</p>
+                      </div>
+                      <button
+                        onClick={() => setShowPaymentModal(true)}
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-sm text-xs md:text-base"
+                      >
+                        <DollarSign className="w-5 h-5" />
+                        Record Payment
+                      </button>
+                    </div>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 text-[10px] md:text-xs uppercase text-gray-500">
-                        <tr>
-                          <th className="px-6 py-3 text-left">Date</th>
-                          <th className="px-6 py-3 text-left">Fee Type</th>
-                          <th className="px-6 py-3 text-left">Amount</th>
-                          <th className="px-6 py-3 text-left">Method</th>
-                          <th className="px-6 py-3 text-left">Recorded By</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {paymentHistory.map(payment => (
-                          <tr key={payment.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                              {new Date(payment.payment_date).toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                              {payment.fee_structures?.fee_types?.name}
-                              <span className="text-[10px] md:text-xs text-gray-500 block">
-                                {payment.fee_structures?.academic_terms?.name}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-green-600">
-                              GH₵ {payment.amount_paid}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                              {payment.payment_method}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
-                              {payment.profiles?.full_name || 'System'}
-                            </td>
-                          </tr>
-                        ))}
-                        {paymentHistory.length === 0 && (
+
+                  {/* Outstanding Fees */}
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="px-6 py-4 border-b bg-gray-50">
+                      <h3 className="font-bold text-gray-800 text-xs md:text-base">Fee Status</h3>
+                    </div>
+                    <div className="divide-y">
+                      {studentFees.map(fee => {
+                        const balance = getFeeBalance(fee.id, fee.amount)
+                        return (
+                          <div key={fee.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 gap-4">
+                            <div>
+                              <div className="font-medium text-gray-900 text-xs md:text-base">{fee.fee_types?.name}</div>
+                              <div className="text-[10px] md:text-sm text-gray-500">
+                                {fee.academic_terms?.name} ({fee.academic_year})
+                              </div>
+                            </div>
+                            <div className="text-left sm:text-right">
+                              <div className="text-[10px] md:text-sm text-gray-500">Total: GH₵ {fee.amount}</div>
+                              <div className={`font-bold text-xs md:text-base ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                {balance > 0 ? `Owing: GH₵ ${balance.toFixed(2)}` : 'Fully Paid'}
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {studentFees.length === 0 && (
+                        <div className="p-8 text-center text-gray-500">
+                          No fees assigned to this class yet.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Payment History */}
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="px-6 py-4 border-b bg-gray-50">
+                      <h3 className="font-bold text-gray-800 text-sm md:text-base">Payment History</h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 text-[10px] md:text-xs uppercase text-gray-500">
                           <tr>
-                            <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                              No payments recorded yet.
-                            </td>
+                            <th className="px-6 py-3 text-left">Date</th>
+                            <th className="px-6 py-3 text-left">Fee Type</th>
+                            <th className="px-6 py-3 text-left">Amount</th>
+                            <th className="px-6 py-3 text-left">Method</th>
+                            <th className="px-6 py-3 text-left">Recorded By</th>
                           </tr>
-                        )}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {paymentHistory.map(payment => (
+                            <tr key={payment.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                                {new Date(payment.payment_date).toLocaleDateString()}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                                {payment.fee_structures?.fee_types?.name}
+                                <span className="text-[10px] md:text-xs text-gray-500 block">
+                                  {payment.fee_structures?.academic_terms?.name}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-green-600">
+                                GH₵ {payment.amount_paid}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                                {payment.payment_method}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                                {payment.profiles?.full_name || 'System'}
+                              </td>
+                            </tr>
+                          ))}
+                          {paymentHistory.length === 0 && (
+                            <tr>
+                              <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                No payments recorded yet.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow p-12 text-center h-full flex flex-col items-center justify-center text-gray-500">
-                <User className="w-16 h-16 mb-4 text-gray-300" />
-                <h3 className="text-base md:text-lg font-medium text-gray-900">Select a Student</h3>
-                <p className="text-sm md:text-base">Choose a class and student from the sidebar to manage fees.</p>
-              </div>
-            )}
+              ) : (
+                <div className="bg-white rounded-lg shadow p-12 text-center h-full flex flex-col items-center justify-center text-gray-500">
+                  <User className="w-16 h-16 mb-4 text-gray-300" />
+                  <h3 className="text-base md:text-lg font-medium text-gray-900">Select a Student</h3>
+                  <p className="text-sm md:text-base">Choose a class and student from the sidebar to manage fees.</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>

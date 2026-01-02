@@ -149,6 +149,7 @@ function StudentPromotionsPage() {
           students!inner (
             id,
             first_name,
+            middle_name,
             last_name
           )
         `)
@@ -162,7 +163,7 @@ function StudentPromotionsPage() {
       // Transform data to match StudentRecommendation interface
       const transformedData = data?.map((item: any) => ({
         student_id: item.student_id,
-        student_name: `${(item.students as any).first_name} ${(item.students as any).last_name}`,
+        student_name: `${(item.students as any).last_name} ${(item.students as any).middle_name ? (item.students as any).middle_name + ' ' : ''}${(item.students as any).first_name}`,
         total_subjects: item.total_subjects,
         total_score: item.total_score,
         average_score: item.average_score,

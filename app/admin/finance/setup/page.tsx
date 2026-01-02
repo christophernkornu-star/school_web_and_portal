@@ -21,7 +21,7 @@ export default function FeeSetupPage() {
   const [newType, setNewType] = useState({ name: '', description: '' })
   const [newStructure, setNewStructure] = useState({
     fee_type_id: '',
-    class_id: '',
+    class_ids: [] as string[],
     term_id: '',
     amount: '',
     academic_year: ''
@@ -102,26 +102,50 @@ export default function FeeSetupPage() {
     }
   }
 
-  const handleAddStructure = async () => {
-    if (!newStructure.fee_type_id || !newStructure.amount || !newStructure.class_id) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields' })
-      return
-    }
+  const handleDeleteType = async (id: string) => {
+    if (!confirm('Are you sure? This will delete the fee type and all associated structures.')) return
 
     const { error } = await supabase
-      .from('fee_structures')
-      .insert(newStructure)
+      .from('fee_types')
+      .delete()
+      .eq('id', id)
 
     if (error) {
       setMessage({ type: 'error', text: error.message })
     } else {
-      setMessage({ type: 'success', text: 'Fee structure created successfully' })
+      setMessage({ type: 'success', text: 'Fee type deleted successfully' })
+      loadData()
+    }
+  }
+
+  const handleAddStructure = async () => {
+    if (!newStructure.fee_type_id || !newStructure.amount || newStructure.class_ids.length === 0) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields' })
+      return
+    }
+
+    const inserts = newStructure.class_ids.map(classId => ({
+      fee_type_id: newStructure.fee_type_id,
+      class_id: classId,
+      term_id: newStructure.term_id,
+      amount: newStructure.amount,
+      academic_year: newStructure.academic_year
+    }))
+
+    const { error } = await supabase
+      .from('fee_structures')
+      .insert(inserts)
+
+    if (error) {
+      setMessage({ type: 'error', text: error.message })
+    } else {
+      setMessage({ type: 'success', text: 'Fee structures created successfully' })
       setShowStructureModal(false)
       // Reset form but keep term/year
       setNewStructure(prev => ({
         ...prev,
         fee_type_id: '',
-        class_id: '',
+        class_ids: [],
         amount: ''
       }))
       loadData()
@@ -189,9 +213,18 @@ export default function FeeSetupPage() {
               
               <div className="space-y-3">
                 {feeTypes.map(type => (
-                  <div key={type.id} className="p-3 border rounded-lg hover:bg-gray-50">
-                    <div className="font-medium text-gray-800 text-xs md:text-base">{type.name}</div>
-                    {type.description && <div className="text-[10px] md:text-xs text-gray-500">{type.description}</div>}
+                  <div key={type.id} className="p-3 border rounded-lg hover:bg-gray-50 flex justify-between items-start group">
+                    <div>
+                      <div className="font-medium text-gray-800 text-xs md:text-base">{type.name}</div>
+                      {type.description && <div className="text-[10px] md:text-xs text-gray-500">{type.description}</div>}
+                    </div>
+                    <button 
+                      onClick={() => handleDeleteType(type.id)}
+                      className="text-red-400 hover:text-red-600 p-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
+                      title="Delete Fee Type"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
                 {feeTypes.length === 0 && (
@@ -229,7 +262,7 @@ export default function FeeSetupPage() {
                   <tbody className="divide-y text-xs md:text-sm">
                     {feeStructures.map(struct => (
                       <tr key={struct.id} className="hover:bg-gray-50">
-                        <td className="py-3 pl-4">{struct.fee_types?.name}</td>
+                        <td className="py-3 pl-4 font-medium text-gray-900">{struct.fee_types?.name}</td>
                         <td className="py-3">
                           <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] md:text-xs font-medium">
                             {struct.classes?.name}
@@ -280,7 +313,7 @@ export default function FeeSetupPage() {
                   placeholder="e.g. Tuition, PTA, Feeding"
                   value={newType.name}
                   onChange={e => setNewType({...newType, name: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
                 />
               </div>
               <div>
@@ -289,7 +322,7 @@ export default function FeeSetupPage() {
                   placeholder="Optional description"
                   value={newType.description}
                   onChange={e => setNewType({...newType, description: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
                   rows={3}
                 />
               </div>
@@ -313,7 +346,7 @@ export default function FeeSetupPage() {
                 <select
                   value={newStructure.fee_type_id}
                   onChange={e => setNewStructure({...newStructure, fee_type_id: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
                 >
                   <option value="">Select Fee Type</option>
                   {feeTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -321,15 +354,46 @@ export default function FeeSetupPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-                <select
-                  value={newStructure.class_id}
-                  onChange={e => setNewStructure({...newStructure, class_id: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">Select Class</option>
-                  {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Classes</label>
+                <div className="border rounded-lg p-2 max-h-40 overflow-y-auto space-y-2 bg-gray-50">
+                  <div className="flex items-center pb-2 border-b border-gray-200">
+                    <input 
+                        type="checkbox" 
+                        checked={newStructure.class_ids.length === classes.length && classes.length > 0}
+                        onChange={(e) => {
+                            if (e.target.checked) {
+                                setNewStructure({...newStructure, class_ids: classes.map(c => c.id)})
+                            } else {
+                                setNewStructure({...newStructure, class_ids: []})
+                            }
+                        }}
+                        className="mr-2 rounded text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="text-sm font-bold text-gray-700">Select All Classes</span>
+                  </div>
+                  {classes.map(c => (
+                    <div key={c.id} className="flex items-center">
+                      <input
+                        type="checkbox"
+                        value={c.id}
+                        checked={newStructure.class_ids.includes(c.id)}
+                        onChange={e => {
+                          const ids = newStructure.class_ids
+                          if (e.target.checked) {
+                            setNewStructure({...newStructure, class_ids: [...ids, c.id]})
+                          } else {
+                            setNewStructure({...newStructure, class_ids: ids.filter(id => id !== c.id)})
+                          }
+                        }}
+                        className="mr-2 rounded text-purple-600 focus:ring-purple-500"
+                      />
+                      <span className="text-sm text-gray-700">{c.name}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {newStructure.class_ids.length} classes selected
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -345,7 +409,7 @@ export default function FeeSetupPage() {
                         academic_year: term?.academic_year || ''
                       })
                     }}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
                   >
                     <option value="">Select Term</option>
                     {terms.map(t => (
@@ -361,7 +425,7 @@ export default function FeeSetupPage() {
                     placeholder="0.00"
                     value={newStructure.amount}
                     onChange={e => setNewStructure({...newStructure, amount: e.target.value})}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
                   />
                 </div>
               </div>

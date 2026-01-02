@@ -79,7 +79,7 @@ export default function LoginPage() {
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-ghana-red via-ghana-gold to-ghana-green"></div>
         
         {/* Main Header */}
-        <div className="bg-white shadow-lg border-b-4 border-methodist-gold">
+        <div className="bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-yellow-700">
           <nav className="container mx-auto px-6 py-4">
             <div className="flex items-center justify-between gap-8">
               {/* Logo and School Name */}
@@ -101,9 +101,9 @@ export default function LoginPage() {
                   Biriwa Methodist 'C' Basic School
                 </h1>
                 <div className="flex flex-col md:flex-row items-center justify-center space-y-1 md:space-y-0 md:space-x-2">
-                  <div className="hidden md:block h-0.5 w-8 bg-methodist-gold"></div>
-                  <p className="text-xs md:text-sm text-gray-600 font-semibold tracking-wide uppercase">School Management System</p>
-                  <div className="hidden md:block h-0.5 w-8 bg-methodist-gold"></div>
+                  <div className="hidden md:block h-0.5 w-8 bg-methodist-blue"></div>
+                  <p className="text-xs md:text-sm text-methodist-blue font-semibold tracking-wide uppercase">School Management System</p>
+                  <div className="hidden md:block h-0.5 w-8 bg-methodist-blue"></div>
                 </div>
               </div>
               </Link>
@@ -112,32 +112,32 @@ export default function LoginPage() {
               <div className="flex items-center space-x-6">
                 {/* Desktop Navigation */}
                 <nav className="hidden md:flex items-center space-x-6">
-                  <Link href="/" className="group relative text-gray-700 font-semibold transition-all duration-200 pb-1">
-                    <span className="group-hover:text-methodist-blue transition-colors">Home</span>
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-gold group-hover:w-full transition-all duration-300"></span>
+                  <Link href="/" className="group relative text-methodist-blue font-semibold transition-all duration-200 pb-1">
+                    <span className="group-hover:text-white transition-colors">Home</span>
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-blue group-hover:w-full transition-all duration-300"></span>
                   </Link>
-                  <Link href="/about" className="group relative text-gray-700 font-semibold transition-all duration-200 pb-1">
-                    <span className="group-hover:text-methodist-blue transition-colors">About</span>
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-gold group-hover:w-full transition-all duration-300"></span>
+                  <Link href="/about" className="group relative text-methodist-blue font-semibold transition-all duration-200 pb-1">
+                    <span className="group-hover:text-white transition-colors">About</span>
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-blue group-hover:w-full transition-all duration-300"></span>
                   </Link>
-                  <Link href="/events" className="group relative text-gray-700 font-semibold transition-all duration-200 pb-1">
-                    <span className="group-hover:text-methodist-blue transition-colors">Academic</span>
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-gold group-hover:w-full transition-all duration-300"></span>
+                  <Link href="/events" className="group relative text-methodist-blue font-semibold transition-all duration-200 pb-1">
+                    <span className="group-hover:text-white transition-colors">Events</span>
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-blue group-hover:w-full transition-all duration-300"></span>
                   </Link>
-                  <Link href="/admission" className="group relative text-gray-700 font-semibold transition-all duration-200 pb-1">
-                    <span className="group-hover:text-methodist-blue transition-colors">Admission</span>
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-gold group-hover:w-full transition-all duration-300"></span>
+                  <Link href="/admission" className="group relative text-methodist-blue font-semibold transition-all duration-200 pb-1">
+                    <span className="group-hover:text-white transition-colors">Admission</span>
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-blue group-hover:w-full transition-all duration-300"></span>
                   </Link>
-                  <Link href="/gallery" className="group relative text-gray-700 font-semibold transition-all duration-200 pb-1">
-                    <span className="group-hover:text-methodist-blue transition-colors">Gallery</span>
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-gold group-hover:w-full transition-all duration-300"></span>
+                  <Link href="/gallery" className="group relative text-methodist-blue font-semibold transition-all duration-200 pb-1">
+                    <span className="group-hover:text-white transition-colors">Gallery</span>
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-blue group-hover:w-full transition-all duration-300"></span>
                   </Link>
                 </nav>
                 
                 {/* Mobile Menu Button */}
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="md:hidden text-methodist-blue hover:text-methodist-gold transition-colors p-2 relative w-10 h-10 flex items-center justify-center"
+                  className="md:hidden text-methodist-blue hover:text-white transition-colors p-2 relative w-10 h-10 flex items-center justify-center"
                   aria-label="Toggle menu"
                 >
                   <div className="w-6 h-5 relative flex flex-col justify-between">
@@ -168,7 +168,7 @@ export default function LoginPage() {
               </Link>
               <Link href="/events" className="block text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-methodist-blue hover:text-white transition-all duration-200"
                 onClick={() => setMobileMenuOpen(false)}>
-                Academic
+                Events
               </Link>
               <Link href="/admission" className="block text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-methodist-blue hover:text-white transition-all duration-200"
                 onClick={() => setMobileMenuOpen(false)}>
