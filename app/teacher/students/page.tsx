@@ -174,14 +174,14 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-lg shadow mb-4 md:mb-0 h-full select-none transition-all duration-200 ${selected ? 'ring-2 ring-ghana-green bg-green-50' : ''}`}>
+    <div className={`relative overflow-hidden rounded-lg shadow mb-4 md:mb-0 h-full select-none transition-all duration-200 ${selected ? 'ring-2 ring-ghana-green bg-green-50 dark:bg-green-900/20' : ''}`}>
       {/* Background Actions */}
       <div className="absolute inset-0 flex items-center justify-between">
         {/* Left Action (Reset Password) - Revealed on Right Swipe */}
-        <div className={`flex items-center justify-start w-full h-full bg-yellow-100 absolute left-0 top-0 transition-opacity duration-300 ${offset > 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
+        <div className={`flex items-center justify-start w-full h-full bg-yellow-100 dark:bg-yellow-900/50 absolute left-0 top-0 transition-opacity duration-300 ${offset > 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
             <button 
                 onClick={(e) => { e.stopPropagation(); onResetPassword(); setOffset(0); }}
-                className="pl-6 pr-4 h-full flex items-center space-x-2 text-yellow-700 font-medium w-1/2"
+                className="pl-6 pr-4 h-full flex items-center space-x-2 text-yellow-700 dark:text-yellow-400 font-medium w-1/2"
             >
                 <KeyRound className="w-5 h-5" />
                 <span>Reset</span>
@@ -189,10 +189,10 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
         </div>
 
         {/* Right Action (Delete) - Revealed on Left Swipe */}
-        <div className={`flex items-center justify-end w-full h-full bg-red-100 absolute right-0 top-0 transition-opacity duration-300 ${offset < 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
+        <div className={`flex items-center justify-end w-full h-full bg-red-100 dark:bg-red-900/50 absolute right-0 top-0 transition-opacity duration-300 ${offset < 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
             <button 
                 onClick={(e) => { e.stopPropagation(); onDelete(); setOffset(0); }}
-                className="pl-4 pr-6 h-full flex items-center justify-end space-x-2 text-red-700 font-medium w-1/2"
+                className="pl-4 pr-6 h-full flex items-center justify-end space-x-2 text-red-700 dark:text-red-400 font-medium w-1/2"
             >
                 <span>Delete</span>
                 <Trash2 className="w-5 h-5" />
@@ -202,7 +202,7 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
 
       {/* Foreground Card */}
       <div 
-        className={`bg-white p-4 md:p-6 relative z-20 h-full ${canManage ? 'cursor-pointer hover:bg-gray-50' : ''} ${selected ? 'bg-green-50' : ''} ${isDragging ? 'transition-none' : 'transition-transform duration-300 ease-out'}`}
+        className={`bg-white dark:bg-gray-800 p-4 md:p-6 relative z-20 h-full ${canManage ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''} ${selected ? 'bg-green-50 dark:bg-green-900/30' : ''} ${isDragging ? 'transition-none' : 'transition-transform duration-300 ease-out'}`}
         style={{ transform: `translateX(${offset}px)` }}
         onTouchStart={canManage ? onTouchStart : undefined}
         onTouchMove={canManage ? onTouchMove : undefined}
@@ -215,7 +215,7 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
                 {selected ? (
                     <CheckSquare className="w-6 h-6 text-ghana-green" />
                 ) : (
-                    <Square className="w-6 h-6 text-gray-300" />
+                    <Square className="w-6 h-6 text-gray-300 dark:text-gray-600" />
                 )}
             </div>
         )}
@@ -229,14 +229,14 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
                 <div className="hidden md:flex space-x-1 md:space-x-2">
                     <button
                         onClick={(e) => { e.stopPropagation(); onResetPassword(); }}
-                        className="p-1.5 md:p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition"
+                        className="p-1.5 md:p-2 text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg transition"
                         title="Reset password"
                     >
                         <KeyRound className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </button>
                     <button
                         onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                        className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
                         title="Delete student"
                     >
                         <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
@@ -245,27 +245,27 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
             )}
         </div>
         <div>
-            <h3 className="font-bold text-base md:text-lg text-gray-800 truncate pr-8">
+            <h3 className="font-bold text-base md:text-lg text-gray-800 dark:text-gray-100 truncate pr-8">
                 {student.last_name} {student.first_name} {student.middle_name || ''}
             </h3>
-            <p className="text-xs md:text-sm text-gray-500">{student.student_id}</p>
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{student.student_id}</p>
             <div className="mt-2 md:mt-3 space-y-1">
                 <p className="text-xs md:text-sm text-ghana-green font-medium">{student.classes?.name || 'No Class'}</p>
                 {student.guardian_name && (
-                <p className="text-xs text-gray-600 truncate">Guardian: {student.guardian_name}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 truncate">Guardian: {student.guardian_name}</p>
                 )}
                 {student.guardian_phone && (
                 <a 
                     href={`tel:${student.guardian_phone}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center space-x-1 text-xs text-gray-500 hover:text-ghana-green transition-colors"
+                    className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400 hover:text-ghana-green transition-colors"
                 >
                     <Phone className="w-3 h-3" />
                     <span>{student.guardian_phone}</span>
                 </a>
                 )}
                 {student.guardian_email && (
-                <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
                     <Mail className="w-3 h-3 flex-shrink-0" />
                     <span className="truncate">{student.guardian_email}</span>
                 </div>
@@ -632,26 +632,26 @@ export default function MyStudentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading students...</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading students...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow sticky top-0 z-30">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-30 transition-colors">
         <div className="container mx-auto px-4 md:px-6 py-4">
           {selectionMode ? (
             <div className="flex items-center justify-between w-full">
                 <div className="flex items-center space-x-4">
-                    <button onClick={() => { setSelectionMode(false); setSelectedStudents([]); }} className="text-gray-500 hover:text-gray-700">
+                    <button onClick={() => { setSelectionMode(false); setSelectedStudents([]); }} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
                         <ArrowLeft className="w-6 h-6" />
                     </button>
-                    <span className="font-bold text-blue-800 text-lg">{selectedStudents.length} Selected</span>
+                    <span className="font-bold text-blue-800 dark:text-blue-400 text-lg">{selectedStudents.length} Selected</span>
                 </div>
                 <div className="flex items-center space-x-2">
                     {/* Bulk Actions */}
@@ -659,14 +659,14 @@ export default function MyStudentsPage() {
                         <>
                             <button 
                                 onClick={() => setBulkResetPasswordModal(true)}
-                                className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg"
+                                className="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg"
                                 title="Reset Passwords"
                             >
                                 <KeyRound className="w-5 h-5" />
                             </button>
                             <button 
                                 onClick={() => setBulkDeleteModal(true)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
                                 title="Delete Selected"
                             >
                                 <Trash2 className="w-5 h-5" />
@@ -678,12 +678,12 @@ export default function MyStudentsPage() {
           ) : (
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 flex-shrink-0">
+              <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 flex-shrink-0">
                 <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
               </Link>
               <div>
-                <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">My Students</h1>
-                <p className="text-xs md:text-sm text-gray-600 mt-0.5">
+                <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 dark:text-gray-100">My Students</h1>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                   {isClassTeacher ? 'View and manage students in your classes' : 'View students in your assigned classes'}
                 </p>
               </div>
@@ -705,10 +705,10 @@ export default function MyStudentsPage() {
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* No Classes Assigned */}
         {teacherClasses.length === 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 md:p-8 text-center">
-            <AlertCircle className="w-12 h-12 md:w-16 md:h-16 text-yellow-600 mx-auto mb-4" />
-            <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No Classes Assigned</h2>
-            <p className="text-sm md:text-base text-gray-600 mb-6">
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-6 md:p-8 text-center">
+            <AlertCircle className="w-12 h-12 md:w-16 md:h-16 text-yellow-600 dark:text-yellow-400 mx-auto mb-4" />
+            <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">No Classes Assigned</h2>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mb-6">
               You are not currently assigned to any classes. Please contact the school administrator.
             </p>
             <Link
@@ -723,7 +723,7 @@ export default function MyStudentsPage() {
         {/* Search and Filter */}
         {teacherClasses.length > 0 && (
           <>
-            <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-4 md:mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-4 md:mb-6 transition-colors">
               <div className="grid md:grid-cols-3 gap-3 md:gap-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
@@ -732,7 +732,7 @@ export default function MyStudentsPage() {
                     placeholder="Search by name or student ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
                   />
                 </div>
                 <div className="relative">
@@ -740,7 +740,7 @@ export default function MyStudentsPage() {
                   <select
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
                   >
                     <option value="all">All Classes</option>
                     {teacherClasses.map(cls => (
@@ -755,7 +755,7 @@ export default function MyStudentsPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
                   >
                     <option value="name_asc">Name (A-Z)</option>
                     <option value="name_desc">Name (Z-A)</option>
@@ -771,25 +771,25 @@ export default function MyStudentsPage() {
             {/* Bulk Actions Bar - Removed as it's now in the header */}
 
             {/* Summary and View Toggle */}
-            <div className="bg-white rounded-lg shadow p-3 md:p-4 mb-4 md:mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 md:p-4 mb-4 md:mb-6 transition-colors">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
                 <div>
-                  <p className="text-xs md:text-sm text-gray-600">
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                     Showing <span className="font-semibold text-ghana-green">{filteredStudents.length}</span> student{filteredStudents.length !== 1 ? 's' : ''}
                     {selectedClass !== 'all' && ` in ${teacherClasses.find(c => c.class_id === selectedClass)?.class_name}`}
                   </p>
                 </div>
                 <div className="flex items-center space-x-3 md:space-x-4 w-full md:w-auto justify-between md:justify-end">
-                  <div className="text-xs md:text-sm text-gray-600">
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                     Total: <span className="font-semibold">{students.length}</span> student{students.length !== 1 ? 's' : ''}
                   </div>
-                  <div className="hidden md:flex border border-gray-300 rounded-lg overflow-hidden">
+                  <div className="hidden md:flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                     <button
                       onClick={() => setViewMode('grid')}
                       className={`px-2 md:px-3 py-1.5 flex items-center space-x-1 ${
                         viewMode === 'grid' 
                           ? 'bg-ghana-green text-white' 
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
                       }`}
                     >
                       <Grid className="w-3 h-3 md:w-4 md:h-4" />
@@ -800,7 +800,7 @@ export default function MyStudentsPage() {
                       className={`px-2 md:px-3 py-1.5 flex items-center space-x-1 ${
                         viewMode === 'list' 
                           ? 'bg-ghana-green text-white' 
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
                       }`}
                     >
                       <List className="w-3 h-3 md:w-4 md:h-4" />
@@ -847,9 +847,9 @@ export default function MyStudentsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto transition-colors">
+                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>
                         {isClassTeacher && (
                           <th className="px-3 md:px-4 py-2 md:py-3 text-left">
@@ -861,34 +861,34 @@ export default function MyStudentsPage() {
                               {selectedStudents.length === filteredStudents.length && filteredStudents.length > 0 ? (
                                 <CheckSquare className="w-4 h-4 md:w-5 md:h-5 text-ghana-green" />
                               ) : (
-                                <Square className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+                                <Square className="w-4 h-4 md:w-5 md:h-5 text-gray-400 dark:text-gray-500" />
                               )}
                             </button>
                           </th>
                         )}
-                        <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Student
                         </th>
-                        <th className="hidden md:table-cell px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="hidden md:table-cell px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Student ID
                         </th>
-                        <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Class
                         </th>
                         <th className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider">Guardian</div>
+                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-300 uppercase tracking-wider">Guardian</div>
                         </th>
                         <th className="hidden lg:table-cell px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs md:text-sm text-gray-500 uppercase tracking-wider">Contact</div>
+                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-300 uppercase tracking-wider">Contact</div>
                         </th>
-                        <th className="px-3 md:px-6 py-2 md:py-3 text-right text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-3 md:px-6 py-2 md:py-3 text-right text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Actions
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                       {filteredStudents.map((student) => (
-                        <tr key={student.id} className={`hover:bg-gray-50 ${selectedStudents.includes(student.id) ? 'bg-green-50' : ''}`}>
+                        <tr key={student.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${selectedStudents.includes(student.id) ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
                           {isClassTeacher && canManageStudentsInClass(student.class_id) && (
                             <td className="px-3 md:px-4 py-3 md:py-4">
                               <button
@@ -898,14 +898,14 @@ export default function MyStudentsPage() {
                                 {selectedStudents.includes(student.id) ? (
                                   <CheckSquare className="w-4 h-4 md:w-5 md:h-5 text-ghana-green" />
                                 ) : (
-                                  <Square className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+                                  <Square className="w-4 h-4 md:w-5 md:h-5 text-gray-400 dark:text-gray-500" />
                                 )}
                               </button>
                             </td>
                           )}
                           {isClassTeacher && !canManageStudentsInClass(student.class_id) && (
                             <td className="px-3 md:px-4 py-3 md:py-4">
-                              <Square className="w-4 h-4 md:w-5 md:h-5 text-gray-300" />
+                              <Square className="w-4 h-4 md:w-5 md:h-5 text-gray-300 dark:text-gray-600" />
                             </td>
                           )}
                           <td className="px-3 md:px-6 py-3 md:py-4">
@@ -914,27 +914,27 @@ export default function MyStudentsPage() {
                                 <GraduationCap className="w-4 h-4 md:w-5 md:h-5 text-ghana-green" />
                               </div>
                               <div className="ml-2 md:ml-4">
-                                <div className="text-xs md:text-sm font-medium text-gray-900">
+                                <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100">
                                   {student.last_name} {student.first_name} {student.middle_name || ''}
                                 </div>
-                                <div className="md:hidden text-xs text-gray-500 mt-0.5">
+                                <div className="md:hidden text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                                   {student.student_id}
                                 </div>
                               </div>
                             </div>
                           </td>
                           <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
-                            <div className="text-xs md:text-sm text-gray-900">{student.student_id}</div>
+                            <div className="text-xs md:text-sm text-gray-900 dark:text-gray-100">{student.student_id}</div>
                           </td>
                           <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
-                            <span className="px-1.5 md:px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            <span className="px-1.5 md:px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                               {student.classes?.name || 'No Class'}
                             </span>
                           </td>
-                          <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                          <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 dark:text-gray-400">
                             {student.guardian_name || '-'}
                           </td>
-                          <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                          <td className="hidden lg:table-cell px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 dark:text-gray-400">
                             <div className="space-y-1">
                               {student.guardian_phone && (
                                 <div className="flex items-center space-x-1">
@@ -955,28 +955,28 @@ export default function MyStudentsPage() {
                               <div className="flex justify-end space-x-1 md:space-x-2">
                                 <Link
                                   href={`/teacher/students/edit/${student.id}`}
-                                  className="text-blue-600 hover:text-blue-900 p-0.5 md:p-1"
+                                  className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 p-0.5 md:p-1"
                                   title="Edit"
                                 >
                                   <Edit className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </Link>
                                 <button
                                   onClick={() => setResetPasswordModal({ show: true, student })}
-                                  className="text-yellow-600 hover:text-yellow-900 p-0.5 md:p-1"
+                                  className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300 p-0.5 md:p-1"
                                   title="Reset Password"
                                 >
                                   <KeyRound className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </button>
                                 <button
                                   onClick={() => setDeleteModal({ show: true, student })}
-                                  className="text-red-600 hover:text-red-900 p-0.5 md:p-1"
+                                  className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-0.5 md:p-1"
                                   title="Delete"
                                 >
                                   <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </button>
                               </div>
                             ) : (
-                              <span className="text-gray-400 text-xs">View Only</span>
+                              <span className="text-gray-400 dark:text-gray-500 text-xs">View Only</span>
                             )}
                           </td>
                         </tr>
@@ -986,12 +986,12 @@ export default function MyStudentsPage() {
                 </div>
               )
             ) : (
-              <div className="bg-white rounded-lg shadow p-8 md:p-12 text-center">
-                <Users className="w-12 h-12 md:w-16 md:h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 md:p-12 text-center transition-colors">
+                <Users className="w-12 h-12 md:w-16 md:h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+                <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   {searchTerm || selectedClass !== 'all' ? 'No students match your search' : 'No students yet'}
                 </h3>
-                <p className="text-sm md:text-base text-gray-600 mb-6">
+                <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6">
                   {searchTerm || selectedClass !== 'all' 
                     ? 'Try adjusting your filters or search term' 
                     : 'Add students to your classes to get started'}
@@ -1013,35 +1013,35 @@ export default function MyStudentsPage() {
       {/* Reset Password Modal */}
       {resetPasswordModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-4 md:p-6 transition-colors">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-yellow-100 p-2 md:p-3 rounded-full">
-                <KeyRound className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
+              <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 md:p-3 rounded-full">
+                <KeyRound className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">Reset Password</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Reset Password</h3>
             </div>
             {resetSuccess ? (
               <div className="text-center py-4">
-                <div className="bg-green-100 p-3 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 flex items-center justify-center">
-                  <svg className="w-6 h-6 md:w-8 md:h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full w-12 h-12 md:w-16 md:h-16 mx-auto mb-4 flex items-center justify-center">
+                  <svg className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-green-600 font-semibold text-sm md:text-base">Password reset successfully!</p>
+                <p className="text-green-600 dark:text-green-400 font-semibold text-sm md:text-base">Password reset successfully!</p>
               </div>
             ) : (
               <>
-                <p className="text-gray-600 mb-2 text-xs md:text-sm">
-                  Are you sure you want to reset the password for <span className="font-semibold">{resetPasswordModal.student?.last_name} {resetPasswordModal.student?.first_name}</span>?
+                <p className="text-gray-600 dark:text-gray-300 mb-2 text-xs md:text-sm">
+                  Are you sure you want to reset the password for <span className="font-semibold text-gray-900 dark:text-gray-100">{resetPasswordModal.student?.last_name} {resetPasswordModal.student?.first_name}</span>?
                 </p>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-                  <p className="text-xs md:text-sm text-blue-800 mb-1">
+                <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-3 mb-6">
+                  <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200 mb-1">
                     <span className="font-semibold">New Username:</span> {getResetCredentials(resetPasswordModal.student).username}
                   </p>
-                  <p className="text-xs md:text-sm text-blue-800">
+                  <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
                     <span className="font-semibold">New Password:</span> {getResetCredentials(resetPasswordModal.student).password}
                   </p>
-                  <p className="text-[10px] md:text-xs text-blue-600 mt-1">
+                  <p className="text-[10px] md:text-xs text-blue-600 dark:text-blue-300 mt-1">
                     The password will be reset to the student's Date of Birth (DD-MM-YYYY)
                   </p>
                 </div>
@@ -1049,7 +1049,7 @@ export default function MyStudentsPage() {
                   <button
                     onClick={() => setResetPasswordModal({ show: false, student: null })}
                     disabled={resetting}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs md:text-sm"
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 text-xs md:text-sm"
                   >
                     Cancel
                   </button>
@@ -1080,21 +1080,21 @@ export default function MyStudentsPage() {
       {/* Delete Confirmation Modal */}
       {deleteModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-4 md:p-6 transition-colors">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-red-100 p-2 md:p-3 rounded-full">
-                <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
+              <div className="bg-red-100 dark:bg-red-900/30 p-2 md:p-3 rounded-full">
+                <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600 dark:text-red-400" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">Delete Student</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Delete Student</h3>
             </div>
-            <p className="text-gray-600 mb-6 text-xs md:text-sm">
-              Are you sure you want to delete <span className="font-semibold">{deleteModal.student?.last_name} {deleteModal.student?.first_name}</span>? This action cannot be undone.
+            <p className="text-gray-600 dark:text-gray-300 mb-6 text-xs md:text-sm">
+              Are you sure you want to delete <span className="font-semibold text-gray-900 dark:text-gray-100">{deleteModal.student?.last_name} {deleteModal.student?.first_name}</span>? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setDeleteModal({ show: false, student: null })}
                 disabled={deleting}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs md:text-sm"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 text-xs md:text-sm"
               >
                 Cancel
               </button>
@@ -1123,21 +1123,21 @@ export default function MyStudentsPage() {
       {/* Bulk Delete Confirmation Modal */}
       {bulkDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-4 md:p-6 transition-colors">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-red-100 p-2 md:p-3 rounded-full">
-                <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600" />
+              <div className="bg-red-100 dark:bg-red-900/30 p-2 md:p-3 rounded-full">
+                <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600 dark:text-red-400" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">Delete Multiple Students</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Delete Multiple Students</h3>
             </div>
-            <p className="text-gray-600 mb-6 text-xs md:text-sm">
-              Are you sure you want to delete <span className="font-semibold">{selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''}</span>? This action cannot be undone.
+            <p className="text-gray-600 dark:text-gray-300 mb-6 text-xs md:text-sm">
+              Are you sure you want to delete <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''}</span>? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setBulkDeleteModal(false)}
                 disabled={bulkDeleting}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs md:text-sm"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 text-xs md:text-sm"
               >
                 Cancel
               </button>
@@ -1166,21 +1166,21 @@ export default function MyStudentsPage() {
       {/* Bulk Reset Password Confirmation Modal */}
       {bulkResetPasswordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-4 md:p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-4 md:p-6 transition-colors">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-yellow-100 p-2 md:p-3 rounded-full">
-                <KeyRound className="w-5 h-5 md:w-6 md:h-6 text-yellow-600" />
+              <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 md:p-3 rounded-full">
+                <KeyRound className="w-5 h-5 md:w-6 md:h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900">Reset Password for Selected Students</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Reset Password for Selected Students</h3>
             </div>
-            <p className="text-gray-600 mb-6 text-xs md:text-sm">
-              Are you sure you want to reset the passwords for <span className="font-semibold">{selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''}</span>? This action cannot be undone.
+            <p className="text-gray-600 dark:text-gray-300 mb-6 text-xs md:text-sm">
+              Are you sure you want to reset the passwords for <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''}</span>? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setBulkResetPasswordModal(false)}
                 disabled={bulkResetting}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-xs md:text-sm"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 text-xs md:text-sm"
               >
                 Cancel
               </button>

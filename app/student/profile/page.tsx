@@ -410,7 +410,17 @@ export default function ProfilePage() {
 
           {/* Guardian Information */}
           <div className="p-4 md:p-8 border-b border-gray-200">
-            <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-4">Guardian Information</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base md:text-lg font-semibold text-gray-800">Guardian Information</h3>
+              {!editMode && canEditProfile && (
+                <button
+                  onClick={() => setEditMode(true)}
+                  className="text-sm text-methodist-blue hover:text-blue-700 font-medium"
+                >
+                  Edit Details
+                </button>
+              )}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               <div className="flex items-start gap-3">
                 <User className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />

@@ -15,7 +15,7 @@
 
 body {
   font-family: 'Poppins', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #f9fafb;
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-300;
 }
 
 .ghana-flag-border {
@@ -52,11 +52,11 @@ body {
 }
 
 .input-field {
-  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent;
+  @apply w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent;
 }
 
 .dashboard-card {
-  @apply bg-white rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition-shadow;
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition-shadow;
 }
 
 .grade-A {

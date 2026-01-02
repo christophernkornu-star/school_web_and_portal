@@ -661,10 +661,10 @@ export default function PerformancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading analytics...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading analytics...</p>
         </div>
       </div>
     )
@@ -672,26 +672,26 @@ export default function PerformancePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <header className="bg-white dark:bg-gray-800 shadow">
           <div className="container mx-auto px-6 py-4">
             <div className="flex items-center space-x-4">
               <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Performance Analytics</h1>
-                <p className="text-sm text-gray-600">Track and analyze student performance</p>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Performance Analytics</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Track and analyze student performance</p>
               </div>
             </div>
           </div>
         </header>
         <main className="container mx-auto px-6 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-start space-x-4">
-            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 flex items-start space-x-4">
+            <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 flex-shrink-0 mt-1" />
             <div>
-              <h3 className="font-bold text-red-800 mb-2 text-sm md:text-base">Error Loading Data</h3>
-              <p className="text-red-700 text-xs md:text-sm">{error}</p>
+              <h3 className="font-bold text-red-800 dark:text-red-300 mb-2 text-sm md:text-base">Error Loading Data</h3>
+              <p className="text-red-700 dark:text-red-200 text-xs md:text-sm">{error}</p>
               <button
                 onClick={() => loadData()}
                 className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
@@ -706,8 +706,8 @@ export default function PerformancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -715,8 +715,8 @@ export default function PerformancePage() {
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Performance Analytics</h1>
-                <p className="text-xs md:text-sm text-gray-600">Track and analyze student performance</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Performance Analytics</h1>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Track and analyze student performance</p>
               </div>
             </div>
             <button
@@ -732,18 +732,18 @@ export default function PerformancePage() {
 
       <main className="container mx-auto px-6 py-8">
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
           <div className="flex items-center space-x-4 mb-4">
             <Filter className="w-5 h-5 text-ghana-green" />
-            <h3 className="font-bold text-gray-800 text-sm md:text-base">Filters</h3>
+            <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Filters</h3>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class</label>
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 <option value="all">All Classes</option>
                 {classes.map((cls) => (
@@ -754,11 +754,11 @@ export default function PerformancePage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Term</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Term</label>
               <select
                 value={selectedTerm}
                 onChange={(e) => setSelectedTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 {terms.map((term) => (
                   <option key={term.id} value={term.id}>
@@ -774,61 +774,61 @@ export default function PerformancePage() {
         {stats && (
           <>
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-800 text-sm md:text-base">Class Average</h3>
+                  <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Class Average</h3>
                   <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
                 </div>
                 <p className="text-xl md:text-2xl font-bold text-ghana-green">{stats.classAverage}%</p>
-                <p className="text-xs md:text-sm text-gray-600 mt-2">Based on {stats.totalStudents} students</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-2">Based on {stats.totalStudents} students</p>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-800 text-sm md:text-base">Pass Rate</h3>
+                  <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Pass Rate</h3>
                   <Award className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
                 </div>
                 <p className="text-xl md:text-2xl font-bold text-blue-600">{stats.passRate}%</p>
-                <p className="text-xs md:text-sm text-gray-600 mt-2">{stats.passedStudents}/{stats.totalStudents} students</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-2">{stats.passedStudents}/{stats.totalStudents} students</p>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-800 text-sm md:text-base">Top Performers</h3>
+                  <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Top Performers</h3>
                   <Award className="w-6 h-6 md:w-8 md:h-8 text-ghana-gold" />
                 </div>
                 <p className="text-xl md:text-2xl font-bold text-ghana-gold">{stats.topPerformers}</p>
-                <p className="text-xs md:text-sm text-gray-600 mt-2">Scoring above 80%</p>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-2">Scoring above 80%</p>
               </div>
             </div>
 
             {/* Performance Distribution */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow p-6 border-2 border-green-200">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg shadow p-6 border-2 border-green-200 dark:border-green-800">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-green-800 text-sm md:text-base">Excellent</h3>
-                  <Target className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
+                  <h3 className="font-bold text-green-800 dark:text-green-300 text-sm md:text-base">Excellent</h3>
+                  <Target className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-green-700">{stats.topPerformers}</p>
-                <p className="text-xs md:text-sm text-green-600 mt-2">80% and above</p>
+                <p className="text-xl md:text-2xl font-bold text-green-700 dark:text-green-400">{stats.topPerformers}</p>
+                <p className="text-xs md:text-sm text-green-600 dark:text-green-300 mt-2">80% and above</p>
               </div>
 
-              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg shadow p-6 border-2 border-yellow-200">
+              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 rounded-lg shadow p-6 border-2 border-yellow-200 dark:border-yellow-800">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-yellow-800 text-sm md:text-base">Average</h3>
-                  <Minus className="w-6 h-6 md:w-8 md:h-8 text-yellow-600" />
+                  <h3 className="font-bold text-yellow-800 dark:text-yellow-300 text-sm md:text-base">Average</h3>
+                  <Minus className="w-6 h-6 md:w-8 md:h-8 text-yellow-600 dark:text-yellow-400" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-yellow-700">{stats.averagePerformers}</p>
-                <p className="text-xs md:text-sm text-yellow-600 mt-2">50% - 79%</p>
+                <p className="text-xl md:text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.averagePerformers}</p>
+                <p className="text-xs md:text-sm text-yellow-600 dark:text-yellow-300 mt-2">50% - 79%</p>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg shadow p-6 border-2 border-red-200">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 rounded-lg shadow p-6 border-2 border-red-200 dark:border-red-800">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-red-800 text-sm md:text-base">Needs Support</h3>
-                  <TrendingDown className="w-6 h-6 md:w-8 md:h-8 text-red-600" />
+                  <h3 className="font-bold text-red-800 dark:text-red-300 text-sm md:text-base">Needs Support</h3>
+                  <TrendingDown className="w-6 h-6 md:w-8 md:h-8 text-red-600 dark:text-red-400" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-red-700">{stats.strugglingStudents}</p>
-                <p className="text-xs md:text-sm text-red-600 mt-2">Below 50%</p>
+                <p className="text-xl md:text-2xl font-bold text-red-700 dark:text-red-400">{stats.strugglingStudents}</p>
+                <p className="text-xs md:text-sm text-red-600 dark:text-red-300 mt-2">Below 50%</p>
               </div>
             </div>
           </>
@@ -836,10 +836,10 @@ export default function PerformancePage() {
 
         {/* Performance Trends Over Time */}
         {overallTrends.length >= 2 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
             <div className="flex items-center space-x-4 mb-6">
               <TrendingUp className="w-6 h-6 text-ghana-green" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-800">Overall Performance Trends</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Overall Performance Trends</h3>
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={overallTrends} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -888,16 +888,16 @@ export default function PerformancePage() {
 
         {/* Subject Performance Trends */}
         {subjectTrends.length >= 2 && subjectPerformance.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
                 <BookOpen className="w-6 h-6 text-ghana-green" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-800">Subject Performance Trends</h3>
+                <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Subject Performance Trends</h3>
               </div>
               <select
                 value={selectedSubjectForTrend}
                 onChange={(e) => setSelectedSubjectForTrend(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
               >
                 {subjectPerformance.map((subject) => (
                   <option key={subject.subject_id} value={subject.subject_id}>
@@ -947,19 +947,19 @@ export default function PerformancePage() {
 
         {/* Grade Distribution */}
         {gradeDistribution.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
             <div className="flex items-center space-x-4 mb-6">
               <BarChart3 className="w-6 h-6 text-ghana-green" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-800">Grade Distribution</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Grade Distribution</h3>
             </div>
             <div className="space-y-4">
               {gradeDistribution.map((grade) => (
                 <div key={grade.grade}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-700 text-sm md:text-base">Grade {grade.grade}</span>
-                    <span className="text-[10px] md:text-xs text-gray-600">{grade.count} students ({grade.percentage}%)</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base">Grade {grade.grade}</span>
+                    <span className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{grade.count} students ({grade.percentage}%)</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                     <div
                       className={`h-3 rounded-full ${
                         grade.grade === 'A' ? 'bg-green-500' :
@@ -980,40 +980,40 @@ export default function PerformancePage() {
 
         {/* Subject Performance */}
         {subjectPerformance.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
             <div className="flex items-center space-x-4 mb-6">
               <BookOpen className="w-6 h-6 text-ghana-green" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-800">Subject Performance</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Subject Performance</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700 text-xs md:text-sm">Subject</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 text-xs md:text-sm">Average</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 text-xs md:text-sm">Highest</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 text-xs md:text-sm">Lowest</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 text-xs md:text-sm">Students</th>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Subject</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Average</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Highest</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Lowest</th>
+                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Students</th>
                   </tr>
                 </thead>
                 <tbody>
                   {subjectPerformance.map((subject) => (
-                    <tr key={subject.subject_id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 font-medium text-gray-800 text-xs md:text-sm">{subject.subject_name}</td>
+                    <tr key={subject.subject_id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="py-3 px-4 font-medium text-gray-800 dark:text-white text-xs md:text-sm">{subject.subject_name}</td>
                       <td className="py-3 px-4 text-center">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${
-                          subject.average >= 80 ? 'bg-green-100 text-green-800' :
-                          subject.average >= 70 ? 'bg-blue-100 text-blue-800' :
-                          subject.average >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          subject.average >= 50 ? 'bg-orange-100 text-orange-800' :
-                          'bg-red-100 text-red-800'
+                          subject.average >= 80 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                          subject.average >= 70 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' :
+                          subject.average >= 60 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                          subject.average >= 50 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                         }`}>
                           {subject.average}%
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center text-green-600 font-semibold text-xs md:text-sm">{subject.highest}%</td>
-                      <td className="py-3 px-4 text-center text-gray-600 text-xs md:text-sm">{subject.lowest}%</td>
-                      <td className="py-3 px-4 text-center text-gray-600 text-xs md:text-sm">{subject.studentCount}</td>
+                      <td className="py-3 px-4 text-center text-green-600 dark:text-green-400 font-semibold text-xs md:text-sm">{subject.highest}%</td>
+                      <td className="py-3 px-4 text-center text-gray-600 dark:text-gray-400 text-xs md:text-sm">{subject.lowest}%</td>
+                      <td className="py-3 px-4 text-center text-gray-600 dark:text-gray-400 text-xs md:text-sm">{subject.studentCount}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -1026,26 +1026,26 @@ export default function PerformancePage() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Top Performers */}
           {topStudents.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <div className="flex items-center space-x-4 mb-6">
                 <Award className="w-6 h-6 text-ghana-gold" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-800">Top Performers</h3>
+                <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Top Performers</h3>
               </div>
               <div className="space-y-3">
                 {topStudents.map((student, index) => (
-                  <div key={student.student_id} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div key={student.student_id} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 rounded-full bg-ghana-gold text-white flex items-center justify-center font-bold text-sm">
                         {index + 1}
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800 text-sm md:text-base">{student.student_name}</p>
-                        <p className="text-[10px] md:text-xs text-gray-600">{student.student_number}</p>
+                        <p className="font-semibold text-gray-800 dark:text-white text-sm md:text-base">{student.student_name}</p>
+                        <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.student_number}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-base md:text-lg font-bold text-green-600">{student.average}%</p>
-                      <p className="text-[10px] md:text-xs text-gray-600">{student.subjects_count} subjects</p>
+                      <p className="text-base md:text-lg font-bold text-green-600 dark:text-green-400">{student.average}%</p>
+                      <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.subjects_count} subjects</p>
                     </div>
                   </div>
                 ))}
@@ -1055,21 +1055,21 @@ export default function PerformancePage() {
 
           {/* Struggling Students */}
           {strugglingStudents.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
               <div className="flex items-center space-x-4 mb-6">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-800">Students Needing Support</h3>
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Students Needing Support</h3>
               </div>
               <div className="space-y-3">
                 {strugglingStudents.map((student) => (
-                  <div key={student.student_id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                  <div key={student.student_id} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                     <div>
-                      <p className="font-semibold text-gray-800 text-sm md:text-base">{student.student_name}</p>
-                      <p className="text-[10px] md:text-xs text-gray-600">{student.student_number}</p>
+                      <p className="font-semibold text-gray-800 dark:text-white text-sm md:text-base">{student.student_name}</p>
+                      <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.student_number}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-base md:text-lg font-bold text-red-600">{student.average}%</p>
-                      <p className="text-[10px] md:text-xs text-gray-600">{student.subjects_count} subjects</p>
+                      <p className="text-base md:text-lg font-bold text-red-600 dark:text-red-400">{student.average}%</p>
+                      <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.subjects_count} subjects</p>
                     </div>
                   </div>
                 ))}
@@ -1080,10 +1080,10 @@ export default function PerformancePage() {
 
         {/* Empty State */}
         {(!stats || stats.totalStudents === 0) && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">No Performance Data Yet</h3>
-            <p className="text-gray-600 mb-6 text-sm md:text-base">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+            <BarChart3 className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white mb-2">No Performance Data Yet</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-6 text-sm md:text-base">
               There are no scores recorded for the selected class and term.
             </p>
             <Link

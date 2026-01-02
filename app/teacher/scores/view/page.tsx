@@ -381,18 +381,18 @@ export default function ViewScoresPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -400,8 +400,8 @@ export default function ViewScoresPage() {
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">View & Edit Scores</h1>
-                <p className="text-xs md:text-sm text-gray-600">Review and correct scores at a glance</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">View & Edit Scores</h1>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Review and correct scores at a glance</p>
               </div>
             </div>
             {scores.length > 0 && (
@@ -419,14 +419,14 @@ export default function ViewScoresPage() {
 
       <main className="container mx-auto px-6 py-8">
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-800">Filter Options</h2>
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-white">Filter Options</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class</label>
               <select
                 value={selectedClass}
                 onChange={(e) => {
@@ -453,7 +453,7 @@ export default function ViewScoresPage() {
                     }
                   }
                 }}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
               >
                 {Array.from(new Set(assignments.map(a => a.class_id))).map(classId => {
                   const assignment = assignments.find(a => a.class_id === classId)
@@ -467,11 +467,11 @@ export default function ViewScoresPage() {
             </div>
 
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Subject</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subject</label>
               <select
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
               >
                 {(() => {
                   // Get the category and map to level
@@ -508,11 +508,11 @@ export default function ViewScoresPage() {
             </div>
 
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Term</label>
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Term</label>
               <select
                 value={selectedTerm}
                 onChange={(e) => setSelectedTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
               >
                 {terms.map(term => (
                   <option key={term.id} value={term.id}>
@@ -527,33 +527,33 @@ export default function ViewScoresPage() {
         {/* Statistics */}
         {scores.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Total Students</p>
-              <p className="text-xl md:text-2xl font-bold text-gray-800">{scores.length}</p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mb-1">Total Students</p>
+              <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">{scores.length}</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Class Average</p>
-              <p className="text-xl md:text-2xl font-bold text-blue-600">{classAverage.toFixed(1)}%</p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mb-1">Class Average</p>
+              <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{classAverage.toFixed(1)}%</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Highest Score</p>
-              <p className="text-xl md:text-2xl font-bold text-green-600">{highestScore}%</p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mb-1">Highest Score</p>
+              <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">{highestScore}%</p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4">
-              <p className="text-xs md:text-sm text-gray-600 mb-1">Missing Scores</p>
-              <p className="text-xl md:text-2xl font-bold text-red-600">{missingScores}</p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mb-1">Missing Scores</p>
+              <p className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400">{missingScores}</p>
             </div>
           </div>
         )}
 
         {/* Warning for missing scores */}
         {missingScores > 0 && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded-lg">
+          <div className="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-500 p-4 mb-6 rounded-lg">
             <div className="flex items-start">
-              <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+              <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-500 mt-0.5 mr-3" />
               <div>
-                <h3 className="text-sm font-semibold text-yellow-800">Incomplete Scores</h3>
-                <p className="text-sm text-yellow-700 mt-1">
+                <h3 className="text-sm font-semibold text-yellow-800 dark:text-yellow-400">Incomplete Scores</h3>
+                <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
                   {missingScores} student{missingScores > 1 ? 's' : ''} {missingScores > 1 ? 'are' : 'is'} missing scores. 
                   Click the edit icon to add them.
                 </p>
@@ -570,16 +570,16 @@ export default function ViewScoresPage() {
               placeholder="Search by student name or ID..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
             />
           </div>
         )}
 
         {/* Scores Table */}
         {scores.length > 0 ? (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-ghana-green text-white">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Student ID</th>
@@ -591,13 +591,13 @@ export default function ViewScoresPage() {
                     <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredScores.map((score) => (
-                    <tr key={score.id} className={`hover:bg-gray-50 ${score.total === null ? 'bg-yellow-50' : ''}`}>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
+                    <tr key={score.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${score.total === null ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''}`}>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                         {score.students?.student_id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-700 dark:text-gray-300">
                         {score.students?.profiles?.full_name}
                       </td>
                       
@@ -611,7 +611,7 @@ export default function ViewScoresPage() {
                               step="0.1"
                               value={editValues.class_score ?? ''}
                               onChange={(e) => setEditValues({ ...editValues, class_score: parseFloat(e.target.value) || null })}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-ghana-green"
+                              className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
                               placeholder="0"
                             />
                           </td>
@@ -623,7 +623,7 @@ export default function ViewScoresPage() {
                               step="0.1"
                               value={editValues.exam_score ?? ''}
                               onChange={(e) => setEditValues({ ...editValues, exam_score: parseFloat(e.target.value) || null })}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded text-center focus:ring-2 focus:ring-ghana-green"
+                              className="w-20 px-2 py-1 border border-gray-300 dark:border-gray-600 rounded text-center focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
                               placeholder="0"
                             />
                           </td>
@@ -704,10 +704,10 @@ export default function ViewScoresPage() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <Eye className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Students Found</h3>
-            <p className="text-gray-600">Select a class, subject, and term to view scores.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
+            <Eye className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-200 mb-2">No Students Found</h3>
+            <p className="text-gray-600 dark:text-gray-400">Select a class, subject, and term to view scores.</p>
           </div>
         )}
       </main>

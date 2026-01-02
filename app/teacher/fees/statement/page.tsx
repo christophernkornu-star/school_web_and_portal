@@ -89,20 +89,20 @@ function ClassStatementContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <Loader2 className="w-8 h-8 animate-spin text-green-600" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 md:p-8 print:bg-white print:p-0">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 md:p-8 print:bg-white print:p-0">
       <div className="max-w-5xl mx-auto">
         {/* Toolbar - Hidden when printing */}
         <div className="mb-6 flex items-center justify-between print:hidden">
           <Link 
             href="/teacher/fees"
-            className="flex items-center text-gray-600 hover:text-gray-900"
+            className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Fees
@@ -117,7 +117,7 @@ function ClassStatementContent() {
         </div>
 
         {/* Report Component */}
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden print:shadow-none print:rounded-none">
+        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden print:shadow-none print:rounded-none">
           <ClassFeeReport 
             className={className}
             students={students}

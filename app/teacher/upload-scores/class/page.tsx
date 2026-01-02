@@ -940,28 +940,28 @@ function ClassScoresContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 transition-colors">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-8">
           <Link
             href="/teacher/dashboard"
-            className="inline-flex items-center text-ghana-green hover:text-green-700 mb-4 text-xs md:text-sm"
+            className="inline-flex items-center text-ghana-green hover:text-green-700 dark:hover:text-green-400 mb-4 text-xs md:text-sm"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Dashboard
           </Link>
-          <h1 className="text-lg md:text-xl font-bold text-gray-900">Class Scores</h1>
-          <p className="text-xs md:text-sm text-gray-600 mt-2">
+          <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Class Scores</h1>
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-2">
             Record multiple class assessments. System automatically calculates final class score (max 40 marks).
           </p>
         </div>
@@ -970,14 +970,14 @@ function ClassScoresContent() {
         <div className="flex space-x-2 mb-6">
           <Link
             href="/teacher/upload-scores/class?method=grid"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'grid' ? 'bg-ghana-green text-white' : 'bg-white text-gray-700'}`}
+            className={`px-4 py-2 rounded text-xs md:text-sm transition-colors ${method === 'grid' ? 'bg-ghana-green text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
           >
             <Grid className="w-4 h-4 inline mr-2" />
             Spreadsheet View
           </Link>
           <Link
             href="/teacher/upload-scores/class?method=csv"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'csv' ? 'bg-ghana-green text-white' : 'bg-white text-gray-700'}`}
+            className={`px-4 py-2 rounded text-xs md:text-sm transition-colors ${method === 'csv' ? 'bg-ghana-green text-white' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
           >
             <Upload className="w-4 h-4 inline mr-2" />
             CSV
@@ -985,17 +985,17 @@ function ClassScoresContent() {
         </div>
 
         {/* Forms based on method */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
           {method === 'grid' && (
             <div className="space-y-6">
                 {/* Filters */}
                 <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class *</label>
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class *</label>
                         <select
                             value={selectedClass}
                             onChange={(e) => setSelectedClass(e.target.value)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs md:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                         >
                             <option value="">Select class</option>
                             {teacherClasses.map(cls => (
@@ -1005,23 +1005,23 @@ function ClassScoresContent() {
                     </div>
 
                     <div className="relative">
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Subjects *</label>
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subjects *</label>
                         <button
                             type="button"
                             onClick={() => setIsSubjectDropdownOpen(!isSubjectDropdownOpen)}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-left bg-white flex justify-between items-center text-xs md:text-sm"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-left bg-white dark:bg-gray-700 flex justify-between items-center text-xs md:text-sm text-gray-900 dark:text-gray-100"
                         >
                             <span className="truncate">
                                 {selectedSubjects.length === 0 
                                     ? 'Select Subjects' 
                                     : `${selectedSubjects.length} Selected`}
                             </span>
-                            <Grid className="w-4 h-4 text-gray-500" />
+                            <Grid className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                         </button>
                         
                         {isSubjectDropdownOpen && (
-                            <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                                <div className="p-2 border-b sticky top-0 bg-white">
+                            <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                <div className="p-2 border-b dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
                                     <button
                                         onClick={() => {
                                             if (selectedSubjects.length === filteredSubjects.length) {
@@ -1030,20 +1030,20 @@ function ClassScoresContent() {
                                                 setSelectedSubjects(filteredSubjects.map(s => s.id))
                                             }
                                         }}
-                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                        className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                                     >
                                         {selectedSubjects.length === filteredSubjects.length ? 'Deselect All' : 'Select All'}
                                     </button>
                                 </div>
                                 {filteredSubjects.map(subject => (
-                                    <label key={subject.id} className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
+                                    <label key={subject.id} className="flex items-center px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer">
                                         <input
                                             type="checkbox"
                                             checked={selectedSubjects.includes(subject.id)}
                                             onChange={(e) => toggleSubject(subject.id)}
-                                            className="mr-3 h-4 w-4 text-ghana-green focus:ring-ghana-green border-gray-300 rounded"
+                                            className="mr-3 h-4 w-4 text-ghana-green focus:ring-ghana-green border-gray-300 dark:border-gray-500 rounded bg-white dark:bg-gray-600"
                                         />
-                                        <span className="text-sm text-gray-700">{subject.name}</span>
+                                        <span className="text-sm text-gray-700 dark:text-gray-200">{subject.name}</span>
                                     </label>
                                 ))}
                             </div>
@@ -1054,8 +1054,8 @@ function ClassScoresContent() {
                     </div>
 
                     <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Term</label>
-                        <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium text-xs md:text-sm">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Term</label>
+                        <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-xs md:text-sm">
                             {currentTermName || 'No current term set'}
                         </div>
                     </div>
@@ -1065,7 +1065,7 @@ function ClassScoresContent() {
                 {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
                     <div>
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-800">Enter Scores</h3>
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Enter Scores</h3>
                             <button
                                 onClick={saveGridScores}
                                 disabled={gridSaving || gridChanges.size === 0}
@@ -1078,14 +1078,14 @@ function ClassScoresContent() {
                         {gridLoading ? (
                             <div className="text-center py-12">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ghana-green mx-auto mb-4"></div>
-                                <p className="text-gray-600">Loading scores...</p>
+                                <p className="text-gray-600 dark:text-gray-400">Loading scores...</p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto border rounded-lg max-h-[70vh]">
-                                <table className="min-w-full divide-y divide-gray-200 border-collapse">
-                                    <thead className="bg-gray-50 sticky top-0 z-20 shadow-sm">
+                            <div className="overflow-x-auto border dark:border-gray-700 rounded-lg max-h-[70vh]">
+                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
+                                    <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-20 shadow-sm">
                                         <tr>
-                                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-30 border-r border-b">
+                                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-30 border-r dark:border-gray-600 border-b dark:border-gray-600">
                                                 Student
                                             </th>
                                             {selectedSubjects.map(subjectId => {
@@ -1093,10 +1093,10 @@ function ClassScoresContent() {
                                                 const firstStudentId = students[0]?.id
                                                 const totalAssessments = gridScores[firstStudentId]?.[subjectId]?.total_assessments || 0
                                                 return (
-                                                    <th key={subjectId} colSpan={2} className="px-6 py-2 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-r bg-gray-100">
+                                                    <th key={subjectId} colSpan={2} className="px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-gray-600 border-r dark:border-gray-600 bg-gray-100 dark:bg-gray-800">
                                                         <div>{subject?.name || 'Unknown'}</div>
                                                         {totalAssessments > 0 && (
-                                                            <div className="text-[10px] text-gray-500 font-normal mt-0.5">
+                                                            <div className="text-[10px] text-gray-500 dark:text-gray-400 font-normal mt-0.5">
                                                                 {totalAssessments} Assessments
                                                             </div>
                                                         )}
@@ -1107,19 +1107,19 @@ function ClassScoresContent() {
                                         <tr>
                                             {selectedSubjects.map(subjectId => (
                                                 <Fragment key={subjectId}>
-                                                    <th key={`${subjectId}-current`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-24 bg-gray-50">Current (40%)</th>
-                                                    <th key={`${subjectId}-add`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-24 border-r bg-gray-50">Add (0-10)</th>
+                                                    <th key={`${subjectId}-current`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 w-24 bg-gray-50 dark:bg-gray-700">Current (40%)</th>
+                                                    <th key={`${subjectId}-add`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 w-24 border-r dark:border-gray-600 bg-gray-50 dark:bg-gray-700">Add (0-10)</th>
                                                 </Fragment>
                                             ))}
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                         {students.map((student) => {
                                             const hasChanges = gridChanges.has(student.id)
                                             return (
-                                                <tr key={student.id} className={hasChanges ? 'bg-blue-50' : 'hover:bg-gray-50'}>
-                                                    <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r shadow-sm">
-                                                        <div className="text-sm font-medium text-gray-900">
+                                                <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}>
+                                                    <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-gray-600 shadow-sm">
+                                                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                                             {student.last_name} {student.first_name}
                                                         </div>
                                                     </td>
@@ -1130,7 +1130,7 @@ function ClassScoresContent() {
                                                         return (
                                                             <Fragment key={subjectId}>
                                                                 <td key={`${subjectId}-current`} className="px-2 py-4 whitespace-nowrap text-center relative group">
-                                                                    <span className="text-sm font-medium text-gray-700">
+                                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                                                                         {scores.current_score.toFixed(1)}
                                                                     </span>
                                                                     {showWarning ? (
@@ -1148,7 +1148,7 @@ function ClassScoresContent() {
                                                                         </div>
                                                                     ) : null}
                                                                 </td>
-                                                                <td key={`${subjectId}-add`} className="px-2 py-4 whitespace-nowrap text-center border-r">
+                                                                <td key={`${subjectId}-add`} className="px-2 py-4 whitespace-nowrap text-center border-r dark:border-gray-600">
                                                                     <input
                                                                         type="number"
                                                                         min="0"
@@ -1163,7 +1163,7 @@ function ClassScoresContent() {
                                                                             }
                                                                             handleGridScoreChange(student.id, subjectId, e.target.value)
                                                                         }}
-                                                                        className="w-20 px-2 py-1 text-center border border-gray-300 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm"
+                                                                        className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                                                         placeholder="+"
                                                                     />
                                                                 </td>
@@ -1179,10 +1179,10 @@ function ClassScoresContent() {
                         )}
                     </div>
                 ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                        <Grid className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Select Filters</h3>
-                        <p className="text-gray-600">Please select a class and at least one subject to view the grid.</p>
+                    <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/30 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <Grid className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Select Filters</h3>
+                        <p className="text-gray-600 dark:text-gray-400">Please select a class and at least one subject to view the grid.</p>
                     </div>
                 )}
             </div>
@@ -1193,11 +1193,11 @@ function ClassScoresContent() {
           {method === 'csv' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class *</label>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class *</label>
                 <select
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs md:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select class</option>
                   {teacherClasses.map(cls => (
@@ -1207,8 +1207,8 @@ function ClassScoresContent() {
               </div>
 
               {currentTermName && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs md:text-sm text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <p className="text-xs md:text-sm text-blue-800 dark:text-blue-300">
                     <strong>Current Term:</strong> {currentTermName}
                   </p>
                 </div>
@@ -1216,27 +1216,27 @@ function ClassScoresContent() {
 
               {selectedClass && (
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Select Subjects for Template * (Select at least one)
                   </label>
-                  <div className="border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
+                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 max-h-60 overflow-y-auto space-y-2 bg-white dark:bg-gray-700">
                     {filteredSubjects.length > 0 ? (
                       filteredSubjects.map(subject => (
-                        <label key={subject.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <label key={subject.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 p-2 rounded">
                           <input
                             type="checkbox"
                             checked={selectedSubjects.includes(subject.id)}
                             onChange={() => toggleSubject(subject.id)}
-                            className="w-4 h-4 text-ghana-green"
+                            className="w-4 h-4 text-ghana-green bg-white dark:bg-gray-600 border-gray-300 dark:border-gray-500"
                           />
-                          <span className="text-xs md:text-sm">{subject.name}</span>
+                          <span className="text-xs md:text-sm text-gray-700 dark:text-gray-200">{subject.name}</span>
                         </label>
                       ))
                     ) : (
-                      <p className="text-xs md:text-sm text-gray-500">No subjects available for this class</p>
+                      <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">No subjects available for this class</p>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {selectedSubjects.length} subject{selectedSubjects.length !== 1 ? 's' : ''} selected
                   </p>
                 </div>
@@ -1254,34 +1254,34 @@ function ClassScoresContent() {
               )}
 
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">CSV File *</label>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CSV File *</label>
                 <input
                   type="file"
                   accept=".csv"
                   onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-xs md:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-ghana-green file:text-white hover:file:bg-green-700"
                 />
-                <p className="text-xs md:text-sm text-gray-500 mt-1">
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                   Format: student_name, mathematics_class, english_language_class, ...
                 </p>
               </div>
 
               {formErrors.csv && (
-                <div className="flex items-center space-x-2 text-red-600 text-xs md:text-sm">
+                <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-xs md:text-sm">
                   <AlertCircle className="w-4 h-4" />
                   <p>{formErrors.csv}</p>
                 </div>
               )}
 
               {uploadResults && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs md:text-sm">
-                  <p className="font-medium">Upload Results:</p>
-                  <p className="text-green-600">✓ Success: {uploadResults.success}</p>
-                  <p className="text-red-600">✗ Failed: {uploadResults.failed}</p>
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-xs md:text-sm">
+                  <p className="font-medium text-gray-900 dark:text-gray-100">Upload Results:</p>
+                  <p className="text-green-600 dark:text-green-400">✓ Success: {uploadResults.success}</p>
+                  <p className="text-red-600 dark:text-red-400">✗ Failed: {uploadResults.failed}</p>
                   {uploadResults.errors.length > 0 && (
                     <div className="mt-2 max-h-40 overflow-y-auto">
                       {uploadResults.errors.map((err: string, i: number) => (
-                        <p key={i} className="text-xs md:text-sm text-red-600">{err}</p>
+                        <p key={i} className="text-xs md:text-sm text-red-600 dark:text-red-400">{err}</p>
                       ))}
                     </div>
                   )}
@@ -1291,7 +1291,7 @@ function ClassScoresContent() {
               <button
                 onClick={handleCsvUpload}
                 disabled={submitting || !csvFile || !selectedClass}
-                className="w-full bg-ghana-green text-white py-3 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 text-xs md:text-sm"
+                className="w-full bg-ghana-green text-white py-3 rounded-lg hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-xs md:text-sm"
               >
                 {submitting ? 'Uploading...' : 'Upload CSV'}
               </button>

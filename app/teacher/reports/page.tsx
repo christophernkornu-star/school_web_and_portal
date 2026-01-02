@@ -301,16 +301,16 @@ export default function ReportsPage() {
   const selectedTermData = terms.find(t => t.id === selectedTerm)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <header className="bg-white dark:bg-gray-800 shadow transition-colors">
         <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center gap-2">
           <div className="flex items-center space-x-2 md:space-x-4">
-            <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 shrink-0">
+            <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 shrink-0">
               <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
             </Link>
             <div>
-              <h1 className="text-base md:text-2xl font-bold text-gray-800 leading-tight">Class Performance Reports</h1>
-              <p className="text-xs md:text-sm text-gray-600 hidden sm:block">Generate report cards and analyze class performance</p>
+              <h1 className="text-base md:text-2xl font-bold text-gray-800 dark:text-white leading-tight">Class Performance Reports</h1>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">Generate report cards and analyze class performance</p>
             </div>
           </div>
           <Link 
@@ -326,20 +326,20 @@ export default function ReportsPage() {
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 transition-colors">
           <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-600" />
-            <h2 className="text-base md:text-lg font-semibold text-gray-800">Filter Options</h2>
+            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <h2 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white">Filter Options</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Class
               </label>
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
               >
                 {Array.from(new Set(assignments.map(a => a.class_id))).map(classId => {
                   const assignment = assignments.find(a => a.class_id === classId)
@@ -353,13 +353,13 @@ export default function ReportsPage() {
             </div>
 
             <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Select Term
               </label>
               <select
                 value={selectedTerm}
                 onChange={(e) => setSelectedTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
               >
                 {terms.map((term) => (
                   <option key={term.id} value={term.id}>
@@ -378,7 +378,7 @@ export default function ReportsPage() {
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
               view === 'overview'
                 ? 'bg-ghana-green text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
             <BarChart3 className="w-4 h-4 inline-block mr-2" />
@@ -389,7 +389,7 @@ export default function ReportsPage() {
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
               view === 'students'
                 ? 'bg-ghana-green text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
             <Users className="w-4 h-4 inline-block mr-2" />
@@ -400,7 +400,7 @@ export default function ReportsPage() {
             className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
               view === 'subjects'
                 ? 'bg-ghana-green text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
             <TrendingUp className="w-4 h-4 inline-block mr-2" />
@@ -419,97 +419,97 @@ export default function ReportsPage() {
         {view === 'overview' && classPerformance && (
           <div className="space-y-6">
             <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm text-gray-600">Class Average</p>
-                    <p className="text-xl md:text-2xl font-bold text-methodist-blue mt-2">
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Class Average</p>
+                    <p className="text-xl md:text-2xl font-bold text-methodist-blue dark:text-blue-400 mt-2">
                       {classPerformance.classAverage}%
                     </p>
                   </div>
-                  <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-methodist-blue opacity-50" />
+                  <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-methodist-blue dark:text-blue-400 opacity-50" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm text-gray-600">Total Students</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-800 mt-2">
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Students</p>
+                    <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mt-2">
                       {classPerformance.totalStudents}
                     </p>
                   </div>
-                  <Users className="w-6 h-6 md:w-8 md:h-8 text-gray-400 opacity-50" />
+                  <Users className="w-6 h-6 md:w-8 md:h-8 text-gray-400 dark:text-gray-500 opacity-50" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm text-gray-600">Highest Score</p>
-                    <p className="text-xl md:text-2xl font-bold text-green-600 mt-2">
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Highest Score</p>
+                    <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400 mt-2">
                       {classPerformance.highestScore}%
                     </p>
                   </div>
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-green-400 opacity-50" />
+                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-green-400 dark:text-green-500 opacity-50" />
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs md:text-sm text-gray-600">Lowest Score</p>
-                    <p className="text-xl md:text-2xl font-bold text-red-600 mt-2">
+                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Lowest Score</p>
+                    <p className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400 mt-2">
                       {classPerformance.lowestScore}%
                     </p>
                   </div>
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-red-400 opacity-50 transform rotate-180" />
+                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-red-400 dark:text-red-500 opacity-50 transform rotate-180" />
                 </div>
               </div>
             </div>
 
             {/* Performance Distribution */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-4">Performance Distribution</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+              <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-4">Performance Distribution</h3>
               <div className="grid md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-green-600">{classPerformance.excellentCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">Excellent (≥80%)</p>
+                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                  <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">{classPerformance.excellentCount}</p>
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Excellent (≥80%)</p>
                 </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-blue-600">{classPerformance.goodCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">Good (60-79%)</p>
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{classPerformance.goodCount}</p>
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Good (60-79%)</p>
                 </div>
-                <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-yellow-600">{classPerformance.averageCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">Average (40-59%)</p>
+                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <p className="text-xl md:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{classPerformance.averageCount}</p>
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Average (40-59%)</p>
                 </div>
-                <div className="text-center p-4 bg-red-50 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-red-600">{classPerformance.poorCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 mt-1">Needs Help (&lt;40%)</p>
+                <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                  <p className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400">{classPerformance.poorCount}</p>
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Needs Help (&lt;40%)</p>
                 </div>
               </div>
             </div>
 
             {/* Students Needing Help */}
             {classPerformance.poorCount > 0 && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded-lg">
-                <h3 className="text-base md:text-lg font-semibold text-red-800 mb-2">⚠️ Students Needing Immediate Attention</h3>
-                <p className="text-red-700 mb-4 text-sm md:text-base">
+              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700 p-6 rounded-lg">
+                <h3 className="text-base md:text-lg font-semibold text-red-800 dark:text-red-200 mb-2">⚠️ Students Needing Immediate Attention</h3>
+                <p className="text-red-700 dark:text-red-300 mb-4 text-sm md:text-base">
                   {classPerformance.poorCount} student{classPerformance.poorCount > 1 ? 's' : ''} performing below 40%. Consider extra support or remedial classes.
                 </p>
                 <div className="space-y-2">
                   {students.filter(s => (s.averageScore || 0) < 40).map(student => (
-                    <div key={student.id} className="bg-white p-3 rounded flex justify-between items-center">
+                    <div key={student.id} className="bg-white dark:bg-gray-800 p-3 rounded flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-gray-800 text-sm md:text-base">
+                        <p className="font-medium text-gray-800 dark:text-white text-sm md:text-base">
                           {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
                         </p>
-                        <p className="text-xs md:text-sm text-gray-600">Average: {student.averageScore}%</p>
+                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Average: {student.averageScore}%</p>
                       </div>
                       <button
                         onClick={() => generateStudentReportCard(student.id)}
-                        className="text-red-600 hover:text-red-800 text-xs md:text-sm font-medium"
+                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs md:text-sm font-medium"
                       >
                         View Details
                       </button>
@@ -523,13 +523,13 @@ export default function ReportsPage() {
 
         {/* Students List */}
         {view === 'students' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors">
             {/* Bulk Actions Bar */}
-            <div className="bg-gray-50 px-4 md:px-6 py-3 border-b flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="bg-gray-50 dark:bg-gray-700 px-4 md:px-6 py-3 border-b dark:border-gray-600 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="flex items-center gap-4">
                 <button
                   onClick={toggleSelectAll}
-                  className="flex items-center gap-2 text-xs md:text-sm text-gray-600 hover:text-gray-800"
+                  className="flex items-center gap-2 text-xs md:text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
                 >
                   {selectedStudents.length === students.length && students.length > 0 ? (
                     <CheckSquare className="w-5 h-5 text-ghana-green" />
@@ -539,7 +539,7 @@ export default function ReportsPage() {
                   {selectedStudents.length === students.length && students.length > 0 ? 'Deselect All' : 'Select All'}
                 </button>
                 {selectedStudents.length > 0 && (
-                  <span className="text-xs md:text-sm text-gray-500">
+                  <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                     {selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''} selected
                   </span>
                 )}
@@ -566,39 +566,39 @@ export default function ReportsPage() {
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-gray-200">
+            <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
               {students.map((student) => (
-                <div key={student.id} className={`p-4 ${selectedStudents.includes(student.id) ? 'bg-green-50' : 'bg-white'}`}>
+                <div key={student.id} className={`p-4 ${selectedStudents.includes(student.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-800'}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <button onClick={() => toggleStudentSelection(student.id)}>
                         {selectedStudents.includes(student.id) ? (
                           <CheckSquare className="w-5 h-5 text-ghana-green" />
                         ) : (
-                          <Square className="w-5 h-5 text-gray-400" />
+                          <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                         )}
                       </button>
                       <div>
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-semibold text-gray-900 dark:text-white">
                           {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
                         </h3>
-                        <p className="text-xs text-gray-500">ID: {student.student_id}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">ID: {student.student_id}</p>
                       </div>
                     </div>
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-xs font-bold text-gray-600">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">
                       {student.position}{getOrdinalSuffix(student.position || 0)}
                     </span>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gray-50 p-2 rounded">
-                      <p className="text-xs text-gray-500 mb-1">Average Score</p>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Average Score</p>
                       <p className={`text-lg font-bold ${getPerformanceColor(student.averageScore || 0).split(' ')[0]}`}>
                         {student.averageScore}%
                       </p>
                     </div>
-                    <div className="bg-gray-50 p-2 rounded">
-                      <p className="text-xs text-gray-500 mb-1">Performance</p>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Performance</p>
                       <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getPerformanceColor(student.averageScore || 0)}`}>
                         {(student.averageScore || 0) >= 80 ? 'Excellent' :
                          (student.averageScore || 0) >= 60 ? 'Good' :
@@ -630,7 +630,7 @@ export default function ReportsPage() {
 
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-ghana-green text-white">
                   <tr>
                     <th className="px-4 py-3 text-center">
@@ -650,27 +650,27 @@ export default function ReportsPage() {
                     <th className="px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {students.map((student) => (
-                    <tr key={student.id} className={`hover:bg-gray-50 ${selectedStudents.includes(student.id) ? 'bg-green-50' : ''}`}>
+                    <tr key={student.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedStudents.includes(student.id) ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
                       <td className="px-4 py-4 text-center">
                         <button onClick={() => toggleStudentSelection(student.id)}>
                           {selectedStudents.includes(student.id) ? (
                             <CheckSquare className="w-5 h-5 text-ghana-green" />
                           ) : (
-                            <Square className="w-5 h-5 text-gray-400" />
+                            <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                           )}
                         </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-xs md:text-sm font-bold text-gray-800">
+                        <span className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">
                           {student.position}{getOrdinalSuffix(student.position || 0)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                         {student.student_id}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-700 dark:text-gray-300">
                         {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -714,25 +714,25 @@ export default function ReportsPage() {
 
         {/* Subject Analysis */}
         {view === 'subjects' && (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="p-6 border-b">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800">Subject Performance Analysis</h3>
-              <p className="text-xs md:text-sm text-gray-600 mt-1">Identify which subjects need more attention</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors">
+            <div className="p-6 border-b dark:border-gray-700">
+              <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white">Subject Performance Analysis</h3>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Identify which subjects need more attention</p>
             </div>
 
             {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-gray-200">
+            <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
               {subjectAnalysis.map((subject, index) => (
-                <div key={index} className="p-4 bg-white">
+                <div key={index} className="p-4 bg-white dark:bg-gray-800">
                   <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-semibold text-gray-900">{subject.subject}</h4>
+                    <h4 className="font-semibold text-gray-900 dark:text-white">{subject.subject}</h4>
                     <span className={`text-lg font-bold ${getPerformanceColor(subject.average).split(' ')[0]}`}>
                       {subject.average}%
                     </span>
                   </div>
                   
                   <div className="mb-3">
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full ${
                           subject.average >= 80 ? 'bg-green-600' :
@@ -745,13 +745,13 @@ export default function ReportsPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex justify-between p-2 bg-green-50 rounded">
-                      <span className="text-gray-600">Highest</span>
-                      <span className="font-bold text-green-600">{subject.highest}%</span>
+                    <div className="flex justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                      <span className="text-gray-600 dark:text-gray-400">Highest</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">{subject.highest}%</span>
                     </div>
-                    <div className="flex justify-between p-2 bg-red-50 rounded">
-                      <span className="text-gray-600">Lowest</span>
-                      <span className="font-bold text-red-600">{subject.lowest}%</span>
+                    <div className="flex justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                      <span className="text-gray-600 dark:text-gray-400">Lowest</span>
+                      <span className="font-bold text-red-600 dark:text-red-400">{subject.lowest}%</span>
                     </div>
                   </div>
                 </div>
@@ -760,20 +760,20 @@ export default function ReportsPage() {
 
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-[10px] md:text-xs font-semibold uppercase text-gray-700">Subject</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700">Class Average</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700">Highest</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700">Lowest</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700">Performance</th>
+                    <th className="px-6 py-3 text-left text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Subject</th>
+                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Class Average</th>
+                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Highest</th>
+                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Lowest</th>
+                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Performance</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {subjectAnalysis.map((subject, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
+                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                         {subject.subject}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -781,14 +781,14 @@ export default function ReportsPage() {
                           {subject.average}%
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-green-600 font-semibold">
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-green-600 dark:text-green-400 font-semibold">
                         {subject.highest}%
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-red-600 font-semibold">
+                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-red-600 dark:text-red-400 font-semibold">
                         {subject.lowest}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                           <div
                             className={`h-2 rounded-full ${
                               subject.average >= 80 ? 'bg-green-600' :
@@ -808,10 +808,10 @@ export default function ReportsPage() {
         )}
 
         {!selectedClass && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg md:text-xl font-semibold text-gray-700 mb-2">No Class Assigned</h3>
-            <p className="text-gray-600 text-sm md:text-base">You haven't been assigned to any classes yet.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center transition-colors">
+            <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg md:text-xl font-semibold text-gray-700 dark:text-white mb-2">No Class Assigned</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">You haven't been assigned to any classes yet.</p>
           </div>
         )}
       </main>

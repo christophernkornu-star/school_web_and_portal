@@ -211,19 +211,19 @@ export default function TeacherFeesPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <Button variant="ghost" size="icon" onClick={() => router.back()} className="dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800">
               <ArrowLeft className="w-6 h-6" />
             </Button>
             <div>
-              <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
+              <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400" />
                 Fee Collection
               </h1>
-              <p className="text-xs md:text-sm lg:text-base text-gray-600">Manage and record student fee payments</p>
+              <p className="text-xs md:text-sm lg:text-base text-gray-600 dark:text-gray-400">Manage and record student fee payments</p>
             </div>
           </div>
           
@@ -231,7 +231,7 @@ export default function TeacherFeesPage() {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="p-2 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-green-500 outline-none text-sm"
+              className="p-2 border rounded-lg bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-green-500 outline-none text-sm dark:border-gray-700 dark:text-white"
             >
               {classes.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -240,7 +240,7 @@ export default function TeacherFeesPage() {
 
             {selectedClass && (
               <Link href={`/teacher/fees/statement?classId=${selectedClass}`}>
-                <Button variant="outline" className="gap-2 h-10">
+                <Button variant="outline" className="gap-2 h-10 dark:bg-gray-800 dark:text-white dark:border-gray-700 dark:hover:bg-gray-700">
                   <FileBarChart className="h-4 w-4" />
                   <span className="hidden sm:inline">Statement</span>
                 </Button>
@@ -251,98 +251,98 @@ export default function TeacherFeesPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 text-xs md:text-sm font-medium">Total Expected</h3>
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
+              <h3 className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Total Expected</h3>
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">
+            <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
               GH₵ {students.length * feeStructures.reduce((sum, f) => sum + (f.amount || 0), 0)}
             </p>
           </div>
           
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 text-xs md:text-sm font-medium">Total Collected</h3>
-              <div className="p-2 bg-green-50 rounded-lg">
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600" />
+              <h3 className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Total Collected</h3>
+              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600 dark:text-green-400" />
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">
+            <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
               GH₵ {payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0)}
             </p>
           </div>
 
-          <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 text-xs md:text-sm font-medium">Outstanding</h3>
-              <div className="p-2 bg-red-50 rounded-lg">
-                <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600" />
+              <h3 className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Outstanding</h3>
+              <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 dark:text-red-400" />
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-800">
+            <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
               GH₵ {(students.length * feeStructures.reduce((sum, f) => sum + (f.amount || 0), 0)) - payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0)}
             </p>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
           
-          <div className="p-4 md:p-6 border-b border-gray-200 flex flex-col md:flex-row justify-between gap-4">
+          <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 dark:text-gray-500" />
               <input
                 type="text"
                 placeholder="Search students..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs md:text-sm"
+                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs md:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-10 shadow-sm">Student</th>
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-10 shadow-sm">Student</th>
                   {feeStructures.map(fee => (
-                    <th key={fee.id} className="px-4 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[150px]">
+                    <th key={fee.id} className="px-4 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px]">
                       {fee.fee_types?.name} <br/>
-                      <span className="text-gray-400">GH₵ {fee.amount}</span>
+                      <span className="text-gray-400 dark:text-gray-500">GH₵ {fee.amount}</span>
                     </th>
                   ))}
-                  <th className="px-4 md:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-4 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {loading ? (
                   <tr>
                     <td colSpan={feeStructures.length + 2} className="px-4 md:px-6 py-12 text-center">
-                      <Loader2 className="w-6 h-6 md:w-8 md:h-8 text-green-600 animate-spin mx-auto" />
-                      <p className="mt-2 text-xs md:text-sm text-gray-500">Loading fee data...</p>
+                      <Loader2 className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400 animate-spin mx-auto" />
+                      <p className="mt-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">Loading fee data...</p>
                     </td>
                   </tr>
                 ) : filteredStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={feeStructures.length + 2} className="px-4 md:px-6 py-12 text-center text-xs md:text-sm text-gray-500">
+                    <td colSpan={feeStructures.length + 2} className="px-4 md:px-6 py-12 text-center text-xs md:text-sm text-gray-500 dark:text-gray-400">
                       No students found
                     </td>
                   </tr>
                 ) : (
                   filteredStudents.map(student => (
-                    <tr key={student.id} className="hover:bg-gray-50">
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 shadow-sm">
+                    <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs md:text-sm">
+                          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold text-xs md:text-sm">
                             {student.first_name[0]}{student.last_name[0]}
                           </div>
                           <div className="ml-4">
-                            <div className="text-xs md:text-sm font-medium text-gray-900">{student.last_name} {student.first_name}</div>
-                            <div className="text-xs text-gray-500">{student.student_id}</div>
+                            <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">{student.last_name} {student.first_name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">{student.student_id}</div>
                           </div>
                         </div>
                       </td>
@@ -352,13 +352,13 @@ export default function TeacherFeesPage() {
                           <td key={fee.id} className="px-4 md:px-6 py-4 whitespace-nowrap text-center">
                             <div className="flex flex-col items-center">
                               <span className={`px-2 py-1 text-[10px] md:text-xs font-semibold rounded-full ${
-                                status.status === 'Paid' ? 'bg-green-100 text-green-800' :
-                                status.status === 'Partial' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
+                                status.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                                status.status === 'Partial' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                                'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                               }`}>
                                 {status.status}
                               </span>
-                              <span className="text-[10px] md:text-xs text-gray-500 mt-1">
+                              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 Paid: {status.paid} / Bal: {status.balance}
                               </span>
                             </div>
@@ -371,7 +371,7 @@ export default function TeacherFeesPage() {
                             setSelectedStudent(student)
                             setShowPaymentModal(true)
                           }}
-                          className="text-green-600 hover:text-green-900 font-medium text-xs md:text-sm flex items-center justify-center gap-1 mx-auto"
+                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs md:text-sm flex items-center justify-center gap-1 mx-auto"
                         >
                           <Plus className="w-3 h-3 md:w-4 md:h-4" />
                           Record Payment
@@ -389,18 +389,18 @@ export default function TeacherFeesPage() {
       {/* Payment Modal */}
       {showPaymentModal && selectedStudent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full my-8 flex flex-col max-h-[90vh]">
-            <div className="p-4 md:p-6 border-b border-gray-200 flex justify-between items-center shrink-0">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full my-8 flex flex-col max-h-[90vh] transition-colors">
+            <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center shrink-0">
               <div>
-                <h3 className="text-base md:text-lg font-bold text-gray-900">Manage Payments</h3>
-                <p className="text-xs md:text-sm text-gray-500">
+                <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Manage Payments</h3>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                   {selectedStudent.last_name} {selectedStudent.first_name} ({selectedStudent.student_id})
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button 
                   onClick={() => setShowPaymentModal(false)}
-                  className="text-gray-400 hover:text-gray-600 p-2"
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2"
                 >
                   <span className="sr-only">Close</span>
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -413,18 +413,18 @@ export default function TeacherFeesPage() {
             <div className="overflow-y-auto p-4 md:p-6 space-y-8">
               {/* New Payment Form */}
               <section>
-                <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <Plus className="w-4 h-4" /> Record New Payment
                 </h4>
-                <form onSubmit={handlePaymentSubmit} className="space-y-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                <form onSubmit={handlePaymentSubmit} className="space-y-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Fee Type</label>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fee Type</label>
                       <select
                         required
                         value={paymentForm.fee_structure_id}
                         onChange={(e) => setPaymentForm({...paymentForm, fee_structure_id: e.target.value})}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       >
                         <option value="">Select Fee</option>
                         {feeStructures.map(fee => (
@@ -436,23 +436,23 @@ export default function TeacherFeesPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Amount (GH₵)</label>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Amount (GH₵)</label>
                       <input
                         type="number"
                         step="0.01"
                         required
                         value={paymentForm.amount_paid}
                         onChange={(e) => setPaymentForm({...paymentForm, amount_paid: e.target.value})}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-medium text-gray-700 mb-1">Payment Method</label>
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Payment Method</label>
                       <select
                         value={paymentForm.payment_method}
                         onChange={(e) => setPaymentForm({...paymentForm, payment_method: e.target.value})}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       >
                         <option value="Cash">Cash</option>
                         <option value="Mobile Money">Mobile Money</option>
@@ -463,11 +463,11 @@ export default function TeacherFeesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Remarks (Optional)</label>
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Remarks (Optional)</label>
                     <textarea
                       value={paymentForm.remarks}
                       onChange={(e) => setPaymentForm({...paymentForm, remarks: e.target.value})}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm"
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       rows={2}
                     />
                   </div>
@@ -496,12 +496,12 @@ export default function TeacherFeesPage() {
 
               {/* Payment History */}
               <section>
-                <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Payment History
                 </h4>
-                <div className="overflow-x-auto border rounded-lg">
+                <div className="overflow-x-auto border rounded-lg dark:border-gray-700">
                   <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 font-medium">
+                    <thead className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-300 font-medium">
                       <tr>
                         <th className="px-4 py-2 whitespace-nowrap">Date</th>
                         <th className="px-4 py-2 whitespace-nowrap">Fee Type</th>
@@ -510,10 +510,10 @@ export default function TeacherFeesPage() {
                         <th className="px-4 py-2 whitespace-nowrap">Recorded By</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                       {payments.filter(p => p.student_id === selectedStudent.id).length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-gray-500">
+                          <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                             No payments recorded yet.
                           </td>
                         </tr>
@@ -523,20 +523,20 @@ export default function TeacherFeesPage() {
                           .map(payment => {
                             const feeType = feeStructures.find(f => f.id === payment.fee_structure_id)?.fee_types?.name || 'Unknown Fee'
                             return (
-                              <tr key={payment.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-2 whitespace-nowrap text-gray-600">
+                              <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                <td className="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
                                   {payment.payment_date ? format(new Date(payment.payment_date), 'MMM dd, yyyy') : '-'}
                                 </td>
-                                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900">
+                                <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 dark:text-white">
                                   {feeType}
                                 </td>
-                                <td className="px-4 py-2 whitespace-nowrap text-green-600 font-medium">
+                                <td className="px-4 py-2 whitespace-nowrap text-green-600 dark:text-green-400 font-medium">
                                   GH₵ {payment.amount_paid}
                                 </td>
-                                <td className="px-4 py-2 whitespace-nowrap text-gray-600">
+                                <td className="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
                                   {payment.payment_method}
                                 </td>
-                                <td className="px-4 py-2 whitespace-nowrap text-gray-500 text-xs">
+                                <td className="px-4 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">
                                   {payment.profiles?.full_name || 'Unknown'}
                                 </td>
                               </tr>

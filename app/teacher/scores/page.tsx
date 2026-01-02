@@ -1145,16 +1145,16 @@ export default function ExamScoresPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
             <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800">Exam Scores</h1>
-              <p className="text-xs md:text-sm text-gray-600">Enter exam scores manually or upload via CSV</p>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Exam Scores</h1>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Enter exam scores manually or upload via CSV</p>
             </div>
           </div>
         </div>
@@ -1163,13 +1163,13 @@ export default function ExamScoresPage() {
       <main className="container mx-auto px-6 py-8">
         <div className="max-w-4xl mx-auto">
           {/* OCR Option Banner */}
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <Camera className="w-8 h-8 text-ghana-green" />
                 <div>
-                  <h3 className="font-semibold text-gray-800">Can't type? Use OCR!</h3>
-                  <p className="text-sm text-gray-600">Upload a photo of your handwritten scores and let AI extract them</p>
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">Can't type? Use OCR!</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Upload a photo of your handwritten scores and let AI extract them</p>
                 </div>
               </div>
               <Link
@@ -1183,14 +1183,14 @@ export default function ExamScoresPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white rounded-t-lg shadow border-b">
+          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow border-b dark:border-gray-700">
             <div className="flex">
               <button
                 onClick={() => setActiveTab('manual')}
                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
                   activeTab === 'manual'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <FileText className="w-5 h-5" />
@@ -1201,7 +1201,7 @@ export default function ExamScoresPage() {
                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
                   activeTab === 'csv'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <Upload className="w-5 h-5" />
@@ -1212,7 +1212,7 @@ export default function ExamScoresPage() {
                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
                   activeTab === 'ungraded'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <AlertCircle className="w-5 h-5" />
@@ -1223,7 +1223,7 @@ export default function ExamScoresPage() {
                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
                   activeTab === 'grid'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 <Grid className="w-5 h-5" />
@@ -1234,36 +1234,36 @@ export default function ExamScoresPage() {
 
           {/* Manual Entry Tab */}
           {activeTab === 'manual' && (
-            <div className="bg-white rounded-b-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
               {submitSuccess && (
-                <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-start space-x-3">
+                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-green-800 font-medium">Score submitted successfully!</p>
-                    <p className="text-green-700 text-sm mt-1">You can enter another score or view the scores list.</p>
+                    <p className="text-green-800 dark:text-green-200 font-medium">Score submitted successfully!</p>
+                    <p className="text-green-700 dark:text-green-300 text-sm mt-1">You can enter another score or view the scores list.</p>
                   </div>
                 </div>
               )}
 
               {formErrors.submit && (
-                <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-                  <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-800">{formErrors.submit}</p>
+                <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start space-x-3">
+                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                  <p className="text-red-800 dark:text-red-200">{formErrors.submit}</p>
                 </div>
               )}
 
               <form onSubmit={handleManualSubmit} className="space-y-6">
                 {/* Score Type Selection */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Score Entry Type</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Score Entry Type</h3>
                   <div className="grid md:grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setScoreType('both')}
                       className={`px-4 py-3 rounded-lg border-2 transition ${
                         scoreType === 'both'
-                          ? 'bg-blue-50 border-blue-500 text-blue-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300'
+                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <div className="font-medium">Both Scores</div>
@@ -1275,7 +1275,7 @@ export default function ExamScoresPage() {
                       className={`px-4 py-3 rounded-lg border-2 transition ${
                         scoreType === 'class_only'
                           ? 'bg-ghana-green text-white border-ghana-green'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <div className="font-medium">Class Score Only</div>
@@ -1287,7 +1287,7 @@ export default function ExamScoresPage() {
                       className={`px-4 py-3 rounded-lg border-2 transition ${
                         scoreType === 'exam_only'
                           ? 'bg-ghana-red text-white border-ghana-red'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <div className="font-medium">Exam Score Only</div>
@@ -1298,10 +1298,10 @@ export default function ExamScoresPage() {
 
                 {/* Selection Filters */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Filters</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Select Filters</h3>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Class *
                       </label>
                       <select
@@ -1313,8 +1313,8 @@ export default function ExamScoresPage() {
                             setFormErrors({...formErrors, class: ''})
                           }
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                          formErrors.class ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                          formErrors.class ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                         }`}
                       >
                         <option value="">Select Class</option>
@@ -1325,12 +1325,12 @@ export default function ExamScoresPage() {
                         ))}
                       </select>
                       {formErrors.class && (
-                        <p className="mt-1 text-sm text-red-600">{formErrors.class}</p>
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.class}</p>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Subject *
                       </label>
                       <select
@@ -1341,8 +1341,8 @@ export default function ExamScoresPage() {
                             setFormErrors({...formErrors, subject: ''})
                           }
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                          formErrors.subject ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                          formErrors.subject ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                         }`}
                       >
                         <option value="">Select Subject</option>
@@ -1356,19 +1356,19 @@ export default function ExamScoresPage() {
                         )}
                       </select>
                       {formErrors.subject && (
-                        <p className="mt-1 text-sm text-red-600">{formErrors.subject}</p>
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.subject}</p>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                        Term <span className="text-xs text-gray-500">(Set by Admin)</span>
+                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Term <span className="text-xs text-gray-500 dark:text-gray-400">(Set by Admin)</span>
                       </label>
-                      <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                      <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
                         {currentTermName || 'No current term set'}
                       </div>
                       {!selectedTerm && (
-                        <p className="mt-1 text-xs text-amber-600">Admin must set current term in system settings</p>
+                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Admin must set current term in system settings</p>
                       )}
                     </div>
                   </div>
@@ -1377,9 +1377,9 @@ export default function ExamScoresPage() {
                 {/* Student Selection */}
                 {selectedClass && (
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Student</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Student</h3>
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Select Student *
                       </label>
                       <select
@@ -1390,8 +1390,8 @@ export default function ExamScoresPage() {
                             setFormErrors({...formErrors, student: ''})
                           }
                         }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                          formErrors.student ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                          formErrors.student ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                         }`}
                       >
                         <option value="">Select Student</option>
@@ -1402,10 +1402,10 @@ export default function ExamScoresPage() {
                         ))}
                       </select>
                       {formErrors.student && (
-                        <p className="mt-1 text-sm text-red-600">{formErrors.student}</p>
+                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.student}</p>
                       )}
                       {students.length === 0 && selectedClass && (
-                        <p className="mt-1 text-sm text-gray-500">No students found in this class</p>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">No students found in this class</p>
                       )}
                     </div>
                   </div>
@@ -1413,14 +1413,14 @@ export default function ExamScoresPage() {
 
                 {/* Score Entry */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Scores</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Scores</h3>
                   <div className="grid md:grid-cols-2 gap-4">
                     <>
                       {(scoreType === 'both' || scoreType === 'class_only') && (
                         <div>
-                          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Class Score (0-100) {scoreType === 'class_only' ? '*' : ''}
-                            <span className="text-xs text-gray-500 ml-2">Converts to max 40</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">Converts to max 40</span>
                           </label>
                           <input
                             type="number"
@@ -1434,25 +1434,25 @@ export default function ExamScoresPage() {
                                 setFormErrors({...formErrors, class_score: ''})
                               }
                             }}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                              formErrors.class_score ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                              formErrors.class_score ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                             }`}
                             placeholder="e.g., 80"
                           />
-                          <p className="text-[10px] text-blue-600 mt-1">
+                          <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-1">
                             * New scores are added to existing class scores (Cumulative)
                           </p>
                           {formErrors.class_score && (
-                            <p className="mt-1 text-sm text-red-600">{formErrors.class_score}</p>
+                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.class_score}</p>
                           )}
                         </div>
                       )}
 
                       {(scoreType === 'both' || scoreType === 'exam_only') && (
                         <div>
-                          <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Exam Score (0-100) {scoreType === 'exam_only' ? '*' : ''}
-                            <span className="text-xs text-gray-500 ml-2">Converts to max 60</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">Converts to max 60</span>
                           </label>
                           <input
                             type="number"
@@ -1466,42 +1466,42 @@ export default function ExamScoresPage() {
                                 setFormErrors({...formErrors, exam_score: ''})
                               }
                             }}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                              formErrors.exam_score ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                              formErrors.exam_score ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
                             }`}
                             placeholder="e.g., 75"
                           />
-                          <p className="text-[10px] text-orange-600 mt-1">
+                          <p className="text-[10px] text-orange-600 dark:text-orange-400 mt-1">
                             * New score overwrites existing exam score
                           </p>
                           {formErrors.exam_score && (
-                            <p className="mt-1 text-sm text-red-600">{formErrors.exam_score}</p>
+                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.exam_score}</p>
                           )}
                         </div>
                       )}
 
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Total Score
                         </label>
                         <input
                           type="text"
                           value={manualScores.total}
                           readOnly
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-semibold"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold"
                           placeholder="Auto-calculated"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                        <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Grade
                         </label>
                         <input
                           type="text"
                           value={manualScores.grade}
                           readOnly
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-semibold"
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold"
                           placeholder="Auto-calculated"
                         />
                       </div>
@@ -1509,13 +1509,13 @@ export default function ExamScoresPage() {
                   </div>
 
                   <div className="mt-4">
-                    <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Remarks (Optional)
                     </label>
                     <textarea
                       value={manualScores.remarks}
                       onChange={(e) => setManualScores({...manualScores, remarks: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
                       rows={3}
                       placeholder="e.g., Excellent performance, needs improvement, etc."
                     />
@@ -1523,12 +1523,12 @@ export default function ExamScoresPage() {
                 </div>
 
                 {/* Grading Scale Info */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-gray-800 mb-3">Grading Scale</h3>
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Grading Scale</h3>
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="font-medium text-gray-700 mb-2">Primary (Basic 1-6):</p>
-                      <ul className="space-y-1 text-gray-600">
+                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">Primary (Basic 1-6):</p>
+                      <ul className="space-y-1 text-gray-600 dark:text-gray-400">
                         <li>• 80-100: Grade 1 - Advance</li>
                         <li>• 70-79: Grade 2 - Proficient</li>
                         <li>• 60-69: Grade 3 - Approaching Proficiency</li>
@@ -1537,8 +1537,8 @@ export default function ExamScoresPage() {
                       </ul>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 mb-2">JHS (Basic 7-9):</p>
-                      <ul className="space-y-1 text-gray-600">
+                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">JHS (Basic 7-9):</p>
+                      <ul className="space-y-1 text-gray-600 dark:text-gray-400">
                         <li>• 80-100: Grade 1 - High proficient</li>
                         <li>• 70-79: Grade 2 - Proficient</li>
                         <li>• 60-69: Grade 3 - Proficient</li>
@@ -1554,7 +1554,7 @@ export default function ExamScoresPage() {
                 <div className="flex justify-end space-x-4">
                   <Link
                     href="/teacher/dashboard"
-                    className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition"
+                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
                   >
                     Cancel
                   </Link>
@@ -1573,26 +1573,26 @@ export default function ExamScoresPage() {
 
           {/* CSV Upload Tab */}
           {activeTab === 'csv' && (
-            <div className="bg-white rounded-b-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
               <div className="space-y-6">
                 {formErrors.csv && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-                    <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-800">{formErrors.csv}</p>
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start space-x-3">
+                    <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-red-800 dark:text-red-200">{formErrors.csv}</p>
                   </div>
                 )}
 
                 {/* Score Type Selection */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Score Entry Type</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Score Entry Type</h3>
                   <div className="grid md:grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setScoreType('both')}
                       className={`px-4 py-3 rounded-lg border-2 transition ${
                         scoreType === 'both'
-                          ? 'bg-blue-50 border-blue-500 text-blue-700'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300'
+                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <div className="font-medium">Both Scores</div>
@@ -1604,7 +1604,7 @@ export default function ExamScoresPage() {
                       className={`px-4 py-3 rounded-lg border-2 transition ${
                         scoreType === 'class_only'
                           ? 'bg-ghana-green text-white border-ghana-green'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <div className="font-medium">Class Score Only</div>
@@ -1616,7 +1616,7 @@ export default function ExamScoresPage() {
                       className={`px-4 py-3 rounded-lg border-2 transition ${
                         scoreType === 'exam_only'
                           ? 'bg-ghana-red text-white border-ghana-red'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
                       <div className="font-medium">Exam Score Only</div>
@@ -1626,12 +1626,12 @@ export default function ExamScoresPage() {
                 </div>
 
                 {/* Instructions */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2 flex items-center space-x-2">
-                    <AlertCircle className="w-5 h-5 text-blue-600" />
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center space-x-2">
+                    <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     <span>CSV Upload Instructions</span>
                   </h3>
-                  <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside ml-7">
+                  <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside ml-7">
                     <li><strong>Select score type above</strong> - Choose what scores to enter</li>
                     <li><strong>Select a class and subjects</strong> - Click subjects below to select them</li>
                     <li>Template includes columns <strong>only for selected subjects</strong> in the order you select them</li>
@@ -1646,12 +1646,12 @@ export default function ExamScoresPage() {
                 </div>
 
                 {/* Grading Scale Info */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 mb-2">Grading Scale</h3>
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Grading Scale</h3>
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
-                      <p className="font-medium text-gray-700 mb-1">Primary (Basic 1-6):</p>
-                      <ul className="space-y-1 text-gray-600">
+                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Primary (Basic 1-6):</p>
+                      <ul className="space-y-1 text-gray-600 dark:text-gray-400">
                         <li>80-100: Grade 1 - Advance</li>
                         <li>70-79: Grade 2 - Proficient</li>
                         <li>60-69: Grade 3 - Approaching Proficiency</li>
@@ -1660,8 +1660,8 @@ export default function ExamScoresPage() {
                       </ul>
                     </div>
                     <div>
-                      <p className="font-medium text-gray-700 mb-1">JHS (Basic 7-9):</p>
-                      <ul className="space-y-1 text-gray-600">
+                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">JHS (Basic 7-9):</p>
+                      <ul className="space-y-1 text-gray-600 dark:text-gray-400">
                         <li>80-100: Grade 1 - High proficient</li>
                         <li>70-79: Grade 2 - Proficient</li>
                         <li>60-69: Grade 3 - Proficient</li>
@@ -1689,7 +1689,7 @@ export default function ExamScoresPage() {
                     </span>
                   </button>
                   {selectedClass && selectedSubjects.length > 0 && (
-                    <p className="mt-2 text-xs text-gray-600">
+                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                       Template includes: {selectedSubjects.map(id => filteredSubjects.find(s => s.id === id)?.name).filter(Boolean).join(', ')}
                     </p>
                   )}
@@ -1697,10 +1697,10 @@ export default function ExamScoresPage() {
 
                 {/* Filter Selection */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Filters</h3>
+                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Select Filters</h3>
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Class *
                       </label>
                       <select
@@ -1711,7 +1711,7 @@ export default function ExamScoresPage() {
                             setFormErrors({...formErrors, csv: ''})
                           }
                         }}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
                         disabled={uploading}
                       >
                         <option value="">Select Class</option>
@@ -1724,14 +1724,14 @@ export default function ExamScoresPage() {
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                        Subjects for Template <span className="text-xs text-gray-500">({selectedSubjects.length} selected)</span>
+                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Subjects for Template <span className="text-xs text-gray-500 dark:text-gray-400">({selectedSubjects.length} selected)</span>
                       </label>
-                      <div className="border border-gray-300 rounded-lg p-3 max-h-48 overflow-y-auto bg-white">
+                      <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 max-h-48 overflow-y-auto bg-white dark:bg-gray-700">
                         {filteredSubjects.length === 0 && selectedClass ? (
-                          <p className="text-sm text-gray-500">No subjects for this level</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">No subjects for this level</p>
                         ) : filteredSubjects.length === 0 ? (
-                          <p className="text-sm text-gray-500">Select a class first</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Select a class first</p>
                         ) : (
                           <div className="space-y-2">
                             {filteredSubjects.map((subject, index) => {
@@ -1757,13 +1757,13 @@ export default function ExamScoresPage() {
                                   className={`w-full text-left px-3 py-2 rounded-md border transition ${
                                     isSelected
                                       ? 'bg-ghana-green text-white border-ghana-green hover:bg-green-700'
-                                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600'
                                   } ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                                 >
                                   <div className="flex items-center justify-between">
                                     <span className="font-medium">{subject.name}</span>
                                     {isSelected && (
-                                      <span className="text-xs bg-white text-ghana-green px-2 py-1 rounded-full font-semibold">
+                                      <span className="text-xs bg-white dark:bg-gray-700 text-ghana-green px-2 py-1 rounded-full font-semibold">
                                         #{selectionOrder}
                                       </span>
                                     )}
@@ -1774,20 +1774,20 @@ export default function ExamScoresPage() {
                           </div>
                         )}
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         Select subjects for template download. When uploading, subjects are auto-detected from CSV.
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                        Term <span className="text-xs text-gray-500">(Set by Admin)</span>
+                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Term <span className="text-xs text-gray-500 dark:text-gray-400">(Set by Admin)</span>
                       </label>
-                      <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                      <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
                         {currentTermName || 'No current term set'}
                       </div>
                       {!selectedTerm && (
-                        <p className="mt-1 text-xs text-amber-600">Admin must set current term in system settings</p>
+                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Admin must set current term in system settings</p>
                       )}
                     </div>
                   </div>
@@ -1795,7 +1795,7 @@ export default function ExamScoresPage() {
 
                 {/* File Upload */}
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Upload CSV File *
                   </label>
                   <input
@@ -1808,12 +1808,12 @@ export default function ExamScoresPage() {
                       }
                       setUploadResults(null)
                     }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
                     disabled={uploading}
                   />
                   {csvFile && (
-                    <p className="text-sm text-gray-600 mt-2 flex items-center space-x-2">
-                      <CheckCircle className="w-4 h-4 text-green-600" />
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 flex items-center space-x-2">
+                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                       <span>Selected: {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)</span>
                     </p>
                   )}
@@ -1822,31 +1822,31 @@ export default function ExamScoresPage() {
                 {/* Upload Results */}
                 {uploadResults && (
                   <div className={`border rounded-lg p-4 ${
-                    uploadResults.failed === 0 ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'
+                    uploadResults.failed === 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
                   }`}>
                     <div className="flex items-start space-x-3 mb-3">
                       {uploadResults.failed === 0 ? (
-                        <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+                        <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400 flex-shrink-0" />
                       ) : (
-                        <AlertCircle className="w-6 h-6 text-yellow-600 flex-shrink-0" />
+                        <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
                       )}
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-800 mb-2">Upload Results</h3>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Upload Results</h3>
                         <div className="space-y-1 text-sm">
-                          <p className="text-green-700 flex items-center space-x-2">
+                          <p className="text-green-700 dark:text-green-300 flex items-center space-x-2">
                             <CheckCircle className="w-4 h-4" />
                             <span>Successfully added: <strong>{uploadResults.success}</strong> score{uploadResults.success !== 1 ? 's' : ''}</span>
                           </p>
                           {uploadResults.failed > 0 && (
                             <>
-                              <p className="text-red-700 flex items-center space-x-2">
+                              <p className="text-red-700 dark:text-red-300 flex items-center space-x-2">
                                 <XCircle className="w-4 h-4" />
                                 <span>Failed: <strong>{uploadResults.failed}</strong> score{uploadResults.failed !== 1 ? 's' : ''}</span>
                               </p>
                               {uploadResults.errors.length > 0 && (
-                                <div className="mt-3 bg-white border border-gray-200 rounded p-3">
-                                  <p className="font-medium text-gray-800 mb-2">Error Details:</p>
-                                  <ul className="space-y-1 text-gray-700 text-xs max-h-48 overflow-y-auto">
+                                <div className="mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded p-3">
+                                  <p className="font-medium text-gray-800 dark:text-gray-100 mb-2">Error Details:</p>
+                                  <ul className="space-y-1 text-gray-700 dark:text-gray-300 text-xs max-h-48 overflow-y-auto">
                                     {uploadResults.errors.slice(0, 20).map((error, i) => (
                                       <li key={i} className="flex items-start space-x-2">
                                         <span className="text-red-500 flex-shrink-0">•</span>
@@ -1854,7 +1854,7 @@ export default function ExamScoresPage() {
                                       </li>
                                     ))}
                                     {uploadResults.errors.length > 20 && (
-                                      <li className="text-gray-500 italic">
+                                      <li className="text-gray-500 dark:text-gray-400 italic">
                                         ... and {uploadResults.errors.length - 20} more errors
                                       </li>
                                     )}
@@ -1871,12 +1871,12 @@ export default function ExamScoresPage() {
 
                 {/* Upload Progress */}
                 {uploading && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                     <div className="flex items-center space-x-3">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-ghana-green"></div>
                       <div>
-                        <p className="font-medium text-gray-800">Processing CSV file...</p>
-                        <p className="text-sm text-gray-600">This may take a moment depending on the file size</p>
+                        <p className="font-medium text-gray-800 dark:text-gray-100">Processing CSV file...</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">This may take a moment depending on the file size</p>
                       </div>
                     </div>
                   </div>
@@ -1886,7 +1886,7 @@ export default function ExamScoresPage() {
                 <div className="flex justify-end space-x-4">
                   <Link
                     href="/teacher/dashboard"
-                    className={`px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition ${
+                    className={`px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
                       uploading ? 'pointer-events-none opacity-50' : ''
                     }`}
                   >
@@ -1909,17 +1909,17 @@ export default function ExamScoresPage() {
 
           {/* Ungraded Subjects Tab */}
           {activeTab === 'ungraded' && (
-            <div className="bg-white rounded-b-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
               {/* Filters */}
               <div className="grid md:grid-cols-3 gap-4 mb-6">
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Class *
                   </label>
                   <select
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">Select Class</option>
                     {teacherClasses.map(cls => (
@@ -1931,10 +1931,10 @@ export default function ExamScoresPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Term *
                   </label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                  <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
                     {currentTermName || 'No current term set'}
                   </div>
                 </div>
@@ -1942,43 +1942,43 @@ export default function ExamScoresPage() {
 
               {/* Ungraded Report */}
               {ungradedData.length > 0 ? (
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="px-4 py-3 bg-gray-50 border-b flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600 flex justify-between items-center">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                       Ungraded Subjects Report
                     </h3>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
                       {ungradedData.length} students with missing grades
                     </span>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Student
                           </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Missing Subjects
                           </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Progress
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {ungradedData.map((item, index) => (
-                          <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                          <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/50'}>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
-                                <div className="flex-shrink-0 h-10 w-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                  <User className="h-5 w-5 text-gray-500" />
+                                <div className="flex-shrink-0 h-10 w-10 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                                  <User className="h-5 w-5 text-gray-500 dark:text-gray-300" />
                                 </div>
                                 <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {item.student.first_name} {item.student.last_name}
                                   </div>
-                                  <div className="text-sm text-gray-500">
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">
                                     {item.student.student_id}
                                   </div>
                                 </div>
@@ -1989,7 +1989,7 @@ export default function ExamScoresPage() {
                                 {item.missingSubjects.map((subject: any) => (
                                   <span 
                                     key={subject.id}
-                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800"
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200"
                                   >
                                     {subject.name}
                                   </span>
@@ -1997,13 +1997,13 @@ export default function ExamScoresPage() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 max-w-[100px]">
+                              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 max-w-[100px]">
                                 <div 
                                   className="bg-blue-600 h-2.5 rounded-full" 
                                   style={{ width: `${(item.gradedCount / item.totalSubjects) * 100}%` }}
                                 ></div>
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                 {item.gradedCount} of {item.totalSubjects} graded
                               </div>
                             </td>
@@ -2014,10 +2014,10 @@ export default function ExamScoresPage() {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                  <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Data</h3>
-                  <p className="text-gray-600">No ungraded subjects found for the selected criteria.</p>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <AlertCircle className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Data</h3>
+                  <p className="text-gray-600 dark:text-gray-400">No ungraded subjects found for the selected criteria.</p>
                 </div>
               )}
             </div>
@@ -2025,17 +2025,17 @@ export default function ExamScoresPage() {
 
           {/* Spreadsheet View Tab */}
           {activeTab === 'grid' && (
-            <div className="bg-white rounded-b-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
               {/* Filters */}
               <div className="grid md:grid-cols-3 gap-4 mb-6">
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Class *
                   </label>
                   <select
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
                   >
                     <option value="">Select Class</option>
                     {teacherClasses.map(cls => (
@@ -2047,25 +2047,25 @@ export default function ExamScoresPage() {
                 </div>
 
                 <div className="relative">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Subjects *
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsSubjectDropdownOpen(!isSubjectDropdownOpen)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-left bg-white flex justify-between items-center"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-left bg-white dark:bg-gray-700 flex justify-between items-center"
                   >
-                    <span className="truncate">
+                    <span className="truncate dark:text-white">
                       {selectedSubjects.length === 0 
                         ? 'Select Subjects' 
                         : `${selectedSubjects.length} Selected`}
                     </span>
-                    <Filter className="w-4 h-4 text-gray-500" />
+                    <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   </button>
                   
                   {isSubjectDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      <div className="p-2 border-b sticky top-0 bg-white">
+                    <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      <div className="p-2 border-b dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
                         <button
                             onClick={() => {
                                 if (selectedSubjects.length === filteredSubjects.length) {
@@ -2074,13 +2074,13 @@ export default function ExamScoresPage() {
                                     setSelectedSubjects(filteredSubjects.map(s => s.id))
                                 }
                             }}
-                            className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
                         >
                             {selectedSubjects.length === filteredSubjects.length ? 'Deselect All' : 'Select All'}
                         </button>
                       </div>
                       {filteredSubjects.map(subject => (
-                        <label key={subject.id} className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
+                        <label key={subject.id} className="flex items-center px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={selectedSubjects.includes(subject.id)}
@@ -2091,9 +2091,9 @@ export default function ExamScoresPage() {
                                 setSelectedSubjects(selectedSubjects.filter(id => id !== subject.id))
                               }
                             }}
-                            className="mr-3 h-4 w-4 text-ghana-green focus:ring-ghana-green border-gray-300 rounded"
+                            className="mr-3 h-4 w-4 text-ghana-green focus:ring-ghana-green border-gray-300 dark:border-gray-500 rounded dark:bg-gray-600"
                           />
-                          <span className="text-sm text-gray-700">{subject.name}</span>
+                          <span className="text-sm text-gray-700 dark:text-gray-200">{subject.name}</span>
                         </label>
                       ))}
                     </div>
@@ -2108,10 +2108,10 @@ export default function ExamScoresPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Term *
                   </label>
-                  <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                  <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
                     {currentTermName || 'No current term set'}
                   </div>
                 </div>
@@ -2121,7 +2121,7 @@ export default function ExamScoresPage() {
               {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
                       Enter Scores ({students.length} Students)
                     </h3>
                     <div className="flex space-x-2">
@@ -2132,7 +2132,7 @@ export default function ExamScoresPage() {
                       >
                         {gridSaving ? (
                           <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-gray-800"></div>
                             <span>Saving...</span>
                           </>
                         ) : (
@@ -2148,25 +2148,25 @@ export default function ExamScoresPage() {
                   {gridLoading ? (
                     <div className="text-center py-12">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ghana-green mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading scores...</p>
+                      <p className="text-gray-600 dark:text-gray-400">Loading scores...</p>
                     </div>
                   ) : students.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                      <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                      <p className="text-gray-600">No students found in this class.</p>
+                    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                      <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                      <p className="text-gray-600 dark:text-gray-400">No students found in this class.</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto border rounded-lg max-h-[70vh]">
-                      <table className="min-w-full divide-y divide-gray-200 border-collapse">
-                        <thead className="bg-gray-50 sticky top-0 z-20 shadow-sm">
+                    <div className="overflow-x-auto border dark:border-gray-700 rounded-lg max-h-[70vh]">
+                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
+                        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-20 shadow-sm">
                           <tr>
-                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50 z-30 border-r border-b">
+                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-30 border-r dark:border-r-gray-600 border-b dark:border-b-gray-600">
                               Student
                             </th>
                             {selectedSubjects.map(subjectId => {
                                 const subject = filteredSubjects.find(s => s.id === subjectId)
                                 return (
-                                    <th key={subjectId} colSpan={4} className="px-6 py-2 text-center text-xs font-bold text-gray-700 uppercase tracking-wider border-b border-r bg-gray-100">
+                                    <th key={subjectId} colSpan={4} className="px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-b-gray-600 border-r dark:border-r-gray-600 bg-gray-100 dark:bg-gray-600">
                                         {subject?.name || 'Unknown Subject'}
                                     </th>
                                 )
@@ -2175,24 +2175,24 @@ export default function ExamScoresPage() {
                           <tr>
                             {selectedSubjects.map(subjectId => (
                                 <Fragment key={subjectId}>
-                                    <th key={`${subjectId}-class`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-20 bg-gray-50">Class (40%)</th>
-                                    <th key={`${subjectId}-exam`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-20 bg-gray-50">Exam (100%)</th>
-                                    <th key={`${subjectId}-total`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-16 bg-gray-50">Total</th>
-                                    <th key={`${subjectId}-grade`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 uppercase tracking-wider border-b w-16 border-r bg-gray-50">Grade</th>
+                                    <th key={`${subjectId}-class`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-20 bg-gray-50 dark:bg-gray-700">Class (40%)</th>
+                                    <th key={`${subjectId}-exam`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-20 bg-gray-50 dark:bg-gray-700">Exam (100%)</th>
+                                    <th key={`${subjectId}-total`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-16 bg-gray-50 dark:bg-gray-700">Total</th>
+                                    <th key={`${subjectId}-grade`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-16 border-r dark:border-r-gray-600 bg-gray-50 dark:bg-gray-700">Grade</th>
                                 </Fragment>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                           {students.map((student) => {
                             const hasChanges = gridChanges.has(student.id)
                             return (
-                              <tr key={student.id} className={hasChanges ? 'bg-blue-50' : 'hover:bg-gray-50'}>
-                                <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white z-10 border-r shadow-sm">
-                                  <div className="text-sm font-medium text-gray-900">
+                              <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
+                                <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-r-gray-600 shadow-sm">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                                     {student.last_name} {student.first_name}
                                   </div>
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
                                     {student.student_id}
                                   </div>
                                 </td>
@@ -2216,7 +2216,7 @@ export default function ExamScoresPage() {
                                                     step="0.1"
                                                     value={scores.class_score}
                                                     onChange={(e) => handleGridScoreChange(student.id, subjectId, 'class_score', e.target.value)}
-                                                    className="w-16 px-1 py-1 text-center border border-gray-300 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm"
+                                                    className="w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm dark:bg-gray-700 dark:text-white"
                                                 />
                                             </td>
                                             <td key={`${subjectId}-exam`} className="px-2 py-4 whitespace-nowrap text-center">
@@ -2227,18 +2227,18 @@ export default function ExamScoresPage() {
                                                     step="0.1"
                                                     value={scores.exam_score}
                                                     onChange={(e) => handleGridScoreChange(student.id, subjectId, 'exam_score', e.target.value)}
-                                                    className="w-16 px-1 py-1 text-center border border-gray-300 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm"
+                                                    className="w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm dark:bg-gray-700 dark:text-white"
                                                 />
                                             </td>
                                             <td key={`${subjectId}-total`} className="px-2 py-4 whitespace-nowrap text-center">
-                                                <span className={`text-sm font-medium ${total > 0 ? 'text-gray-900' : 'text-gray-400'}`}>
+                                                <span className={`text-sm font-medium ${total > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
                                                     {hasData ? total.toFixed(1) : '-'}
                                                 </span>
                                             </td>
-                                            <td key={`${subjectId}-grade`} className="px-2 py-4 whitespace-nowrap text-center border-r">
+                                            <td key={`${subjectId}-grade`} className="px-2 py-4 whitespace-nowrap text-center border-r dark:border-r-gray-600">
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                    !hasData ? 'bg-gray-100 text-gray-500' :
-                                                    total >= 50 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                    !hasData ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' :
+                                                    total >= 50 ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
                                                 }`}>
                                                     {hasData ? grade : '-'}
                                                 </span>
@@ -2255,10 +2255,10 @@ export default function ExamScoresPage() {
                   )}
                 </div>
               ) : (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-                  <Filter className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Select Filters</h3>
-                  <p className="text-gray-600">Please select a class, at least one subject, and term to view the score grid.</p>
+                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <Filter className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Select Filters</h3>
+                  <p className="text-gray-600 dark:text-gray-400">Please select a class, at least one subject, and term to view the score grid.</p>
                 </div>
               )}
             </div>

@@ -171,10 +171,10 @@ export default function EditStudentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading student data...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading student data...</p>
         </div>
       </div>
     )
@@ -182,10 +182,10 @@ export default function EditStudentPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
+        <div className="max-w-md mx-auto text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 transition-colors">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-2">Error</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">{error}</p>
           <Link
             href="/teacher/students"
             className="inline-block bg-ghana-green text-white px-6 py-3 rounded-lg hover:bg-green-700"
@@ -198,16 +198,16 @@ export default function EditStudentPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <header className="bg-white dark:bg-gray-800 shadow transition-colors">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/teacher/students" className="text-ghana-green hover:text-green-700">
+            <Link href="/teacher/students" className="text-ghana-green hover:text-green-700 dark:hover:text-green-400">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Edit Student</h1>
-              <p className="text-sm text-gray-600">Update student information</p>
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Edit Student</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Update student information</p>
             </div>
           </div>
         </div>
@@ -215,42 +215,42 @@ export default function EditStudentPage() {
 
       <main className="container mx-auto px-6 py-8">
         <div className="max-w-2xl mx-auto">
-          <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 space-y-6">
+          <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6 transition-colors">
             {/* Account Information */}
-            <div className="border-b pb-6 mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">Account Information</h3>
+            <div className="border-b border-gray-200 dark:border-gray-700 pb-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Account Information</h3>
               <div className="grid md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Student ID
                   </label>
                   <input
                     type="text"
                     value={accountInfo.student_id}
                     readOnly
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Username
                   </label>
                   <input
                     type="text"
                     value={accountInfo.username}
                     readOnly
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Student Email
                   </label>
                   <input
                     type="text"
                     value={accountInfo.email || 'N/A'}
                     readOnly
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
                   />
                 </div>
               </div>
@@ -258,15 +258,15 @@ export default function EditStudentPage() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   First Name *
                 </label>
                 <input
                   type="text"
                   value={formData.first_name}
                   onChange={(e) => setFormData({...formData, first_name: e.target.value})}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                    formErrors.first_name ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    formErrors.first_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 />
                 {formErrors.first_name && (
@@ -275,27 +275,27 @@ export default function EditStudentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Middle Name
                 </label>
                 <input
                   type="text"
                   value={formData.middle_name}
                   onChange={(e) => setFormData({...formData, middle_name: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Last Name *
                 </label>
                 <input
                   type="text"
                   value={formData.last_name}
                   onChange={(e) => setFormData({...formData, last_name: e.target.value})}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                    formErrors.last_name ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    formErrors.last_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 />
                 {formErrors.last_name && (
@@ -304,15 +304,15 @@ export default function EditStudentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Date of Birth *
                 </label>
                 <input
                   type="date"
                   value={formData.date_of_birth}
                   onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                    formErrors.date_of_birth ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    formErrors.date_of_birth ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 />
                 {formErrors.date_of_birth && (
@@ -321,14 +321,14 @@ export default function EditStudentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Gender *
                 </label>
                 <select
                   value={formData.gender}
                   onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                    formErrors.gender ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    formErrors.gender ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 >
                   <option value="">Select Gender</option>
@@ -341,14 +341,14 @@ export default function EditStudentPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Class *
                 </label>
                 <select
                   value={formData.class_id}
                   onChange={(e) => setFormData({...formData, class_id: e.target.value})}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                    formErrors.class_id ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    formErrors.class_id ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 >
                   <option value="">Select Class</option>
@@ -364,15 +364,15 @@ export default function EditStudentPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Guardian Name *
                 </label>
                 <input
                   type="text"
                   value={formData.guardian_name}
                   onChange={(e) => setFormData({...formData, guardian_name: e.target.value})}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                    formErrors.guardian_name ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    formErrors.guardian_name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 />
                 {formErrors.guardian_name && (
@@ -381,15 +381,15 @@ export default function EditStudentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Guardian Phone *
                 </label>
                 <input
                   type="tel"
                   value={formData.guardian_phone}
                   onChange={(e) => setFormData({...formData, guardian_phone: e.target.value})}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent ${
-                    formErrors.guardian_phone ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                    formErrors.guardian_phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                 />
                 {formErrors.guardian_phone && (
@@ -398,14 +398,14 @@ export default function EditStudentPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Guardian Email
                 </label>
                 <input
                   type="email"
                   value={formData.guardian_email}
                   onChange={(e) => setFormData({...formData, guardian_email: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
                 />
               </div>
             </div>
@@ -413,7 +413,7 @@ export default function EditStudentPage() {
             <div className="flex justify-end space-x-4 pt-4">
               <Link
                 href="/teacher/students"
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Cancel
               </Link>

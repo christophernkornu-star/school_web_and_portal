@@ -238,7 +238,7 @@ export default function EditStudentPage() {
               </div>
               <div>
                 <span className="text-gray-600">Email:</span>
-                <p className="font-medium">{student.profiles?.email}</p>
+                <p className="font-medium break-all">{student.profiles?.email}</p>
               </div>
             </div>
           </div>

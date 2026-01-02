@@ -23,6 +23,7 @@ interface PromotionRecord {
   academic_year: string
   promotion_status: string
   teacher_remarks: string
+  current_class_id: string
 }
 
 export default function PromotionsPage() {
@@ -157,19 +158,13 @@ export default function PromotionsPage() {
     setMessage({ type: '', text: '' })
 
     try {
-      const updates: PromotionRecord[] = []
-      
-      Object.keys(promotionChanges).forEach(studentId => {
-        const change = promotionChanges[studentId]
-        if (change.status) {
-          updates.push({
-            student_id: studentId,
-            academic_year: academicYear,
-            promotion_status: change.status,
-            teacher_remarks: change.remarks || ''
-          })
-        }
-      })
+      const user = await getCurrentUser()
+      if (!user) throw new Error('Not authenticated')
+
+      const updates = Object.keys(promotionChanges).map(studentId => ({
+        studentId,
+        ...promotionChanges[studentId]
+      })).filter(u => u.status)
 
       if (updates.length === 0) {
         setMessage({ type: 'error', text: 'No changes to save' })
@@ -177,13 +172,15 @@ export default function PromotionsPage() {
         return
       }
 
-      // Upsert promotion records
+      // Execute promotion decisions
       for (const update of updates) {
-        const { error } = await supabase
-          .from('student_promotions')
-          .upsert(update, { 
-            onConflict: 'student_id,academic_year'
-          })
+        const { error } = await supabase.rpc('execute_admin_promotion_decision', {
+            p_student_id: update.studentId,
+            p_academic_year: academicYear,
+            p_user_id: user.id,
+            p_status: update.status,
+            p_remarks: update.remarks || ''
+        })
 
         if (error) throw error
       }
@@ -353,8 +350,8 @@ export default function PromotionsPage() {
 
         {/* Bulk Actions */}
         {selectedStudents.length > 0 && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center space-x-3">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center space-x-3 w-full md:w-auto justify-center md:justify-start">
               <div className="bg-purple-100 p-2 rounded-full">
                 <UserCheck className="w-5 h-5 text-purple-600" />
               </div>
@@ -362,30 +359,32 @@ export default function PromotionsPage() {
                 {selectedStudents.length} students selected
               </span>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-3 w-full md:w-auto">
               <select
                 value={bulkStatus}
                 onChange={(e) => setBulkStatus(e.target.value)}
-                className="px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
+                className="w-full md:w-auto px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
               >
                 <option value="">-- Select Action --</option>
                 <option value="promoted">Promote Selected</option>
                 <option value="repeated">Repeat Selected</option>
                 <option value="graduated">Graduate Selected</option>
               </select>
-              <button
-                onClick={handleBulkApply}
-                disabled={!bulkStatus}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Apply
-              </button>
-              <button
-                onClick={() => setSelectedStudents([])}
-                className="text-gray-500 hover:text-gray-700 px-3 py-2"
-              >
-                Cancel
-              </button>
+              <div className="flex items-center space-x-3 w-full md:w-auto">
+                <button
+                  onClick={handleBulkApply}
+                  disabled={!bulkStatus}
+                  className="flex-1 md:flex-none bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Apply
+                </button>
+                <button
+                  onClick={() => setSelectedStudents([])}
+                  className="flex-1 md:flex-none text-gray-500 hover:text-gray-700 px-3 py-2 text-center"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -406,7 +405,8 @@ export default function PromotionsPage() {
                 <span className="ml-2 text-xs md:text-sm font-normal text-gray-500">({classStudents.length} students)</span>
               </h2>
               
-              <div className="bg-white rounded-lg shadow overflow-hidden">
+              {/* Desktop Table View */}
+              <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b">
                     <tr>
@@ -496,6 +496,98 @@ export default function PromotionsPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                <div className="flex items-center justify-between bg-white p-3 rounded-lg shadow mb-2">
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={classStudents.every(s => selectedStudents.includes(s.id))}
+                      onChange={() => handleSelectAll(classStudents)}
+                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <span>Select All {className}</span>
+                  </label>
+                </div>
+
+                {classStudents.map((student) => {
+                  const currentStatus = promotionChanges[student.id]?.status || student.promotion_status || ''
+                  const currentRemarks = promotionChanges[student.id]?.remarks ?? student.teacher_remarks ?? ''
+                  const isSelected = selectedStudents.includes(student.id)
+                  
+                  return (
+                    <div key={student.id} className={`bg-white rounded-lg shadow p-4 space-y-3 ${isSelected ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}>
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-start space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectStudent(student.id)}
+                            className="mt-1 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {student.first_name} {student.last_name}
+                            </div>
+                            <div className="text-xs text-gray-500">{student.student_id}</div>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="text-xs text-gray-500 mb-1">Average</span>
+                          <span className={`text-sm font-bold ${
+                            (student.average_score || 0) >= 50 ? 'text-green-600' :
+                            (student.average_score || 0) >= 40 ? 'text-yellow-600' : 'text-red-600'
+                          }`}>
+                            {(student.average_score || 0).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-3">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                          <div className="flex space-x-2">
+                            <select
+                              value={currentStatus}
+                              onChange={(e) => handlePromotionChange(student.id, 'status', e.target.value)}
+                              className={`flex-1 text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
+                                currentStatus === 'promoted' ? 'bg-green-50 border-green-300' :
+                                currentStatus === 'repeated' ? 'bg-red-50 border-red-300' :
+                                currentStatus === 'graduated' ? 'bg-blue-50 border-blue-300' :
+                                'bg-white border-gray-300'
+                              }`}
+                            >
+                              <option value="">-- Select --</option>
+                              <option value="promoted">Promoted</option>
+                              <option value="repeated">Repeated</option>
+                              <option value="graduated">Graduated</option>
+                              <option value="pending">Pending</option>
+                            </select>
+                            <button
+                              onClick={() => handleAutoPromote(student.id, student.average_score || 0)}
+                              className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium"
+                            >
+                              Auto
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-xs font-medium text-gray-500 mb-1">Remarks</label>
+                          <input
+                            type="text"
+                            placeholder="Optional remarks..."
+                            value={currentRemarks}
+                            onChange={(e) => handlePromotionChange(student.id, 'remarks', e.target.value)}
+                            className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           ))
