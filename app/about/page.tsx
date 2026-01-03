@@ -25,29 +25,29 @@ export default function AboutPage() {
         <div className="container mx-auto px-6">
           <div className="max-w-4xl mx-auto">
             <h3 className="text-3xl font-bold text-methodist-blue mb-6">Our History</h3>
-            <p className="text-gray-700 mb-4 leading-relaxed">
+            <p className="text-gray-700 mb-4 leading-relaxed text-justify">
               Biriwa Methodist 'C' Basic School is a growing centre of excellence located in Biriwa 
               in the Central Region of Ghana, just 200 metres from the Gulf of Guinea. Established 
               during the 2011/2012 academic year, the school was carved out of the original Biriwa 
               Methodist A & B Schools to expand access to quality basic education within the community.
             </p>
-            <p className="text-gray-700 mb-4 leading-relaxed">
+            <p className="text-gray-700 mb-4 leading-relaxed text-justify">
               Situated in a vibrant coastal town where many parents are fisherfolk, the school plays 
               a vital role in providing hope, stability, and opportunity for children from diverse backgrounds.
             </p>
-            <p className="text-gray-700 mb-4 leading-relaxed">
+            <p className="text-gray-700 mb-4 leading-relaxed text-justify">
               As part of the Methodist Church Ghana's commitment to holistic education, Biriwa Methodist 'C' 
               is grounded in Christian values that promote academic excellence, strong character, moral discipline, 
               and spiritual growth. We provide a complete basic education from Kindergarten one (1) to Basic 9 
               School three (3).
             </p>
-            <p className="text-gray-700 mb-4 leading-relaxed">
+            <p className="text-gray-700 mb-4 leading-relaxed text-justify">
               Under the leadership of a transformational headteacher, <strong>Majesty Tettey</strong>, the school 
               has experienced significant progress in academics, infrastructure, and community engagement. His 
               vision-driven leadership continues to strengthen partnerships with parents, stakeholders, and the 
               wider Biriwa community.
             </p>
-            <p className="text-gray-700 leading-relaxed">
+            <p className="text-gray-700 leading-relaxed text-justify">
               Today, Biriwa Methodist 'C' Basic School stands as a beacon of opportunity—shaping confident, 
               disciplined, and academically competitive learners prepared for future success.
             </p>

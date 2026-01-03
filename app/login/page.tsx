@@ -132,6 +132,10 @@ export default function LoginPage() {
                     <span className="group-hover:text-white transition-colors">Gallery</span>
                     <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-blue group-hover:w-full transition-all duration-300"></span>
                   </Link>
+                  <Link href="/complaints" className="group relative text-methodist-blue font-semibold transition-all duration-200 pb-1">
+                    <span className="group-hover:text-white transition-colors">Complaints</span>
+                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-methodist-blue group-hover:w-full transition-all duration-300"></span>
+                  </Link>
                 </nav>
                 
                 {/* Mobile Menu Button */}
@@ -177,6 +181,10 @@ export default function LoginPage() {
               <Link href="/gallery" className="block text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-methodist-blue hover:text-white transition-all duration-200"
                 onClick={() => setMobileMenuOpen(false)}>
                 Gallery
+              </Link>
+              <Link href="/complaints" className="block text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-methodist-blue hover:text-white transition-all duration-200"
+                onClick={() => setMobileMenuOpen(false)}>
+                Complaints
               </Link>
             </nav>
           </div>

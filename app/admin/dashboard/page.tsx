@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   GraduationCap, Users, BookOpen, Building2, LogOut, 
-  UserPlus, FileText, Settings, BarChart3, Calendar, Newspaper, Image, TrendingUp, DollarSign
+  UserPlus, FileText, Settings, BarChart3, Calendar, Newspaper, Image, TrendingUp, DollarSign, MessageSquare
 } from 'lucide-react'
 import { getCurrentUser, signOut } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -377,6 +377,18 @@ export default function AdminDashboard() {
                 <div>
                   <h3 className="font-bold text-lg text-gray-800 mb-1">Events</h3>
                   <p className="text-sm text-gray-500">Manage calendar</p>
+                </div>
+              </div>
+            </Link>
+
+            <Link href="/admin/complaints" className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 hover:-translate-y-1">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="bg-gradient-to-br from-orange-100 to-orange-200 p-4 rounded-2xl">
+                  <MessageSquare className="w-10 h-10 text-orange-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-gray-800 mb-1">Complaints</h3>
+                  <p className="text-sm text-gray-500">View feedback</p>
                 </div>
               </div>
             </Link>

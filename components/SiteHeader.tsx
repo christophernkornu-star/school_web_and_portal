@@ -71,6 +71,10 @@ export default function SiteHeader() {
                   <span className={`transition-colors ${pathname === '/gallery' ? 'text-blue-900' : 'text-white group-hover:text-blue-900'}`}>Gallery</span>
                   <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-900 transition-all duration-300 ${pathname === '/gallery' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </Link>
+                <Link href="/complaints" className="group relative text-sm xl:text-base font-bold transition-all duration-200 pb-1 whitespace-nowrap drop-shadow-lg">
+                  <span className={`transition-colors ${pathname === '/complaints' ? 'text-blue-900' : 'text-white group-hover:text-blue-900'}`}>Complaints</span>
+                  <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-900 transition-all duration-300 ${pathname === '/complaints' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+                </Link>
               </nav>
               
               {/* Portal Login Button */}
@@ -127,6 +131,10 @@ export default function SiteHeader() {
             <Link href="/gallery" className={`block font-bold py-2 px-4 rounded-lg transition-all duration-200 ${pathname === '/gallery' ? 'bg-blue-900 text-white' : 'text-methodist-blue hover:bg-ghana-gold hover:text-white'}`}
               onClick={() => setMobileMenuOpen(false)}>
               Gallery
+            </Link>
+            <Link href="/complaints" className={`block font-bold py-2 px-4 rounded-lg transition-all duration-200 ${pathname === '/complaints' ? 'bg-blue-900 text-white' : 'text-methodist-blue hover:bg-ghana-gold hover:text-white'}`}
+              onClick={() => setMobileMenuOpen(false)}>
+              Complaints
             </Link>
             <Link href="/login" className="block text-white font-extrabold py-3 px-4 rounded-lg bg-blue-900 hover:bg-blue-800 transition-all duration-200 text-center shadow-lg"
               onClick={() => setMobileMenuOpen(false)}>
