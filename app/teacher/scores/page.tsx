@@ -1164,9 +1164,9 @@ export default function ExamScoresPage() {
         <div className="max-w-4xl mx-auto">
           {/* OCR Option Banner */}
           <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Camera className="w-8 h-8 text-ghana-green" />
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center space-x-3 w-full md:w-auto">
+                <Camera className="w-8 h-8 text-ghana-green flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-gray-800 dark:text-gray-100">Can't type? Use OCR!</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-300">Upload a photo of your handwritten scores and let AI extract them</p>
@@ -1174,7 +1174,7 @@ export default function ExamScoresPage() {
               </div>
               <Link
                 href="/teacher/scores/ocr"
-                className="bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 transition flex items-center space-x-2"
+                className="w-full md:w-auto bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center space-x-2"
               >
                 <Camera className="w-5 h-5" />
                 <span>Try OCR Entry</span>
@@ -1183,11 +1183,11 @@ export default function ExamScoresPage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow border-b dark:border-gray-700">
-            <div className="flex">
+          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow border-b dark:border-gray-700 overflow-x-auto">
+            <div className="flex min-w-max">
               <button
                 onClick={() => setActiveTab('manual')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'manual'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -1198,7 +1198,7 @@ export default function ExamScoresPage() {
               </button>
               <button
                 onClick={() => setActiveTab('csv')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'csv'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -1209,7 +1209,7 @@ export default function ExamScoresPage() {
               </button>
               <button
                 onClick={() => setActiveTab('ungraded')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'ungraded'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -1220,7 +1220,7 @@ export default function ExamScoresPage() {
               </button>
               <button
                 onClick={() => setActiveTab('grid')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'grid'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
@@ -1955,13 +1955,13 @@ export default function ExamScoresPage() {
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <th scope="col" className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Student
                           </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <th scope="col" className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Missing Subjects
                           </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                          <th scope="col" className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                             Progress
                           </th>
                         </tr>
@@ -1969,7 +1969,7 @@ export default function ExamScoresPage() {
                       <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                         {ungradedData.map((item, index) => (
                           <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/50'}>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center">
                                 <div className="flex-shrink-0 h-10 w-10 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
                                   <User className="h-5 w-5 text-gray-500 dark:text-gray-300" />
@@ -1984,7 +1984,7 @@ export default function ExamScoresPage() {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-4">
+                            <td className="px-3 md:px-6 py-4">
                               <div className="flex flex-wrap gap-2">
                                 {item.missingSubjects.map((subject: any) => (
                                   <span 
@@ -1996,7 +1996,7 @@ export default function ExamScoresPage() {
                                 ))}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                               <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 max-w-[100px]">
                                 <div 
                                   className="bg-blue-600 h-2.5 rounded-full" 
@@ -2160,13 +2160,13 @@ export default function ExamScoresPage() {
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
                         <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-20 shadow-sm">
                           <tr>
-                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-30 border-r dark:border-r-gray-600 border-b dark:border-b-gray-600">
+                            <th rowSpan={2} className="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-30 border-r dark:border-r-gray-600 border-b dark:border-b-gray-600 min-w-[120px] md:min-w-[200px]">
                               Student
                             </th>
                             {selectedSubjects.map(subjectId => {
                                 const subject = filteredSubjects.find(s => s.id === subjectId)
                                 return (
-                                    <th key={subjectId} colSpan={4} className="px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-b-gray-600 border-r dark:border-r-gray-600 bg-gray-100 dark:bg-gray-600">
+                                    <th key={subjectId} colSpan={4} className="px-2 md:px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-b-gray-600 border-r dark:border-r-gray-600 bg-gray-100 dark:bg-gray-600">
                                         {subject?.name || 'Unknown Subject'}
                                     </th>
                                 )
@@ -2188,8 +2188,8 @@ export default function ExamScoresPage() {
                             const hasChanges = gridChanges.has(student.id)
                             return (
                               <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
-                                <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-r-gray-600 shadow-sm">
-                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                <td className="px-2 md:px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-r-gray-600 shadow-sm">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[120px] md:max-w-none">
                                     {student.last_name} {student.first_name}
                                   </div>
                                   <div className="text-xs text-gray-500 dark:text-gray-400">
