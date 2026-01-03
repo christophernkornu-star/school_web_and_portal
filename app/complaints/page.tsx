@@ -55,7 +55,7 @@ export default function ComplaintsPage() {
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="text-purple-600 font-medium hover:text-purple-700 underline"
+                  className="text-blue-900 font-medium hover:text-blue-800 underline"
                 >
                   Submit another
                 </button>
@@ -78,7 +78,7 @@ export default function ComplaintsPage() {
                       name="type"
                       id="type"
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all"
                     >
                       <option value="complaint">Complaint</option>
                       <option value="suggestion">Suggestion</option>
@@ -95,7 +95,7 @@ export default function ComplaintsPage() {
                       id="subject"
                       required
                       placeholder="Brief summary"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -110,7 +110,7 @@ export default function ComplaintsPage() {
                     required
                     rows={5}
                     placeholder="Please describe your complaint or suggestion in detail..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all resize-none"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all resize-none"
                   ></textarea>
                 </div>
 
@@ -129,7 +129,7 @@ export default function ComplaintsPage() {
                         type="text"
                         name="contact_name"
                         id="contact_name"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all"
                       />
                     </div>
 
@@ -141,7 +141,7 @@ export default function ComplaintsPage() {
                         type="email"
                         name="contact_email"
                         id="contact_email"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all"
                       />
                     </div>
 
@@ -153,7 +153,7 @@ export default function ComplaintsPage() {
                         type="tel"
                         name="contact_phone"
                         id="contact_phone"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-900 focus:border-transparent outline-none transition-all"
                       />
                     </div>
                   </div>
@@ -162,7 +162,7 @@ export default function ComplaintsPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full bg-blue-900 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-800 transition-colors flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-xl hover:shadow-2xl"
                 >
                   {isSubmitting ? (
                     <>
