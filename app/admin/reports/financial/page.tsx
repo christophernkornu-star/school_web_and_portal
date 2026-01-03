@@ -193,7 +193,7 @@ export default function FinancialReportsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -202,14 +202,14 @@ export default function FinancialReportsPage() {
               <ArrowLeft className="w-6 h-6 text-gray-600" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Financial Reports</h1>
-              <p className="text-gray-600">Track collections and outstanding balances</p>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800">Financial Reports</h1>
+              <p className="text-sm md:text-base text-gray-600">Track collections and outstanding balances</p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
             <select 
-              className="bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+              className="w-full sm:w-auto bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
             >
@@ -220,7 +220,7 @@ export default function FinancialReportsPage() {
             </select>
             <button 
               onClick={() => window.print()}
-              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
             >
               <Download className="w-4 h-4 mr-2" />
               Export
@@ -266,11 +266,11 @@ export default function FinancialReportsPage() {
 
         {/* Tabs & Filters */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex space-x-4">
+          <div className="border-b border-gray-200 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex overflow-x-auto pb-2 lg:pb-0 gap-2 no-scrollbar">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                   activeTab === 'overview' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -278,7 +278,7 @@ export default function FinancialReportsPage() {
               </button>
               <button
                 onClick={() => setActiveTab('collections')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                   activeTab === 'collections' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -286,7 +286,7 @@ export default function FinancialReportsPage() {
               </button>
               <button
                 onClick={() => setActiveTab('debts')}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                   activeTab === 'debts' ? 'bg-purple-100 text-purple-700' : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
@@ -294,19 +294,19 @@ export default function FinancialReportsPage() {
               </button>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <div className="relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="relative w-full sm:w-auto">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search student..."
-                  className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                  className="w-full sm:w-64 pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 outline-none"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
               <select
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
               >
@@ -347,7 +347,7 @@ export default function FinancialReportsPage() {
 
                 {activeTab === 'collections' && (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full min-w-[800px] text-left">
                       <thead>
                         <tr className="border-b border-gray-200">
                           <th className="pb-3 font-semibold text-gray-600">Date</th>
@@ -395,7 +395,7 @@ export default function FinancialReportsPage() {
 
                 {activeTab === 'debts' && (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full min-w-[900px] text-left">
                       <thead>
                         <tr className="border-b border-gray-200">
                           <th className="pb-3 font-semibold text-gray-600">Student</th>
