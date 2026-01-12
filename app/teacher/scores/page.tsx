@@ -1870,15 +1870,31 @@ export default function ExamScoresPage() {
                               student.student_id.toLowerCase().includes(query)
                             )
                           }).sort((a, b) => {
+                            // Secondary sort by name (Last Name then First Name)
+                            const nameCompare = a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name)
+
+                            if (gridSortOrder === 'default') {
+                              // If default, we can respect the original fetch order (which is first_name) 
+                              // or enforce last_name sort. Users usually prefer last_name in lists.
+                              // Let's stick to the explicit name compare for consistency.
+                              return nameCompare
+                            }
+
+                            const genderA = a.gender?.toLowerCase()
+                            const genderB = b.gender?.toLowerCase()
+
+                            // If genders are the same, use name comparison
+                            if (genderA === genderB) return nameCompare
+
                             if (gridSortOrder === 'male_first') {
-                              if (a.gender === b.gender) return 0
-                              return a.gender?.toLowerCase() === 'male' ? -1 : 1
+                              return genderA === 'male' ? -1 : 1
                             }
+                            
                             if (gridSortOrder === 'female_first') {
-                              if (a.gender === b.gender) return 0
-                              return a.gender?.toLowerCase() === 'female' ? -1 : 1
+                              return genderA === 'female' ? -1 : 1
                             }
-                            return 0
+                            
+                            return nameCompare
                           }).map((student) => {
                             const hasChanges = gridChanges.has(student.id)
                             return (
