@@ -26,6 +26,7 @@ interface Student {
   first_name: string
   last_name: string
   class_id: string
+  gender: string
 }
 
 export default function ExamScoresPage() {
@@ -39,7 +40,9 @@ export default function ExamScoresPage() {
   const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([])
   const [students, setStudents] = useState<Student[]>([])
   
-  const [activeTab, setActiveTab] = useState<'manual' | 'csv' | 'ungraded' | 'grid'>('manual')
+  const [activeTab, setActiveTab] = useState<'csv' | 'ungraded' | 'grid'>('csv')
+  const [gridSearchQuery, setGridSearchQuery] = useState('')
+  const [gridSortOrder, setGridSortOrder] = useState<'default' | 'male_first' | 'female_first'>('default')
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedSubject, setSelectedSubject] = useState('')
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
@@ -189,7 +192,7 @@ export default function ExamScoresPage() {
       try {
         const { data, error } = await supabase
           .from('students')
-          .select('id, student_id, first_name, last_name, class_id')
+          .select('id, student_id, first_name, last_name, class_id, gender')
           .eq('class_id', selectedClass)
           .eq('status', 'active')
           .order('first_name') as { data: any[] | null; error: any }
@@ -1154,7 +1157,7 @@ export default function ExamScoresPage() {
             </Link>
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Exam Scores</h1>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Enter exam scores manually or upload via CSV</p>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Upload exam scores via CSV or use Spreadsheet View</p>
             </div>
           </div>
         </div>
@@ -1185,17 +1188,6 @@ export default function ExamScoresPage() {
           {/* Tab Navigation */}
           <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow border-b dark:border-gray-700 overflow-x-auto">
             <div className="flex min-w-max">
-              <button
-                onClick={() => setActiveTab('manual')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'manual'
-                    ? 'text-ghana-green border-b-2 border-ghana-green'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                <FileText className="w-5 h-5" />
-                <span>Enter Manually</span>
-              </button>
               <button
                 onClick={() => setActiveTab('csv')}
                 className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
@@ -1232,344 +1224,7 @@ export default function ExamScoresPage() {
             </div>
           </div>
 
-          {/* Manual Entry Tab */}
-          {activeTab === 'manual' && (
-            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
-              {submitSuccess && (
-                <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-green-800 dark:text-green-200 font-medium">Score submitted successfully!</p>
-                    <p className="text-green-700 dark:text-green-300 text-sm mt-1">You can enter another score or view the scores list.</p>
-                  </div>
-                </div>
-              )}
 
-              {formErrors.submit && (
-                <div className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start space-x-3">
-                  <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                  <p className="text-red-800 dark:text-red-200">{formErrors.submit}</p>
-                </div>
-              )}
-
-              <form onSubmit={handleManualSubmit} className="space-y-6">
-                {/* Score Type Selection */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Score Entry Type</h3>
-                  <div className="grid md:grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setScoreType('both')}
-                      className={`px-4 py-3 rounded-lg border-2 transition ${
-                        scoreType === 'both'
-                          ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300'
-                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
-                      }`}
-                    >
-                      <div className="font-medium">Both Scores</div>
-                      <div className="text-xs mt-1">Class + Exam</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScoreType('class_only')}
-                      className={`px-4 py-3 rounded-lg border-2 transition ${
-                        scoreType === 'class_only'
-                          ? 'bg-ghana-green text-white border-ghana-green'
-                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
-                      }`}
-                    >
-                      <div className="font-medium">Class Score Only</div>
-                      <div className="text-xs mt-1">Max 40 marks</div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setScoreType('exam_only')}
-                      className={`px-4 py-3 rounded-lg border-2 transition ${
-                        scoreType === 'exam_only'
-                          ? 'bg-ghana-red text-white border-ghana-red'
-                          : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
-                      }`}
-                    >
-                      <div className="font-medium">Exam Score Only</div>
-                      <div className="text-xs mt-1">Max 60 marks</div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Selection Filters */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Select Filters</h3>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Class *
-                      </label>
-                      <select
-                        value={selectedClass}
-                        onChange={(e) => {
-                          setSelectedClass(e.target.value)
-                          setSelectedStudent('')
-                          if (formErrors.class) {
-                            setFormErrors({...formErrors, class: ''})
-                          }
-                        }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                          formErrors.class ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
-                        }`}
-                      >
-                        <option value="">Select Class</option>
-                        {teacherClasses.map(cls => (
-                          <option key={cls.class_id} value={cls.class_id}>
-                            {cls.class_name}
-                          </option>
-                        ))}
-                      </select>
-                      {formErrors.class && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.class}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Subject *
-                      </label>
-                      <select
-                        value={selectedSubject}
-                        onChange={(e) => {
-                          setSelectedSubject(e.target.value)
-                          if (formErrors.subject) {
-                            setFormErrors({...formErrors, subject: ''})
-                          }
-                        }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                          formErrors.subject ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
-                        }`}
-                      >
-                        <option value="">Select Subject</option>
-                        {filteredSubjects.map(subject => (
-                          <option key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </option>
-                        ))}
-                        {filteredSubjects.length === 0 && selectedClass && (
-                          <option value="" disabled>No subjects for this level</option>
-                        )}
-                      </select>
-                      {formErrors.subject && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.subject}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Term <span className="text-xs text-gray-500 dark:text-gray-400">(Set by Admin)</span>
-                      </label>
-                      <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
-                        {currentTermName || 'No current term set'}
-                      </div>
-                      {!selectedTerm && (
-                        <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Admin must set current term in system settings</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Student Selection */}
-                {selectedClass && (
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Student</h3>
-                    <div>
-                      <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Select Student *
-                      </label>
-                      <select
-                        value={selectedStudent}
-                        onChange={(e) => {
-                          setSelectedStudent(e.target.value)
-                          if (formErrors.student) {
-                            setFormErrors({...formErrors, student: ''})
-                          }
-                        }}
-                        className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                          formErrors.student ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
-                        }`}
-                      >
-                        <option value="">Select Student</option>
-                        {students.map(student => (
-                          <option key={student.id} value={student.id}>
-                            {student.first_name} {student.last_name} ({student.student_id})
-                          </option>
-                        ))}
-                      </select>
-                      {formErrors.student && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.student}</p>
-                      )}
-                      {students.length === 0 && selectedClass && (
-                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">No students found in this class</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Score Entry */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Scores</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <>
-                      {(scoreType === 'both' || scoreType === 'class_only') && (
-                        <div>
-                          <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Class Score (0-100) {scoreType === 'class_only' ? '*' : ''}
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">Converts to max 40</span>
-                          </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="100"
-                            value={manualScores.class_score}
-                            onChange={(e) => {
-                              setManualScores({...manualScores, class_score: e.target.value})
-                              if (formErrors.class_score) {
-                                setFormErrors({...formErrors, class_score: ''})
-                              }
-                            }}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                              formErrors.class_score ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                            placeholder="e.g., 80"
-                          />
-                          <p className="text-[10px] text-blue-600 dark:text-blue-400 mt-1">
-                            * New scores are added to existing class scores (Cumulative)
-                          </p>
-                          {formErrors.class_score && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.class_score}</p>
-                          )}
-                        </div>
-                      )}
-
-                      {(scoreType === 'both' || scoreType === 'exam_only') && (
-                        <div>
-                          <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                            Exam Score (0-100) {scoreType === 'exam_only' ? '*' : ''}
-                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">Converts to max 60</span>
-                          </label>
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="100"
-                            value={manualScores.exam_score}
-                            onChange={(e) => {
-                              setManualScores({...manualScores, exam_score: e.target.value})
-                              if (formErrors.exam_score) {
-                                setFormErrors({...formErrors, exam_score: ''})
-                              }
-                            }}
-                            className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white ${
-                              formErrors.exam_score ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-900/20' : 'border-gray-300 dark:border-gray-600'
-                            }`}
-                            placeholder="e.g., 75"
-                          />
-                          <p className="text-[10px] text-orange-600 dark:text-orange-400 mt-1">
-                            * New score overwrites existing exam score
-                          </p>
-                          {formErrors.exam_score && (
-                            <p className="mt-1 text-sm text-red-600 dark:text-red-400">{formErrors.exam_score}</p>
-                          )}
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Total Score
-                        </label>
-                        <input
-                          type="text"
-                          value={manualScores.total}
-                          readOnly
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold"
-                          placeholder="Auto-calculated"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Grade
-                        </label>
-                        <input
-                          type="text"
-                          value={manualScores.grade}
-                          readOnly
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold"
-                          placeholder="Auto-calculated"
-                        />
-                      </div>
-                    </>
-                  </div>
-
-                  <div className="mt-4">
-                    <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Remarks (Optional)
-                    </label>
-                    <textarea
-                      value={manualScores.remarks}
-                      onChange={(e) => setManualScores({...manualScores, remarks: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                      rows={3}
-                      placeholder="e.g., Excellent performance, needs improvement, etc."
-                    />
-                  </div>
-                </div>
-
-                {/* Grading Scale Info */}
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
-                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3">Grading Scale</h3>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">Primary (Basic 1-6):</p>
-                      <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-                        <li>• 80-100: Grade 1 - Advance</li>
-                        <li>• 70-79: Grade 2 - Proficient</li>
-                        <li>• 60-69: Grade 3 - Approaching Proficiency</li>
-                        <li>• 50-59: Grade 4 - Developing</li>
-                        <li>• 0-49: Grade 5 - Beginning</li>
-                      </ul>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">JHS (Basic 7-9):</p>
-                      <ul className="space-y-1 text-gray-600 dark:text-gray-400">
-                        <li>• 80-100: Grade 1 - High proficient</li>
-                        <li>• 70-79: Grade 2 - Proficient</li>
-                        <li>• 60-69: Grade 3 - Proficient</li>
-                        <li>• 50-59: Grade 4 - Approaching proficiency</li>
-                        <li>• 40-49: Grade 5 - Developing</li>
-                        <li>• 0-39: Grade 6 - Emerging</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Submit Button */}
-                <div className="flex justify-end space-x-4">
-                  <Link
-                    href="/teacher/dashboard"
-                    className="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-                  >
-                    Cancel
-                  </Link>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-6 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition"
-                  >
-                    <FileText className="w-5 h-5" />
-                    <span>{submitting ? 'Submitting...' : 'Submit Score'}</span>
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
 
           {/* CSV Upload Tab */}
           {activeTab === 'csv' && (
@@ -2120,10 +1775,33 @@ export default function ExamScoresPage() {
               {/* Grid Table */}
               {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
                 <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+                  <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
+                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">
                       Enter Scores ({students.length} Students)
                     </h3>
+                    
+                    <div className="flex-1 w-full md:max-w-md flex gap-2">
+                       <div className="relative flex-1">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search students..."
+                          value={gridSearchQuery}
+                          onChange={(e) => setGridSearchQuery(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white sm:text-sm"
+                        />
+                      </div>
+                      <select
+                        value={gridSortOrder}
+                        onChange={(e) => setGridSortOrder(e.target.value as any)}
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white sm:text-sm"
+                      >
+                        <option value="default">Default Sort</option>
+                        <option value="male_first">Males First</option>
+                        <option value="female_first">Females First</option>
+                      </select>
+                    </div>
+
                     <div className="flex space-x-2">
                       <button
                         onClick={saveGridScores}
@@ -2184,7 +1862,24 @@ export default function ExamScoresPage() {
                           </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {students.map((student) => {
+                          {students.filter(student => {
+                            const query = gridSearchQuery.toLowerCase()
+                            return (
+                              student.first_name.toLowerCase().includes(query) ||
+                              student.last_name.toLowerCase().includes(query) ||
+                              student.student_id.toLowerCase().includes(query)
+                            )
+                          }).sort((a, b) => {
+                            if (gridSortOrder === 'male_first') {
+                              if (a.gender === b.gender) return 0
+                              return a.gender?.toLowerCase() === 'male' ? -1 : 1
+                            }
+                            if (gridSortOrder === 'female_first') {
+                              if (a.gender === b.gender) return 0
+                              return a.gender?.toLowerCase() === 'female' ? -1 : 1
+                            }
+                            return 0
+                          }).map((student) => {
                             const hasChanges = gridChanges.has(student.id)
                             return (
                               <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
