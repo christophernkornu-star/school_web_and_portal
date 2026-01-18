@@ -184,15 +184,15 @@ export default function EventsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 md:space-x-4">
               <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">School Events</h1>
-                <p className="text-sm text-gray-600">Manage and schedule school events</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800">School Events</h1>
+                <p className="text-xs md:text-sm text-gray-600">Manage and schedule school events</p>
               </div>
             </div>
             <button 
@@ -206,9 +206,9 @@ export default function EventsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {events.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
+          <div className="bg-white rounded-lg shadow p-8 md:p-12 text-center">
             <CalendarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">No events yet</h3>
             <p className="text-gray-600 mb-6">Create your first event to display on the website</p>
@@ -221,7 +221,7 @@ export default function EventsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {events.map((event) => (
               <div key={event.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
                 <div className="flex items-start space-x-4">

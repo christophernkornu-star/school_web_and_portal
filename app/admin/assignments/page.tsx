@@ -100,7 +100,7 @@ export default function AssignmentsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
@@ -115,7 +115,7 @@ export default function AssignmentsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <h3 className="font-semibold text-blue-800 mb-2 text-sm md:text-base">How to Assign Classes & Subjects</h3>
@@ -200,8 +200,8 @@ export default function AssignmentsPage() {
 
         {/* Summary Statistics */}
         {teacherAssignments.length > 0 && (
-          <div className="grid md:grid-cols-3 gap-6 mt-8">
-            <div className="bg-white rounded-lg shadow p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8">
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs md:text-sm text-gray-600">Total Teachers</p>
@@ -210,22 +210,22 @@ export default function AssignmentsPage() {
                 <Users className="w-12 h-12 text-blue-200" />
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs md:text-sm text-gray-600">Total Classes</p>
                   <p className="text-2xl md:text-3xl font-bold text-ghana-green">{classes.length}</p>
                 </div>
-                <Users className="w-12 h-12 text-green-200" />
+                <Users className="w-10 h-10 md:w-12 md:h-12 text-green-200" />
               </div>
             </div>
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-4 md:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs md:text-sm text-gray-600">Total Subjects</p>
                   <p className="text-2xl md:text-3xl font-bold text-methodist-gold">{subjects.length}</p>
                 </div>
-                <BookOpen className="w-12 h-12 text-yellow-200" />
+                <BookOpen className="w-10 h-10 md:w-12 md:h-12 text-yellow-200" />
               </div>
             </div>
           </div>

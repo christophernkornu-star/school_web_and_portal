@@ -547,34 +547,34 @@ export default function StudentCumulativePage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Link href="/student/dashboard" className="text-purple-600 hover:text-purple-700">
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
               </Link>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Cumulative Record</h1>
+                <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">Cumulative Record</h1>
                 <p className="text-xs md:text-sm text-gray-600">Your academic performance history</p>
               </div>
             </div>
             {reportData && (
               <button
                 onClick={generatePDF}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm md:text-base w-full sm:w-auto"
               >
                 <Printer className="w-4 h-4" />
-                Print Record
+                <span className="sm:inline">Print Record</span>
               </button>
             )}
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {reportData ? (
           <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="overflow-x-auto p-6">
+            <div className="overflow-x-auto p-4 md:p-6">
               <table className="min-w-full border-collapse border border-gray-300">
                 <thead>
                   <tr>

@@ -188,7 +188,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
             <Link href="/admin/dashboard" className="text-gray-600 hover:text-gray-800">
               <ArrowLeft className="w-6 h-6" />
@@ -201,8 +201,8 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-2 gap-6">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {settingsSections.map((section, index) => (
             <Link key={index} href={section.href} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-start space-x-4">
@@ -225,15 +225,15 @@ export default function SettingsPage() {
         <div className="mt-8 bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-bold text-gray-800 mb-4">System Maintenance</h2>
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex-1">
                 <h3 className="font-medium text-gray-800">Fix Student Usernames</h3>
-                <p className="text-sm text-gray-600">Regenerate all student usernames to follow the format: First 3 letters + Last 3 letters (e.g., 'formah')</p>
+                <p className="text-xs md:text-sm text-gray-600">Regenerate all student usernames to follow the format: First 3 letters + Last 3 letters (e.g., 'formah')</p>
               </div>
               <button
                 onClick={handleFixUsernames}
                 disabled={fixingUsernames}
-                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50 transition"
+                className="w-full sm:w-auto px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50 transition whitespace-nowrap"
               >
                 {fixingUsernames ? 'Processing...' : 'Run Fix'}
               </button>
@@ -246,15 +246,15 @@ export default function SettingsPage() {
           </div>
 
           <div className="border-t pt-4 mt-4">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex-1">
                 <h3 className="font-medium text-gray-800">Reset Student Passwords</h3>
-                <p className="text-sm text-gray-600">Reset all student passwords to their Date of Birth (DD-MM-YYYY)</p>
+                <p className="text-xs md:text-sm text-gray-600">Reset all student passwords to their Date of Birth (DD-MM-YYYY)</p>
               </div>
               <button
                 onClick={handleFixPasswords}
                 disabled={fixingPasswords}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 transition"
+                className="w-full sm:w-auto px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 transition whitespace-nowrap"
               >
                 {fixingPasswords ? 'Processing...' : 'Reset All'}
               </button>
@@ -267,15 +267,15 @@ export default function SettingsPage() {
           </div>
 
           <div className="border-t pt-4 mt-4">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex-1">
                 <h3 className="font-medium text-gray-800">Remove Duplicate Students</h3>
-                <p className="text-sm text-gray-600">Find and remove duplicate student records (keeps the one with Middle Name)</p>
+                <p className="text-xs md:text-sm text-gray-600">Find and remove duplicate student records (keeps the one with Middle Name)</p>
               </div>
               <button
                 onClick={handleFixDuplicates}
                 disabled={fixingDuplicates}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 transition"
+                className="w-full sm:w-auto px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 transition whitespace-nowrap"
               >
                 {fixingDuplicates ? 'Processing...' : 'Remove Duplicates'}
               </button>

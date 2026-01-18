@@ -262,8 +262,8 @@ export default function PromotionsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
                 <ArrowLeft className="w-6 h-6" />
@@ -276,7 +276,7 @@ export default function PromotionsPage() {
             <button
               onClick={handleSaveAll}
               disabled={saving || Object.keys(promotionChanges).length === 0}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2 disabled:opacity-50"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
             >
               <Save className="w-5 h-5" />
               <span>{saving ? 'Saving...' : 'Save All Changes'}</span>
@@ -285,7 +285,7 @@ export default function PromotionsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {message.text && (
           <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
             message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'

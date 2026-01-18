@@ -90,9 +90,9 @@ export default function AdminDashboard() {
         
         {/* Main Header */}
         <div className="bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-yellow-700">
-          <nav className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center space-x-3">
+          <nav className="container mx-auto px-4 md:px-6 py-3 md:py-4">
+            <div className="flex items-center justify-between gap-2">
+              <Link href="/" className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
                 <GraduationCap className="w-10 h-10 text-methodist-blue" />
                 <div>
                   <h1 className="text-lg md:text-xl font-bold text-methodist-blue">
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Welcome Section */}
         <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white rounded-lg p-8 mb-8 shadow-lg">
           <div>
@@ -330,9 +330,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Content Management</h2>
-          <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="mt-6 md:mt-8">
+          <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-4 md:mb-6">Content Management</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
             <Link href="/admin/news" className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-6 hover:-translate-y-1">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="bg-gradient-to-br from-red-100 to-red-200 p-4 rounded-2xl">

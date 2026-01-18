@@ -7,7 +7,7 @@ export default function EnrollmentsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
             <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
               <ArrowLeft className="w-6 h-6" />
@@ -20,7 +20,7 @@ export default function EnrollmentsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         <div className="bg-white rounded-lg shadow p-8 text-center">
           <Calendar className="w-16 h-16 text-methodist-blue mx-auto mb-4" />
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Enrollment Management</h2>

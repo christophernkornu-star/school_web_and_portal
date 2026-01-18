@@ -16,7 +16,7 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
             <Link href="/admin/dashboard" className="text-methodist-gold hover:text-yellow-600">
               <ArrowLeft className="w-6 h-6" />
@@ -29,8 +29,8 @@ export default function ReportsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-2 gap-6">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
           {reportTypes.map((report, index) => (
             <Link key={index} href={report.href || '#'} className="block group">
               <div className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer h-full">

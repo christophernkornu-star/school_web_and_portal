@@ -270,12 +270,12 @@ export default function EnterScores() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="ghana-flag-border bg-white shadow-md">
-        <nav className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <nav className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
               <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-ghana-green" />
               <div>
-                <h1 className="text-lg md:text-xl font-bold text-ghana-green">
+                <h1 className="text-base md:text-xl font-bold text-ghana-green">
                   Biriwa Methodist 'C' Basic School
                 </h1>
                 <p className="text-[10px] md:text-xs text-gray-600">Teacher Portal - Enter Scores</p>
@@ -283,14 +283,14 @@ export default function EnterScores() {
             </div>
             <Link href="/teacher/dashboard" className="flex items-center space-x-2 text-gray-700 hover:text-ghana-green">
               <ArrowLeft className="w-5 h-5" />
-              <span>Back to Dashboard</span>
+              <span className="text-sm">Back to Dashboard</span>
             </Link>
           </div>
         </nav>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">Enter Student Scores</h2>
 
         {/* Selection Filters */}
@@ -386,15 +386,15 @@ export default function EnterScores() {
         {/* Students Table */}
         {selectedClass && selectedSubject && selectedAssessment && (
           <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
+            <div className="p-4 md:p-6 border-b">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h3 className="text-base md:text-lg font-bold text-gray-800">
                   Enter Scores for {students.length} Students
                 </h3>
                 <button
                   onClick={handleSaveScores}
                   disabled={saving || Object.keys(scores).length === 0}
-                  className="btn-secondary flex items-center space-x-2 disabled:opacity-50"
+                  className="btn-secondary flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
                 >
                   <Save className="w-4 h-4" />
                   <span>{saving ? 'Saving...' : 'Save Scores'}</span>

@@ -136,15 +136,15 @@ export default function AnnouncementsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 md:space-x-4">
               <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">Announcements</h1>
-                <p className="text-sm text-gray-600">Create and manage school announcements</p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Announcements</h1>
+                <p className="text-xs md:text-sm text-gray-600">Create and manage school announcements</p>
               </div>
             </div>
             <button 
@@ -171,7 +171,7 @@ export default function AnnouncementsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {announcements.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <Megaphone className="w-16 h-16 text-gray-400 mx-auto mb-4" />

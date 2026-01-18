@@ -331,9 +331,9 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 md:space-x-4">
               <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
@@ -356,7 +356,7 @@ export default function TermsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {message.text && (
           <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
             message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
@@ -370,7 +370,7 @@ export default function TermsPage() {
         )}
 
         {Object.keys(groupedTerms).length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
+          <div className="bg-white rounded-lg shadow p-8 md:p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No academic terms found</h3>
             <p className="text-gray-600 mb-6">Get started by adding your first academic term</p>
@@ -384,9 +384,9 @@ export default function TermsPage() {
           </div>
         ) : (
           Object.entries(groupedTerms).map(([year, yearTerms]) => (
-            <div key={year} className="mb-8">
+            <div key={year} className="mb-6 md:mb-8">
               <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4">{year} Academic Year</h2>
-              <div className="grid md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {yearTerms.map((term) => (
                   <div key={term.id} className={`bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow ${
                     term.is_current ? 'ring-2 ring-green-500' : ''

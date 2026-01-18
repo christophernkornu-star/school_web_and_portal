@@ -145,9 +145,9 @@ export default function AdminGalleryPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 md:space-x-4">
               <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
@@ -167,9 +167,9 @@ export default function AdminGalleryPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Stats */}
-        <div className="grid md:grid-cols-4 gap-6 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-sm">Total Photos</p>
             <p className="text-2xl font-bold text-gray-800">{photos.length}</p>

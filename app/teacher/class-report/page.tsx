@@ -228,10 +228,10 @@ export default function ClassReportPage() {
 
   if (classes.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-600">You must be a Class Teacher to access the Class Report.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-sm md:text-base text-gray-600">You must be a Class Teacher to access the Class Report.</p>
           <button onClick={() => router.back()} className="mt-4 text-blue-600 hover:underline">Go Back</button>
         </div>
       </div>
@@ -239,20 +239,20 @@ export default function ClassReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8 print:p-0 print:bg-white transition-colors duration-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 print:p-0 print:bg-white transition-colors duration-200">
       {/* No Print Section: Controls */}
-      <div className="max-w-[1400px] mx-auto mb-8 print:hidden">
-        <div className="flex items-center justify-between mb-6">
+      <div className="max-w-[1400px] mx-auto mb-6 md:mb-8 print:hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
             <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
               <ArrowLeft className="w-6 h-6 text-gray-800 dark:text-gray-200" />
             </button>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Class Report Sheet</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Class Report Sheet</h1>
           </div>
           {sheetData && (
             <button 
               onClick={() => window.print()}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full sm:w-auto"
             >
               <Printer className="w-5 h-5" />
               Print Report
@@ -260,7 +260,7 @@ export default function ClassReportPage() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-end transition-colors">
+        <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end transition-colors">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Class</label>
             <select 

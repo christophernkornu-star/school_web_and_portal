@@ -415,7 +415,7 @@ export default function TeacherDashboard() {
         
         {/* Main Header */}
         <div className="bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-yellow-700">
-          <nav className="container mx-auto px-6 py-4">
+          <nav className="container mx-auto px-4 md:px-6 py-3 md:py-4">
             <div className="flex items-center justify-between">
               <Link href="/" className="flex items-center space-x-3">
                 <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-methodist-blue" />
@@ -442,9 +442,9 @@ export default function TeacherDashboard() {
     </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white rounded-lg p-8 mb-8 shadow-lg">
+        <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white rounded-lg p-6 md:p-8 mb-6 md:mb-8 shadow-lg">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold mb-2">
               Welcome, {teacher?.first_name} {teacher?.middle_name ? `${teacher.middle_name} ` : ''}{teacher?.last_name}!

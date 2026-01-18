@@ -187,9 +187,9 @@ export default function SubjectsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 md:space-x-4">
               <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
@@ -212,7 +212,7 @@ export default function SubjectsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {message.text && (
           <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
             message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'

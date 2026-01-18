@@ -7,21 +7,21 @@ export default function FinanceDashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
             <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">Finance Management</h1>
-              <p className="text-sm text-gray-600">Manage school fees and payments</p>
+              <h1 className="text-lg md:text-2xl font-bold text-gray-800">Finance Management</h1>
+              <p className="text-xs md:text-sm text-gray-600">Manage school fees and payments</p>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           
           {/* Fee Setup Card */}
           <Link href="/admin/finance/setup" className="group">
@@ -31,8 +31,8 @@ export default function FinanceDashboard() {
                   <Settings className="w-8 h-8 text-purple-600" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Fee Setup</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Fee Setup</h3>
+              <p className="text-sm md:text-base text-gray-600">
                 Define fee types (Tuition, PTA, etc.) and set amounts for each class and term.
               </p>
               <div className="mt-4 text-purple-600 font-medium flex items-center">
@@ -49,8 +49,8 @@ export default function FinanceDashboard() {
                   <DollarSign className="w-8 h-8 text-green-600" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Fee Collection</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Fee Collection</h3>
+              <p className="text-sm md:text-base text-gray-600">
                 Record payments from students, view outstanding balances, and payment history.
               </p>
               <div className="mt-4 text-green-600 font-medium flex items-center">
@@ -67,8 +67,8 @@ export default function FinanceDashboard() {
                   <PieChart className="w-8 h-8 text-yellow-600" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">Financial Reports</h3>
-              <p className="text-gray-600">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-2">Financial Reports</h3>
+              <p className="text-sm md:text-base text-gray-600">
                 View daily collections, outstanding debts, and generate financial statements.
               </p>
               <div className="mt-4 text-yellow-600 font-medium flex items-center">
