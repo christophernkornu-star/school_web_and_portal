@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import InactivityHandler from '@/components/InactivityHandler'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ThemeInitializer from '@/components/ThemeInitializer'
+import { ScrollRestorationProvider } from '@/components/ScrollRestorationProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -36,7 +37,9 @@ export default function RootLayout({
         <ThemeInitializer />
         <InactivityHandler />
         <PWAInstallPrompt />
-        {children}
+        <ScrollRestorationProvider>
+          {children}
+        </ScrollRestorationProvider>
       </body>
     </html>
   )
