@@ -215,9 +215,11 @@ export default function TeacherFeesPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => router.back()} className="dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800">
-              <ArrowLeft className="w-6 h-6" />
-            </Button>
+            <Link href="/teacher/dashboard">
+              <Button variant="ghost" size="icon" className="dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-800">
+                <ArrowLeft className="w-6 h-6" />
+              </Button>
+            </Link>
             <div>
               <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400" />

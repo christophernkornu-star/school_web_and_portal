@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { ArrowLeft, Save, Search, Filter, Lock, Unlock, AlertTriangle } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -147,9 +148,9 @@ export default function ResultsApprovalPage() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center space-x-4">
-            <button onClick={() => router.back()} className="text-gray-600 hover:text-gray-900">
+            <Link href="/admin/results" className="text-gray-600 hover:text-gray-900">
               <ArrowLeft className="w-6 h-6" />
-            </button>
+            </Link>
             <h1 className="text-lg md:text-2xl font-bold text-gray-800">Results Approval & Withholding</h1>
           </div>
           {message && (

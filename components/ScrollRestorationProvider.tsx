@@ -65,13 +65,7 @@ interface ScrollRestorationProviderProps {
 export function ScrollRestorationProvider({ children }: ScrollRestorationProviderProps) {
   const pathname = usePathname()
   const previousPathRef = useRef<string>(pathname)
-  const hasRestoredRef = useRef(false)
-  const isFirstRender = useRef(true)
-
-  // Initialize scroll positions from sessionStorage on mount
-  useEffect(() => {
-    scrollPositions = getScrollPositions()
-  }, [])
+  const restorationAttemptsRef = useRef<NodeJS.Timeout[]>([])
 
   // Save scroll position helper
   const savePosition = useCallback((path: string, position: number) => {
@@ -96,31 +90,69 @@ export function ScrollRestorationProvider({ children }: ScrollRestorationProvide
     sessionStorage.removeItem(STORAGE_KEY)
   }, [])
 
-  // Intercept all link clicks to save scroll position BEFORE navigation
+  // Clear any pending restoration attempts
+  const clearRestorationAttempts = useCallback(() => {
+    restorationAttemptsRef.current.forEach(timeout => clearTimeout(timeout))
+    restorationAttemptsRef.current = []
+  }, [])
+
+  // Restore scroll position with multiple attempts
+  const restoreScrollPosition = useCallback((targetPosition: number) => {
+    clearRestorationAttempts()
+
+    const restore = () => {
+      if (Math.abs(window.scrollY - targetPosition) > 10) {
+        window.scrollTo({ top: targetPosition, behavior: 'instant' })
+      }
+    }
+
+    // Immediate restoration
+    restore()
+
+    // Schedule multiple restoration attempts for dynamic content
+    const delays = [0, 50, 100, 200, 300, 500, 750, 1000, 1500]
+    delays.forEach(delay => {
+      const timeout = setTimeout(restore, delay)
+      restorationAttemptsRef.current.push(timeout)
+    })
+  }, [clearRestorationAttempts])
+
+  // Intercept all clicks to save scroll position BEFORE navigation
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      const link = target.closest('a')
+      const link = target.closest('a[href]')
       const button = target.closest('button')
       
-      // Check if it's a navigation action
+      // Save scroll position on any interactive element click
       if (link || button) {
-        // Save current scroll position immediately before any navigation
-        const currentScroll = window.scrollY
-        scrollPositions.set(pathname, currentScroll)
+        scrollPositions.set(pathname, window.scrollY)
         saveScrollPositions(scrollPositions)
       }
     }
 
-    // Use capture phase to catch the click before navigation happens
+    // Capture phase ensures we save before navigation
     document.addEventListener('click', handleClick, { capture: true })
+    
+    // Also intercept keyboard navigation (Enter on links)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        const target = e.target as HTMLElement
+        if (target.tagName === 'A' || target.closest('a[href]')) {
+          scrollPositions.set(pathname, window.scrollY)
+          saveScrollPositions(scrollPositions)
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown, { capture: true })
 
     return () => {
       document.removeEventListener('click', handleClick, { capture: true })
+      document.removeEventListener('keydown', handleKeyDown, { capture: true })
     }
   }, [pathname])
 
-  // Also save on scroll (debounced)
+  // Save scroll position continuously (debounced)
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null
 
@@ -129,7 +161,7 @@ export function ScrollRestorationProvider({ children }: ScrollRestorationProvide
       timeoutId = setTimeout(() => {
         scrollPositions.set(pathname, window.scrollY)
         saveScrollPositions(scrollPositions)
-      }, 200)
+      }, 100)
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
@@ -140,56 +172,54 @@ export function ScrollRestorationProvider({ children }: ScrollRestorationProvide
     }
   }, [pathname])
 
-  // Handle route changes - restore scroll position
+  // Handle route changes
   useEffect(() => {
-    // Skip first render - let the page load naturally
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      // But still try to restore if we have a saved position (e.g., page refresh)
-      const savedPosition = scrollPositions.get(pathname)
-      if (savedPosition !== undefined && savedPosition > 0) {
-        setTimeout(() => {
-          window.scrollTo(0, savedPosition)
-        }, 100)
-      }
-      return
-    }
-
-    // If we're on a new path (navigation occurred)
+    // Check if this is a navigation (path changed)
     if (previousPathRef.current !== pathname) {
-      // Reset restoration flag for new page
-      hasRestoredRef.current = false
+      // Clear any pending restorations from previous page
+      clearRestorationAttempts()
+      
+      // Update previous path
       previousPathRef.current = pathname
-    }
-
-    // Restore scroll position for this path if we have one saved
-    if (!hasRestoredRef.current) {
+      
+      // Check for saved scroll position
       const savedPosition = scrollPositions.get(pathname)
       
       if (savedPosition !== undefined && savedPosition > 0) {
-        // Multiple attempts to restore - handles dynamic content loading
-        const restore = () => {
-          window.scrollTo(0, savedPosition)
-        }
-
-        // Immediate
-        restore()
-        
-        // After paint and with delays for dynamic content
-        requestAnimationFrame(() => {
-          restore()
-          setTimeout(restore, 50)
-          setTimeout(restore, 100)
-          setTimeout(restore, 250)
-          setTimeout(restore, 500)
-        })
+        // Restore scroll position
+        restoreScrollPosition(savedPosition)
+      } else {
+        // New page - scroll to top
+        window.scrollTo({ top: 0, behavior: 'instant' })
       }
-      
-      hasRestoredRef.current = true
     }
-  }, [pathname])
 
-  // Save position before page unload (browser refresh/close)
+    return () => {
+      // Save position when component unmounts or path changes
+      scrollPositions.set(pathname, window.scrollY)
+      saveScrollPositions(scrollPositions)
+    }
+  }, [pathname, clearRestorationAttempts, restoreScrollPosition])
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      // Give the browser a moment to update the URL
+      requestAnimationFrame(() => {
+        const currentPath = window.location.pathname
+        const savedPosition = scrollPositions.get(currentPath)
+        
+        if (savedPosition !== undefined && savedPosition > 0) {
+          restoreScrollPosition(savedPosition)
+        }
+      })
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [restoreScrollPosition])
+
+  // Save position before page unload
   useEffect(() => {
     const handleBeforeUnload = () => {
       scrollPositions.set(pathname, window.scrollY)
@@ -200,24 +230,12 @@ export function ScrollRestorationProvider({ children }: ScrollRestorationProvide
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [pathname])
 
-  // Handle browser back/forward buttons
+  // Cleanup on unmount
   useEffect(() => {
-    const handlePopState = () => {
-      // Small delay to let the pathname update
-      setTimeout(() => {
-        const savedPosition = scrollPositions.get(window.location.pathname)
-        if (savedPosition !== undefined && savedPosition > 0) {
-          window.scrollTo(0, savedPosition)
-          // Multiple attempts
-          setTimeout(() => window.scrollTo(0, savedPosition), 50)
-          setTimeout(() => window.scrollTo(0, savedPosition), 150)
-        }
-      }, 10)
+    return () => {
+      clearRestorationAttempts()
     }
-
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
-  }, [])
+  }, [clearRestorationAttempts])
 
   const contextValue: ScrollRestorationContextType = {
     saveCurrentPosition,

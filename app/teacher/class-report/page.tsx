@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { ArrowLeft, Printer } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -232,7 +233,7 @@ export default function ClassReportPage() {
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-xl md:text-2xl font-bold text-red-600 mb-4">Access Denied</h1>
           <p className="text-sm md:text-base text-gray-600">You must be a Class Teacher to access the Class Report.</p>
-          <button onClick={() => router.back()} className="mt-4 text-blue-600 hover:underline">Go Back</button>
+          <Link href="/teacher/dashboard" className="mt-4 text-blue-600 hover:underline">Go Back</Link>
         </div>
       </div>
     )
@@ -244,9 +245,9 @@ export default function ClassReportPage() {
       <div className="max-w-[1400px] mx-auto mb-6 md:mb-8 print:hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
+            <Link href="/teacher/dashboard" className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors inline-flex">
               <ArrowLeft className="w-6 h-6 text-gray-800 dark:text-gray-200" />
-            </button>
+            </Link>
             <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Class Report Sheet</h1>
           </div>
           {sheetData && (
