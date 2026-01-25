@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, Megaphone, Bell } from 'lucide-react'
-import { getCurrentUser, getStudentData, signOut } from '@/lib/auth'
+import { signOut } from '@/lib/auth'
 import type { Student, Profile } from '@/lib/supabase'
-import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { useStudent } from '@/components/providers/StudentContext'
 
 interface Announcement {
   id: string
@@ -17,9 +17,6 @@ interface Announcement {
   created_at: string
   category?: string
 }
-
-import { useRef } from 'react'
-import { useStudent } from '@/components/providers/StudentContext'
 
 export default function StudentDashboard() {
   const router = useRouter()
@@ -72,133 +69,41 @@ export default function StudentDashboard() {
   // Removed old parallel fetching logic since it's now in Context
 
 
-  async function loadAnnouncements() {
-    try {
-      const now = new Date().toISOString()
-      // Get announcements - try with target_audience first, fallback to all published
-      // Also filter out expired announcements
-      const { data, error } = await supabase
-        .from('announcements')
-        .select('*')
-        .eq('published', true)
-        .or(`expires_at.is.null,expires_at.gt.${now}`)
-        .order('created_at', { ascending: false })
-        .limit(5) as { data: any[] | null, error: any }
-
-      if (error) {
-        console.log('Error loading announcements:', error.message)
-        return
-      }
-
-      if (data && data.length > 0) {
-        // Filter client-side if target_audience exists
-        const filteredData = data.filter(announcement => {
-          // If no target_audience field, show to all
-          if (!announcement.target_audience) return true
-          // If target_audience exists, check if it includes students, parents, or all
-          const audience = announcement.target_audience as string[]
-          return audience.includes('students') || audience.includes('parents') || audience.includes('all')
-        })
-        setAnnouncements(filteredData)
-      }
-    } catch (error) {
-      console.error('Error loading announcements:', error)
-    }
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login?portal=student')
   }
 
-  async function loadStats(studentId: string) {
-    try {
-      // Get student data including class_id
-      const { data: studentInfo } = await supabase
-        .from('students')
-        .select(`
-          id,
-          class_id,
-          classes(id, name)
-        `)
-        .eq('id', studentId)
-        .single()
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading student dashboard...</p>
+        </div>
+      </div>
+    )
+  }
 
-      console.log('Student info loaded:', studentInfo)
-
-      // Get current term ID from system settings
-      const { data: termSetting } = await supabase
-        .from('system_settings')
-        .select('setting_value')
-        .eq('setting_key', 'current_term')
-        .single() as { data: any }
-
-      const currentTermId = termSetting?.setting_value
-      console.log('Current term ID:', currentTermId)
-
-      if (currentTermId) {
-        // Get term name
-        const { data: term } = await supabase
-          .from('academic_terms')
-          .select('name')
-          .eq('id', currentTermId)
-          .maybeSingle() as { data: any }
-
-        if (term) {
-          setStats(prev => ({ ...prev, currentTerm: term.name }))
-        }
-
-        // Get attendance - count days where student was present or late
-        const { count: daysPresent } = await supabase
-          .from('attendance')
-          .select('id', { count: 'exact' })
-          .eq('student_id', studentId)
-          .in('status', ['present', 'late']) as { count: number | null }
-
-        // Get total days from term data
-        const { data: termInfo } = await supabase
-          .from('academic_terms')
-          .select('total_days')
-          .eq('id', currentTermId)
-          .maybeSingle() as { data: any }
-
-        const totalDays = termInfo?.total_days || 0
-        const display = `${daysPresent || 0}/${totalDays}`
-        setStats(prev => ({ ...prev, attendance: display }))
-
-        // Calculate average score from scores table FOR CURRENT TERM ONLY
-        const { data: scores } = await supabase
-          .from('scores')
-          .select('total')
-          .eq('student_id', studentId)
-          .eq('term_id', currentTermId) as { data: any[] | null }
-
-        if (scores && scores.length > 0) {
-          const validScores = scores.filter((g: any) => g.total !== null && g.total !== undefined)
-          if (validScores.length > 0) {
-            const avg = validScores.reduce((sum: number, g: any) => sum + (g.total || 0), 0) / validScores.length
-            setStats(prev => ({ ...prev, averageScore: Math.round(avg * 10) / 10 }))
-          } else {
-            setStats(prev => ({ ...prev, averageScore: 0 }))
-          }
-        } else {
-          setStats(prev => ({ ...prev, averageScore: 0 }))
-        }
-      } else {
-        // No current term set
-        setStats(prev => ({ ...prev, averageScore: 0 }))
-      }
-
-      // Calculate class position for current term
-      try {
-        const { data: currentTermData } = await supabase
-          .from('system_settings')
-          .select('setting_value')
-          .eq('setting_key', 'current_term')
-          .single() as { data: any }
-
-        if (currentTermData?.setting_value && studentInfo?.class_id) {
-          // Use API route to get class rankings (bypasses RLS)
-          const response = await fetch(
-            `/api/class-rankings?classId=${studentInfo.class_id}&termId=${currentTermData.setting_value}`
-          )
-          const rankingsData = await response.json()
-
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+          <div className="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <LogOut className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Access Error</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button
+            onClick={handleLogout}
+            className="bg-methodist-blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    )
+  }
           console.log('Rankings data:', rankingsData)
           const allTermScores = rankingsData.scores || []
           const totalStudents = rankingsData.totalClassSize || 1
