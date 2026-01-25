@@ -114,12 +114,6 @@ export default function StudentDashboard() {
     if (j === 3 && k !== 13) return 'rd'
     return 'th'
   }
-    const k = num % 100
-    if (j === 1 && k !== 11) return 'st'
-    if (j === 2 && k !== 12) return 'nd'
-    if (j === 3 && k !== 13) return 'rd'
-    return 'th'
-  }
 
   function formatTimeAgo(dateString: string): string {
     const date = new Date(dateString)
@@ -135,41 +129,7 @@ export default function StudentDashboard() {
     return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
-  const handleLogout = async () => {
-    await signOut()
-    router.push('/login?portal=student')
-  }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <div className="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <LogOut className="w-8 h-8 text-red-600" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Access Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={handleLogout}
-            className="bg-methodist-blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
