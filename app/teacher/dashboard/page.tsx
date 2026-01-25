@@ -13,7 +13,7 @@ import { useTeacher } from '@/components/providers/TeacherContext'
 
 export default function TeacherDashboard() {
   const router = useRouter()
-  const { user, teacher, loading: contextLoading, dashboardData, fetchDashboardData } = useTeacher()
+  const { user, teacher, profile, loading: contextLoading, dashboardData, fetchDashboardData } = useTeacher()
   const [assignments, setAssignments] = useState<any[]>([])
   const [permissions, setPermissions] = useState<any[]>([])
   const [attendanceClasses, setAttendanceClasses] = useState<string[]>([])
