@@ -474,44 +474,56 @@ export default function ReportCardPage() {
         }
       })
 
-      const reportCardsArray = Object.values(termGroups)
-
-      // Calculate class position and subject ranks for each term
-      for (const report of reportCardsArray) {
+      // Calculate class position and subject ranks for each term in parallel
+      await Promise.all(reportCardsArray.map(async (report) => {
         try {
           console.log(`Calculating for term: ${report.termName}, student class_id: ${student.class_id}`)
           
-          // Get attendance - count days where student was present or late
-          const { count: daysPresent } = await supabase
-            .from('attendance')
-            .select('id', { count: 'exact' })
-            .eq('student_id', student.id)
-            .in('status', ['present', 'late']) as { count: number | null }
+          // Load promotion status for Third Term reports
+          const isThirdTerm = report.termName?.toLowerCase().includes('third') || 
+                              report.termName?.toLowerCase().includes('term 3') ||
+                              report.termName?.toLowerCase().includes('3rd')
           
-          // Get total days for the term
-          const { data: termData } = await supabase
-            .from('academic_terms')
-            .select('total_days')
-            .eq('id', report.termId)
-            .maybeSingle() as { data: any }
+          const academicYear = report.year || '';
+
+          // Fetch independent data in parallel
+          const [attendanceResult, termDataResult, rankingsResponse, promotionDataResult] = await Promise.all([
+             supabase
+              .from('attendance')
+              .select('id', { count: 'exact', head: true }) // optimized: select only id and head
+              .eq('student_id', student.id)
+              .in('status', ['present', 'late']),
+             
+             supabase
+              .from('academic_terms')
+              .select('total_days')
+              .eq('id', report.termId)
+              .maybeSingle(),
+
+             fetch(`/api/class-rankings?classId=${student.class_id}&termId=${report.termId}`),
+            
+             isThirdTerm ? supabase
+                .from('student_promotions')
+                .select('promotion_status, teacher_remarks')
+                .eq('student_id', student.id)
+                .eq('academic_year', academicYear)
+                .limit(1) : Promise.resolve({ data: [] })
+          ]);
+
           
-          report.daysPresent = daysPresent || 0
-          report.totalDays = termData?.total_days || 0
+          report.daysPresent = attendanceResult.count || 0
+          report.totalDays = (termDataResult.data as any)?.total_days || 0
           
-          // Use API route to get class rankings (bypasses RLS)
-          const response = await fetch(
-            `/api/class-rankings?classId=${student.class_id}&termId=${report.termId}`
-          )
-          const rankingsData = await response.json()
+          let rankingsData = { scores: [], totalClassSize: 1 };
+          if (rankingsResponse.ok) {
+             rankingsData = await rankingsResponse.json();
+          }
           
           const classScores = rankingsData.scores || []
           const totalClassSize = rankingsData.totalClassSize || 1
           
           // Store total class size for display
           report.totalClassSize = totalClassSize
-
-          console.log('All scores fetched:', classScores?.length)
-          console.log('Class students with scores:', totalClassSize)
 
           if (classScores && classScores.length > 0) {
             
@@ -532,7 +544,6 @@ export default function ReportCardPage() {
             const position = sortedStudents.findIndex(([sid]) => sid === student.id) + 1
             report.position = position > 0 ? position : null
             
-            console.log('Position calculated:', position, 'out of', totalClassSize)
 
             // Calculate subject ranks
             report.grades.forEach(grade => {
@@ -545,30 +556,12 @@ export default function ReportCardPage() {
               // Find rank for this student
               const rank = subjectScores.findIndex((s: any) => s.student_id === student.id) + 1
               grade.rank = rank > 0 ? rank : null
-                
-              console.log(`Subject: ${grade.subject_name}, Rank: ${rank} out of ${subjectScores.length}`)
             })
-          } else {
-            console.log('No scores found for this term')
-          }
+          } 
           
-          // Load promotion status for Third Term reports
-          const isThirdTerm = report.termName?.toLowerCase().includes('third') || 
-                              report.termName?.toLowerCase().includes('term 3') ||
-                              report.termName?.toLowerCase().includes('3rd')
           
           if (isThirdTerm) {
-            // Get the academic year from the report
-            const academicYear = report.year || ''
-            
-            // Check for promotion decision from student_promotions table
-            const { data: promotionData } = await supabase
-              .from('student_promotions')
-              .select('promotion_status, teacher_remarks')
-              .eq('student_id', student.id)
-              .eq('academic_year', academicYear)
-              .limit(1) as { data: any[] | null }
-            
+             const promotionData = (promotionDataResult as any).data;
             if (promotionData && promotionData.length > 0) {
               const promotion = promotionData[0]
               report.promotionDecision = promotion.promotion_status
@@ -581,7 +574,7 @@ export default function ReportCardPage() {
         } catch (error) {
           console.error('Error calculating position:', error)
         }
-      }
+      }));
 
       setReportCards(reportCardsArray)
 

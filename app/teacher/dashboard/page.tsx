@@ -53,10 +53,23 @@ export default function TeacherDashboard() {
         setTeacher(teacherData)
         setProfile(teacherData.profiles)
         
-        // Load teacher class assignments and related data
+        // Load independent data in parallel
         try {
-          const classAccess = await getTeacherClassAccess(teacherData.profile_id)
-          
+          const [classAccess, perms, attClasses, termDataSettings] = await Promise.all([
+            getTeacherClassAccess(teacherData.profile_id),
+            getTeacherPermissions(teacherData.id),
+            getClassesForAttendance(teacherData.id),
+            supabase
+              .from('system_settings')
+              .select('setting_value')
+              .eq('setting_key', 'current_term')
+              .single() as Promise<{ data: any }>
+          ])
+
+          // Handle permissions and classes
+          setPermissions(perms)
+          setAttendanceClasses(attClasses)
+
           // Convert class access to assignment format for display
           const classAssignments = classAccess.map(cls => ({
             id: cls.class_id,
@@ -67,124 +80,86 @@ export default function TeacherDashboard() {
           }))
           setAssignments(classAssignments)
 
-          // Load teaching model permissions
-          const perms = await getTeacherPermissions(teacherData.id)
-          setPermissions(perms)
-
-          // Load classes where teacher can mark attendance
-          const attClasses = await getClassesForAttendance(teacherData.id)
-          setAttendanceClasses(attClasses)
-
-          // Load student count from teacher's assigned classes
-          if (classAccess.length > 0) {
-            const classIds = classAccess.map(c => c.class_id)
-            const { count, error: countError } = await supabase
-              .from('students')
-              .select('*', { count: 'exact', head: true })
-              .in('class_id', classIds)
-              .eq('status', 'active')
-            
-            if (!countError && count !== null) {
-              setStudentCount(count)
-            }
-
-            // Calculate attendance rate for teacher's classes
-            try {
-              // Get current term ID
-              const { data: termData } = await supabase
-                .from('system_settings')
-                .select('setting_value')
-                .eq('setting_key', 'current_term')
-                .single() as { data: any }
-              
-              if (termData?.setting_value) {
-                // Get all students in teacher's classes
-                const { data: students } = await supabase
-                  .from('students')
-                  .select('id')
-                  .in('class_id', classIds)
-                  .eq('status', 'active') as { data: any[] | null }
-                
-                if (students && students.length > 0) {
-                  const studentIds = students.map((s: any) => s.id)
-                  
-                  // Get attendance records - count present/late days per student
-                  const { data: attendance } = await supabase
-                    .from('attendance')
-                    .select('student_id')
-                    .in('student_id', studentIds)
-                    .in('status', ['present', 'late']) as { data: any[] | null }
-                  
-                  // Get total days in term via API to bypass RLS
-                  let termInfo = null
-                  try {
-                    const termResponse = await fetch(`/api/term-data?termId=${termData.setting_value}`)
-                    if (termResponse.ok) {
-                      termInfo = await termResponse.json()
-                    }
-                  } catch (e) {
-                    console.error('Error fetching term info:', e)
-                  }
-                  
-                  if (attendance && termInfo?.total_days) {
-                    const totalPresent = attendance.length
-                    const totalPossible = studentIds.length * termInfo.total_days
-                    
-                    if (totalPossible > 0) {
-                      const rate = Math.round((totalPresent / totalPossible) * 100)
-                      setAttendanceRate(`${rate}%`)
-                    } else {
-                      setAttendanceRate('0%')
-                    }
-                  }
-                }
-              }
-            } catch (err) {
-              console.error('Error calculating attendance rate:', err)
-            }
-          }
-        } catch (err) {
-          console.error('Error loading class assignments:', err)
-        }
-
-        // Load current term from system settings
-        try {
-          const { data: termData } = await supabase
-            .from('system_settings')
-            .select('setting_value')
-            .eq('setting_key', 'current_term')
-            .single() as { data: any }
+          // Handle term data
+          const termId = termDataSettings?.data?.setting_value;
+          let termInfo:any = null;
           
-          if (termData?.setting_value) {
-            // Fetch the actual term name using API to bypass RLS
+          if (termId) {
+            // Fetch term name and data
             try {
-              const termResponse = await fetch(`/api/term-data?termId=${termData.setting_value}`)
+              const termResponse = await fetch(`/api/term-data?termId=${termId}`)
               if (termResponse.ok) {
-                const term = await termResponse.json()
-                if (term) {
-                  setCurrentTerm(`${term.name} (${term.academic_year})`)
-                } else {
-                  setCurrentTerm('N/A')
+                termInfo = await termResponse.json()
+                if (termInfo) {
+                  setCurrentTerm(`${termInfo.name} (${termInfo.academic_year})`)
                 }
-              } else {
-                setCurrentTerm('N/A')
               }
             } catch (e) {
-              console.error('Error fetching term:', e)
-              setCurrentTerm('N/A')
+              console.error('Error fetching term info:', e)
             }
           }
-        } catch (err) {
-          console.error('Error loading current term:', err)
-        }
 
-        // Load recent activities
-        if (teacherData?.id) {
-          try {
-            await loadRecentActivities(teacherData.id)
-          } catch (err) {
-            console.error('Error loading recent activities:', err)
+          // Load derived data based on class access
+          if (classAccess.length > 0) {
+            const classIds = classAccess.map(c => c.class_id)
+            
+            // Parallelize student count and attendance calculation
+            const studentCountPromise = supabase
+              .from('students')
+              .select('id', { count: 'exact', head: true })
+              .in('class_id', classIds)
+              .eq('status', 'active');
+
+            // Start attendance calculation if we have term info
+            const attendancePromise = (async () => {
+              if (termId && termInfo?.total_days) {
+                  // Get active students IDs only
+                  const { data: students } = await supabase
+                    .from('students')
+                    .select('id')
+                    .in('class_id', classIds)
+                    .eq('status', 'active');
+                  
+                  if (students && students.length > 0) {
+                    const studentIds = students.map((s: any) => s.id);
+                    
+                    // Optimised: only select count if possible, or minimal columns
+                    const { count } = await supabase
+                      .from('attendance')
+                      .select('student_id', { count: 'exact', head: true })
+                      .in('student_id', studentIds)
+                      .in('status', ['present', 'late']);
+                    
+                    if (count !== null) {
+                       const totalPossible = studentIds.length * termInfo.total_days;
+                       if (totalPossible > 0) {
+                          const rate = Math.round((count / totalPossible) * 100);
+                          setAttendanceRate(`${rate}%`);
+                       } else {
+                          setAttendanceRate('0%');
+                       }
+                    }
+                  } else {
+                     setAttendanceRate('0%');
+                  }
+              }
+            })();
+
+            const [countResult] = await Promise.all([
+               studentCountPromise,
+               attendancePromise
+            ]);
+            
+            if (!countResult.error && countResult.count !== null) {
+              setStudentCount(countResult.count)
+            }
           }
+
+          // Load recent activities
+          loadRecentActivities(teacherData.id).catch(err => console.error('Error loading recent activities:', err));
+
+        } catch (err) {
+          console.error('Error loading dashboard data:', err)
         }
       } catch (err: any) {
         console.error('Unexpected error:', err)

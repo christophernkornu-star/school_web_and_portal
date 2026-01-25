@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle } from 'lucide-react'
+import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { createUserAction } from '@/app/actions/create-user'
+
+const PAGE_SIZE = 20
 
 export default function StudentsPage() {
   const router = useRouter()
@@ -17,37 +19,71 @@ export default function StudentsPage() {
   const [classFilter, setClassFilter] = useState('all')
   const [classes, setClasses] = useState<any[]>([])
   const [message, setMessage] = useState({ type: '', text: '' })
+  
+  // Pagination state
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
 
+  // Initial load for classes
   useEffect(() => {
-    loadData()
-  }, [router])
+    loadClasses()
+  }, [])
 
-  async function loadData() {
-    const user = await getCurrentUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
+  // Debounced load for students
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadStudents()
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [page, searchTerm, classFilter, router])
 
-    // Load classes
+  async function loadClasses() {
     const { data: classesData } = await supabase
       .from('classes')
       .select('*')
       .order('level')
     
     if (classesData) setClasses(classesData)
+  }
 
-    // Load students with class information
-    const { data: studentsData } = await supabase
+  async function loadStudents() {
+    setLoading(true)
+    const user = await getCurrentUser()
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    let query = supabase
       .from('students')
       .select(`
         *,
         profiles:profile_id(full_name, email),
         classes:class_id(name, level)
-      `)
+      `, { count: 'exact' })
       .order('first_name')
 
-    if (studentsData) setStudents(studentsData)
+    // Apply filters
+    if (classFilter !== 'all') {
+      query = query.eq('class_id', classFilter)
+    }
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      // Note: searching across multiple columns with OR
+      query = query.or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,student_id.ilike.%${term}%,middle_name.ilike.%${term}%`)
+    }
+
+    // Apply pagination
+    const from = (page - 1) * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+    
+    const { data: studentsData, count } = await query.range(from, to)
+
+    if (studentsData) {
+      setStudents(studentsData)
+      setTotalCount(count || 0)
+    }
     setLoading(false)
   }
 
@@ -68,30 +104,26 @@ export default function StudentsPage() {
       }
 
       setMessage({ type: 'success', text: 'Student deleted successfully!' })
-      loadData() // Refresh the list
+      loadStudents() // Refresh the list
     } catch (error: any) {
       console.error('Error deleting student:', error)
       setMessage({ type: 'error', text: error.message || 'Failed to delete student' })
     }
   }
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value)
+    setPage(1)
+  }
 
+  const handleClassFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setClassFilter(e.target.value)
+    setPage(1)
+  }
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
-
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = 
-      student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (student.middle_name && student.middle_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.student_id.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesClass = classFilter === 'all' || student.class_id === classFilter
-
-    return matchesSearch && matchesClass
-  })
-
-  if (loading) {
+  if (loading && students.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -131,7 +163,7 @@ export default function StudentsPage() {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+      <main className={`container mx-auto px-4 md:px-6 py-6 md:py-8 transition-opacity duration-200 ${loading && students.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
         {/* Message Alert */}
         {message.text && (
           <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
@@ -152,7 +184,7 @@ export default function StudentsPage() {
                 type="text"
                 placeholder="Search by name or ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearch}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent"
               />
             </div>
@@ -160,7 +192,7 @@ export default function StudentsPage() {
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <select
                 value={classFilter}
-                onChange={(e) => setClassFilter(e.target.value)}
+                onChange={handleClassFilter}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent appearance-none"
               >
                 <option value="all">All Classes</option>
@@ -171,7 +203,7 @@ export default function StudentsPage() {
             </div>
             <div className="flex items-center justify-end md:w-auto">
               <span className="text-gray-600 text-sm bg-gray-100 px-3 py-2 rounded-lg whitespace-nowrap">
-                <strong>{filteredStudents.length}</strong> students
+                <strong>{totalCount}</strong> students
               </span>
             </div>
           </div>
@@ -179,7 +211,7 @@ export default function StudentsPage() {
 
         {/* Mobile Card View */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
-          {filteredStudents.map((student) => (
+          {students.map((student) => (
             <div key={student.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col">
               <div className="flex justify-between items-start mb-3">
                 <div>
@@ -252,7 +284,7 @@ export default function StudentsPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredStudents.map((student) => (
+                {students.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {student.student_id}
@@ -302,7 +334,7 @@ export default function StudentsPage() {
           </div>
         </div>
 
-        {filteredStudents.length === 0 && (
+        {students.length === 0 && !loading && (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
@@ -318,6 +350,61 @@ export default function StudentsPage() {
               <Plus className="w-5 h-5 mr-2" />
               Add Student
             </Link>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalCount > 0 && (
+          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow">
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{students.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0}</span> to <span className="font-medium">{Math.min(page * PAGE_SIZE, totalCount)}</span> of{' '}
+                  <span className="font-medium">{totalCount}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Previous</span>
+                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  
+                  <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                    Page {page} of {totalPages || 1}
+                  </span>
+
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Next</span>
+                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         )}
       </main>

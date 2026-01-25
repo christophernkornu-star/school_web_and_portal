@@ -33,23 +33,17 @@ export default function AdminDashboard() {
         return
       }
 
-      // Load admin profile
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-
-      if (profileData) {
-        setProfile(profileData)
-      }
-
-      // Load statistics
-      const [studentsRes, teachersRes, classesRes] = await Promise.all([
-        supabase.from('students').select('id', { count: 'exact' }),
-        supabase.from('teachers').select('id', { count: 'exact' }).eq('status', 'active'),
-        supabase.from('classes').select('id', { count: 'exact' }),
+      // Load statistics in parallel with profile fetching
+      const [studentsRes, teachersRes, classesRes, profileData] = await Promise.all([
+        supabase.from('students').select('id', { count: 'exact', head: true }),
+        supabase.from('teachers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('classes').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('*').eq('id', user.id).single()
       ])
+
+      if (profileData.data) {
+        setProfile(profileData.data)
+      }
 
       setStats({
         totalStudents: studentsRes.count || 0,
