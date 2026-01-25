@@ -197,68 +197,56 @@ export default function EnrollmentsPage() {
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Filters */}
         <div className="bg-white p-4 rounded-lg shadow mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="flex flex-wrap gap-4 w-full md:w-auto">
-            <div className="relative">
-              <Filter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <select
-                value={classFilter}
-                onChange={(e) => setClassFilter(e.target.value)}
-                className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue text-sm w-full md:w-48 appearance-none bg-white"
-              >
-                <option value="all">All Classes</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
+          <div className="flex flex-col md:flex-row flex-wrap gap-4 w-full md:w-auto">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-4 w-full">
+              <div className="relative w-full md:w-auto">
+                <Filter className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <select
+                  value={classFilter}
+                  onChange={(e) => setClassFilter(e.target.value)}
+                  className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue text-sm w-full md:w-48 appearance-none bg-white"
+                >
+                  <option value="all">All Classes</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
 
-            <div className="relative">
-              <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <select
-                value={termFilter}
-                onChange={(e) => setTermFilter(e.target.value)}
-                className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue text-sm w-full md:w-48 appearance-none bg-white"
-              >
-                 <option value="current">Current Enrollment</option>
-                 {terms.map((t: any) => (
-                   <option key={t.id} value={t.id} disabled={t.id !== currentTermId}>
-                     {t.name} {t.academic_year} {t.id !== currentTermId && '(Archived)'}
-                   </option>
-                 ))}
-              </select>
-            </div>
+              <div className="relative w-full md:w-auto">
+                <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <select
+                  value={termFilter}
+                  onChange={(e) => setTermFilter(e.target.value)}
+                  className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue text-sm w-full md:w-48 appearance-none bg-white"
+                >
+                   <option value="current">Current Enrollment</option>
+                   {terms.map((t: any) => (
+                     <option key={t.id} value={t.id} disabled={t.id !== currentTermId}>
+                       {t.name} {t.academic_year} {t.id !== currentTermId && '(Archived)'}
+                     </option>
+                   ))}
+                </select>
+              </div>
 
-            <div className="relative">
-              <UserCheck className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue text-sm w-full md:w-40 appearance-none bg-white"
-              >
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="transferred">Transferred</option>
-                <option value="graduated">Graduated</option>
-              </select>
-            </div>
-
-            <div className="relative">
-              <UserCheck className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-              <select
-                value={termFilter}
-                onChange={(e) => setTermFilter(e.target.value)}
-                className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue text-sm w-full md:w-40 appearance-none bg-white"
-              >
-                <option value="current">Current Term</option>
-                {terms.map(t => (
-                  <option key={t.id} value={t.id}>{t.name} ({t.academic_year})</option>
-                ))}
-              </select>
+              <div className="relative w-full md:w-auto">
+                <UserCheck className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue text-sm w-full md:w-48 appearance-none bg-white"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="transferred">Transferred</option>
+                  <option value="graduated">Graduated</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="relative w-full md:w-64">
+          <div className="relative w-full md:w-64 mt-2 md:mt-0">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
             <input
               type="text"
@@ -272,38 +260,46 @@ export default function EnrollmentsPage() {
 
         {/* Action Bar (Visible when Selection > 0) */}
         {selectedStudents.size > 0 && (
-          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-2">
-            <div className="flex items-center space-x-2 text-methodist-blue font-medium">
-              <CheckSquare className="w-5 h-5" />
-              <span>{selectedStudents.size} student{selectedStudents.size !== 1 && 's'} selected</span>
+          <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-2 sticky top-[72px] z-20 shadow-md md:static md:shadow-none">
+            <div className="flex items-center space-x-2 text-methodist-blue font-medium w-full sm:w-auto justify-between sm:justify-start">
+              <div className="flex items-center space-x-2">
+                <CheckSquare className="w-5 h-5" />
+                <span>{selectedStudents.size} selected</span>
+              </div>
+              <button 
+                onClick={() => setSelectedStudents(new Set())}
+                className="text-xs text-blue-600 underline sm:hidden"
+              >
+                Clear
+              </button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
               <button
                 onClick={() => {
                   setActionType('transfer')
                   setShowTransferModal(true)
                 }}
-                className="px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 flex items-center shadow-sm"
+                className="px-4 py-2 bg-white border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 flex items-center justify-center shadow-sm w-full sm:w-auto"
               >
                 <ArrowRightLeft className="w-4 h-4 mr-2" />
-                Transfer Class
+                Transfer
               </button>
               <button
                 onClick={() => {
                   setActionType('status')
                   setShowTransferModal(true)
                 }}
-                className="px-4 py-2 bg-white border border-red-200 text-red-700 rounded-lg hover:bg-red-50 flex items-center shadow-sm"
+                className="px-4 py-2 bg-white border border-red-200 text-red-700 rounded-lg hover:bg-red-50 flex items-center justify-center shadow-sm w-full sm:w-auto"
               >
                 <AlertCircle className="w-4 h-4 mr-2" />
-                Change Status
+                Status
               </button>
             </div>
           </div>
         )}
 
-        {/* Students Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Students Table - Desktop */}
+        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b">
@@ -378,6 +374,73 @@ export default function EnrollmentsPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        {/* Mobile List View */}
+        <div className="md:hidden space-y-3">
+          <div className="flex items-center justify-between mb-2 px-1">
+             <button 
+                onClick={toggleSelectAll}
+                className="flex items-center text-sm text-gray-600 font-medium"
+              >
+                {students.length > 0 && selectedStudents.size === students.length ? (
+                  <CheckSquare className="w-5 h-5 text-methodist-blue mr-2" />
+                ) : (
+                  <Square className="w-5 h-5 mr-2" />
+                )}
+                Select All
+            </button>
+            <span className="text-xs text-gray-500">{students.length} students found</span>
+          </div>
+
+          {students.length === 0 ? (
+             <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>No students found matching filters.</p>
+             </div>
+          ) : (
+             students.map((student) => {
+               const isSelected = selectedStudents.has(student.id)
+               return (
+                 <div 
+                   key={student.id} 
+                   className={`bg-white rounded-lg shadow p-4 border-l-4 ${
+                     isSelected ? 'border-l-methodist-blue ring-1 ring-blue-200' : 'border-l-transparent'
+                   } ${
+                     student.status === 'active' ? 'border-l-green-500' : 
+                     student.status === 'inactive' ? 'border-l-red-500' : 'border-l-gray-300'
+                   }`}
+                   onClick={() => toggleStudent(student.id)}
+                 >
+                   <div className="flex items-start justify-between">
+                     <div className="flex-1">
+                       <h3 className="font-bold text-gray-900">{student.last_name}, {student.first_name}</h3>
+                       <p className="text-xs text-gray-500 font-mono mb-2">{student.student_id}</p>
+                       <div className="flex flex-wrap gap-2 text-sm">
+                         <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">
+                           {student.classes?.name || 'Unassigned'}
+                         </span>
+                         <span className={`px-2 py-0.5 inline-flex text-xs font-medium rounded ${
+                            student.status === 'active' ? 'bg-green-100 text-green-800' :
+                            student.status === 'inactive' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {student.status}
+                          </span>
+                       </div>
+                     </div>
+                     <div className="ml-3">
+                        {isSelected ? (
+                          <CheckSquare className="w-6 h-6 text-methodist-blue" />
+                        ) : (
+                          <Square className="w-6 h-6 text-gray-300" />
+                        )}
+                     </div>
+                   </div>
+                 </div>
+               )
+             })
+          )}
         </div>
       </main>
 
