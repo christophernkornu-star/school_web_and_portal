@@ -13,8 +13,7 @@ import { useTeacher } from '@/components/providers/TeacherContext'
 
 export default function TeacherDashboard() {
   const router = useRouter()
-  const supabase = getSupabaseBrowserClient()
-  const { user, profile, teacher, loading: contextLoading } = useTeacher()
+  const { user, teacher, loading: contextLoading, dashboardData, fetchDashboardData } = useTeacher()
   const [assignments, setAssignments] = useState<any[]>([])
   const [permissions, setPermissions] = useState<any[]>([])
   const [attendanceClasses, setAttendanceClasses] = useState<string[]>([])
@@ -33,260 +32,34 @@ export default function TeacherDashboard() {
       return
     }
 
-    // If we have a user but no teacher profile after context loads
     if (!teacher) {
       setError('Teacher profile not found. Please contact the administrator.')
       setLoading(false)
       return
     }
 
-    async function loadUserData() {
-      try {
-        // Load independent data in parallel
-        try {
-          const [classAccess, perms, attClasses, termDataSettings] = await Promise.all([
-            getTeacherClassAccess(teacher.profile_id),
-            getTeacherPermissions(teacher.id),
-            getClassesForAttendance(teacher.id),
-            supabase
-              .from('system_settings')
-              .select('setting_value')
-              .eq('setting_key', 'current_term')
-              .single() as Promise<{ data: any }>
-          ])
-
-          // Handle permissions and classes
-          setPermissions(perms)
-          setAttendanceClasses(attClasses)
-
-          // Convert class access to assignment format for display
-          const classAssignments = classAccess.map(cls => ({
-            id: cls.class_id,
-            class_id: cls.class_id,
-            classes: {
-              class_name: cls.class_name
-            }
-          }))
-          setAssignments(classAssignments)
-
-          // Handle term data
-          const termId = termDataSettings?.data?.setting_value;
-          let termInfo:any = null;
-          
-          if (termId) {
-            // Fetch term name and data
-            try {
-              const termResponse = await fetch(`/api/term-data?termId=${termId}`)
-              if (termResponse.ok) {
-                termInfo = await termResponse.json()
-                if (termInfo) {
-                  setCurrentTerm(`${termInfo.name} (${termInfo.academic_year})`)
-                }
-              }
-            } catch (e) {
-              console.error('Error fetching term info:', e)
-            }
-          }
-
-          // Load derived data based on class access
-          if (classAccess.length > 0) {
-            const classIds = classAccess.map(c => c.class_id)
-            
-            // Parallelize student count and attendance calculation
-            const studentCountPromise = supabase
-              .from('students')
-              .select('id', { count: 'exact', head: true })
-              .in('class_id', classIds)
-              .eq('status', 'active');
-
-            // Start attendance calculation if we have term info
-            const attendancePromise = (async () => {
-              if (termId && termInfo?.total_days) {
-                  // Get active students IDs only
-                  const { data: students } = await supabase
-                    .from('students')
-                    .select('id')
-                    .in('class_id', classIds)
-                    .eq('status', 'active');
-                  
-                  if (students && students.length > 0) {
-                    const studentIds = students.map((s: any) => s.id);
-                    
-                    // Optimised: only select count if possible, or minimal columns
-                    const { count } = await supabase
-                      .from('attendance')
-                      .select('student_id', { count: 'exact', head: true })
-                      .in('student_id', studentIds)
-                      .in('status', ['present', 'late']);
-                    
-                    if (count !== null) {
-                       const totalPossible = studentIds.length * termInfo.total_days;
-                       if (totalPossible > 0) {
-                          const rate = Math.round((count / totalPossible) * 100);
-                          setAttendanceRate(`${rate}%`);
-                       } else {
-                          setAttendanceRate('0%');
-                       }
-                    }
-                  } else {
-                     setAttendanceRate('0%');
-                  }
-              }
-            })();
-
-            const [countResult] = await Promise.all([
-               studentCountPromise,
-               attendancePromise
-            ]);
-            
-            if (!countResult.error && countResult.count !== null) {
-              setStudentCount(countResult.count)
-            }
-          }
-
-          // Load recent activities
-          loadRecentActivities(teacher.id).catch(err => console.error('Error loading recent activities:', err));
-
-        } catch (err) {
-          console.error('Error loading dashboard data:', err)
-        }
-      } catch (err: any) {
-        console.error('Unexpected error:', err)
-        setError('An unexpected error occurred. Please refresh the page.')
-      } finally {
-        setLoading(false)
+    // Check if we have cached data
+    if (dashboardData) {
+      setAssignments(dashboardData.assignments)
+      setPermissions(dashboardData.permissions)
+      setAttendanceClasses(dashboardData.attendanceClasses)
+      setStudentCount(dashboardData.stats.studentCount)
+      setAttendanceRate(dashboardData.stats.attendanceRate)
+      setRecentActivities(dashboardData.recentActivities)
+      setLoading(false)
+      
+      // Optionally re-fetch in background if older than 1 min but less than 5
+      if (Date.now() - dashboardData.lastFetched > 60 * 1000) {
+        fetchDashboardData()
       }
+    } else {
+      // First load
+      fetchDashboardData().then(() => setLoading(false))
     }
+  }, [user, teacher, contextLoading, dashboardData, fetchDashboardData, router])
 
-    loadUserData()
-  }, [user, teacher, contextLoading, router, supabase])
+  // Removed old fetch logic
 
-  async function loadRecentActivities(teacherId: string) {
-    const activities: any[] = []
-
-    try {
-      // Fetch recent score entries
-      const { data: scores } = await supabase
-        .from('scores')
-        .select('id, created_at, subject_id, student_id')
-        .eq('teacher_id', teacherId)
-        .order('created_at', { ascending: false })
-        .limit(5) as { data: any[] | null }
-
-      if (scores && scores.length > 0) {
-        // Get unique subject and student IDs
-        const subjectIds = [...new Set(scores.map((s: any) => s.subject_id).filter(Boolean))]
-        const studentIds = [...new Set(scores.map((s: any) => s.student_id).filter(Boolean))]
-        
-        // Batch fetch subjects
-        const { data: subjects } = await supabase
-          .from('subjects')
-          .select('id, name')
-          .in('id', subjectIds) as { data: any[] | null }
-        const subjectMap = new Map(subjects?.map((s: any) => [s.id, s.name]))
-        
-        // Batch fetch students with their classes
-        const { data: students } = await supabase
-          .from('students')
-          .select('id, class_id')
-          .in('id', studentIds) as { data: any[] | null }
-        const studentClassMap = new Map(students?.map((s: any) => [s.id, s.class_id]))
-        
-        // Batch fetch classes
-        const classIds = [...new Set(students?.map((s: any) => s.class_id).filter(Boolean) || [])]
-        const { data: classes } = await supabase
-          .from('classes')
-          .select('id, name')
-          .in('id', classIds) as { data: any[] | null }
-        const classMap = new Map(classes?.map((c: any) => [c.id, c.name]))
-        
-        // Create activities
-        for (const score of scores) {
-          const subjectName = subjectMap.get(score.subject_id) || 'Unknown Subject'
-          const classId = studentClassMap.get(score.student_id)
-          const className = classId ? (classMap.get(classId) || 'Unknown Class') : 'Unknown Class'
-          
-          activities.push({
-            id: `score-${score.id}`,
-            type: 'score',
-            description: `Entered scores for ${subjectName} - ${className}`,
-            timestamp: score.created_at,
-            color: 'green'
-          })
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching score activities:', err)
-    }
-
-    try {
-      // Fetch recent attendance records (if table exists and has teacher_id)
-      const { data: attendance } = await supabase
-        .from('attendance')
-        .select('*')
-        .limit(5)
-        .order('created_at', { ascending: false }) as { data: any[] | null }
-
-      if (attendance && attendance.length > 0) {
-        // Filter by teacher if column exists
-        const teacherAttendance = attendance.filter((a: any) => 
-          !a.teacher_id || a.teacher_id === teacherId
-        )
-        
-        // Get class IDs and fetch class names
-        const classIds = [...new Set(teacherAttendance.map((a: any) => a.class_id).filter(Boolean))]
-        const { data: classes } = await supabase
-          .from('classes')
-          .select('id, name')
-          .in('id', classIds) as { data: any[] | null }
-        const classMap = new Map(classes?.map((c: any) => [c.id, c.name]))
-        
-        for (const record of teacherAttendance.slice(0, 5)) {
-          const className = classMap.get(record.class_id) || 'Unknown Class'
-          activities.push({
-            id: `attendance-${record.id}`,
-            type: 'attendance',
-            description: `Marked attendance for ${className}`,
-            timestamp: record.created_at,
-            color: 'blue'
-          })
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching attendance activities:', err)
-    }
-
-    try {
-      // Fetch recent assessments (table has limited columns: id, created_at, title)
-      // Note: assessments table doesn't have teacher_id, so we fetch recent ones
-      const { data: assessments } = await supabase
-        .from('assessments')
-        .select('id, created_at, title')
-        .order('created_at', { ascending: false })
-        .limit(10) as { data: any[] | null }
-
-      if (assessments && assessments.length > 0) {
-        // Since we can't filter by teacher, just take the most recent ones
-        for (const assessment of assessments.slice(0, 3)) {
-          const displayName = assessment.title || 'Assessment'
-          
-          activities.push({
-            id: `assessment-${assessment.id}`,
-            type: 'assessment',
-            description: `Assessment created: ${displayName}`,
-            timestamp: assessment.created_at,
-            color: 'purple'
-          })
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching assessment activities:', err)
-    }
-
-    // Sort all activities by timestamp and take the 5 most recent
-    activities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    setRecentActivities(activities.slice(0, 5))
-  }
 
   function getTimeAgo(timestamp: string): string {
     const now = new Date()

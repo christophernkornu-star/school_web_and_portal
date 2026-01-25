@@ -23,27 +23,21 @@ import { useStudent } from '@/components/providers/StudentContext'
 
 export default function StudentDashboard() {
   const router = useRouter()
-  const supabase = getSupabaseBrowserClient()
-  const { user, profile, student, loading: contextLoading } = useStudent()
-  const [loading, setLoading] = useState(true)
+  // Ensure we consistently use dashboardData from context
+  const { user, profile, student, loading: contextLoading, dashboardData, fetchDashboardData } = useStudent()
+  
+  // Initialize state with cached data if available
+  const [loading, setLoading] = useState(!dashboardData) // Load if no cache
   const [error, setError] = useState<string | null>(null)
-  const [allowCumulativeDownload, setAllowCumulativeDownload] = useState(false)
-  const [announcements, setAnnouncements] = useState<Announcement[]>([])
-  const [stats, setStats] = useState<{
-    currentTerm: string
-    attendance: number | string
-    averageScore: number
-    classPosition: string
-  }>({
+  const [allowCumulativeDownload, setAllowCumulativeDownload] = useState(dashboardData?.allowCumulativeDownload || false)
+  const [announcements, setAnnouncements] = useState<Announcement[]>(dashboardData?.announcements || [])
+  const [stats, setStats] = useState(dashboardData?.stats || {
     currentTerm: 'N/A',
     attendance: 'No Data',
     averageScore: 0,
     classPosition: 'N/A'
   })
   
-  // Use a ref to prevent double fetching
-  const statsLoaded = useRef(false)
-
   useEffect(() => {
     if (contextLoading) return
 
@@ -58,36 +52,25 @@ export default function StudentDashboard() {
       return
     }
 
-    async function initializeDashboard() {
-      // Prevent reloading if we already have data
-      if (statsLoaded.current) {
-         setLoading(false)
-         return
-      }
-
-      // Load system settings
-      const { data: settingsData } = await supabase
-        .from('system_settings')
-        .select('setting_value')
-        .eq('setting_key', 'allow_cumulative_download')
-        .maybeSingle()
-      
-      setAllowCumulativeDownload(settingsData?.setting_value === 'true')
-
-      // Load announcements in parallel
-      const loadAnnouncementsPromise = loadAnnouncements()
-      
-      // Load stats
-      const loadStatsPromise = loadStats(student.id)
-
-      await Promise.all([loadAnnouncementsPromise, loadStatsPromise])
-      
-      statsLoaded.current = true
+    // Use cached data if available
+    if (dashboardData) {
+      setAllowCumulativeDownload(dashboardData.allowCumulativeDownload)
+      setAnnouncements(dashboardData.announcements)
+      setStats(dashboardData.stats)
       setLoading(false)
-    }
 
-    initializeDashboard()
-  }, [user, student, contextLoading, router])
+      // Background refresh if needed (e.g., > 1 min old)
+      if (Date.now() - dashboardData.lastFetched > 60 * 1000) {
+        fetchDashboardData()
+      }
+    } else {
+      // First fetch
+      fetchDashboardData().then(() => setLoading(false))
+    }
+  }, [user, student, contextLoading, dashboardData, fetchDashboardData, router])
+
+  // Removed old parallel fetching logic since it's now in Context
+
 
   async function loadAnnouncements() {
     try {
