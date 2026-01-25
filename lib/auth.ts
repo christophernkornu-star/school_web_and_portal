@@ -12,11 +12,16 @@ export async function signInWithUsername(username: string, password: string) {
   const browserSupabase = getBrowserSupabase()
   
   // Try to find user by username in profiles first
-  const { data: profileData } = await browserSupabase
+  // Use maybeSingle() to avoid 406/JSON errors when no user is found
+  const { data: profileData, error: profileError } = await browserSupabase
     .from('profiles')
     .select('email, role')
     .eq('username', username)
-    .single() as { data: any }
+    .maybeSingle()
+
+  if (profileError) {
+    console.warn('⚠️ Profile lookup failed, falling back to constructed email:', profileError)
+  }
 
   let emailToUse = profileData?.email || `${username}@school.local`
   

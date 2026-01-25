@@ -15,6 +15,7 @@ type DashboardData = {
     studentCount: number
     attendanceRate: string
   }
+  currentTerm: string // Add currentTerm
   recentActivities: any[]
   lastFetched: number
 }
@@ -192,6 +193,7 @@ export function TeacherProvider({ children }: { children: React.ReactNode }) {
           studentCount,
           attendanceRate
         },
+        currentTerm: termInfo?.name || 'N/A',
         recentActivities: activities,
         lastFetched: Date.now()
       })

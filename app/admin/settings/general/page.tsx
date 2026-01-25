@@ -218,13 +218,9 @@ export default function GeneralSettings() {
 
       if (cumulativeError) throw new Error('Failed to update cumulative download setting: ' + cumulativeError.message)
 
-      // 4. Sync academic year in terms (optional but good for consistency)
-      if (formData.current_academic_year) {
-        await supabase
-          .from('academic_terms')
-          .update({ academic_year: formData.current_academic_year })
-          .neq('academic_year', formData.current_academic_year)
-      }
+      // 4. Removed erroneous bulk update of academic years
+      // Previous code force-updated all older terms to the current academic year, causing unique constraint violations.
+      // History should be preserved.
 
       alert('General settings updated successfully!')
       router.push('/admin/settings')

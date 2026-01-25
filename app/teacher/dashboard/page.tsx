@@ -45,6 +45,7 @@ export default function TeacherDashboard() {
       setAttendanceClasses(dashboardData.attendanceClasses)
       setStudentCount(dashboardData.stats.studentCount)
       setAttendanceRate(dashboardData.stats.attendanceRate)
+      if (dashboardData.currentTerm) setCurrentTerm(dashboardData.currentTerm)
       setRecentActivities(dashboardData.recentActivities)
       setLoading(false)
       
@@ -96,12 +97,12 @@ export default function TeacherDashboard() {
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-md mx-auto text-center">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Error Loading Dashboard</h2>
-              <p className="text-gray-600 mb-6">{error}</p>
-              <div className="space-y-3">
+        <div className="max-w-md mx-auto text-center">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Error Loading Dashboard</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="space-y-3">
               <button
                 onClick={() => window.location.reload()}
                 className="w-full bg-ghana-green text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
@@ -124,13 +125,13 @@ export default function TeacherDashboard() {
   if (!teacher || !profile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-md mx-auto text-center">
-            <div className="bg-white rounded-lg shadow-lg p-8">
-              <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Profile Not Found</h2>
-              <p className="text-gray-600 mb-6">
-                Your teacher profile could not be found. Please contact the school administrator.
-              </p>
+        <div className="max-w-md mx-auto text-center">
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <AlertCircle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">Profile Not Found</h2>
+            <p className="text-gray-600 mb-6">
+              Your teacher profile could not be found. Please contact the school administrator.
+            </p>
             <button
               onClick={handleLogout}
               className="w-full bg-ghana-green text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
@@ -245,6 +246,26 @@ export default function TeacherDashboard() {
             My Class Assignments
           </h3>
           
+          <Link
+            href="/teacher/assessments"
+            className="block mb-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border border-blue-200 dark:border-blue-700 rounded-lg hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-white dark:bg-gray-800 rounded-full shadow-sm text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-gray-800 dark:text-gray-100">Online Assessments</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Create quizzes, exams, and assignments for your students.</p>
+                </div>
+              </div>
+              <div className="text-blue-600 dark:text-blue-400 font-medium text-sm flex items-center">
+                Manage <span className="ml-1 group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </div>
+          </Link>
+
           {attendanceClasses.length > 0 && (
             <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg">
               <p className="text-xs md:text-sm text-yellow-800 dark:text-yellow-200">

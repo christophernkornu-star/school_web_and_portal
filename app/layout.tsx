@@ -5,6 +5,7 @@ import InactivityHandler from '@/components/InactivityHandler'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ThemeInitializer from '@/components/ThemeInitializer'
 import { ScrollRestorationProvider } from '@/components/ScrollRestorationProvider'
+import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -37,6 +38,7 @@ export default function RootLayout({
         <ThemeInitializer />
         <InactivityHandler />
         <PWAInstallPrompt />
+        <Toaster position="top-center" />
         <ScrollRestorationProvider>
           {children}
         </ScrollRestorationProvider>

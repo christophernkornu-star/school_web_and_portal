@@ -310,6 +310,19 @@ export default function StudentDashboard() {
             </div>
           </Link>
 
+          <Link href="/student/assessments" className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group hover:border-blue-400 cursor-pointer">
+            <div className="flex justify-between items-start mb-2">
+              <div className="bg-blue-50 p-2.5 rounded-lg group-hover:bg-blue-100 transition-colors text-blue-600">
+                 <FileText className="w-5 h-5" />
+              </div>
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Assessments</span>
+            </div>
+             <div>
+              <p className="text-lg font-bold text-gray-800 group-hover:text-blue-600">Take Quiz</p>
+              <p className="text-xs text-gray-500 mt-1">Assignments & Exams</p>
+            </div>
+          </Link>
+
           {allowCumulativeDownload ? (
             <Link href="/student/cumulative" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-orange-200 transition-all duration-300 flex items-start space-x-4">
               <div className="bg-orange-50 p-3 rounded-xl group-hover:bg-orange-100 transition-colors">
