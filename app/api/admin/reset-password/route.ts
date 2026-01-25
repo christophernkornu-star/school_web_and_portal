@@ -48,75 +48,41 @@ export async function POST(request: NextRequest) {
        return NextResponse.json({ error: 'Unauthorized to reset passwords' }, { status: 403 })
     }
 
-    // If requester is teacher, ensure they are not resetting an admin's password (optional, but good practice)
-    // For now, keeping the logic simple as per original intent but secure.
+    // Role-based logic
+    if (profile.role === 'teacher') {
+       // 1. Get Teacher ID
+       const { data: teacher } = await supabaseAdmin
+          .from('teachers')
+          .select('id')
+          .eq('profile_id', session.user.id)
+          .single();
+       
+       if (!teacher) {
+          return NextResponse.json({ error: 'Teacher profile incomplete' }, { status: 403 })
+       }
 
-      if (profileError || !profile) {
-        return NextResponse.json({ 
-          error: 'Profile not found',
-          details: profileError?.message 
-        }, { status: 404 })
-      }
-
-      if (profile.role !== 'admin' && profile.role !== 'teacher') {
-        return NextResponse.json({ 
-          error: `Forbidden: Only admins and teachers can reset passwords. Your role: ${profile.role}`,
-          username: profile.username
-        }, { status: 403 })
-      }
-
-      // Debug logging
-      console.log('Reset password request:', {
-        requesterId,
-        userId,
-        requesterRole: profile.role,
-        requesterUsername: profile.username
-      })
-
-      // Check role-based permissions
-      if (profile.role === 'admin') {
-        // Admins can reset anyone's password
-        console.log('Admin detected - allowing password reset')
-      } else if (profile.role === 'teacher') {
-        // Teachers can only reset student passwords in their assigned classes
-        console.log('Teacher detected - checking student access')
-        
-        const { data: studentData } = await supabaseAdmin
+       // 2. Get Target Student Class
+       const { data: student } = await supabaseAdmin
           .from('students')
-          .select(`
-            id,
-            class_id,
-            classes!inner(id)
-          `)
+          .select('class_id')
           .eq('profile_id', userId)
           .single()
 
-        if (!studentData) {
-          return NextResponse.json({ error: 'Teachers can only reset student passwords in their assigned classes' }, { status: 403 })
-        }
+       if (!student) {
+          return NextResponse.json({ error: 'Target user is not a student' }, { status: 400 })
+       }
 
-        // Verify teacher has access to this class
-        const { data: teacherData } = await supabaseAdmin
-          .from('teachers')
-          .select(`
-            id,
-            teacher_class_assignments!inner(class_id)
-          `)
-          .eq('profile_id', requesterId)
-          .eq('teacher_class_assignments.class_id', studentData.class_id)
+       // 3. Check Assignment
+       const { data: assignment } = await supabaseAdmin
+          .from('teacher_class_assignments')
+          .select('*')
+          .eq('teacher_id', teacher.id)
+          .eq('class_id', student.class_id)
           .single()
-
-        if (!teacherData) {
-          return NextResponse.json({ error: 'Forbidden: You can only reset passwords for students in your assigned classes' }, { status: 403 })
-        }
-      } else {
-        return NextResponse.json({ 
-          error: `Forbidden: Invalid role '${profile.role}' for password reset` 
-        }, { status: 403 })
-      }
-    } else {
-      // If no requesterId provided, allow the reset (for admin operations without auth check)
-      console.log('No requesterId - allowing password reset')
+          
+       if (!assignment) {
+          return NextResponse.json({ error: 'You are not assigned to this student\'s class' }, { status: 403 })
+       }
     }
 
     // Validate password length
