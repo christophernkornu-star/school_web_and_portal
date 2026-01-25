@@ -104,50 +104,16 @@ export default function StudentDashboard() {
       </div>
     )
   }
-          console.log('Rankings data:', rankingsData)
-          const allTermScores = rankingsData.scores || []
-          const totalStudents = rankingsData.totalClassSize || 1
 
-          console.log('All term scores fetched:', allTermScores?.length)
-          console.log('Total students in class:', totalStudents)
-
-          if (allTermScores && allTermScores.length > 0) {
-            // Calculate total scores per student
-            const studentTotals: { [studentId: string]: number} = {}
-            allTermScores.forEach((score: any) => {
-              if (!studentTotals[score.student_id]) {
-                studentTotals[score.student_id] = 0
-              }
-              studentTotals[score.student_id] += score.total || 0
-            })
-
-            // Sort students by total score (descending)
-            const sortedStudents = Object.entries(studentTotals)
-              .sort(([, totalA], [, totalB]) => totalB - totalA)
-
-            // Find current student's position
-            const position = sortedStudents.findIndex(([sid]) => sid === studentId) + 1
-            
-            console.log('Position:', position, 'out of', totalStudents, 'students')
-
-            if (position > 0) {
-              const ordinal = getOrdinalSuffix(position)
-              setStats(prev => ({ ...prev, classPosition: `${position}${ordinal} / ${totalStudents}` }))
-            }
-          } else {
-            console.log('No scores found for current term')
-          }
-        }
-      } catch (error) {
-        console.error('Error calculating class position:', error)
-      }
-    } catch (error) {
-      console.error('Error loading stats:', error)
-    }
-  }
-
+  // Helper for ordinal suffix (e.g., 1st, 2nd, 3rd)
   function getOrdinalSuffix(num: number): string {
     const j = num % 10
+    const k = num % 100
+    if (j === 1 && k !== 11) return 'st'
+    if (j === 2 && k !== 12) return 'nd'
+    if (j === 3 && k !== 13) return 'rd'
+    return 'th'
+  }
     const k = num % 100
     if (j === 1 && k !== 11) return 'st'
     if (j === 2 && k !== 12) return 'nd'
