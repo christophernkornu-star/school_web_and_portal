@@ -4,15 +4,16 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
-import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { createUserAction } from '@/app/actions/create-user'
+import { useAdmin } from '@/components/providers/AdminContext'
 
 const PAGE_SIZE = 20
 
 export default function StudentsPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
+  const { user, loading: contextLoading } = useAdmin()
   const [students, setStudents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -35,7 +36,7 @@ export default function StudentsPage() {
       loadStudents()
     }, 300)
     return () => clearTimeout(timer)
-  }, [page, searchTerm, classFilter, router])
+  }, [page, searchTerm, classFilter, router, user, contextLoading])
 
   async function loadClasses() {
     const { data: classesData } = await supabase
@@ -47,8 +48,9 @@ export default function StudentsPage() {
   }
 
   async function loadStudents() {
+    if (contextLoading) return
     setLoading(true)
-    const user = await getCurrentUser()
+    
     if (!user) {
       router.push('/login')
       return

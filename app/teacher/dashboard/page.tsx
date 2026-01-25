@@ -4,17 +4,17 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GraduationCap, Users, FileText, BarChart3, LogOut, BookOpen, Calendar, AlertCircle, Camera, CheckCircle, TrendingUp, DollarSign, Printer, Settings } from 'lucide-react'
-import { getCurrentUser, getTeacherData, getTeacherAssignments, signOut } from '@/lib/auth'
+import { getTeacherAssignments, signOut } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { getTeacherPermissions, getClassesForAttendance } from '@/lib/teaching-model-permissions'
 import { ClassPermissionCard } from '@/components/TeachingModelComponents'
+import { useTeacher } from '@/components/providers/TeacherContext'
 
 export default function TeacherDashboard() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  const [profile, setProfile] = useState<any>(null)
-  const [teacher, setTeacher] = useState<any>(null)
+  const { user, profile, teacher, loading: contextLoading } = useTeacher()
   const [assignments, setAssignments] = useState<any[]>([])
   const [permissions, setPermissions] = useState<any[]>([])
   const [attendanceClasses, setAttendanceClasses] = useState<string[]>([])
@@ -26,39 +26,28 @@ export default function TeacherDashboard() {
   const [recentActivities, setRecentActivities] = useState<any[]>([])
 
   useEffect(() => {
+    if (contextLoading) return
+
+    if (!user) {
+      router.push('/login?portal=teacher')
+      return
+    }
+
+    // If we have a user but no teacher profile after context loads
+    if (!teacher) {
+      setError('Teacher profile not found. Please contact the administrator.')
+      setLoading(false)
+      return
+    }
+
     async function loadUserData() {
       try {
-        const user = await getCurrentUser()
-        
-        if (!user) {
-          router.push('/login?portal=teacher')
-          return
-        }
-
-        const { data: teacherData, error: teacherError } = await getTeacherData(user.id)
-        
-        if (teacherError) {
-          setError('Failed to load teacher data. Please try again.')
-          console.error('Teacher data error:', teacherError)
-          setLoading(false)
-          return
-        }
-
-        if (!teacherData) {
-          setError('Teacher profile not found. Please contact the administrator.')
-          setLoading(false)
-          return
-        }
-        
-        setTeacher(teacherData)
-        setProfile(teacherData.profiles)
-        
         // Load independent data in parallel
         try {
           const [classAccess, perms, attClasses, termDataSettings] = await Promise.all([
-            getTeacherClassAccess(teacherData.profile_id),
-            getTeacherPermissions(teacherData.id),
-            getClassesForAttendance(teacherData.id),
+            getTeacherClassAccess(teacher.profile_id),
+            getTeacherPermissions(teacher.id),
+            getClassesForAttendance(teacher.id),
             supabase
               .from('system_settings')
               .select('setting_value')
@@ -156,7 +145,7 @@ export default function TeacherDashboard() {
           }
 
           // Load recent activities
-          loadRecentActivities(teacherData.id).catch(err => console.error('Error loading recent activities:', err));
+          loadRecentActivities(teacher.id).catch(err => console.error('Error loading recent activities:', err));
 
         } catch (err) {
           console.error('Error loading dashboard data:', err)
@@ -170,7 +159,7 @@ export default function TeacherDashboard() {
     }
 
     loadUserData()
-  }, [router])
+  }, [user, teacher, contextLoading, router, supabase])
 
   async function loadRecentActivities(teacherId: string) {
     const activities: any[] = []

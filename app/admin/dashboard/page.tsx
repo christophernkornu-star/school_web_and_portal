@@ -8,13 +8,14 @@ import {
   GraduationCap, Users, BookOpen, Building2, LogOut, 
   UserPlus, FileText, Settings, BarChart3, Calendar, Newspaper, Image, TrendingUp, DollarSign, MessageSquare
 } from 'lucide-react'
-import { getCurrentUser, signOut } from '@/lib/auth'
+import { signOut } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { useAdmin } from '@/components/providers/AdminContext'
 
 export default function AdminDashboard() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  const [profile, setProfile] = useState<any>(null)
+  const { user, profile, loading: contextLoading } = useAdmin()
   const [stats, setStats] = useState({
     totalStudents: 0,
     totalTeachers: 0,
@@ -25,25 +26,20 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function loadData() {
-      const user = await getCurrentUser()
-      
-      if (!user) {
-        router.push('/login?portal=admin')
-        return
-      }
+    if (contextLoading) return
 
-      // Load statistics in parallel with profile fetching
-      const [studentsRes, teachersRes, classesRes, profileData] = await Promise.all([
+    if (!user) {
+      router.push('/login?portal=admin')
+      return
+    }
+
+    async function loadStats() {
+      // Load statistics only - profile and user are from context
+      const [studentsRes, teachersRes, classesRes] = await Promise.all([
         supabase.from('students').select('id', { count: 'exact', head: true }),
         supabase.from('teachers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('classes').select('id', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*').eq('id', user.id).single()
       ])
-
-      if (profileData.data) {
-        setProfile(profileData.data)
-      }
 
       setStats({
         totalStudents: studentsRes.count || 0,
@@ -56,15 +52,15 @@ export default function AdminDashboard() {
       setLoading(false)
     }
 
-    loadData()
-  }, [router])
+    loadStats()
+  }, [user, contextLoading, router])
 
   const handleLogout = async () => {
     await signOut()
     router.push('/login?portal=admin')
   }
 
-  if (loading) {
+  if (contextLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

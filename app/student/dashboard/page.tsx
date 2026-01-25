@@ -18,11 +18,13 @@ interface Announcement {
   category?: string
 }
 
+import { useRef } from 'react'
+import { useStudent } from '@/components/providers/StudentContext'
+
 export default function StudentDashboard() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [student, setStudent] = useState<any | null>(null)
+  const { user, profile, student, loading: contextLoading } = useStudent()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [allowCumulativeDownload, setAllowCumulativeDownload] = useState(false)
@@ -38,35 +40,31 @@ export default function StudentDashboard() {
     averageScore: 0,
     classPosition: 'N/A'
   })
+  
+  // Use a ref to prevent double fetching
+  const statsLoaded = useRef(false)
 
   useEffect(() => {
-    async function loadUserData() {
-      const user = await getCurrentUser()
-      
-      if (!user) {
-        router.push('/login?portal=student')
-        return
+    if (contextLoading) return
+
+    if (!user) {
+      router.push('/login?portal=student')
+      return
+    }
+
+    if (!student) {
+      setError('No student record found for your account. Please contact the administrator.')
+      setLoading(false)
+      return
+    }
+
+    async function initializeDashboard() {
+      // Prevent reloading if we already have data
+      if (statsLoaded.current) {
+         setLoading(false)
+         return
       }
 
-      // Load student data
-      const studentResult = await getStudentData(user.id)
-      
-      if (!studentResult.data) {
-        console.error('No student record found for this user')
-        console.error('User ID:', user.id)
-        console.error('User email:', user.email)
-        setError('No student record found for your account. Please contact the administrator.')
-        setLoading(false)
-        return
-      }
-      
-      console.log('Student data loaded:', studentResult.data)
-      setStudent(studentResult.data)
-      setProfile(studentResult.data.profiles)
-      
-      // Load real statistics using the database id (not student_id which is a string)
-      await loadStats(studentResult.data.id)
-      
       // Load system settings
       const { data: settingsData } = await supabase
         .from('system_settings')
@@ -76,14 +74,20 @@ export default function StudentDashboard() {
       
       setAllowCumulativeDownload(settingsData?.setting_value === 'true')
 
-      // Load announcements
-      await loadAnnouncements()
+      // Load announcements in parallel
+      const loadAnnouncementsPromise = loadAnnouncements()
       
+      // Load stats
+      const loadStatsPromise = loadStats(student.id)
+
+      await Promise.all([loadAnnouncementsPromise, loadStatsPromise])
+      
+      statsLoaded.current = true
       setLoading(false)
     }
 
-    loadUserData()
-  }, [router])
+    initializeDashboard()
+  }, [user, student, contextLoading, router])
 
   async function loadAnnouncements() {
     try {
