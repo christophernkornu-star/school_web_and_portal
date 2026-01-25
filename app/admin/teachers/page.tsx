@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, Search, Plus, ArrowLeft, Edit, Trash2, Upload, Download, KeyRound } from 'lucide-react'
+import { GraduationCap, Search, Plus, ArrowLeft, Edit, Trash2, Upload, Download, KeyRound, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+
+const PAGE_SIZE = 20
 
 export default function TeachersPage() {
   const router = useRouter()
@@ -19,6 +21,54 @@ export default function TeachersPage() {
   const [resetPasswordModal, setResetPasswordModal] = useState<{ show: boolean; teacher: any | null }>({ show: false, teacher: null })
   const [resetting, setResetting] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
+
+  // Pagination state
+  const [page, setPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+
+  // Debounced load for teachers
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadTeachers()
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [page, searchTerm, router])
+
+  async function loadTeachers() {
+    setLoading(true)
+    const user = await getCurrentUser()
+    if (!user) {
+      router.push('/login')
+      return
+    }
+
+    let query = supabase
+      .from('teachers')
+      .select('*', { count: 'exact' })
+      .order('first_name')
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase()
+      // Searching across multiple columns
+      query = query.or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,teacher_id.ilike.%${term}%`)
+    }
+
+    // Apply pagination
+    const from = (page - 1) * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+    
+    const { data, count, error } = await query.range(from, to)
+
+    if (error) {
+      console.error('Error loading teachers:', error)
+    }
+
+    if (data) {
+      setTeachers(data)
+      setTotalCount(count || 0)
+    } 
+    setLoading(false)
+  }
 
   async function handleResetPassword() {
     if (!resetPasswordModal.teacher) return
@@ -106,39 +156,11 @@ export default function TeachersPage() {
 
       setTeachers(prev => prev.filter(t => t.teacher_id !== teacherId))
       alert('Teacher and their login account deleted successfully')
+      loadTeachers()
     } catch (error: any) {
       alert('Failed to delete teacher: ' + error.message)
     }
   }
-
-  useEffect(() => {
-    async function loadData() {
-      const user = await getCurrentUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('teachers')
-        .select('*')
-        .order('first_name')
-
-      if (error) {
-        console.error('Error loading teachers:', error)
-      }
-
-      if (data) {
-        console.log('Teachers loaded:', data)
-        setTeachers(data)
-      } else {
-        console.log('No teacher data returned')
-      }
-      setLoading(false)
-    }
-
-    loadData()
-  }, [router])
 
   const handleCSVUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -237,13 +259,14 @@ export default function TeachersPage() {
     a.click()
   }
 
-  const filteredTeachers = teachers.filter(teacher =>
-    teacher.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    teacher.teacher_id.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value)
+    setPage(1)
+  }
 
-  if (loading) {
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+
+  if (loading && teachers.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -291,21 +314,26 @@ export default function TeachersPage() {
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Search */}
         <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search by name or teacher ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
-            />
+          <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by name or teacher ID..."
+                value={searchTerm}
+                onChange={handleSearch}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+              />
+            </div>
+            <div className="text-sm text-gray-600">
+              <strong>{totalCount}</strong> teachers found
+            </div>
           </div>
         </div>
 
         {/* Teachers Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {filteredTeachers.map((teacher) => (
+        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 transition-opacity duration-200 ${loading && teachers.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+          {teachers.map((teacher) => (
             <div key={teacher.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -383,20 +411,66 @@ export default function TeachersPage() {
           ))}
         </div>
 
-        {filteredTeachers.length === 0 && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        {teachers.length === 0 && !loading && (
+          <div className="text-center py-12">
+            <GraduationCap className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">No teachers found</h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm ? 'Try adjusting your search' : 'Get started by adding your first teacher'}
-            </p>
-            <Link 
-              href="/admin/teachers/add"
-              className="inline-flex items-center px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add Teacher
-            </Link>
+            <p className="text-gray-500">Try adjusting your search or add a new teacher.</p>
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalCount > 0 && (
+          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6 rounded-lg shadow">
+            <div className="flex flex-1 justify-between sm:hidden">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+              </button>
+            </div>
+            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-gray-700">
+                  Showing <span className="font-medium">{teachers.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0}</span> to <span className="font-medium">{Math.min(page * PAGE_SIZE, totalCount)}</span> of{' '}
+                  <span className="font-medium">{totalCount}</span> results
+                </p>
+              </div>
+              <div>
+                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Previous</span>
+                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  
+                  <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                    Page {page} of {totalPages || 1}
+                  </span>
+
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page >= totalPages}
+                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span className="sr-only">Next</span>
+                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         )}
       </main>
