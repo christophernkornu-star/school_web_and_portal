@@ -188,24 +188,24 @@ export default function AnnouncementsPage() {
         ) : (
           <div className="space-y-4">
             {announcements.map((announcement) => (
-              <div key={announcement.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-4 flex-1">
-                    <div className={`p-3 rounded-lg ${
+              <div key={announcement.id} className="bg-white rounded-lg shadow p-4 md:p-6 hover:shadow-lg transition-shadow">
+                <div className="flex flex-col md:flex-row items-start justify-between gap-4 md:gap-0">
+                  <div className="flex items-start space-x-3 md:space-x-4 flex-1 w-full">
+                    <div className={`p-2 md:p-3 rounded-lg flex-shrink-0 ${
                       announcement.priority === 'urgent' ? 'bg-red-100' : 
                       announcement.priority === 'high' ? 'bg-orange-100' : 
                       'bg-blue-100'
                     }`}>
-                      <Megaphone className={`w-6 h-6 ${
+                      <Megaphone className={`w-5 h-5 md:w-6 md:h-6 ${
                         announcement.priority === 'urgent' ? 'text-red-600' :
                         announcement.priority === 'high' ? 'text-orange-600' :
                         'text-blue-600'
                       }`} />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="font-bold text-base md:text-lg text-gray-800">{announcement.title}</h3>
-                        <span className={`px-2 py-1 text-[10px] md:text-xs font-semibold rounded-full ${
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="font-bold text-base md:text-lg text-gray-800 break-words">{announcement.title}</h3>
+                        <span className={`px-2 py-0.5 md:py-1 text-[10px] md:text-xs font-semibold rounded-full whitespace-nowrap ${
                           announcement.priority === 'urgent' ? 'bg-red-100 text-red-600' :
                           announcement.priority === 'high' ? 'bg-orange-100 text-orange-600' :
                           'bg-blue-100 text-blue-600'
@@ -213,42 +213,46 @@ export default function AnnouncementsPage() {
                           {announcement.priority.charAt(0).toUpperCase() + announcement.priority.slice(1)}
                         </span>
                         {!announcement.published && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-[10px] md:text-xs font-semibold rounded-full">
+                          <span className="px-2 py-0.5 md:py-1 bg-gray-100 text-gray-600 text-[10px] md:text-xs font-semibold rounded-full whitespace-nowrap">
                             Draft
                           </span>
                         )}
                         {announcement.show_on_homepage && (
-                          <span className="px-2 py-1 bg-green-100 text-green-600 text-[10px] md:text-xs font-semibold rounded-full">
+                          <span className="px-2 py-0.5 md:py-1 bg-green-100 text-green-600 text-[10px] md:text-xs font-semibold rounded-full whitespace-nowrap">
                             Homepage
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-600 mb-3 whitespace-pre-wrap">{announcement.content}</p>
-                      <div className="flex items-center space-x-4 text-xs md:text-sm text-gray-500">
-                        <span className="capitalize">{announcement.category}</span>
-                        <span>•</span>
-                        <span>{new Date(announcement.created_at).toLocaleDateString()}</span>
+                      <p className="text-sm md:text-base text-gray-600 mb-3 whitespace-pre-wrap break-words">{announcement.content}</p>
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs md:text-sm text-gray-500">
+                        <span className="capitalize px-2 py-0.5 bg-gray-100 rounded-full">{announcement.category}</span>
+                        <div className="flex items-center space-x-1">
+                          <span>Created: {new Date(announcement.created_at).toLocaleDateString()}</span>
+                        </div>
                         {announcement.expires_at && (
-                          <>
-                            <span>•</span>
+                          <div className="flex items-center space-x-1">
                             <span>Expires: {new Date(announcement.expires_at).toLocaleDateString()}</span>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
                   </div>
-                  <div className="flex space-x-2">
+                  <div className="flex items-center justify-end space-x-2 w-full md:w-auto border-t md:border-t-0 pt-3 md:pt-0 mt-2 md:mt-0">
                     <button 
                       onClick={() => handleEdit(announcement)}
-                      className="p-2 bg-blue-50 text-methodist-blue rounded hover:bg-blue-100"
+                      className="p-2 bg-blue-50 text-methodist-blue rounded hover:bg-blue-100 flex-1 md:flex-none flex justify-center"
+                      title="Edit"
                     >
                       <Edit className="w-4 h-4" />
+                      <span className="md:hidden ml-2 text-sm">Edit</span>
                     </button>
                     <button 
                       onClick={() => handleDelete(announcement.id)}
-                      className="p-2 bg-red-50 text-red-600 rounded hover:bg-red-100"
+                      className="p-2 bg-red-50 text-red-600 rounded hover:bg-red-100 flex-1 md:flex-none flex justify-center"
+                      title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />
+                      <span className="md:hidden ml-2 text-sm">Delete</span>
                     </button>
                   </div>
                 </div>
@@ -260,8 +264,8 @@ export default function AnnouncementsPage() {
         {/* Create/Edit Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" suppressHydrationWarning>
-            <div className="bg-white rounded-lg max-w-2xl w-full p-6">
-              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full p-4 md:p-6 overflow-y-auto max-h-[90vh]">
+              <h3 className="text-lg md:text-xl font-bold text-gray-800 mb-4 sticky top-0 bg-white pb-2 border-b">
                 {editingId ? 'Edit Announcement' : 'Create New Announcement'}
               </h3>
               
@@ -290,7 +294,7 @@ export default function AnnouncementsPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                     <select
