@@ -12,9 +12,12 @@ export async function middleware(req: NextRequest) {
 
   const path = req.nextUrl.pathname
 
-  // 1. Protect Admin Routes
-  if (path.startsWith('/admin') || path.startsWith('/api/admin')) {
+  // 1. Protect Admin Routes (and sensitive API routes)
+  if (path.startsWith('/admin') || path.startsWith('/api/admin') || path.startsWith('/api/students')) {
     if (!session) {
+      if (path.startsWith('/api')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
       return NextResponse.redirect(new URL('/login?portal=admin', req.url))
     }
     
@@ -27,6 +30,21 @@ export async function middleware(req: NextRequest) {
         .eq('id', session.user.id)
         .single()
       role = profile?.role
+    }
+
+    // Allow Admin to access everything in this block
+    if (role === 'admin') {
+      return res
+    }
+    
+    // For /api/students, allow teachers as well (if that's the requirement, safe to assume admin+teacher usage for bulk upload usually)
+    // But bulk upload is sensitive. Let's check strictly. 
+    // If the path is specifically bulk-upload, maybe restrict to admin? 
+    // The previous implementation was completely open. 
+    // Let's restrict /api/students to Admin only for now, similar to /api/admin.
+    
+    if (path.startsWith('/api/students') && role !== 'admin') {
+       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
     if (role !== 'admin') {

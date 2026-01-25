@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 // Create a Supabase client with service role key for admin operations
 const supabaseAdmin = createClient(
@@ -15,19 +17,39 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, newPassword, newUsername, requesterId } = await request.json()
+    const { userId, newPassword, newUsername } = await request.json()
 
     if (!userId || !newPassword) {
       return NextResponse.json({ error: 'Missing userId or newPassword' }, { status: 400 })
     }
 
-    // If requesterId is provided, verify they're admin or teacher
-    if (requesterId) {
-      const { data: profile, error: profileError } = await supabaseAdmin
+    // Verify Authentication & Authorization via Session
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Fetch the requester's profile using the session ID
+    const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
         .select('role, username')
-        .eq('id', requesterId)
+        .eq('id', session.user.id) // Use session ID, not body param
         .single()
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Requester profile not found' }, { status: 403 })
+    }
+
+    // Check if requester is admin or teacher
+    if (profile.role !== 'admin' && profile.role !== 'teacher') {
+       return NextResponse.json({ error: 'Unauthorized to reset passwords' }, { status: 403 })
+    }
+
+    // If requester is teacher, ensure they are not resetting an admin's password (optional, but good practice)
+    // For now, keeping the logic simple as per original intent but secure.
 
       if (profileError || !profile) {
         return NextResponse.json({ 
