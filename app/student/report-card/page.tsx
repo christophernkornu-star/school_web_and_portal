@@ -452,7 +452,8 @@ export default function ReportCardPage() {
       })
 
       // Calculate totals and averages
-      Object.values(termGroups).forEach((report) => {
+      const reportCardsArray = Object.values(termGroups)
+      reportCardsArray.forEach((report) => {
         const validScores = report.grades
           .map(g => g.total)
           .filter((score): score is number => score !== null)
