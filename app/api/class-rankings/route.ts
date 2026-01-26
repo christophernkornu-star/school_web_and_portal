@@ -1,5 +1,7 @@
 // API route to get class rankings (bypasses RLS)
 import { createClient } from '@supabase/supabase-js'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -10,6 +12,27 @@ const supabase = createClient(
 )
 
 export async function GET(request: Request) {
+  // 1. Verify Authentication & Authorization
+  const cookieStore = cookies()
+  const supabaseAuth = createRouteHandlerClient({ cookies: () => cookieStore })
+  
+  const { data: { session } } = await supabaseAuth.auth.getSession()
+  
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Check Role - Only Teachers and Admins should see full class rankings
+  const { data: profile } = await supabaseAuth
+    .from('profiles')
+    .select('role')
+    .eq('id', session.user.id)
+    .single()
+
+  if (profile?.role !== 'admin' && profile?.role !== 'teacher') {
+    return NextResponse.json({ error: 'Forbidden: Access denied' }, { status: 403 })
+  }
+
   const { searchParams } = new URL(request.url)
   const classId = searchParams.get('classId')
   const termId = searchParams.get('termId')
