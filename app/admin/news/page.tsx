@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Edit, Trash2, Eye, EyeOff, Image as ImageIcon, Upload } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import Image from 'next/image'
 
 export default function AdminNewsPage() {
   const supabase = getSupabaseBrowserClient()
@@ -218,8 +219,14 @@ export default function AdminNewsPage() {
             <div key={newsItem.id} className="bg-white rounded-lg shadow p-4 md:p-6 hover:shadow-md transition-shadow">
               <div className="flex flex-col md:flex-row items-start gap-4">
                 {newsItem.featured_image && (
-                  <div className="w-full md:w-32 h-48 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                    <img src={newsItem.featured_image} alt={newsItem.title} className="w-full h-full object-cover" />
+                  <div className="w-full md:w-32 h-48 md:h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0 relative">
+                    <Image 
+                      src={newsItem.featured_image} 
+                      alt={newsItem.title} 
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 128px"
+                    />
                   </div>
                 )}
                 <div className="flex-1 w-full">

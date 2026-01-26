@@ -74,7 +74,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="relative overflow-hidden">
+      <header className="sticky top-0 z-50 overflow-hidden">
         {/* Ghana Flag Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-ghana-red via-ghana-gold to-ghana-green"></div>
         

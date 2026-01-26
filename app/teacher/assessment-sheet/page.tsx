@@ -7,6 +7,7 @@ import { ArrowLeft, Printer, FileText, Filter } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
+import Image from 'next/image'
 
 interface Student {
   id: string
@@ -384,7 +385,13 @@ export default function AssessmentSheetPage() {
             
             {/* Watermark */}
             <div className="watermark fixed inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.03] dark:opacity-[0.1]">
-               <img src="/school_crest.png" alt="" className="w-[500px] h-[500px] object-contain" />
+               <Image 
+                  src="/school_crest.png" 
+                  alt="" 
+                  width={500} 
+                  height={500}
+                  className="w-[500px] h-[500px] object-contain" 
+                />
             </div>
 
             <div className="relative z-10">

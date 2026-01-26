@@ -329,30 +329,30 @@ export default function EditQuizPage() {
     }
   }
 
-  if (fetchingData) return <div className="p-8 text-center">Loading...</div>
+  if (fetchingData) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/teacher/assessments" className="p-2 hover:bg-gray-100 rounded-full">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
+        <div className="container mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Link href="/teacher/assessments" className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-xl font-bold">Edit Assessment</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">Edit Assessment</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
                 onClick={() => handleSubmit('draft')}
                 disabled={loading}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+                className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 transition-colors whitespace-nowrap"
             >
                 Save Draft
             </button>
              <button
                 onClick={() => handleSubmit('published')}
                 disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-medium bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm"
             >
                 <Save className="w-4 h-4" />
                 {loading ? 'Saving...' : 'Update'}
@@ -363,170 +363,226 @@ export default function EditQuizPage() {
       
        <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Quiz Settings - Same as Create */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4">Assessment Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Assessment Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                 <div className="col-span-1 md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
                     <input
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="e.g., Mid-Term Mathematics Test"
+                        className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     />
                 </div>
-                 <div className="col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                 <div className="col-span-1 md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                     <textarea
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Enter instructions or description..."
+                        className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
                         rows={3}
                     />
                 </div>
                  {/* Simplified Inputs for Edit */}
                    <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Class</label>
+                     <div className="relative">
                      <select
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none transition-all"
                     >
-                         <option value="">Select Class</option>
+                         <option value="" className="text-gray-500 dark:text-gray-400">Select Class</option>
                         {classes.map((c: any) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                     </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    </div>
                    </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                        <div className="relative">
                         <select
                             value={selectedSubject}
                             onChange={(e) => setSelectedSubject(e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none transition-all"
                         >
-                            <option value="">Select Subject</option>
+                            <option value="" className="text-gray-500 dark:text-gray-400">Select Subject</option>
                              {subjects.map((s: any) => (
                                 <option key={s.id} value={s.id}>{s.name}</option>
                             ))}
                         </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                            <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                        </div>
                     </div>
                      <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                    <div className="relative">
                     <select
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none transition-all"
                     >
                         <option value="Assignment">Assignment</option>
                         <option value="Exam">Exam</option>
                         <option value="Test">Test</option>
                     </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Term</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Term</label>
+                    <div className="relative">
                     <select
                         value={selectedTerm}
                         onChange={(e) => setSelectedTerm(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none transition-all"
                     >
                         {terms.map((t: any) => (
                             <option key={t.id} value={t.id}>{t.name}</option>
                         ))}
                     </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                        <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                    </div>
                 </div>
 
                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Due Date</label>
                     <input
                         type="datetime-local"
                         value={dueDate}
                         onChange={(e) => setDueDate(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Duration (Minutes)</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Duration (Minutes)</label>
+                    <div className="relative">
                     <input
                         type="number"
                         value={duration}
                         onChange={(e) => setDuration(parseInt(e.target.value) || '')}
-                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="e.g. 60"
+                        className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
                     />
+                    <div className="absolute inset-y-0 right-0 flex items-center font-medium pr-3 pointer-events-none text-gray-500 dark:text-gray-400 text-sm">
+                        min
+                    </div>
+                    </div>
                 </div>
             </div>
         </div>
         
-         {/* Questions Builder (Simplified View for brevity in code generation, but functional) */}
+         {/* Questions Builder */}
          <div className="space-y-6">
-             <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Questions ({questions.length})</h2>
+             <div className="flex flex-row items-center justify-between gap-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Questions ({questions.length})</h2>
                  <button
                     onClick={addQuestion}
-                    className="text-blue-600 font-medium flex items-center gap-1"
+                    className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 px-3 py-1.5 rounded-lg font-medium flex items-center gap-1 transition-colors text-sm"
                 >
-                    <Plus className="w-4 h-4" /> Add Question
+                    <Plus className="w-4 h-4" /> Add <span className="hidden sm:inline">Question</span>
                 </button>
              </div>
              
              {questions.map((question, index) => (
-                 <div key={question.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                     <div className="flex justify-between mb-4">
-                         <span className="font-bold text-gray-500">Q{index + 1}</span>
-                         <button onClick={() => removeQuestion(index)} className="text-red-500"><Trash2 className="w-4 h-4"/></button>
+                 <div key={question.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
+                     <div className="flex justify-between items-start mb-4">
+                         <span className="font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm">Q{index + 1}</span>
+                         <button onClick={() => removeQuestion(index)} className="text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-md transition-colors"><Trash2 className="w-4 h-4"/></button>
                      </div>
                      <textarea
                         value={question.text}
                         onChange={(e) => updateQuestion(index, 'text', e.target.value)}
-                        className="w-full mb-3 p-2 border rounded"
-                        placeholder="Question Text"
+                        className="w-full mb-4 p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                        placeholder="Enter your question here..."
+                        rows={2}
                      />
-                     <div className="grid grid-cols-2 gap-4 mb-3">
-                         <select
-                            value={question.type}
-                            onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                            className="p-2 border rounded"
-                         >
-                            <option value="multiple_choice">Multiple Choice</option>
-                            <option value="true_false">True/False</option>
-                            <option value="short_answer">Short Answer</option>
-                         </select>
-                         <input
-                            type="number"
-                            value={question.points}
-                            onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value))}
-                            className="p-2 border rounded"
-                            placeholder="Points"
-                         />
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                         <div>
+                             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Type</label>
+                             <div className="relative">
+                                 <select
+                                    value={question.type}
+                                    onChange={(e) => updateQuestion(index, 'type', e.target.value)}
+                                    className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none appearance-none"
+                                 >
+                                    <option value="multiple_choice">Multiple Choice</option>
+                                    <option value="true_false">True/False</option>
+                                    <option value="short_answer">Short Answer</option>
+                                 </select>
+                                 <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                                    <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                </div>
+                             </div>
+                         </div>
+                         <div>
+                             <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Points</label>
+                             <input
+                                type="number"
+                                value={question.points}
+                                onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value))}
+                                className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
+                                placeholder="Points"
+                                min={0}
+                             />
+                         </div>
                      </div>
                      
                      {/* Options */}
                      {(question.type === 'multiple_choice' || question.type === 'true_false') && (
-                        <div className="space-y-2 pl-4 border-l-2">
+                        <div className="space-y-3 pl-0 sm:pl-4 sm:border-l-2 border-gray-100 dark:border-gray-700 pt-2">
+                             <div className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Answer Options</div>
                             {question.options.map((opt, optIndex) => (
-                                <div key={opt.id} className="flex gap-2 items-center">
-                                    <input 
-                                        type="checkbox"
-                                        checked={opt.isCorrect}
-                                        onChange={(e) => updateOption(index, optIndex, 'isCorrect', e.target.checked)}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={opt.text}
-                                        onChange={(e) => updateOption(index, optIndex, 'text', e.target.value)}
-                                        className="flex-1 p-1 border-b"
-                                        placeholder="Option text"
-                                        readOnly={question.type === 'true_false'}
-                                    />
+                                <div key={opt.id} className="flex gap-3 items-center group">
+                                    <div className="flex items-center h-full pt-1">
+                                        <input 
+                                            type="checkbox"
+                                            checked={opt.isCorrect}
+                                            onChange={(e) => updateOption(index, optIndex, 'isCorrect', e.target.checked)}
+                                            className="w-5 h-5 text-blue-600 dark:text-blue-500 rounded focus:ring-blue-500 border-gray-300 dark:border-gray-600 cursor-pointer"
+                                            title="Mark as correct answer"
+                                        />
+                                    </div>
+                                    <div className="flex-1 relative">
+                                        <input
+                                            type="text"
+                                            value={opt.text}
+                                            onChange={(e) => updateOption(index, optIndex, 'text', e.target.value)}
+                                            className={`w-full p-2 border-b-2 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-500 outline-none text-gray-900 dark:text-white bg-transparent transition-colors ${question.type === 'true_false' ? 'font-medium bg-gray-50 dark:bg-gray-700/50 rounded px-3 border-none' : ''}`}
+                                            placeholder={`Option ${optIndex + 1}`}
+                                            readOnly={question.type === 'true_false'}
+                                        />
+                                    </div>
                                     {question.type === 'multiple_choice' && (
-                                        <button onClick={() => removeOption(index, optIndex)} className="text-red-400"><Trash2 className="w-3 h-3"/></button>
+                                        <button 
+                                            onClick={() => removeOption(index, optIndex)} 
+                                            className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 p-1 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                            title="Remove option"
+                                        >
+                                            <Trash2 className="w-4 h-4"/>
+                                        </button>
                                     )}
                                 </div>
                             ))}
                              {question.type === 'multiple_choice' && (
-                                <button onClick={() => addOption(index)} className="text-xs text-blue-500 mt-1">+ Add Option</button>
+                                <button onClick={() => addOption(index)} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium mt-2 flex items-center gap-1 py-1 px-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors w-max">
+                                    <Plus className="w-4 h-4" /> Add Option
+                                </button>
                              )}
                         </div>
                      )}
