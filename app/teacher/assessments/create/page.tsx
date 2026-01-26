@@ -424,133 +424,158 @@ export default function CreateQuizPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/teacher/assessments" className="p-2 hover:bg-gray-100 rounded-full">
+      <div className="bg-white border-b sticky top-0 z-30 shadow-sm">
+        <div className="container mx-auto px-4 py-3 md:py-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 md:gap-4 min-w-0">
+            <Link href="/teacher/assessments" className="p-2 hover:bg-gray-100 rounded-full flex-shrink-0 text-gray-500">
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <h1 className="text-xl font-bold">Create New Assessment</h1>
+            <h1 className="text-lg md:text-xl font-bold text-gray-800 truncate">Create Assessment</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
                 onClick={() => handleSubmit('draft')}
                 disabled={loading}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50"
+                className="px-3 py-2 md:px-4 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg disabled:opacity-50 whitespace-nowrap"
             >
-                Save Draft
+                <span className="hidden sm:inline">Save Draft</span>
+                <span className="sm:hidden">Draft</span>
             </button>
             <button
                 onClick={() => handleSubmit('published')}
                 disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+                className="px-3 py-2 md:px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium whitespace-nowrap shadow-sm active:scale-95"
             >
                 <Save className="w-4 h-4" />
-                {loading ? 'Publishing...' : 'Publish'}
+                {loading ? (
+                    <span>Saving...</span>
+                ) : (
+                   <span>Publish</span>
+                )}
             </button>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-6 md:py-8 max-w-4xl">
         {/* Quiz Settings */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
-          <h2 className="text-lg font-semibold mb-4">Assessment Details</h2>
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 mb-8 border border-gray-100">
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Assessment Details</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="col-span-2">
+            <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                 <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 placeholder:text-gray-400"
                     placeholder="e.g., Mid-Term Mathematics Exam"
                 />
             </div>
             
-            <div className="col-span-2">
+            <div className="col-span-1 md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (Optional)</label>
                 <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 placeholder:text-gray-400 resize-none md:resize-y"
                     rows={3}
                     placeholder="Instructions for students..."
                 />
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-                <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                    <option value="">Select Class</option>
-                    {classes.map((c: any) => (
-                        <option key={c.id || `class-${Math.random()}`} value={c.id}>{c.name}</option>
-                    ))}
-                </select>
+                <div className="relative">
+                    <select
+                        value={selectedClass}
+                        onChange={(e) => setSelectedClass(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 appearance-none cursor-pointer"
+                    >
+                        <option value="">Select Class</option>
+                        {classes.map((c: any) => (
+                            <option key={c.id || `class-${Math.random()}`} value={c.id}>{c.name}</option>
+                        ))}
+                    </select>
+                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                    </div>
+                </div>
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-                <select
-                    value={selectedSubject}
-                    onChange={(e) => setSelectedSubject(e.target.value)}
-                    disabled={!selectedClass}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
-                >
-                    <option value="">Select Subject</option>
-                    {subjects.map((s: any) => (
-                        <option key={s.id || `subject-${Math.random()}`} value={s.id}>{s.name}</option>
-                    ))}
-                </select>
+                 <div className="relative">
+                    <select
+                        value={selectedSubject}
+                        onChange={(e) => setSelectedSubject(e.target.value)}
+                        disabled={!selectedClass}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 disabled:bg-gray-100 disabled:text-gray-400 appearance-none cursor-pointer"
+                    >
+                        <option value="">Select Subject</option>
+                        {subjects.map((s: any) => (
+                            <option key={s.id || `subject-${Math.random()}`} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                    </div>
+                </div>
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                    <option value="Assignment">Assignment / Class Work</option>
-                    <option value="Exam">Examination</option>
-                    <option value="Test">Class Test</option>
-                </select>
+                 <div className="relative">
+                    <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 appearance-none cursor-pointer"
+                    >
+                        <option value="Assignment">Assignment / Class Work</option>
+                        <option value="Exam">Examination</option>
+                        <option value="Test">Class Test</option>
+                    </select>
+                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                    </div>
+                </div>
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Term</label>
-                <select
-                    value={selectedTerm}
-                    onChange={(e) => setSelectedTerm(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                    {terms.map((t: any) => (
-                        <option key={t.id || `term-${Math.random()}`} value={t.id}>{t.name} ({t.academic_year})</option>
-                    ))}
-                </select>
+                 <div className="relative">
+                    <select
+                        value={selectedTerm}
+                        onChange={(e) => setSelectedTerm(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 appearance-none cursor-pointer"
+                    >
+                        {terms.map((t: any) => (
+                            <option key={t.id || `term-${Math.random()}`} value={t.id}>{t.name} ({t.academic_year})</option>
+                        ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                        <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" fillRule="evenodd"></path></svg>
+                    </div>
+                </div>
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                 <input
                     type="datetime-local"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 placeholder:text-gray-400"
                 />
             </div>
 
-            <div>
+            <div className="col-span-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Duration (Minutes)</label>
                 <input
                     type="number"
                     value={duration}
                     onChange={(e) => setDuration(parseInt(e.target.value) || '')}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 placeholder:text-gray-400"
                     placeholder="Leave empty for no limit"
                 />
             </div>
@@ -565,30 +590,33 @@ export default function CreateQuizPage() {
             </div>
 
             {questions.map((question, index) => (
-                <div key={question.id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <div className="flex justify-between items-start mb-4">
+                <div key={question.id} className="bg-white rounded-xl shadow-sm p-4 md:p-6 border border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
                         <div className="flex items-center gap-2">
-                             <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-sm font-medium">Q{index + 1}</span>
+                             <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-sm font-medium flex-shrink-0">Q{index + 1}</span>
                              <select
                                 value={question.type}
                                 onChange={(e) => updateQuestion(index, 'type', e.target.value)}
-                                className="text-sm border-none bg-transparent font-medium text-blue-600 focus:ring-0 cursor-pointer"
+                                className="text-sm border-none bg-transparent font-medium text-blue-600 focus:ring-0 cursor-pointer py-0 pl-0 pr-8"
                             >
                                 <option value="multiple_choice">Multiple Choice</option>
                                 <option value="true_false">True / False</option>
                                 <option value="short_answer">Short Answer</option>
                             </select>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="number"
-                                value={question.points}
-                                onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value) || 0)}
-                                className="w-16 px-2 py-1 border rounded text-sm text-right"
-                                min="0"
-                            />
-                            <span className="text-sm text-gray-500">pts</span>
-                            <button onClick={() => removeQuestion(index)} className="p-1 text-red-500 hover:bg-red-50 rounded">
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                            <div className="flex items-center gap-1">
+                                <label className="text-xs text-gray-500 sm:hidden">Points:</label>
+                                <input
+                                    type="number"
+                                    value={question.points}
+                                    onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value) || 0)}
+                                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none"
+                                    min="0"
+                                />
+                                <span className="text-sm text-gray-500">pts</span>
+                            </div>
+                            <button onClick={() => removeQuestion(index)} className="p-1.5 text-red-500 hover:bg-red-50 rounded ml-2">
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
@@ -598,7 +626,7 @@ export default function CreateQuizPage() {
                         <textarea
                             value={question.text}
                             onChange={(e) => updateQuestion(index, 'text', e.target.value)}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 focus:bg-white text-gray-900 placeholder:text-gray-400 resize-none"
                             rows={2}
                             placeholder="Type your question here..."
                         />
@@ -606,7 +634,7 @@ export default function CreateQuizPage() {
 
                     {/* Options Area */}
                     {(question.type === 'multiple_choice' || question.type === 'true_false') && (
-                        <div className="space-y-2 pl-4 border-l-2 border-gray-100">
+                        <div className="space-y-3 pl-0 md:pl-4 md:border-l-2 md:border-gray-100">
                             {question.options.map((option, optIndex) => (
                                 <div key={option.id} className="flex items-center gap-3 group">
                                     <button
@@ -625,7 +653,7 @@ export default function CreateQuizPage() {
                                         value={option.text}
                                         onChange={(e) => updateOption(index, optIndex, 'text', e.target.value)}
                                         readOnly={question.type === 'true_false'} // TF text is fixed
-                                        className={`flex-1 px-3 py-1.5 border-b border-gray-200 focus:border-blue-500 outline-none bg-transparent ${
+                                        className={`flex-1 px-3 py-1.5 border-b border-gray-200 focus:border-blue-500 outline-none bg-transparent text-gray-900 placeholder:text-gray-400 ${
                                             question.type === 'true_false' ? 'cursor-default select-none font-medium' : ''
                                         }`}
                                         placeholder={`Option ${optIndex + 1}`}
@@ -634,7 +662,7 @@ export default function CreateQuizPage() {
                                     {question.type === 'multiple_choice' && (
                                         <button 
                                             onClick={() => removeOption(index, optIndex)}
-                                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500"
+                                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-opacity"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -644,7 +672,7 @@ export default function CreateQuizPage() {
                             {question.type === 'multiple_choice' && (
                                 <button
                                     onClick={() => addOption(index)}
-                                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 mt-2"
+                                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 mt-3 pl-9 md:pl-0"
                                 >
                                     <Plus className="w-4 h-4" /> Add Option
                                 </button>
@@ -653,8 +681,8 @@ export default function CreateQuizPage() {
                     )}
 
                     {question.type === 'short_answer' && (
-                        <div className="pl-4 border-l-2 border-gray-100 py-2">
-                             <p className="text-sm text-gray-500 italic">Students will type their answer in a text box.</p>
+                        <div className="pl-0 md:pl-4 md:border-l-2 md:border-gray-100 py-2">
+                             <p className="text-sm text-gray-500 italic bg-gray-50 p-2 rounded">Students will type their answer in a text box.</p>
                         </div>
                     )}
                 </div>
@@ -662,7 +690,7 @@ export default function CreateQuizPage() {
 
             <button
                 onClick={addQuestion}
-                className="w-full py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-all flex flex-col items-center gap-2"
+                className="w-full py-3 md:py-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-blue-500 hover:text-blue-500 transition-all flex flex-col items-center gap-2 bg-white active:scale-[0.99]"
             >
                 <Plus className="w-6 h-6" />
                 <span className="font-medium">Add New Question</span>
