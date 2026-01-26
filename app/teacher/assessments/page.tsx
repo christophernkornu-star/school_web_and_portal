@@ -88,63 +88,62 @@ export default function AssessmentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <header className="bg-white shadow sticky top-0 z-10">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/teacher/dashboard" className="text-green-600 hover:text-green-700">
+            <div className="flex items-center space-x-3">
+              <Link href="/teacher/dashboard" className="text-gray-500 hover:text-gray-700">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Assessments</h1>
-                <p className="text-xs md:text-sm text-gray-600">Create and manage tests, quizzes, and projects</p>
+                <h1 className="text-xl font-bold text-gray-800">Assessments</h1>
               </div>
             </div>
             <Link
               href="/teacher/assessments/create"
-              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-xs md:text-sm transition-colors"
+              className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm transition-colors shadow-sm active:scale-95"
             >
               <Plus className="w-5 h-5" />
-              <span className="hidden md:inline">Create Assessment</span>
-              <span className="md:hidden">New</span>
+              <span className="hidden sm:inline">Create Assessment</span>
+              <span className="sm:hidden">New</span>
             </Link>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-6 border-b border-gray-100">
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-            <p className="text-gray-500 text-xs md:text-sm font-medium uppercase">Total</p>
-            <p className="text-2xl md:text-3xl font-bold text-gray-800 mt-1">{totalCount}</p>
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Total</p>
+            <p className="text-2xl font-bold text-gray-800 mt-1">{totalCount}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-            <p className="text-gray-500 text-xs md:text-sm font-medium uppercase">Published</p>
-            <p className="text-2xl md:text-3xl font-bold text-green-600 mt-1">{publishedCount}</p>
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Published</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">{publishedCount}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-            <p className="text-gray-500 text-xs md:text-sm font-medium uppercase">Drafts</p>
-            <p className="text-2xl md:text-3xl font-bold text-yellow-600 mt-1">{draftCount}</p>
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Drafts</p>
+            <p className="text-2xl font-bold text-yellow-600 mt-1">{draftCount}</p>
           </div>
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-            <p className="text-gray-500 text-xs md:text-sm font-medium uppercase">Exams</p>
-            <p className="text-2xl md:text-3xl font-bold text-blue-600 mt-1">{examCount}</p>
+            <p className="text-gray-500 text-xs font-medium uppercase tracking-wide">Exams</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">{examCount}</p>
           </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
-          <div className="flex overflow-x-auto">
+        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden border border-gray-100">
+          <div className="flex overflow-x-auto scrollbar-hide">
             {['All', 'Exam', 'Assignment', 'Test'].map((f) => (
                 <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                    className={`flex-1 min-w-[100px] px-4 md:px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap text-center ${
                         filter === f 
-                        ? 'border-green-600 text-green-600 bg-green-50' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                        ? 'text-green-700 bg-green-50 border-b-2 border-green-600' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 border-b-2 border-transparent'
                     }`}
                 >
                     {f === 'All' ? 'All Assessments' : f + 's'}
@@ -155,85 +154,90 @@ export default function AssessmentsPage() {
 
         {/* Assessments List */}
         {filteredAssessments.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-lg shadow-sm">
-                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+            <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="mx-auto w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                     <BookOpen className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900">No assessments found</h3>
-                <p className="text-gray-500 mt-1">Get started by creating a new assessment.</p>
+                <p className="text-gray-500 mt-2 max-w-sm mx-auto">Get started by creating a new assessment for your students.</p>
                 <Link
                     href="/teacher/assessments/create"
-                    className="inline-flex items-center gap-2 mt-4 text-green-600 font-medium hover:text-green-700"
+                    className="inline-flex items-center gap-2 mt-6 text-green-600 font-semibold hover:text-green-700"
                 >
-                    <Plus className="w-4 h-4" /> Create New
+                    <Plus className="w-5 h-5" /> Create Assessment
                 </Link>
             </div>
         ) : (
-            <div className="grid gap-4">
+            <div className="space-y-4">
             {filteredAssessments.map((assessment) => (
-                <div key={assessment.id} className="bg-white rounded-lg shadow-sm p-4 md:p-6 hover:shadow-md transition-shadow border border-gray-100">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                    <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-800">{assessment.title}</h3>
-                        <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                        assessment.status === 'published' 
-                            ? 'bg-green-100 text-green-800' 
-                            : assessment.status === 'closed'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                        {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
-                        </span>
-                        <span className="px-2.5 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                            {assessment.category}
-                        </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-6 text-sm text-gray-600 mt-3">
-                        <div className="flex items-center gap-2">
-                            <BookOpen className="w-4 h-4 text-gray-400" />
-                            <span>{assessment.subjects?.name || 'Unknown Subject'}</span>
+                <div key={assessment.id} className="bg-white rounded-xl shadow-sm p-4 md:p-5 border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2 min-w-0 max-w-full">
+                                    <h3 className="text-base md:text-lg font-semibold text-gray-800 truncate">{assessment.title}</h3>
+                                    <span className={`flex-shrink-0 px-2.5 py-0.5 text-xs font-medium rounded-full ${
+                                    assessment.status === 'published' 
+                                        ? 'bg-green-100 text-green-800' 
+                                        : assessment.status === 'closed'
+                                        ? 'bg-red-100 text-red-800'
+                                        : 'bg-yellow-100 text-yellow-800'
+                                    }`}>
+                                    {assessment.status.charAt(0).toUpperCase() + assessment.status.slice(1)}
+                                    </span>
+                                </div>
+                                <span className="md:hidden px-2 py-0.5 text-xs font-medium rounded bg-gray-100 text-gray-600">
+                                   {assessment.category}
+                                </span>
+                            </div>
+                            
+                            <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-sm text-gray-600 mt-2">
+                                <span className="hidden md:inline-block px-2 py-0.5 text-xs font-medium rounded bg-blue-50 text-blue-700 border border-blue-100">
+                                    {assessment.category}
+                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    <BookOpen className="w-3.5 h-3.5 text-gray-400" />
+                                    <span className="truncate max-w-[150px]">{assessment.subjects?.name || 'Unknown Subject'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-3.5 h-3.5 flex items-center justify-center font-bold text-[10px] border rounded border-gray-400 text-gray-500">C</span>
+                                    <span>{assessment.classes?.name || 'Unknown Class'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                                    <span>{assessment.due_date ? new Date(assessment.due_date).toLocaleDateString() : 'No Due Date'}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5 text-gray-400" />
+                                    <span>{assessment.duration_minutes ? assessment.duration_minutes + ' mins' : 'No Limit'}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="w-4 h-4 text-gray-400 flex items-center justify-center font-bold text-xs border rounded border-gray-300">C</span>
-                            <span>{assessment.classes?.name || 'Unknown Class'}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-gray-400" />
-                            <span>{assessment.due_date ? new Date(assessment.due_date).toLocaleDateString() : 'No Due Date'}</span>
-                        </div>
-                         <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-gray-400" />
-                            <span>{assessment.duration_minutes ? assessment.duration_minutes + ' mins' : 'No Limit'}</span>
-                        </div>
-                    </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 border-t md:border-t-0 pt-4 md:pt-0 mt-2 md:mt-0 justify-end">
-                    <Link 
-                        href={`/teacher/assessments/${assessment.id}`}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip"
-                        title="View Details"
-                    >
-                        <Eye className="w-5 h-5" />
-                    </Link>
-                    <Link 
-                        href={`/teacher/assessments/edit/${assessment.id}`}
-                        className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                        title="Edit"
-                    >
-                        <Edit className="w-5 h-5" />
-                    </Link>
-                    <button 
-                        onClick={() => handleDelete(assessment.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
-                    >
-                        <Trash2 className="w-5 h-5" />
-                    </button>
+                        <div className="flex items-center gap-2 border-t md:border-t-0 pt-3 md:pt-0 mt-2 md:mt-0 justify-end md:self-center">
+                            <Link 
+                                href={`/teacher/assessments/${assessment.id}`}
+                                className="flex items-center justify-center w-8 h-8 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="View Details"
+                            >
+                                <Eye className="w-5 h-5" />
+                            </Link>
+                            <Link 
+                                href={`/teacher/assessments/edit/${assessment.id}`}
+                                className="flex items-center justify-center w-8 h-8 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Edit"
+                            >
+                                <Edit className="w-5 h-5" />
+                            </Link>
+                            <button 
+                                onClick={() => handleDelete(assessment.id)}
+                                className="flex items-center justify-center w-8 h-8 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </button>
+                        </div>
                     </div>
-                </div>
                 </div>
             ))}
             </div>

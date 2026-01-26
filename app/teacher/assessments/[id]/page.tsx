@@ -132,28 +132,28 @@ export default function QuizDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Link href="/teacher/assessments" className="text-gray-600 hover:text-gray-900">
+              <Link href="/teacher/assessments" className="text-gray-600 hover:text-gray-900 flex-shrink-0">
                 <ArrowLeft className="w-6 h-6" />
               </Link>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">{quiz.title}</h1>
-                <p className="text-sm text-gray-500">{quiz.classes?.name} • {quiz.subjects?.name}</p>
+              <div className="min-w-0"> {/* Allow truncation */}
+                <h1 className="text-lg md:text-xl font-bold text-gray-800 truncate">{quiz.title}</h1>
+                <p className="text-sm text-gray-500 truncate">{quiz.classes?.name} • {quiz.subjects?.name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
                  <Link
                     href={`/teacher/assessments/edit/${quizId}`}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
+                    className="flex-shrink-0 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm whitespace-nowrap"
                 >
                     Edit
                 </Link>
                 <button
                     onClick={handleSync}
                     disabled={syncing}
-                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:opacity-50"
+                    className="flex-shrink-0 flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm disabled:opacity-50 whitespace-nowrap"
                 >
                     <UploadCloud className="w-4 h-4" />
                     <span>{syncing ? 'Syncing...' : 'Push to Gradebook'}</span>
@@ -163,51 +163,52 @@ export default function QuizDetailsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8 h-full">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                <div className="p-3 bg-green-100 text-green-600 rounded-full">
+      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8 h-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <div className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div className="p-3 bg-green-100 text-green-600 rounded-full flex-shrink-0">
                     <Users className="w-6 h-6" />
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500">Total Attempts</p>
-                    <p className="text-2xl font-bold">{attempts.length}</p>
+                    <p className="text-xs md:text-sm text-gray-500">Total Attempts</p>
+                    <p className="text-xl md:text-2xl font-bold">{attempts.length}</p>
                 </div>
             </div>
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
+            <div className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div className="p-3 bg-blue-100 text-blue-600 rounded-full flex-shrink-0">
                     <CheckCircle className="w-6 h-6" />
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500">Average Score</p>
-                    <p className="text-2xl font-bold">{avgScore} <span className="text-sm text-gray-400 font-normal">/ {quiz.total_points}</span></p>
+                    <p className="text-xs md:text-sm text-gray-500">Average Score</p>
+                    <p className="text-xl md:text-2xl font-bold">{avgScore} <span className="text-sm text-gray-400 font-normal">/ {quiz.total_points}</span></p>
                 </div>
             </div>
-             <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
-                <div className="p-3 bg-purple-100 text-purple-600 rounded-full">
+             <div className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4">
+                <div className="p-3 bg-purple-100 text-purple-600 rounded-full flex-shrink-0">
                     <Clock className="w-6 h-6" />
                 </div>
                 <div>
-                    <p className="text-sm text-gray-500">Status</p>
-                    <p className="text-xl font-bold capitalize">{quiz.status}</p>
+                    <p className="text-xs md:text-sm text-gray-500">Status</p>
+                    <p className="text-lg md:text-xl font-bold capitalize">{quiz.status}</p>
                 </div>
             </div>
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
+            <div className="px-4 md:px-6 py-4 border-b border-gray-100">
                 <h3 className="font-semibold text-gray-800">Student Results</h3>
             </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+            <div className="overflow-x-auto -mx-4 md:mx-0">
+              <div className="inline-block min-w-full align-middle md:px-0">
+                <table className="min-w-full text-sm text-left">
                     <thead className="bg-gray-50 text-gray-500 font-medium">
                         <tr>
-                            <th className="px-6 py-3">Student Name</th>
-                            <th className="px-6 py-3">Submitted At</th>
-                            <th className="px-6 py-3">Score</th>
-                            <th className="px-6 py-3">Percentage</th>
-                            <th className="px-6 py-3">Status</th>
-                            <th className="px-6 py-3 text-right">Actions</th>
+                            <th className="px-4 md:px-6 py-3 whitespace-nowrap">Student Name</th>
+                            <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Submitted At</th>
+                            <th className="px-4 md:px-6 py-3 whitespace-nowrap">Score</th>
+                            <th className="hidden sm:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Percentage</th>
+                            <th className="px-4 md:px-6 py-3 whitespace-nowrap">Status</th>
+                            <th className="px-4 md:px-6 py-3 text-right whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -225,36 +226,36 @@ export default function QuizDetailsPage() {
                                     
                                 return (
                                     <tr key={attempt.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-3 font-medium text-gray-900">
+                                        <td className="px-4 md:px-6 py-3 font-medium text-gray-900 whitespace-nowrap">
                                             {attempt.students.last_name} {attempt.students.first_name} {attempt.students.middle_name}
                                         </td>
-                                        <td className="px-6 py-3 text-gray-500">
+                                        <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 whitespace-nowrap">
                                             {new Date(attempt.end_time || attempt.created_at).toLocaleString()}
                                         </td>
-                                        <td className="px-6 py-3 font-semibold text-gray-800">
+                                        <td className="px-4 md:px-6 py-3 font-semibold text-gray-800 whitespace-nowrap">
                                             {attempt.score}
                                         </td>
-                                         <td className="px-6 py-3 text-gray-600">
+                                         <td className="hidden sm:table-cell px-4 md:px-6 py-3 text-gray-600 whitespace-nowrap">
                                             {percentage}%
                                         </td>
-                                        <td className="px-6 py-3">
+                                        <td className="px-4 md:px-6 py-3 whitespace-nowrap">
                                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                 attempt.status === 'graded' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                                             }`}>
                                                 {attempt.status}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-3 text-right">
+                                        <td className="px-4 md:px-6 py-3 text-right whitespace-nowrap">
                                             <button 
                                                 onClick={() => handleDeleteAttempt(attempt.id)}
                                                 disabled={deletingId === attempt.id}
-                                                className="text-red-600 hover:text-red-800 p-1 hover:bg-red-50 rounded disabled:opacity-50"
+                                                className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded disabled:opacity-50"
                                                 title="Reset Attempt (Allow Retake)"
                                             >
                                                 {deletingId === attempt.id ? (
                                                     <span className="animate-spin text-xs">...</span>
                                                 ) : (
-                                                    <RotateCcw className="w-4 h-4" />
+                                                    <RotateCcw className="w-5 h-5 md:w-4 md:h-4" />
                                                 )}
                                             </button>
                                         </td>
@@ -264,6 +265,7 @@ export default function QuizDetailsPage() {
                         )}
                     </tbody>
                 </table>
+              </div>
             </div>
         </div>
       </main>

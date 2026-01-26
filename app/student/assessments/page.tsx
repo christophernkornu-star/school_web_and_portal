@@ -93,10 +93,10 @@ export default function StudentAssessmentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-       <header className="bg-white shadow">
-        <div className="container mx-auto px-4 py-4">
+       <header className="bg-white shadow sticky top-0 z-10">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/student/dashboard" className="text-blue-600 hover:text-blue-800">
+            <Link href="/student/dashboard" className="text-gray-500 hover:text-gray-700">
               <ArrowLeft className="w-6 h-6" />
             </Link>
             <h1 className="text-xl font-bold text-gray-800">Online Assessments</h1>
@@ -104,57 +104,63 @@ export default function StudentAssessmentsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-4 md:px-6 py-6">
         {quizzes.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-xl shadow-sm">
+            <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+                <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900">No Assessments</h3>
                 <p className="text-gray-500">No assessments available for your class yet.</p>
             </div>
         ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {quizzes.map((quiz) => (
-                    <div key={quiz.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 flex flex-col justify-between h-full">
+                    <div key={quiz.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 flex flex-col justify-between h-full transition-shadow hover:shadow-md">
                         <div>
-                            <div className="flex justify-between items-start mb-2">
-                                <span className="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700">
+                            <div className="flex justify-between items-start mb-3">
+                                <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">
                                     {quiz.subjects?.name}
                                 </span>
                                 {quiz.attempt && (
-                                    <span className={`flex items-center gap-1 text-xs font-medium ${
-                                        quiz.attempt.status === 'in_progress' ? 'text-yellow-600' : 'text-green-600'
+                                    <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full ${
+                                        quiz.attempt.status === 'in_progress' 
+                                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-100' 
+                                            : 'bg-green-50 text-green-700 border border-green-100'
                                     }`}>
                                         {quiz.attempt.status === 'in_progress' ? (
                                             <>In Progress</>
                                         ) : (
-                                            <><CheckCircle className="w-3 h-3" /> Completed</>
+                                            <><CheckCircle className="w-3.5 h-3.5" /> Completed</>
                                         )}
                                     </span>
                                 )}
                             </div>
-                            <h3 className="text-lg font-bold text-gray-800 mb-1">{quiz.title}</h3>
-                            <p className="text-sm text-gray-500 mb-4 line-clamp-2">{quiz.description}</p>
+                            <h3 className="text-lg font-bold text-gray-800 mb-2 leading-snug">{quiz.title}</h3>
+                            <p className="text-sm text-gray-500 mb-5 line-clamp-2">{quiz.description}</p>
                             
-                            <div className="space-y-2 text-sm text-gray-600 mb-6">
-                                <div className="flex items-center gap-2">
+                            <div className="space-y-2.5 text-sm text-gray-600 mb-6 bg-gray-50 p-3 rounded-lg">
+                                <div className="flex items-center gap-2.5">
                                     <Clock className="w-4 h-4 text-gray-400" />
-                                    <span>{quiz.duration_minutes ? `${quiz.duration_minutes} Mins` : 'No Time Limit'}</span>
+                                    <span className="font-medium">{quiz.duration_minutes ? `${quiz.duration_minutes} Mins` : 'No Time Limit'}</span>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2.5">
                                     <Calendar className="w-4 h-4 text-gray-400" />
                                     <span>Due: {quiz.due_date ? new Date(quiz.due_date).toLocaleDateString() : 'No Due Date'}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="pt-4 border-t">
+                        <div className="pt-4 border-t border-gray-50 mt-auto">
                             {quiz.attempt?.status === 'submitted' || quiz.attempt?.status === 'graded' ? (
-                                <div className="flex justify-between items-center">
+                                <div className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-lg">
                                     <span className="text-sm font-medium text-gray-500">Your Score:</span>
-                                    <span className="text-xl font-bold text-gray-900">{quiz.attempt.score} <span className="text-sm font-normal text-gray-400">/ {quiz.total_points}</span></span>
+                                    <span className="text-lg font-bold text-gray-900">{quiz.attempt.score} <span className="text-sm font-normal text-gray-400">/ {quiz.total_points}</span></span>
                                 </div>
                             ) : (
                                 <Link 
                                     href={`/student/assessments/take/${quiz.id}`}
-                                    className={`block w-full text-center py-2.5 rounded-lg font-medium transition-colors ${
+                                    className={`flex items-center justify-center w-full py-3 rounded-lg font-medium transition-colors shadow-sm active:scale-95 transform duration-150 ${
                                         quiz.attempt?.status === 'in_progress'
                                         ? 'bg-yellow-500 text-white hover:bg-yellow-600'
                                         : 'bg-blue-600 text-white hover:bg-blue-700'

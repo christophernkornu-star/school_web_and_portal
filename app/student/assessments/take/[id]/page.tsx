@@ -310,49 +310,49 @@ export default function TakeQuizPage() {
 
       {/* Sticky Header with Timer */}
       <div className="bg-white border-b sticky top-0 z-20 shadow-sm">
-        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <h1 className="text-lg font-bold truncate max-w-[200px] md:max-w-md">{quiz.title}</h1>
-            <div className={`flex items-center gap-2 font-mono font-bold text-lg px-3 py-1 rounded ${
+        <div className="container mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
+            <h1 className="text-base md:text-lg font-bold truncate w-full md:w-auto text-center md:text-left">{quiz.title}</h1>
+            <div className={`flex items-center gap-2 font-mono font-bold text-base md:text-lg px-3 py-1 rounded w-full md:w-auto justify-center md:justify-start ${
                 timeLeft !== null && timeLeft < 300 ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-800'
             }`}>
-                <Clock className="w-5 h-5" />
+                <Clock className="w-4 h-4 md:w-5 md:h-5" />
                 {timeLeft !== null ? formatTime(timeLeft) : '--:--'}
             </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="space-y-8">
+      <main className="container mx-auto px-4 py-6 md:py-8 max-w-3xl">
+        <div className="space-y-6 md:space-y-8">
             {questions.map((q, index) => (
-                <div key={q.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                    <div className="flex gap-4 mb-4">
-                        <span className="flex-shrink-0 w-8 h-8 bg-blue-50 text-blue-600 font-bold rounded-lg flex items-center justify-center">
+                <div key={q.id} className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex gap-3 md:gap-4 mb-4">
+                        <span className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 bg-blue-50 text-blue-600 font-bold rounded-lg flex items-center justify-center text-sm md:text-base">
                             {index + 1}
                         </span>
                         <div className="flex-1">
-                            <p className="text-lg font-medium text-gray-800">{q.question_text}</p>
+                            <p className="text-base md:text-lg font-medium text-gray-800">{q.question_text}</p>
                             <p className="text-xs text-gray-500 mt-1">{q.points} points</p>
                         </div>
                     </div>
 
-                    <div className="pl-12 space-y-3">
+                    <div className="pl-0 md:pl-12 space-y-3">
                         {/* Options */}
                         {(q.question_type === 'multiple_choice' || q.question_type === 'true_false') && (
                             q.quiz_options.map((opt: any) => (
                                 <label 
                                     key={opt.id} 
-                                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                    className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all active:scale-[0.99] hover:bg-gray-50 ${
                                         answers[q.id]?.optionId === opt.id 
                                             ? 'border-blue-500 bg-blue-50' 
-                                            : 'border-transparent bg-gray-50 hover:bg-gray-100'
+                                            : 'border-transparent bg-gray-50'
                                     }`}
                                 >
-                                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                                    <div className={`w-5 h-5 flex-shrink-0 rounded-full border-2 flex items-center justify-center ${
                                         answers[q.id]?.optionId === opt.id ? 'border-blue-500' : 'border-gray-400'
                                     }`}>
                                         {answers[q.id]?.optionId === opt.id && <div className="w-2.5 h-2.5 bg-blue-500 rounded-full" />}
                                     </div>
-                                    <span className="text-gray-700">{opt.option_text}</span>
+                                    <span className="text-gray-700 text-sm md:text-base">{opt.option_text}</span>
                                     {/* Hidden Radio for accessibility */}
                                     <input 
                                         type="radio" 
@@ -370,7 +370,7 @@ export default function TakeQuizPage() {
                             <textarea
                                 value={answers[q.id]?.text || ''}
                                 onChange={(e) => handleTextChange(q.id, e.target.value)}
-                                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm md:text-base"
                                 rows={3}
                                 placeholder="Type your answer here..."
                             />
@@ -384,7 +384,7 @@ export default function TakeQuizPage() {
             <button
                 onClick={() => submitQuiz(false)}
                 disabled={submitting || isTimeUp}
-                className="px-8 py-4 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 transform transition-transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
+                className="w-full md:w-auto px-8 py-4 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2 transform transition-transform md:hover:scale-105 active:scale-95 disabled:transform-none disabled:cursor-not-allowed"
             >
                 <CheckCircle className="w-6 h-6" />
                 {submitting ? 'Submitting...' : 'Submit Assessment'}
