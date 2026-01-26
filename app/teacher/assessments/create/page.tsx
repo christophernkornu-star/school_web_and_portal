@@ -611,7 +611,7 @@ export default function CreateQuizPage() {
                                     type="number"
                                     value={question.points}
                                     onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value) || 0)}
-                                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-16 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:ring-2 focus:ring-blue-500 outline-none bg-white text-gray-900 font-medium"
                                     min="0"
                                 />
                                 <span className="text-sm text-gray-500">pts</span>
