@@ -636,7 +636,7 @@ export default function CreateQuizPage() {
                     {(question.type === 'multiple_choice' || question.type === 'true_false') && (
                         <div className="space-y-3 pl-0 md:pl-4 md:border-l-2 md:border-gray-100">
                             {question.options.map((option, optIndex) => (
-                                <div key={option.id} className="flex items-center gap-3 group">
+                                <div key={option.id} className="flex items-center gap-2 md:gap-3 group">
                                     <button
                                         onClick={() => updateOption(index, optIndex, 'isCorrect', !option.isCorrect)}
                                         className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
@@ -648,21 +648,24 @@ export default function CreateQuizPage() {
                                         {option.isCorrect && <CheckCircle2 className="w-4 h-4" />}
                                     </button>
                                     
-                                    <input
-                                        type="text"
-                                        value={option.text}
-                                        onChange={(e) => updateOption(index, optIndex, 'text', e.target.value)}
-                                        readOnly={question.type === 'true_false'} // TF text is fixed
-                                        className={`flex-1 px-3 py-1.5 border-b border-gray-200 focus:border-blue-500 outline-none bg-transparent text-gray-900 placeholder:text-gray-400 ${
-                                            question.type === 'true_false' ? 'cursor-default select-none font-medium' : ''
-                                        }`}
-                                        placeholder={`Option ${optIndex + 1}`}
-                                    />
+                                    <div className="flex-1 min-w-0 relative">
+                                        <input
+                                            type="text"
+                                            value={option.text}
+                                            onChange={(e) => updateOption(index, optIndex, 'text', e.target.value)}
+                                            readOnly={question.type === 'true_false'} // TF text is fixed
+                                            className={`w-full px-2 md:px-3 py-1.5 border-b border-gray-200 focus:border-blue-500 outline-none bg-transparent text-gray-900 placeholder:text-gray-400 ${
+                                                question.type === 'true_false' ? 'cursor-default select-none font-medium' : ''
+                                            }`}
+                                            placeholder={`Option ${optIndex + 1}`}
+                                        />
+                                    </div>
                                     
                                     {question.type === 'multiple_choice' && (
                                         <button 
                                             onClick={() => removeOption(index, optIndex)}
-                                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-2 text-gray-400 hover:text-red-500 transition-opacity"
+                                            className="flex-shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 md:p-2 text-gray-400 hover:text-red-500 transition-opacity bg-gray-50 rounded-full sm:bg-transparent"
+                                            title="Delete Option"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -672,7 +675,7 @@ export default function CreateQuizPage() {
                             {question.type === 'multiple_choice' && (
                                 <button
                                     onClick={() => addOption(index)}
-                                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 mt-3 pl-9 md:pl-0"
+                                    className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1 mt-3 pl-8 md:pl-0"
                                 >
                                     <Plus className="w-4 h-4" /> Add Option
                                 </button>
