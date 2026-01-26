@@ -15,6 +15,7 @@ export default function ResultsApprovalPage() {
   const [selectedClass, setSelectedClass] = useState('')
   const [students, setStudents] = useState<any[]>([])
   const [searchQuery, setSearchQuery] = useState('')
+  const [showWithheldOnly, setShowWithheldOnly] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
 
@@ -137,11 +138,17 @@ export default function ResultsApprovalPage() {
     }
   }
 
-  const filteredStudents = students.filter(s => 
-    s.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.student_id.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredStudents = students.filter(s => {
+    const matchesSearch = 
+      s.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      s.student_id.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    if (showWithheldOnly) {
+      return matchesSearch && s.results_withheld
+    }
+    return matchesSearch
+  })
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -188,6 +195,15 @@ export default function ResultsApprovalPage() {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <label className="flex items-center mt-2 space-x-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={showWithheldOnly}
+                  onChange={(e) => setShowWithheldOnly(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">Show withheld results only</span>
+              </label>
             </div>
 
             <div className="flex justify-end md:justify-start">
