@@ -529,7 +529,7 @@ export default function EditQuizPage() {
                 >
                     <Plus className="w-4 h-4" /> Add <span className="hidden sm:inline">Question</span>
                 </button>
-             </div
+             </div>
              
              {questions.map((question, index) => (
                  <div key={question.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
