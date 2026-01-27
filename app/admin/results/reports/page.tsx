@@ -15,6 +15,7 @@ type Student = {
   gender: string
   class_name?: string
   photo_url?: string
+  status?: string
 }
 
 type Score = {
