@@ -95,7 +95,7 @@ export default function PerformanceAnalysisPage() {
 
           // --- Process Stats ---
           const totalRecords = scores.length
-          const totalScoreSum = scores.reduce((sum, s) => sum + (s.total || 0), 0)
+          const totalScoreSum = scores.reduce((sum: number, s: any) => sum + (s.total || 0), 0)
           const globalAverage = totalRecords > 0 ? totalScoreSum / totalRecords : 0
           const passingScores = scores.filter((s:any) => (s.total || 0) >= 50).length
           const passRate = totalRecords > 0 ? (passingScores / totalRecords) * 100 : 0
