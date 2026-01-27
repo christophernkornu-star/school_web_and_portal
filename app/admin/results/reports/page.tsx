@@ -303,7 +303,7 @@ export default function ReportsPage() {
 
   const handlePrint = useReactToPrint({
     content: () => componentRef.current,
-  })
+  } as any)
 
   // Toggle selection
   const toggleStudent = (id: string) => {
