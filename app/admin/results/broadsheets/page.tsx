@@ -58,8 +58,8 @@ export default function BroadsheetsPage() {
       setLoading(true)
       try {
           // Get names for header
-          const cls = classes.find(c => c.id === selectedClass)
-          const trm = terms.find(t => t.id === selectedTerm)
+          const cls = classes.find((c: any) => c.id === selectedClass)
+          const trm = terms.find((t: any) => t.id === selectedTerm)
           setSelectedClassName(cls?.name || '')
           setSelectedTermName(`${trm?.name} - ${trm?.academic_year}` || '')
 
@@ -124,8 +124,8 @@ export default function BroadsheetsPage() {
               })
 
               // Calculate positions
-              processedStudents.sort((a, b) => b.total - a.total)
-              processedStudents.forEach((s, idx) => {
+              processedStudents.sort((a: any, b: any) => b.total - a.total)
+              processedStudents.forEach((s: any, idx: number) => {
                   s.position = idx + 1
               })
               
