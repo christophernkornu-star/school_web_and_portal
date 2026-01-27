@@ -352,7 +352,7 @@ export default function EnrollmentsPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
-                            {student.last_name}, {student.first_name} {student.middle_name || ''}
+                            {student.last_name}, {student.first_name}{student.middle_name ? ` ${student.middle_name}` : ''}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -414,7 +414,7 @@ export default function EnrollmentsPage() {
                  >
                    <div className="flex items-start justify-between">
                      <div className="flex-1">
-                       <h3 className="font-bold text-gray-900">{student.last_name}, {student.first_name}</h3>
+                       <h3 className="font-bold text-gray-900">{student.last_name}, {student.first_name}{student.middle_name ? ` ${student.middle_name}` : ''}</h3>
                        <p className="text-xs text-gray-500 font-mono mb-2">{student.student_id}</p>
                        <div className="flex flex-wrap gap-2 text-sm">
                          <span className="bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-xs font-medium">
