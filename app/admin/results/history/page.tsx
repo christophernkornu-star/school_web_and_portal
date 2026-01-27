@@ -90,7 +90,7 @@ export default function HistoricalRecordsPage() {
                 student_id,
                 academic_year,
                 current_class:classes(name),
-                student:students(id, first_name, last_name, student_id, gender, status)
+                student:students(id, first_name, middle_name, last_name, student_id, gender, status)
             `)
             .eq('academic_year', selectedYear)
         
@@ -98,7 +98,7 @@ export default function HistoricalRecordsPage() {
             setRecords(promoData.map((p: any) => ({
                 id: p.student.id,
                 identifier: p.student.student_id,
-                name: `${p.student.first_name} ${p.student.last_name}`,
+                name: `${p.student.first_name} ${p.student.middle_name ? p.student.middle_name + ' ' : ''}${p.student.last_name}`,
                 role_detail: p.current_class?.name || 'Unknown Class',
                 status: p.student.status,
                 gender: p.student.gender
@@ -112,7 +112,7 @@ export default function HistoricalRecordsPage() {
              // First get term end date
              const { data: termData } = await supabase.from('academic_terms').select('end_date').eq('id', selectedTerm).single()
              
-             let query = supabase.from('students').select('id, student_id, first_name, last_name, gender, status, classes(name)')
+             let query = supabase.from('students').select('id, student_id, first_name, middle_name, last_name, gender, status, classes(name)')
              
              if (termData) {
                  query = query.lte('admission_date', termData.end_date)
@@ -124,7 +124,7 @@ export default function HistoricalRecordsPage() {
                  setRecords(stdData.map((s: any) => ({
                     id: s.id,
                     identifier: s.student_id,
-                    name: `${s.first_name} ${s.last_name}`,
+                    name: `${s.first_name} ${s.middle_name ? s.middle_name + ' ' : ''}${s.last_name}`,
                     role_detail: s.classes?.name || 'Unassigned',
                     status: s.status,
                     gender: s.gender
@@ -138,7 +138,7 @@ export default function HistoricalRecordsPage() {
         const { data: assignData } = await supabase
             .from('class_subjects')
             .select(`
-                teacher:teachers(id, teacher_id, first_name, last_name, phone, status),
+                teacher:teachers(id, teacher_id, first_name, middle_name, last_name, phone, status),
                 class:classes(name),
                 subject:subjects(name)
             `)
@@ -152,7 +152,7 @@ export default function HistoricalRecordsPage() {
                     uniqueTeachers.set(item.teacher.id, {
                         id: item.teacher.id,
                         identifier: item.teacher.teacher_id,
-                        name: `${item.teacher.first_name} ${item.teacher.last_name}`,
+                        name: `${item.teacher.first_name} ${item.teacher.middle_name ? item.teacher.middle_name + ' ' : ''}${item.teacher.last_name}`,
                         role_detail: item.teacher.status, // Or maybe list count of subjects
                         contact: item.teacher.phone,
                         status: item.teacher.status
