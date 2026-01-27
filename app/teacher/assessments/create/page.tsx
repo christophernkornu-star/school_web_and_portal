@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Save, Trash2, GripVertical, CheckCircle2, Circle, HelpCircle } from 'lucide-react'
+import { ArrowLeft, Plus, Save, Trash2, GripVertical, CheckCircle2, Circle, HelpCircle, AlertCircle } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 
@@ -42,6 +42,7 @@ export default function CreateQuizPage() {
   const [classes, setClasses] = useState<any[]>([])
   const [subjects, setSubjects] = useState<any[]>([])
   const [terms, setTerms] = useState<any[]>([])
+  const [isReadOnly, setIsReadOnly] = useState(false)
   
   // Cache for assignments to filter subjects locally
   const [allAssignments, setAllAssignments] = useState<any[]>([])
@@ -73,13 +74,17 @@ export default function CreateQuizPage() {
         // 1. Get Teacher Profile ID
         const { data: teacherData } = await supabase
           .from('teachers')
-          .select('id')
+          .select('id, status')
           .eq('profile_id', session.user.id)
           .single()
 
         if (!teacherData) {
            console.error('Teacher profile not found')
            return
+        }
+
+        if (teacherData.status === 'on_leave' || teacherData.status === 'on leave') {
+          setIsReadOnly(true)
         }
 
         const newAssignments: any[] = []
@@ -335,6 +340,11 @@ export default function CreateQuizPage() {
   }
 
   const handleSubmit = async (status: 'draft' | 'published') => {
+    if (isReadOnly) {
+       toast.error('You cannot create assessments while on leave.')
+       return
+    }
+
     if (!title || !selectedClass || !selectedSubject || !selectedTerm) {
       toast.error('Please fill in all required fields')
       return
@@ -423,6 +433,16 @@ export default function CreateQuizPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
+      {isReadOnly && (
+        <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800 px-4 py-3">
+          <div className="container mx-auto flex items-center space-x-3">
+             <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+             <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+               Read-Only Mode: You are currently on leave and cannot create new assessments.
+             </p>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -435,14 +455,14 @@ export default function CreateQuizPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
                 onClick={() => handleSubmit('draft')}
-                disabled={loading}
+                disabled={loading || isReadOnly}
                 className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 transition-colors whitespace-nowrap"
             >
                 Save Draft
             </button>
             <button
                 onClick={() => handleSubmit('published')}
-                disabled={loading}
+                disabled={loading || isReadOnly}
                 className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-medium bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm active:scale-95"
             >
                 <Save className="w-4 h-4" />

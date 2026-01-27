@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, ArrowLeft, Save, Search } from 'lucide-react'
+import { GraduationCap, ArrowLeft, Save, Search, AlertCircle } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -20,6 +20,8 @@ export default function EnterScores() {
   const [assessments, setAssessments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  const isReadOnly = teacher?.status === 'on_leave' || teacher?.status === 'on leave'
 
   useEffect(() => {
     async function loadData() {
@@ -102,6 +104,7 @@ export default function EnterScores() {
   }
 
   const handleScoreChange = (studentId: string, value: string) => {
+    if (isReadOnly) return
     const numValue = parseFloat(value)
     if (!isNaN(numValue)) {
       if (numValue > 10) {
@@ -126,6 +129,8 @@ export default function EnterScores() {
   }
 
   const handleSaveScores = async () => {
+    if (isReadOnly) return
+
     if (!selectedAssessment) {
       alert('Please select an assessment')
       return
@@ -287,174 +292,200 @@ export default function EnterScores() {
             </Link>
           </div>
         </nav>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-6">Enter Student Scores</h2>
-
-        {/* Selection Filters */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="grid md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                Select Class
-              </label>
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="input-field"
-              >
-                <option value="">-- Select Class --</option>
-                {Array.from(new Set(assignments.map(a => a.class_id))).map((classId) => {
-                  const assignment = assignments.find(a => a.class_id === classId)
-                  return (
-                    <option key={classId} value={classId}>
-                      {assignment?.classes?.name}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                Select Subject
-              </label>
-              <select
-                value={selectedSubject}
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="input-field"
-                disabled={!selectedClass}
-              >
-                <option value="">-- Select Subject --</option>
-                {(() => {
-                  // Get the category and map to level
-                  const selectedClassData = assignments.find(a => a.class_id === selectedClass)
-                  const category = selectedClassData?.classes?.category
-                  const classLevel = category === 'Lower Primary' ? 'lower_primary' 
-                    : category === 'Upper Primary' ? 'upper_primary'
-                    : category === 'Junior High' ? 'jhs'
-                    : null
-                  
-                  // Filter subjects by level, avoiding duplicates
-                  const subjectIds = new Set<string>()
-                  return assignments
-                    .filter(a => {
-                      // Filter by level if available, otherwise by class_id
-                      if (classLevel && a.subjects?.level) {
-                        if (a.subjects.level !== classLevel) return false
-                      } else {
-                        if (a.class_id !== selectedClass) return false
-                      }
-                      
-                      // Avoid duplicate subjects
-                      if (subjectIds.has(a.subject_id)) return false
-                      subjectIds.add(a.subject_id)
-                      return true
-                    })
-                    .map((assignment) => (
-                      <option key={assignment.subject_id} value={assignment.subject_id}>
-                        {assignment.subjects?.name}
-                      </option>
-                    ))
-                })()}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
-                Select Assessment
-              </label>
-              <select
-                value={selectedAssessment}
-                onChange={(e) => setSelectedAssessment(e.target.value)}
-                className="input-field"
-                disabled={!selectedSubject}
-              >
-                <option value="">-- Select Assessment --</option>
-                {assessments.map((assessment) => (
-                  <option key={assessment.id} value={assessment.id}>
-                    {assessment.assessment_name} ({assessment.assessment_types?.type_name})
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Students Table */}
-        {selectedClass && selectedSubject && selectedAssessment && (
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="p-4 md:p-6 border-b">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <h3 className="text-base md:text-lg font-bold text-gray-800">
-                  Enter Scores for {students.length} Students
-                </h3>
-                <button
-                  onClick={handleSaveScores}
-                  disabled={saving || Object.keys(scores).length === 0}
-                  className="btn-secondary flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{saving ? 'Saving...' : 'Save Scores'}</span>
-                </button>
+        
+        <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+          {isReadOnly && (
+            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow-sm">
+              <div className="flex items-center">
+                <AlertCircle className="w-5 h-5 text-amber-500 mr-2" />
+                <div>
+                  <p className="font-bold text-amber-700">Read-Only Access</p>
+                  <p className="text-sm text-amber-600">
+                    You are currently marked as "On Leave". You can view scores but cannot enter or modify them.
+                  </p>
+                </div>
               </div>
             </div>
+          )}
 
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-ghana-green text-white">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
-                      Student ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
-                      Student Name
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase">
-                      Score
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {students.map((student) => (
-                    <tr key={student.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
-                        {student.student_id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {student.profiles?.full_name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          value={scores[student.id] || ''}
-                          onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                          className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center"
-                          placeholder="0.0"
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
+                Enter Student Scores
+              </h2>
+              <p className="text-sm text-gray-500">
+                {selectedClass && selectedSubject && selectedAssessment
+                  ? `Class: ${assignments.find(a => a.class_id === selectedClass)?.classes?.name} | Subject: ${assignments.find(a => a.subject_id === selectedSubject)?.subjects?.name} | Assessment: ${assessments.find(a => a.id === selectedAssessment)?.assessment_name}` 
+                  : 'Please select a class, subject, and assessment to begin.'}
+              </p>
             </div>
           </div>
-        )}
 
-        {(!selectedClass || !selectedSubject || !selectedAssessment) && (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-            <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">
-              Please select a class, subject, and assessment to begin entering scores.
-            </p>
+          {/* Selection Filters */}
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div className="grid md:grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  Select Class
+                </label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="input-field"
+                >
+                  <option value="">-- Select Class --</option>
+                  {Array.from(new Set(assignments.map(a => a.class_id))).map((classId) => {
+                    const assignment = assignments.find(a => a.class_id === classId)
+                    return (
+                      <option key={classId} value={classId}>
+                        {assignment?.classes?.name}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  Select Subject
+                </label>
+                <select
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value)}
+                  className="input-field"
+                  disabled={!selectedClass}
+                >
+                  <option value="">-- Select Subject --</option>
+                  {(() => {
+                    // Get the category and map to level
+                    const selectedClassData = assignments.find(a => a.class_id === selectedClass)
+                    const category = selectedClassData?.classes?.category
+                    const classLevel = category === 'Lower Primary' ? 'lower_primary' 
+                      : category === 'Upper Primary' ? 'upper_primary'
+                      : category === 'Junior High' ? 'jhs'
+                      : null
+                    
+                    // Filter subjects by level, avoiding duplicates
+                    const subjectIds = new Set<string>()
+                    return assignments
+                      .filter(a => {
+                        // Filter by level if available, otherwise by class_id
+                        if (classLevel && a.subjects?.level) {
+                          if (a.subjects.level !== classLevel) return false
+                        } else {
+                          if (a.class_id !== selectedClass) return false
+                        }
+                        
+                        // Avoid duplicate subjects
+                        if (subjectIds.has(a.subject_id)) return false
+                        subjectIds.add(a.subject_id)
+                        return true
+                      })
+                      .map((assignment) => (
+                        <option key={assignment.subject_id} value={assignment.subject_id}>
+                          {assignment.subjects?.name}
+                        </option>
+                      ))
+                  })()}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                  Select Assessment
+                </label>
+                <select
+                  value={selectedAssessment}
+                  onChange={(e) => setSelectedAssessment(e.target.value)}
+                  className="input-field"
+                  disabled={!selectedSubject}
+                >
+                  <option value="">-- Select Assessment --</option>
+                  {assessments.map((assessment) => (
+                    <option key={assessment.id} value={assessment.id}>
+                      {assessment.assessment_name} ({assessment.assessment_types?.type_name})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
-        )}
-      </main>
+
+          {/* Students Table */}
+          {selectedClass && selectedSubject && selectedAssessment && (
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="p-4 md:p-6 border-b">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <h3 className="text-base md:text-lg font-bold text-gray-800">
+                    Enter Scores for {students.length} Students
+                  </h3>
+                  <button
+                    onClick={handleSaveScores}
+                    disabled={saving || Object.keys(scores).length === 0 || isReadOnly}
+                    className="btn-secondary flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{saving ? 'Saving...' : 'Save Scores'}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-ghana-green text-white">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
+                        Student ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
+                        Student Name
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase">
+                        Score
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {students.map((student) => (
+                      <tr key={student.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
+                          {student.student_id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                          {student.profiles?.full_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                            disabled={isReadOnly}
+                            value={scores[student.id] || ''}
+                            onChange={(e) => handleScoreChange(student.id, e.target.value)}
+                            className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 disabled:cursor-not-allowed"
+                            placeholder="0.0"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {(!selectedClass || !selectedSubject || !selectedAssessment) && (
+            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">
+                Please select a class, subject, and assessment to begin entering scores.
+              </p>
+            </div>
+          )}
+        </main>
+      </header>
     </div>
   )
 }

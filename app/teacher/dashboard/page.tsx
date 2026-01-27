@@ -75,7 +75,7 @@ export default function TeacherDashboard() {
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
     if (diffDays === 1) return 'Yesterday'
     if (diffDays < 7) return `${diffDays} days ago`
-    return past.toLocaleDateString()
+    return past.toLocaleDateString('en-GB')
   }
 
   const handleLogout = async () => {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import Link from 'next/link'
-import { ArrowLeft, Plus, BookOpen, Calendar, CheckCircle, XCircle, Eye, Trash2, Edit, Calculator } from 'lucide-react'
+import { ArrowLeft, Plus, BookOpen, Calendar, CheckCircle, XCircle, Eye, Trash2, Edit, Calculator, AlertCircle } from 'lucide-react'
 import AuthGuard from '@/app/components/AuthGuard'
 
 interface Teacher {
@@ -87,6 +87,7 @@ function ClassExercisesPage() {
   const [exercises, setExercises] = useState<Exercise[]>([])
   const [classSummary, setClassSummary] = useState<ClassScoreSummary[]>([])
   const [activeView, setActiveView] = useState<'add' | 'view' | 'summary'>('add')
+  const [isReadOnly, setIsReadOnly] = useState(false)
 
   useEffect(() => {
     fetchInitialData()
@@ -124,7 +125,7 @@ function ClassExercisesPage() {
       // Fetch teacher data
       const { data: teacherData, error: teacherError } = await supabase
         .from('teachers')
-        .select('id, profile_id')
+        .select('id, profile_id, status')
         .eq('profile_id', user.id)
         .single() as { data: any, error: any }
 
@@ -140,6 +141,12 @@ function ClassExercisesPage() {
         setError('No teacher profile found')
         setLoading(false)
         return
+      }
+
+      const readOnly = teacherData.status === 'on_leave' || teacherData.status === 'on leave'
+      setIsReadOnly(readOnly)
+      if (readOnly && activeView === 'add') {
+        setActiveView('view')
       }
       
       setTeacher({ id: teacherData.id, user_id: teacherData.profile_id })
@@ -318,7 +325,10 @@ function ClassExercisesPage() {
   }
 
   async function handleSubmit(e: React.FormEvent) {
+    if (isReadOnly) return
     e.preventDefault()
+    setSubmitting(true)
+    setSubmitSuccess(false)
     
     const errors: any = {}
     if (!selectedClass) errors.class = 'Please select a class'
@@ -405,14 +415,15 @@ function ClassExercisesPage() {
     }
   }
 
-  async function handleDelete(exerciseId: string) {
+  async function handleDelete(id: string) {
+    if (isReadOnly) return
     if (!confirm('Are you sure you want to delete this exercise?')) return
-
+    
     try {
       const { error } = await supabase
         .from('class_exercises')
         .delete()
-        .eq('id', exerciseId)
+        .eq('id', id)
 
       if (error) throw error
       
@@ -508,6 +519,18 @@ function ClassExercisesPage() {
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {isReadOnly && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-center space-x-3">
+            <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-amber-900">Read-Only Mode</h3>
+              <p className="text-sm text-amber-800">
+                You are marked as "On Leave". You can view exercises and summaries but cannot add, edit, or delete records.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Success Message */}
         {submitSuccess && (
           <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3">
@@ -524,14 +547,19 @@ function ClassExercisesPage() {
           <div className="flex border-b border-gray-200">
             <button
               onClick={() => {
-                setActiveView('add')
-                setShowForm(false)
-                setEditingExercise(null)
+                if (!isReadOnly) {
+                  setActiveView('add')
+                  setShowForm(false)
+                  setEditingExercise(null)
+                }
               }}
+              disabled={isReadOnly}
               className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 font-medium transition-colors ${
                 activeView === 'add'
                   ? 'text-ghana-green border-b-2 border-ghana-green'
-                  : 'text-gray-500 hover:text-gray-700'
+                  : isReadOnly 
+                    ? 'text-gray-300 cursor-not-allowed' 
+                    : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Plus className="w-5 h-5" />
@@ -843,7 +871,7 @@ function ClassExercisesPage() {
                               <h4 className="font-semibold text-gray-800 text-sm md:text-base">{exercise.exercise_name}</h4>
                               <span className="text-xs md:text-sm text-gray-500 flex items-center space-x-1">
                                 <Calendar className="w-4 h-4" />
-                                <span>{new Date(exercise.exercise_date).toLocaleDateString()}</span>
+                                <span>{new Date(exercise.exercise_date).toLocaleDateString('en-GB')}</span>
                               </span>
                             </div>
                             <div className="flex items-center space-x-4 text-xs md:text-sm">
@@ -864,20 +892,24 @@ function ClassExercisesPage() {
                             )}
                           </div>
                           <div className="flex items-center space-x-2 ml-4">
-                            <button
-                              onClick={() => startEdit(exercise)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                              title="Edit"
-                            >
-                              <Edit className="w-5 h-5" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(exercise.id)}
-                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                              title="Delete"
-                            >
-                              <Trash2 className="w-5 h-5" />
-                            </button>
+                            {!isReadOnly && (
+                              <>
+                                <button
+                                  onClick={() => startEdit(exercise)}
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                                  title="Edit"
+                                >
+                                  <Edit className="w-5 h-5" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(exercise.id)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-5 h-5" />
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

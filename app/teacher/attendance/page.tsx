@@ -42,6 +42,8 @@ export default function AttendancePage() {
   const [sortOrder, setSortOrder] = useState<'boys-first' | 'girls-first' | 'name'>('name')
   const [searchQuery, setSearchQuery] = useState('')
 
+  const isReadOnly = teacher?.status === 'on_leave' || teacher?.status === 'on leave'
+
   useEffect(() => {
     async function init() {
       const user = await getCurrentUser()
@@ -202,26 +204,22 @@ export default function AttendancePage() {
   }
 
   const handleSaveAttendance = async () => {
-    if (!selectedClass || !selectedTerm) {
-      alert('Please select a class and term')
-      return
-    }
-
+    if (isReadOnly) return
+    
     setSaving(true)
-
     try {
-      const records = students.map(student => ({
-        student_id: student.id,
+      const updates = Object.entries(attendance).map(([studentId, days]) => ({
+        student_id: studentId,
         class_id: selectedClass,
         term_id: selectedTerm,
-        days_present: attendance[student.id] || 0,
+        days_present: days,
         recorded_by: teacher.id
       }))
 
       // Upsert attendance records
       const { error } = await supabase
         .from('student_attendance')
-        .upsert(records, {
+        .upsert(updates, {
           onConflict: 'student_id,term_id',
           ignoreDuplicates: false
         })
@@ -362,7 +360,7 @@ export default function AttendancePage() {
               )}
               <button
                 onClick={handleSaveAttendance}
-                disabled={saving || !selectedClass || students.length === 0}
+                disabled={saving || !selectedClass || students.length === 0 || isReadOnly}
                 className="flex items-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition text-xs md:text-sm"
               >
                 <Save className="w-5 h-5" />
@@ -374,6 +372,18 @@ export default function AttendancePage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {isReadOnly && (
+          <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center space-x-3">
+            <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-amber-900 dark:text-amber-200">Read-Only Mode</h3>
+              <p className="text-sm text-amber-800 dark:text-amber-300">
+                You are currently marked as "On Leave". You can view attendance records but cannot make changes.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-8">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Record Attendance</h1>
           <p className="mt-2 text-xs md:text-sm text-gray-600 dark:text-gray-400">
@@ -417,7 +427,7 @@ export default function AttendancePage() {
               </div>
               <button
                 onClick={applyToAll}
-                disabled={!selectedClass || students.length === 0 || !bulkDays}
+                disabled={!selectedClass || students.length === 0 || !bulkDays || isReadOnly}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition font-medium whitespace-nowrap text-xs md:text-sm"
               >
                 Apply to All
@@ -651,12 +661,17 @@ export default function AttendancePage() {
                               min="0"
                               max={totalDays}
                               value={daysPresent}
-                              onChange={(e) => handleAttendanceChange(student.id, parseInt(e.target.value) || 0)}
+                              disabled={isReadOnly}
+                              onChange={(e) => {
+                                const val = parseInt(e.target.value)
+                                if (!isNaN(val) && val >= 0 && val <= totalDays) {
+                                  handleAttendanceChange(student.id, val)
+                                }
+                              }}
                               onKeyDown={(e) => handleKeyDown(e, index)}
-                              autoFocus={index === 0}
-                              className="w-16 md:w-20 px-2 md:px-3 py-1 md:py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg text-center text-sm md:text-lg font-semibold focus:ring-2 focus:ring-ghana-green focus:border-ghana-green transition dark:bg-gray-700 dark:text-white"
+                              className="w-20 px-2 py-1 text-center border rounded focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                             />
-                            <span className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">/ {totalDays}</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">/ {totalDays}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-center">

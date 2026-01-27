@@ -181,7 +181,7 @@ export default function GalleryPage() {
               )}
               <div className="mt-4 text-sm text-gray-500">
                 <p>Album: {selectedPhoto.album_name}</p>
-                <p>Uploaded: {new Date(selectedPhoto.created_at).toLocaleDateString()}</p>
+                <p>Uploaded: {new Date(selectedPhoto.created_at).toLocaleDateString('en-GB')}</p>
               </div>
             </div>
           </div>

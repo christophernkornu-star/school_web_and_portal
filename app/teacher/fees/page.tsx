@@ -31,6 +31,7 @@ export default function TeacherFeesPage() {
     remarks: ''
   })
   const [submitting, setSubmitting] = useState(false)
+  const [isReadOnly, setIsReadOnly] = useState(false)
 
   useEffect(() => {
     loadInitialData()
@@ -58,6 +59,16 @@ export default function TeacherFeesPage() {
         router.push('/login')
         return
       }
+
+      // Check teacher status for read-only mode
+      const { data: teacherData } = await supabase
+        .from('teachers')
+        .select('status')
+        .eq('profile_id', user.id)
+        .single()
+
+      const readOnly = teacherData?.status === 'on_leave' || teacherData?.status === 'on leave'
+      setIsReadOnly(readOnly)
 
       let classesData: any[] = []
 
@@ -252,6 +263,18 @@ export default function TeacherFeesPage() {
         </div>
 
         {/* Stats Cards */}
+        {isReadOnly && (
+          <div className="mb-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center space-x-3">
+            <AlertCircle className="w-6 h-6 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-amber-900 dark:text-amber-200">Read-Only Mode</h3>
+              <p className="text-sm text-amber-800 dark:text-amber-300">
+                You are marked as "On Leave". You can view fee records but cannot record new payments.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
           <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
             <div className="flex items-center justify-between mb-4">
@@ -370,10 +393,15 @@ export default function TeacherFeesPage() {
                       <td className="px-4 md:px-6 py-4 whitespace-nowrap text-center">
                         <button
                           onClick={() => {
-                            setSelectedStudent(student)
-                            setShowPaymentModal(true)
+                            if (!isReadOnly) {
+                              setSelectedStudent(student)
+                              setShowPaymentModal(true)
+                            }
                           }}
-                          className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs md:text-sm flex items-center justify-center gap-1 mx-auto"
+                          disabled={isReadOnly}
+                          className={`text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs md:text-sm flex items-center justify-center gap-1 mx-auto ${
+                            isReadOnly ? 'opacity-50 cursor-not-allowed grayscale' : ''
+                          }`}
                         >
                           <Plus className="w-3 h-3 md:w-4 md:h-4" />
                           Record Payment

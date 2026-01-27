@@ -345,7 +345,7 @@ export default function FeeCollectionPage() {
                           {paymentHistory.map(payment => (
                             <tr key={payment.id} className="hover:bg-gray-50">
                               <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
-                                {new Date(payment.payment_date).toLocaleDateString()}
+                                {new Date(payment.payment_date).toLocaleDateString('en-GB')}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                                 {payment.fee_structures?.fee_types?.name}

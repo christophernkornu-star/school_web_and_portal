@@ -1,6 +1,7 @@
 'use client'
 
 import { TeacherProvider } from '@/components/providers/TeacherContext'
+import { TeacherStatusBanner } from './components/TeacherStatusBanner'
 
 export default function TeacherLayout({
   children,
@@ -9,6 +10,7 @@ export default function TeacherLayout({
 }) {
   return (
     <TeacherProvider>
+      <TeacherStatusBanner />
       {children}
     </TeacherProvider>
   )

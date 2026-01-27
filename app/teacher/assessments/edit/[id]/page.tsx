@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Trash2, Plus, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Save, Trash2, Plus, CheckCircle2, AlertCircle } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 
@@ -48,6 +48,7 @@ export default function EditQuizPage() {
   const [terms, setTerms] = useState<any[]>([])
   
   const [questions, setQuestions] = useState<Question[]>([])
+  const [isReadOnly, setIsReadOnly] = useState(false)
 
   // Load Initial Data
   useEffect(() => {
@@ -58,6 +59,17 @@ export default function EditQuizPage() {
         if (!session) {
           router.push('/login')
           return
+        }
+
+        // Check Teacher Status
+        const { data: teacherData } = await supabase
+          .from('teachers')
+          .select('status')
+          .eq('profile_id', session.user.id)
+          .single()
+        
+        if (teacherData?.status === 'on_leave' || teacherData?.status === 'on leave') {
+          setIsReadOnly(true)
         }
 
         // Fetch Metadata
@@ -239,7 +251,15 @@ export default function EditQuizPage() {
 
 
   const handleSubmit = async (status: 'draft' | 'published') => {
-    if (!title) { toast.error('Title is required'); return }
+    if (isReadOnly) {
+       toast.error('You cannot update assessments while on leave.')
+       return
+    }
+    
+    if (!title || !selectedClass || !selectedSubject || !selectedTerm) {
+      toast.error('Please fill in all required fields')
+      return
+    }
 
     setLoading(true)
     try {
@@ -333,6 +353,16 @@ export default function EditQuizPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
+      {isReadOnly && (
+        <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-800 px-4 py-3">
+          <div className="container mx-auto flex items-center space-x-3">
+             <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+             <p className="text-sm font-medium text-amber-900 dark:text-amber-200">
+               Read-Only Mode: You are currently on leave and cannot modify assessments.
+             </p>
+          </div>
+        </div>
+      )}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -344,14 +374,14 @@ export default function EditQuizPage() {
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <button
                 onClick={() => handleSubmit('draft')}
-                disabled={loading}
+                disabled={loading || isReadOnly}
                 className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 transition-colors whitespace-nowrap"
             >
                 Save Draft
             </button>
              <button
                 onClick={() => handleSubmit('published')}
-                disabled={loading}
+                disabled={loading || isReadOnly}
                 className="flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-medium bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 flex items-center gap-2 transition-colors whitespace-nowrap shadow-sm"
             >
                 <Save className="w-4 h-4" />
@@ -371,6 +401,7 @@ export default function EditQuizPage() {
                     <input
                         type="text"
                         value={title}
+                        disabled={isReadOnly}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="e.g., Mid-Term Mathematics Test"
                         className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
@@ -380,6 +411,7 @@ export default function EditQuizPage() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
                     <textarea
                         value={description}
+                        disabled={isReadOnly}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Enter instructions or description..."
                         className="w-full px-3 py-2 text-gray-900 dark:text-white bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500"
@@ -497,7 +529,7 @@ export default function EditQuizPage() {
                 >
                     <Plus className="w-4 h-4" /> Add <span className="hidden sm:inline">Question</span>
                 </button>
-             </div>
+             </div
              
              {questions.map((question, index) => (
                  <div key={question.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 dark:border-gray-700">

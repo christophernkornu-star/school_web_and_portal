@@ -146,7 +146,7 @@ export default function StudentAssessmentsPage() {
                                 </div>
                                 <div className="flex items-center gap-2.5">
                                     <Calendar className="w-4 h-4 text-gray-400" />
-                                    <span>Due: {quiz.due_date ? new Date(quiz.due_date).toLocaleDateString() : 'No Due Date'}</span>
+                                    <span>Due: {quiz.due_date ? new Date(quiz.due_date).toLocaleDateString('en-GB') : 'No Due Date'}</span>
                                 </div>
                             </div>
                         </div>

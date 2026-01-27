@@ -62,6 +62,7 @@ function ExamScoresContent() {
   const [uploadResults, setUploadResults] = useState<any>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
+  const [isReadOnly, setIsReadOnly] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -75,6 +76,17 @@ function ExamScoresContent() {
         const { data: teacherData, error: teacherError} = await getTeacherData(user.id)
         if (teacherError || !teacherData) {
           throw new Error('Teacher profile not found')
+        }
+
+        // Check read-only status
+        const { data: statusCheck } = await supabase
+          .from('teachers')
+          .select('status')
+          .eq('profile_id', user.id)
+          .single()
+        
+        if (statusCheck?.status === 'on_leave' || statusCheck?.status === 'on leave') {
+          setIsReadOnly(true)
         }
 
         setTeacher({
@@ -256,9 +268,7 @@ function ExamScoresContent() {
 
   async function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault()
-
-    if (!validateManualForm()) return
-
+    if (isReadOnly) return
     setSubmitting(true)
     setSubmitSuccess(false)
 
@@ -363,12 +373,9 @@ function ExamScoresContent() {
     }
   }
 
-  async function handleCsvUpload() {
-    if (!csvFile || !selectedClass || !selectedTerm) {
-      setFormErrors({ csv: 'Please select class, term, and CSV file' })
-      return
-    }
-
+  async function handleCsvUpload(e: React.FormEvent) {
+    e.preventDefault()
+    if (!csvFile || isReadOnly) return
     setSubmitting(true)
     setUploadResults(null)
     setFormErrors({})
@@ -555,6 +562,18 @@ function ExamScoresContent() {
           </p>
         </div>
 
+        {isReadOnly && (
+          <div className="mb-6 bg-amber-50 rounded-lg p-4 flex items-center space-x-3 border border-amber-200">
+            <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-amber-900">Read-Only Mode</h3>
+              <p className="text-sm text-amber-800">
+                You are marked as "On Leave". You cannot enter or upload exam scores.
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex space-x-2 mb-6">
           <Link
             href="/teacher/upload-scores/exam?method=manual"
@@ -589,6 +608,7 @@ function ExamScoresContent() {
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
+                    disabled={isReadOnly}
                   >
                     <option value="">Select class</option>
                     {teacherClasses.map(cls => (
@@ -673,8 +693,8 @@ function ExamScoresContent() {
 
                 <button
                   type="submit"
-                  disabled={submitting}
-                  className="w-full bg-ghana-red text-white py-3 rounded-lg hover:bg-red-700 transition disabled:bg-gray-400 text-xs md:text-sm"
+                  disabled={submitting || isReadOnly}
+                  className="w-full bg-ghana-red text-white py-3 rounded-lg hover:bg-red-700 transition disabled:bg-gray-400 text-xs md:text-sm disabled:cursor-not-allowed"
                 >
                   {submitting ? 'Submitting...' : 'Submit Exam Score'}
                 </button>
@@ -690,6 +710,7 @@ function ExamScoresContent() {
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
+                  disabled={isReadOnly}
                 >
                   <option value="">Select class</option>
                   {teacherClasses.map(cls => (
@@ -704,7 +725,8 @@ function ExamScoresContent() {
                   type="file"
                   accept=".csv"
                   onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm disabled:cursor-not-allowed"
+                  disabled={isReadOnly}
                 />
                 <p className="text-xs md:text-sm text-gray-500 mt-1">
                   Format: student_name, mathematics_exam, english_language_exam, ...

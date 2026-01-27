@@ -221,9 +221,11 @@ export default function EditTeacherPage() {
         if (checkError) throw checkError
 
         // Filter out teachers who are 'on_leave' - they don't count as conflicts
-        const activeConflicts = existingClassTeachers?.filter((ct: any) => 
-          ct.teachers?.status !== 'on_leave' && ct.teachers?.status !== 'inactive' && ct.teachers?.status !== 'transferred'
-        ) || []
+        // Also check against 'On Leave' just in case of capitalization differences
+        const activeConflicts = existingClassTeachers?.filter((ct: any) => {
+          const status = ct.teachers?.status?.toLowerCase()
+          return status !== 'on_leave' && status !== 'on leave' && status !== 'inactive' && status !== 'transferred'
+        }) || []
 
         if (activeConflicts.length > 0) {
           const conflictClasses = activeConflicts.map((ct: any) => {
@@ -232,22 +234,45 @@ export default function EditTeacherPage() {
           })
           throw new Error(`Cannot assign as class teacher. The following classes already have an active class teacher: ${conflictClasses.join(', ')}. Please remove the existing class teacher first.`)
         }
+
+        // Revoke 'is_class_teacher' from inactive/on-leave teachers to free up the slot
+        const revokableConflicts = existingClassTeachers?.filter((ct: any) => {
+          const status = ct.teachers?.status?.toLowerCase()
+          return status === 'on_leave' || status === 'on leave' || status === 'inactive' || status === 'transferred'
+        }) || []
+
+        if (revokableConflicts.length > 0) {
+          for (const conflict of revokableConflicts) {
+             console.log(`Revoking class teacher status from ${conflict.teacher_id} for class ${conflict.class_id} (Status: Inactive/On Leave)`)
+             await supabase
+                 .from('teacher_class_assignments')
+                 .update({ is_class_teacher: false })
+                 .eq('class_id', conflict.class_id)
+                 .eq('teacher_id', conflict.teacher_id)
+          }
+        }
       }
 
       // Update class assignments (use teacher UUID id, not teacher_id string)
+      // First delete existing assignments
       await supabase
         .from('teacher_class_assignments')
         .delete()
         .eq('teacher_id', teacher.id)
 
       if (assignedClasses.length > 0) {
-        const classInserts = assignedClasses.map(class_id => ({
+        // Deduplicate classes to avoid conflicts
+        const uniqueClasses = Array.from(new Set(assignedClasses))
+        const classInserts = uniqueClasses.map(class_id => ({
           teacher_id: teacher.id,
           class_id,
           is_class_teacher: classTeacherFor.includes(class_id),
           is_primary: classTeacherFor.includes(class_id), // First class teacher assignment is primary
         }))
-        await supabase.from('teacher_class_assignments').insert(classInserts)
+        
+        if (classInserts.length > 0) {
+            await supabase.from('teacher_class_assignments').insert(classInserts)
+        }
       }
 
       // Update subject assignments (use teacher UUID id, not teacher_id string)
@@ -256,18 +281,27 @@ export default function EditTeacherPage() {
         .delete()
         .eq('teacher_id', teacher.id)
 
+      // Consolidate all subject assignments
+      const finalSubjectAssignments = new Map<string, any>()
+
+      // 1. Add manual assignments
       if (assignedSubjects.length > 0) {
-        const subjectInserts = assignedSubjects.map(assignment => ({
-          teacher_id: teacher.id,
-          subject_id: assignment.subject_id,
-          class_id: assignment.class_id,
-          can_edit: assignment.can_edit !== false, // Default true
-        }))
-        await supabase.from('teacher_subject_assignments').insert(subjectInserts)
+        assignedSubjects.forEach(assignment => {
+          const key = `${assignment.class_id}-${assignment.subject_id}`
+          finalSubjectAssignments.set(key, {
+            teacher_id: teacher.id,
+            subject_id: assignment.subject_id,
+            class_id: assignment.class_id,
+            can_edit: assignment.can_edit !== false, // Default true
+          })
+        })
       }
 
-      // Auto-assign all subjects for class teacher model
-      for (const class_id of assignedClasses) {
+      // 2. Auto-assign all subjects for class teacher model
+      // Deduplicate classes again for safety
+      const uniqueAssignedClasses = Array.from(new Set(assignedClasses))
+      
+      for (const class_id of uniqueAssignedClasses) {
         const model = teachingModels[class_id]
         // For KG, ALWAYS treat as class teacher model regardless of explicit setting
         const classInfo = classes.find(c => c.id === class_id)
@@ -285,18 +319,25 @@ export default function EditTeacherPage() {
               return true
             })
 
-            const allSubjectInserts = relevantSubjects.map(subject => ({
-              teacher_id: teacher.id,
-              subject_id: subject.id,
-              class_id: class_id,
-              can_edit: true,
-            }))
-            
-            if (allSubjectInserts.length > 0) {
-               await supabase.from('teacher_subject_assignments').insert(allSubjectInserts)
-            }
+            relevantSubjects.forEach(subject => {
+                const key = `${class_id}-${subject.id}`
+                // If not already assigned manually, assign it now
+                if (!finalSubjectAssignments.has(key)) {
+                    finalSubjectAssignments.set(key, {
+                        teacher_id: teacher.id,
+                        subject_id: subject.id,
+                        class_id: class_id,
+                        can_edit: true,
+                    })
+                }
+            })
           }
         }
+      }
+
+      // 3. Batch insert all subject assignments
+      if (finalSubjectAssignments.size > 0) {
+         await supabase.from('teacher_subject_assignments').insert(Array.from(finalSubjectAssignments.values()))
       }
 
       alert('Teacher updated successfully!')
