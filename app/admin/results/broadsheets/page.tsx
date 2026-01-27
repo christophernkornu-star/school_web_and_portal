@@ -79,7 +79,7 @@ export default function BroadsheetsPage() {
           }
 
           // 2. Fetch Scores for these students
-          const studentIds = students.map(s => s.id)
+          const studentIds = students.map((s: any) => s.id)
           const { data: scores } = await supabase
             .from('scores')
             .select(`
@@ -101,7 +101,7 @@ export default function BroadsheetsPage() {
             
           // 4. Build Data Structure
           if (subjects) {
-              const processedStudents = students.map(student => {
+              const processedStudents = students.map((student: any) => {
                   const studentScores = scores?.filter((s: any) => s.student_id === student.id) || []
                   const subjectScores: {[key: string]: any} = {}
                   let totalScore = 0
@@ -182,7 +182,7 @@ export default function BroadsheetsPage() {
                     className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                  >
                      <option value="">Select Term</option>
-                     {terms.map(t => (
+                     {terms.map((t: any) => (
                          <option key={t.id} value={t.id}>{t.name} ({t.academic_year})</option>
                      ))}
                  </select>
@@ -195,7 +195,7 @@ export default function BroadsheetsPage() {
                     className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                  >
                      <option value="">Select Class</option>
-                     {classes.map(c => (
+                     {classes.map((c: any) => (
                          <option key={c.id} value={c.id}>{c.name}</option>
                      ))}
                  </select>
@@ -243,7 +243,7 @@ export default function BroadsheetsPage() {
                                     <th className="border border-gray-300 p-2 text-left min-w-[150px] sticky left-[40px] bg-gray-100 z-10">Student Name</th>
                                     
                                     {/* Subject Headers */}
-                                    {broadsheetData.subjects.map(subject => (
+                                    {broadsheetData.subjects.map((subject: any) => (
                                         <th key={subject.id} className="border border-gray-300 p-2 text-center min-w-[60px] cursor-help" title={subject.name}>
                                             <div className="truncate max-w-[80px] mx-auto">{subject.code || subject.name.substring(0, 3)}</div>
                                         </th>
@@ -255,7 +255,7 @@ export default function BroadsheetsPage() {
                             </thead>
                             <tbody>
                                 {broadsheetData.students.length > 0 ? (
-                                    broadsheetData.students.map((student) => (
+                                    broadsheetData.students.map((student: any) => (
                                         <tr key={student.id} className="hover:bg-gray-50">
                                             <td className="border border-gray-300 p-2 text-center sticky left-0 bg-white hover:bg-gray-50 z-10">{student.position}</td>
                                             <td className="border border-gray-300 p-2 font-medium sticky left-[40px] bg-white hover:bg-gray-50 z-10 whitespace-nowrap">
@@ -263,7 +263,7 @@ export default function BroadsheetsPage() {
                                             </td>
                                             
                                             {/* Subject Scores */}
-                                            {broadsheetData.subjects.map(subject => {
+                                            {broadsheetData.subjects.map((subject: any) => {
                                                 const scoreData = student.scores[subject.id]
                                                 return (
                                                     <td key={subject.id} className="border border-gray-300 p-2 text-center">
