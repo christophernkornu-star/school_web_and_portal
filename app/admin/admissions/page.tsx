@@ -238,14 +238,10 @@ export default function AdmissionsPage() {
                             </>
                           )}
                           {app.status === 'approved' && (
-                            <button 
-                              onClick={() => updateStatus(app.id, 'approved')}
-                              disabled={updating}
-                              className="px-3 py-1 bg-methodist-gold text-white text-xs md:text-sm rounded hover:bg-yellow-600 disabled:opacity-50 text-center"
-                              title="Click to create student account if missing"
-                            >
-                              Enroll
-                            </button>
+                            <span className="px-3 py-1 bg-gray-100 text-green-700 text-xs md:text-sm rounded border border-green-200 text-center font-medium cursor-default flex items-center justify-center">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Enrolled
+                            </span>
                           )}
                         </div>
                       </td>

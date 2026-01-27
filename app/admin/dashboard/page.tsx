@@ -298,9 +298,9 @@ export default function AdminDashboard() {
                   <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400 group-hover:scale-110 transition-transform" />
                 </div>
               </Link>
-               <Link href="/admin/results/approval" className="block p-4 bg-red-50 dark:bg-red-900/10 rounded-xl hover:bg-white border border-red-100 dark:border-red-900/30 hover:border-red-300 dark:hover:border-red-700 transition-all group">
+               <Link href="/admin/results" className="block p-4 bg-red-50 dark:bg-red-900/10 rounded-xl hover:bg-white border border-red-100 dark:border-red-900/30 hover:border-red-300 dark:hover:border-red-700 transition-all group">
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-800 dark:text-gray-100 font-semibold">Results Approval</span>
+                  <span className="text-gray-800 dark:text-gray-100 font-semibold">Results Management</span>
                   <FileText className="w-4 h-4 text-red-600 dark:text-red-400 group-hover:scale-110 transition-transform" />
                 </div>
               </Link>

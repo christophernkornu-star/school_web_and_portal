@@ -1,6 +1,6 @@
 import './globals.css'
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Poppins } from 'next/font/google'
 import InactivityHandler from '@/components/InactivityHandler'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ThemeInitializer from '@/components/ThemeInitializer'
@@ -8,6 +8,12 @@ import { ScrollRestorationProvider } from '@/components/ScrollRestorationProvide
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
+const poppins = Poppins({ 
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+  subsets: ['latin'],
+  variable: '--font-poppins',
+  display: 'swap',
+})
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -34,7 +40,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body className={`${inter.className} ${poppins.variable} font-sans`}>
         <ThemeInitializer />
         <InactivityHandler />
         <PWAInstallPrompt />

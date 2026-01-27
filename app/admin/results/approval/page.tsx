@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Search, Filter, Lock, Unlock, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Save, Search, Filter, Lock, Unlock, AlertTriangle, ChevronRight } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -18,6 +18,7 @@ export default function ResultsApprovalPage() {
   const [showWithheldOnly, setShowWithheldOnly] = useState(false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+  const [withheldCount, setWithheldCount] = useState(0)
 
   useEffect(() => {
     loadInitialData()
@@ -45,6 +46,15 @@ export default function ResultsApprovalPage() {
         .order('name')
       
       if (classesData) setClasses(classesData)
+
+      // Get count of withheld results
+      const { count } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true })
+        .eq('results_withheld', true)
+        .eq('status', 'active')
+      
+      if (count !== null) setWithheldCount(count)
     } catch (error) {
       console.error('Error loading data:', error)
     } finally {
@@ -55,18 +65,26 @@ export default function ResultsApprovalPage() {
   async function loadStudents(classId: string) {
     setLoading(true)
     try {
-      const { data } = await supabase
+      let query = supabase
         .from('students')
-        .select('id, student_id, first_name, last_name, results_withheld, withheld_reason')
-        .eq('class_id', classId)
+        .select('id, student_id, first_name, last_name, results_withheld, withheld_reason, class:classes(name)')
         .eq('status', 'active')
         .order('last_name')
+
+      if (classId === 'all_withheld') {
+        query = query.eq('results_withheld', true)
+      } else {
+        query = query.eq('class_id', classId)
+      }
+      
+      const { data } = await query
       
       if (data) {
         setStudents(data.map((s: any) => ({
           ...s,
           results_withheld: s.results_withheld || false,
-          withheld_reason: s.withheld_reason || ''
+          withheld_reason: s.withheld_reason || '',
+          className: s.class?.name
         })))
       }
     } catch (error) {
@@ -112,22 +130,31 @@ export default function ResultsApprovalPage() {
     }
 
     try {
-      for (const update of updates) {
-        const { error } = await supabase
+      // Parallelize updates for performance
+      const promises = updates.map(update => 
+        supabase
           .from('students')
           .update({
             results_withheld: update.results_withheld,
             withheld_reason: update.withheld_reason
           })
           .eq('id', update.id)
-        
-        if (error) throw error
-      }
+      )
+
+      await Promise.all(promises)
 
       setMessage(`Successfully updated ${updates.length} students`)
       
       // Reset dirty state
       setStudents(prev => prev.map(s => ({ ...s, isDirty: false })))
+
+      // Update count
+      const { count } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true })
+        .eq('results_withheld', true)
+        .eq('status', 'active')
+      if (count !== null) setWithheldCount(count)
       
       setTimeout(() => setMessage(''), 3000)
     } catch (error) {
@@ -167,50 +194,77 @@ export default function ResultsApprovalPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select a class...</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Search Student</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Name or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+        {/* Global Stats / Quick Access */}
+        <div 
+          onClick={() => setSelectedClass('all_withheld')}
+          className="bg-white rounded-lg shadow-sm p-4 mb-6 border-l-4 border-red-500 cursor-pointer hover:shadow-md transition-all group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-red-50 rounded-full group-hover:bg-red-100 transition-colors">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
               </div>
-              <label className="flex items-center mt-2 space-x-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={showWithheldOnly}
-                  onChange={(e) => setShowWithheldOnly(e.target.checked)}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Show withheld results only</span>
-              </label>
+              <div>
+                <h3 className="font-bold text-gray-800 text-lg">Results Withheld</h3>
+                <p className="text-gray-600">
+                  <span className="font-bold text-red-600">{withheldCount}</span> students currently have their results withheld
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-6 h-6 text-gray-300 group-hover:text-red-500 transition-colors" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-6 lg:items-end justify-between">
+            <div className="flex flex-col md:flex-row gap-4 flex-1">
+              <div className="w-full md:w-64">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Class</label>
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select a class...</option>
+                  <option value="all_withheld" className="font-bold text-red-600">⚠ All Withheld Results</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="w-full md:w-64">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Search Student</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Name or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="md:pb-3 flex items-center">
+                <label className="flex items-center space-x-2 cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={showWithheldOnly}
+                    onChange={(e) => setShowWithheldOnly(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4"
+                  />
+                  <span className="text-sm font-medium text-gray-700">Show withheld only</span>
+                </label>
+              </div>
             </div>
 
-            <div className="flex justify-end md:justify-start">
+            <div className="w-full lg:w-auto">
               <button
                 onClick={handleSave}
                 disabled={saving || !students.some(s => s.isDirty)}
-                className="w-full md:w-auto flex items-center justify-center space-x-2 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full lg:w-auto flex items-center justify-center space-x-2 bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors font-medium"
               >
                 <Save className="w-5 h-5" />
                 <span>{saving ? 'Saving...' : 'Save Changes'}</span>
@@ -226,6 +280,9 @@ export default function ResultsApprovalPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                    {selectedClass === 'all_withheld' && (
+                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
+                    )}
                     <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">Reason for Withholding</th>
                     <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
@@ -244,6 +301,11 @@ export default function ResultsApprovalPage() {
                           </div>
                         </div>
                       </td>
+                      {selectedClass === 'all_withheld' && (
+                        <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {student.className || '-'}
+                        </td>
+                      )}
                       <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                           student.results_withheld 
@@ -289,7 +351,7 @@ export default function ResultsApprovalPage() {
                   ))}
                   {filteredStudents.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={selectedClass === 'all_withheld' ? 5 : 4} className="px-6 py-4 text-center text-gray-500">
                         No students found
                       </td>
                     </tr>

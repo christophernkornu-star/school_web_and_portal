@@ -32,18 +32,73 @@ export default function ResultsDashboardPage() {
             </p>
           </Link>
 
-          {/* Placeholder for future Result Reports */}
-          {/* 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 opacity-60 cursor-not-allowed">
-            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <FileText className="w-6 h-6 text-gray-400" />
+          {/* Print Reports Link */}
+          <Link 
+            href="/admin/results/reports" 
+            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-blue-200"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-green-600" />
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-green-500 transition-colors" />
             </div>
-            <h3 className="text-lg font-bold text-gray-400 mb-2">Print Reports</h3>
-            <p className="text-gray-400 text-sm">
-              Generate and print term reports, broadsheets, and transcripts.
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Print Reports</h3>
+            <p className="text-gray-600 text-sm">
+              Generate and print bulk term reports and transcripts for students.
             </p>
-          </div> 
-          */}
+          </Link>
+
+          {/* Broadsheets Link */}
+          <Link 
+            href="/admin/results/broadsheets" 
+            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-blue-200"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-purple-600" />
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-purple-500 transition-colors" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Broadsheets</h3>
+            <p className="text-gray-600 text-sm">
+              View comprehensive result spreadsheets for all students and subjects.
+            </p>
+          </Link>
+
+          {/* Performance Analysis Link */}
+          <Link 
+            href="/admin/results/analysis" 
+            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-blue-200"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-orange-600" /> {/* Should be ChartIcon if available, reusing FileText for now/Lucide icons */}
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-orange-500 transition-colors" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Performance Analysis</h3>
+            <p className="text-gray-600 text-sm">
+              Visualize school performance with charts, graphs, and statistical insights.
+            </p>
+          </Link>
+
+          {/* Historical Data Link */}
+          <Link 
+            href="/admin/results/history" 
+            className="group bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-all border border-gray-100 hover:border-blue-200"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-gray-600" />
+              </div>
+              <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-gray-500 transition-colors" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Historical Records</h3>
+            <p className="text-gray-600 text-sm">
+              View active students and teachers from previous academic terms and years.
+            </p>
+          </Link>
         </div>
       </div>
     </div>
