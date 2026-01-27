@@ -258,52 +258,92 @@ export default function HistoricalRecordsPage() {
                     <p className="mt-2 text-gray-500">Loading records...</p>
                 </div>
             ) : (
-                <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Name
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    ID
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {activeTab === 'students' ? 'Class' : 'Status'}
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {activeTab === 'students' ? 'Gender' : 'Contact'}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {filteredRecords.length > 0 ? (
-                                filteredRecords.map((record) => (
-                                    <tr key={record.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="font-medium text-gray-900">{record.name}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {record.identifier}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {record.role_detail}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {activeTab === 'students' ? record.gender : record.contact}
+                <>
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Name
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        ID
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {activeTab === 'students' ? 'Class' : 'Status'}
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        {activeTab === 'students' ? 'Gender' : 'Contact'}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                                {filteredRecords.length > 0 ? (
+                                    filteredRecords.map((record) => (
+                                        <tr key={record.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="font-medium text-gray-900">{record.name}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {record.identifier}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {record.role_detail}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {activeTab === 'students' ? record.gender : record.contact}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                                            No records found for the selected period.
                                         </td>
                                     </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Mobile Card View */}
+                    <div className="md:hidden">
+                        <div className="divide-y divide-gray-200">
+                            {filteredRecords.length > 0 ? (
+                                filteredRecords.map((record) => (
+                                    <div key={record.id} className="p-4 bg-white space-y-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-medium text-gray-900">{record.name}</div>
+                                                <div className="text-sm text-gray-500">{record.identifier}</div>
+                                            </div>
+                                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                                record.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                            }`}>
+                                                {record.status || (activeTab === 'students' ? 'Student' : 'Teacher')}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div>
+                                                <span className="text-gray-500 block text-xs uppercase tracking-wide">{activeTab === 'students' ? 'Class' : 'Status'}</span>
+                                                <span className="font-medium">{record.role_detail}</span>
+                                            </div>
+                                            <div>
+                                                <span className="text-gray-500 block text-xs uppercase tracking-wide">{activeTab === 'students' ? 'Gender' : 'Contact'}</span>
+                                                <span className="font-medium">{activeTab === 'students' ? record.gender : record.contact}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 ))
                             ) : (
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                                        No records found for the selected period.
-                                    </td>
-                                </tr>
+                                <div className="p-8 text-center text-gray-500">
+                                    No records found for the selected period.
+                                </div>
                             )}
-                        </tbody>
-                    </table>
-                </div>
+                        </div>
+                    </div>
+                </>
             )}
         </div>
       </div>
