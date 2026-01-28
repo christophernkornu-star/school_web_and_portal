@@ -1173,7 +1173,7 @@ export default function ExamScoresPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="container mx-auto px-6 py-4">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center gap-4">
             <BackButton href="/teacher/dashboard" />
             <div>
@@ -1184,12 +1184,12 @@ export default function ExamScoresPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 md:px-6 py-8">
         <div className="max-w-4xl mx-auto">
           {/* OCR Option Banner */}
           <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center space-x-3 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center space-x-3 w-full sm:w-auto">
                 <Camera className="w-8 h-8 text-ghana-green flex-shrink-0" />
                 <div>
                   <h3 className="font-semibold text-gray-800 dark:text-gray-100">Can't type? Use OCR!</h3>
@@ -1198,7 +1198,7 @@ export default function ExamScoresPage() {
               </div>
               <Link
                 href="/teacher/scores/ocr"
-                className="w-full md:w-auto bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center space-x-2"
               >
                 <Camera className="w-5 h-5" />
                 <span>Try OCR Entry</span>

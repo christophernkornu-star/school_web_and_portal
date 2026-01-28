@@ -735,8 +735,8 @@ export default function PerformancePage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       <header className="bg-white dark:bg-gray-800 shadow transition-colors">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <BackButton className="text-ghana-green hover:text-green-700" />
               <div>
@@ -746,7 +746,7 @@ export default function PerformancePage() {
             </div>
             <button
               onClick={exportToCSV}
-              className="flex items-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700"
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 text-sm md:text-base"
             >
               <Download className="w-4 h-4" />
               <span>Export Report</span>
@@ -755,7 +755,7 @@ export default function PerformancePage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-4 py-8">
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
           <div className="flex items-center space-x-4 mb-4">
