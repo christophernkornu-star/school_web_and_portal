@@ -1057,6 +1057,62 @@ export default function TeacherStudentReportPage() {
     `
   }
 
+  const getClassName = () => (student?.classes?.name || student?.classes?.class_name || '').toLowerCase()
+  const isJHSClass = () => {
+    const name = getClassName()
+    return name.includes('jhs') || name.includes('basic 7') || name.includes('basic 8') || name.includes('basic 9') || name.includes('form 1') || name.includes('form 2') || name.includes('form 3')
+  }
+
+  const getGradeLabel = (score: number) => {
+    if (isJHSClass()) {
+      if (score >= 80) return 'HP'
+      if (score >= 60) return 'P' // 70-79 and 60-69 match P based on logic, or distinct?
+      // Based on request: 70-79 Proficient, 60-69 Proficient. So >= 60 is P.
+      if (score >= 50) return 'AP'
+      if (score >= 40) return 'D'
+      return 'E'
+    } else {
+      // Primary
+      if (score >= 80) return 'A'
+      if (score >= 70) return 'P'
+      if (score >= 60) return 'AP'
+      if (score >= 50) return 'D'
+      return 'B'
+    }
+  }
+
+  const getGradeColorClass = (score: number, type: 'text' | 'bg') => {
+    // Shared color logic roughly based on performance
+    let color = 'red'
+    if (score >= 80) color = 'green'
+    else if (score >= 70) color = 'blue'
+    else if (score >= 60) color = 'cyan' // or some other color?
+    else if (score >= 50) color = 'yellow'
+    
+    // Adjust for specific schemes
+    if (isJHSClass()) {
+        if (score >= 80) color = 'green' // HP
+        else if (score >= 60) color = 'blue' // P
+        else if (score >= 50) color = 'yellow' // AP
+        else if (score >= 40) color = 'orange' // D
+        else color = 'red' // E
+    } else {
+        if (score >= 80) color = 'green' // A
+        else if (score >= 70) color = 'blue' // P
+        else if (score >= 60) color = 'cyan' // AP
+        else if (score >= 50) color = 'yellow' // D
+        else color = 'red' // B
+    }
+
+    if (type === 'text') {
+        if (color === 'cyan') return 'text-cyan-600'
+        return `text-${color}-600`
+    }
+    // bg
+    if (color === 'cyan') return 'bg-cyan-100'
+    return `bg-${color}-100`
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 transition-colors">
       <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
@@ -1106,22 +1162,12 @@ export default function TeacherStudentReportPage() {
              <div className="flex items-center justify-between">
                 <div>
                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Average Score</p>
-                   <p className={`text-2xl md:text-3xl font-bold mt-1 ${
-                      reportData?.averageScore >= 80 ? 'text-green-600' :
-                      reportData?.averageScore >= 60 ? 'text-blue-600' :
-                      reportData?.averageScore >= 40 ? 'text-yellow-600' : 'text-red-600'
-                   }`}>{reportData?.averageScore}%</p>
+                   <p className={`text-2xl md:text-3xl font-bold mt-1 ${getGradeColorClass(reportData?.averageScore || 0, 'text')}`}>{reportData?.averageScore}%</p>
                 </div>
                 {/* Visual Indicator */}
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                      reportData?.averageScore >= 80 ? 'bg-green-100 text-green-600' :
-                      reportData?.averageScore >= 60 ? 'bg-blue-100 text-blue-600' :
-                      reportData?.averageScore >= 40 ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'
-                }`}>
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${getGradeColorClass(reportData?.averageScore || 0, 'bg')} ${getGradeColorClass(reportData?.averageScore || 0, 'text')}`}>
                    <span className="font-bold text-lg">
-                      {reportData?.averageScore >= 80 ? 'A' : 
-                       reportData?.averageScore >= 60 ? 'B' : 
-                       reportData?.averageScore >= 40 ? 'C' : 'F'}
+                      {getGradeLabel(reportData?.averageScore || 0)}
                    </span>
                 </div>
              </div>
