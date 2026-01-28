@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { ArrowLeft, Edit2, Save, X, Filter, Download, Eye, AlertCircle, Trash2 } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 interface Score {
   id: string
@@ -82,7 +85,7 @@ export default function ViewScoresPage() {
       
       if (assignmentsError) {
         console.error('Error loading assignments:', assignmentsError)
-        alert('Error loading teacher assignments. Please check your teacher ID configuration.')
+        toast.error('Error loading teacher assignments. Please check your teacher ID configuration.')
         setLoading(false)
         return
       }
@@ -131,7 +134,8 @@ export default function ViewScoresPage() {
       setLoading(false)
     } catch (error) {
       console.error('Error loading data:', error)
-      setLoading(false)
+      setLoading(false
+      )
     }
   }
 
@@ -251,12 +255,12 @@ export default function ViewScoresPage() {
       
       // Validate scores
       if (classScore < 0 || classScore > 30) {
-        alert('Class score must be between 0 and 30')
+        toast.error('Class score must be between 0 and 30')
         setSaving(false)
         return
       }
       if (examScore < 0 || examScore > 70) {
-        alert('Exam score must be between 0 and 70')
+        toast.error('Exam score must be between 0 and 70')
         setSaving(false)
         return
       }
@@ -303,7 +307,7 @@ export default function ViewScoresPage() {
       setEditValues({ class_score: null, exam_score: null })
     } catch (error) {
       console.error('Error saving score:', error)
-      alert('Failed to save score')
+      toast.error('Failed to save score')
     } finally {
       setSaving(false)
     }
@@ -323,7 +327,7 @@ export default function ViewScoresPage() {
       setScores(prev => prev.filter(s => s.id !== scoreId))
     } catch (error) {
       console.error('Error deleting score:', error)
-      alert('Failed to delete score')
+      toast.error('Failed to delete score')
     }
   }
 
@@ -381,11 +385,32 @@ export default function ViewScoresPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="space-y-2">
+                       <Skeleton className="h-6 w-48 rounded" />
+                       <Skeleton className="h-4 w-32 rounded" />
+                  </div>
+               </div>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+            <div className="space-y-6">
+                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                     <Skeleton className="h-8 w-48 mb-4" />
+                    <Skeleton className="h-64 w-full rounded" />
+                 </div>
+            </div>
+          </main>
       </div>
     )
   }
@@ -395,10 +420,8 @@ export default function ViewScoresPage() {
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+            <div className="flex items-center gap-4">
+              <BackButton href="/teacher/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">View & Edit Scores</h1>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Review and correct scores at a glance</p>

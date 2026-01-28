@@ -5,6 +5,9 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import Link from 'next/link'
 import { ArrowLeft, Plus, BookOpen, Calendar, CheckCircle, XCircle, Eye, Trash2, Edit, Calculator, AlertCircle } from 'lucide-react'
 import AuthGuard from '@/app/components/AuthGuard'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 interface Teacher {
   id: string
@@ -430,7 +433,7 @@ function ClassExercisesPage() {
       fetchExercises()
     } catch (error: any) {
       console.error('Error deleting exercise:', error)
-      alert('Failed to delete exercise')
+      toast.error('Failed to delete exercise')
     }
   }
 
@@ -467,11 +470,31 @@ function ClassExercisesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="space-y-2">
+                       <Skeleton className="h-6 w-48 rounded" />
+                       <Skeleton className="h-4 w-32 rounded" />
+                  </div>
+               </div>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                </div>
+                <div className="border rounded-lg p-6 bg-white dark:bg-gray-800">
+                    <Skeleton className="h-10 w-full mb-4" />
+                    <Skeleton className="h-64 w-full rounded" />
+                </div>
+            </div>
+          </main>
       </div>
     )
   }
@@ -502,13 +525,8 @@ function ClassExercisesPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/teacher/dashboard"
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
-              >
-                <ArrowLeft className="w-6 h-6 text-gray-600" />
-              </Link>
+            <div className="flex items-center gap-4">
+              <BackButton href="/teacher/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-900">Class Exercises</h1>
                 <p className="text-xs md:text-sm text-gray-600">Record and manage individual class exercises</p>

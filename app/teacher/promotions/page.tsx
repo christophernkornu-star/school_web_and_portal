@@ -5,6 +5,9 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import Link from 'next/link'
 import { ArrowLeft, TrendingUp, TrendingDown, CheckCircle, XCircle, AlertTriangle, Users, FileText } from 'lucide-react'
 import AuthGuard from '@/app/components/AuthGuard'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 interface Teacher {
   id: string
@@ -64,6 +67,7 @@ function StudentPromotionsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
+        toast.error('You must be logged in to access this page')
         setError('You must be logged in to access this page')
         setLoading(false)
         return
@@ -78,6 +82,7 @@ function StudentPromotionsPage() {
 
       if (teacherError) {
         if (teacherError.code === 'PGRST116') {
+          toast.error('No teacher profile found for your account')
           setError('No teacher profile found for your account')
         } else {
           throw teacherError
@@ -268,11 +273,33 @@ function StudentPromotionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 transition-colors">
+         <div className="bg-white dark:bg-gray-800 shadow mb-8">
+            <div className="container mx-auto px-6 py-4">
+               <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                     <Skeleton className="h-8 w-8 rounded-full" />
+                     <Skeleton className="h-8 w-48 rounded" />
+                  </div>
+                  <Skeleton className="h-8 w-32 rounded" />
+               </div>
+            </div>
+         </div>
+         <div className="container mx-auto px-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                     <Skeleton className="h-6 w-32" />
+                     <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                     <Skeleton className="h-6 w-32" />
+                     <Skeleton className="h-10 w-full" />
+                  </div>
+               </div>
+            </div>
+            <Skeleton className="h-96 w-full rounded-lg" />
+         </div>
       </div>
     )
   }
@@ -283,9 +310,7 @@ function StudentPromotionsPage() {
         <header className="bg-white dark:bg-gray-800 shadow">
           <div className="container mx-auto px-4 md:px-6 py-4">
             <div className="flex items-center space-x-4">
-              <Link href="/teacher/dashboard" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
-                <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-300" />
-              </Link>
+              <BackButton className="text-gray-600 dark:text-gray-300" />
               <div>
                 <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Student Promotions</h1>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Manage end-of-year promotions</p>
@@ -315,14 +340,12 @@ function StudentPromotionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <header className="bg-white dark:bg-gray-800 shadow transition-colors">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/teacher/dashboard" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
-                <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-300" />
-              </Link>
+              <BackButton className="text-gray-600 dark:text-gray-300" />
               <div>
                 <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Student Promotion Decisions</h1>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Academic Year: {academicYear} - Students Below 30% Average</p>

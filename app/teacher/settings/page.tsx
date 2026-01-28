@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { ArrowLeft, Moon, Sun, Lock, Save, AlertCircle, Check, User, GraduationCap } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getCurrentUser } from '@/lib/auth'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 export default function TeacherSettingsPage() {
   const router = useRouter()
@@ -140,10 +143,10 @@ export default function TeacherSettingsPage() {
 
       if (error) throw error
 
-      setMessage({ type: 'success', text: 'Profile updated successfully' })
+      toast.success('Profile updated successfully')
     } catch (error: any) {
       console.error('Error updating profile:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to update profile' })
+      toast.error(error.message || 'Failed to update profile')
     } finally {
       setSaving(false)
     }
@@ -154,12 +157,12 @@ export default function TeacherSettingsPage() {
     setMessage({ type: '', text: '' })
     
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setMessage({ type: 'error', text: 'Passwords do not match' })
+      toast.error('Passwords do not match')
       return
     }
 
     if (passwordData.newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters' })
+      toast.error('Password must be at least 6 characters')
       return
     }
 
@@ -172,11 +175,11 @@ export default function TeacherSettingsPage() {
 
       if (error) throw error
 
-      setMessage({ type: 'success', text: 'Password updated successfully' })
+      toast.success('Password updated successfully')
       setPasswordData({ newPassword: '', confirmPassword: '' })
     } catch (error: any) {
       console.error('Error updating password:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to update password' })
+      toast.error(error.message || 'Failed to update password')
     } finally {
       setSaving(false)
     }
@@ -184,8 +187,30 @@ export default function TeacherSettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-8 w-40 rounded" />
+               </div>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+             <div className="max-w-3xl mx-auto space-y-8">
+                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <Skeleton className="h-6 w-32 mb-6" />
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                 </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                     <Skeleton className="h-6 w-32 mb-6" />
+                     <Skeleton className="h-10 w-full" />
+                 </div>
+             </div>
+          </main>
       </div>
     )
   }
@@ -194,10 +219,8 @@ export default function TeacherSettingsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
       <header className="bg-white dark:bg-gray-800 shadow transition-colors duration-200">
         <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <Link href="/teacher/dashboard" className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition">
-              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-300" />
-            </Link>
+          <div className="flex items-center gap-4">
+            <BackButton href="/teacher/dashboard" />
             <div>
               <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Manage your preferences and security</p>

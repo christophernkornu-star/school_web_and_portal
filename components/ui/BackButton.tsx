@@ -8,17 +8,24 @@ interface BackButtonProps {
   className?: string
   fallbackPath?: string
   icon?: boolean
+  href?: string
 }
 
 export default function BackButton({ 
   label, 
   className = "", 
   fallbackPath, 
-  icon = true 
+  icon = true,
+  href
 }: BackButtonProps) {
   const router = useRouter()
   
   const handleBack = () => {
+    if (href) {
+      router.push(href)
+      return
+    }
+    
     // If available, we might want to check history length
     // But since we can't reliably know if back() exits the app in all envs without tracking,
     // we assume calling back() is the intent.

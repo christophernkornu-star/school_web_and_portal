@@ -7,6 +7,9 @@ import { ArrowLeft, FileText, Upload, Download, Users, AlertCircle, CheckCircle,
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 interface TeacherClass {
   class_id: string
@@ -810,13 +813,13 @@ export default function ExamScoresPage() {
 
   async function downloadTemplate() {
     if (!selectedClass) {
-      alert('Please select a class first to download the template with student names.')
+      toast.error('Please select a class first to download the template with student names.')
       return
     }
 
     // Check if at least one subject is selected
     if (selectedSubjects.length === 0) {
-      alert('Please select at least one subject to include in the template.')
+      toast.error('Please select at least one subject to include in the template.')
       return
     }
 
@@ -892,7 +895,7 @@ export default function ExamScoresPage() {
       window.URL.revokeObjectURL(url)
     } catch (error: any) {
       console.error('Error generating template:', error)
-      alert('Failed to generate template. Please try again.')
+      toast.error('Failed to generate template. Please try again.')
     }
   }
 
@@ -1110,11 +1113,31 @@ export default function ExamScoresPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading exam scores...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="space-y-2">
+                       <Skeleton className="h-6 w-48 rounded" />
+                       <Skeleton className="h-4 w-32 rounded" />
+                  </div>
+               </div>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+            <div className="space-y-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-10 w-full" />
+                   </div>
+                    <Skeleton className="h-10 w-full mb-4" />
+                   <Skeleton className="h-96 w-full rounded" />
+                </div>
+            </div>
+          </main>
       </div>
     )
   }
@@ -1151,10 +1174,8 @@ export default function ExamScoresPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+          <div className="flex items-center gap-4">
+            <BackButton href="/teacher/dashboard" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Exam Scores</h1>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Upload exam scores via CSV or use Spreadsheet View</p>

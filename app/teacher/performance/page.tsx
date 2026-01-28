@@ -8,6 +8,8 @@ import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
 
 interface PerformanceStats {
   classAverage: number
@@ -661,11 +663,38 @@ export default function PerformancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Loading analytics...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 transition-colors">
+        <header className="bg-white dark:bg-gray-800 shadow mb-8">
+            <div className="container mx-auto px-6 py-4">
+                <div className="flex justify-between items-center mb-4">
+                   <div className="flex items-center gap-3">
+                       <Skeleton className="h-8 w-8 rounded-full" />
+                       <Skeleton className="h-8 w-48 rounded" />
+                   </div>
+                   <Skeleton className="h-10 w-32 rounded-lg" />
+                </div>
+                <div className="flex gap-4">
+                    <Skeleton className="h-10 w-48 rounded-lg" />
+                    <Skeleton className="h-10 w-48 rounded-lg" />
+                </div>
+            </div>
+        </header>
+
+        <main className="container mx-auto px-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
+             </div>
+             
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                 <Skeleton className="h-80 rounded-xl" />
+                 <Skeleton className="h-80 rounded-xl" />
+             </div>
+
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <Skeleton className="h-96 rounded-xl" />
+                  <Skeleton className="h-96 rounded-xl" />
+             </div>
+        </main>
       </div>
     )
   }
@@ -676,9 +705,7 @@ export default function PerformancePage() {
         <header className="bg-white dark:bg-gray-800 shadow">
           <div className="container mx-auto px-6 py-4">
             <div className="flex items-center space-x-4">
-              <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton className="text-ghana-green hover:text-green-700" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Performance Analytics</h1>
                 <p className="text-sm text-gray-600 dark:text-gray-300">Track and analyze student performance</p>
@@ -706,14 +733,12 @@ export default function PerformancePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <header className="bg-white dark:bg-gray-800 shadow transition-colors">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton className="text-ghana-green hover:text-green-700" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Performance Analytics</h1>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Track and analyze student performance</p>
@@ -1011,10 +1036,7 @@ export default function PerformancePage() {
                           {subject.average}%
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center text-green-600 dark:text-green-400 font-semibold text-xs md:text-sm">{subject.highest}%</td>
-                      <td className="py-3 px-4 text-center text-gray-600 dark:text-gray-400 text-xs md:text-sm">{subject.lowest}%</td>
-                      <td className="py-3 px-4 text-center text-gray-600 dark:text-gray-400 text-xs md:text-sm">{subject.studentCount}</td>
-                    </tr>
+                      </tr>
                   ))}
                 </tbody>
               </table>
