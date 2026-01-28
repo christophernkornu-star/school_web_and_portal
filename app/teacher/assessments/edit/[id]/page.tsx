@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { ArrowLeft, Save, Plus, Trash2, AlertCircle } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
@@ -350,7 +352,50 @@ export default function EditQuizPage() {
     }
   }
 
-  if (fetchingData) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Loading...</div>
+  if (fetchingData) {
+    return (
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+             <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 h-16 sticky top-0 z-30">
+                <div className="container mx-auto px-4 h-full flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <Skeleton className="w-48 h-6" />
+                    </div>
+                    <div className="flex gap-2">
+                        <Skeleton className="w-24 h-9 rounded-lg" />
+                        <Skeleton className="w-24 h-9 rounded-lg" />
+                    </div>
+                </div>
+             </div>
+             <div className="container mx-auto px-4 py-8 max-w-4xl space-y-8">
+                 <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-6">
+                    <Skeleton className="w-40 h-6 mb-4" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="col-span-2"><Skeleton className="w-full h-10 rounded-lg" /></div>
+                         <div className="col-span-2"><Skeleton className="w-full h-24 rounded-lg" /></div>
+                         <Skeleton className="w-full h-10 rounded-lg" />
+                         <Skeleton className="w-full h-10 rounded-lg" />
+                    </div>
+                 </div>
+                 {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-start mb-4">
+                            <Skeleton className="w-full h-6 mr-4" />
+                            <div className="flex gap-2">
+                                <Skeleton className="w-8 h-8 rounded" />
+                                <Skeleton className="w-8 h-8 rounded" />
+                            </div>
+                        </div>
+                        <div className="space-y-3">
+                             <Skeleton className="w-full h-10 rounded-lg" />
+                             <Skeleton className="w-full h-10 rounded-lg" />
+                        </div>
+                    </div>
+                 ))}
+             </div>
+        </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">

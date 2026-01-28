@@ -4,9 +4,11 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { GraduationCap, ArrowLeft, Save, Search, AlertCircle } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { toast } from 'react-hot-toast'
 
 export default function EnterScores() {
   const router = useRouter()
@@ -20,7 +22,10 @@ export default function EnterScores() {
   const [scores, setScores] = useState<Record<string, number>>({})
   const [assessments, setAssessments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingScores, setLoadingScores] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
   const isReadOnly = teacher?.status === 'on_leave' || teacher?.status === 'on leave'
 
@@ -56,6 +61,40 @@ export default function EnterScores() {
       loadAssessments()
     }
   }, [selectedClass, selectedSubject])
+
+  useEffect(() => {
+    async function loadExistingScores() {
+      if (!selectedAssessment) {
+        setScores({})
+        return
+      }
+
+      setLoadingScores(true)
+      try {
+        const { data, error } = await supabase
+          .from('student_scores')
+          .select('student_id, score')
+          .eq('assessment_id', selectedAssessment)
+
+        if (error) throw error
+
+        if (data) {
+          const loadedScores: Record<string, number> = {}
+          data.forEach((item) => {
+            loadedScores[item.student_id] = item.score
+          })
+          setScores(loadedScores)
+        }
+      } catch (error) {
+        console.error('Error loading scores:', error)
+        toast.error('Failed to load existing scores')
+      } finally {
+        setLoadingScores(false)
+      }
+    }
+
+    loadExistingScores()
+  }, [selectedAssessment])
 
   const loadStudents = async () => {
     const { data, error } = await supabase
@@ -107,9 +146,12 @@ export default function EnterScores() {
   const handleScoreChange = (studentId: string, value: string) => {
     if (isReadOnly) return
     const numValue = parseFloat(value)
+    
+    setIsDirty(true)
+    
     if (!isNaN(numValue)) {
       if (numValue > 10) {
-        alert('Score cannot be greater than 10')
+        toast.error('Score cannot be greater than 10')
         return
       }
       setScores({ ...scores, [studentId]: numValue })
@@ -133,11 +175,12 @@ export default function EnterScores() {
     if (isReadOnly) return
 
     if (!selectedAssessment) {
-      alert('Please select an assessment')
+      toast.error('Please select an assessment')
       return
     }
 
     setSaving(true)
+    const toastId = toast.loading('Saving scores...')
 
     try {
       // 1. Save individual assessment scores
@@ -250,12 +293,13 @@ export default function EnterScores() {
        }
       }
 
-      alert('Scores saved and class scores updated successfully!')
-      setScores({})
+      toast.success('Scores saved and class scores updated successfully!', { id: toastId })
+      setIsDirty(false)
+      setLastSaved(new Date())
       
     } catch (err: any) {
       console.error('Error saving scores:', err)
-      alert('An error occurred while saving scores: ' + err.message)
+      toast.error('An error occurred while saving scores: ' + err.message, { id: toastId })
     }
 
     setSaving(false)
@@ -263,11 +307,41 @@ export default function EnterScores() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="ghana-flag-border bg-white shadow-md mb-8">
+            <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
+                 <div className="flex items-center space-x-3">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <div>
+                        <Skeleton className="w-48 h-5 mb-1" />
+                        <Skeleton className="w-32 h-3" />
+                    </div>
+                </div>
+                <Skeleton className="w-24 h-8 rounded" />
+            </div>
+        </header>
+        <main className="max-w-7xl mx-auto px-4 space-y-8">
+             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Skeleton className="h-10 w-full rounded-md" />
+                    <Skeleton className="h-10 w-full rounded-md" />
+                    <Skeleton className="h-10 w-full rounded-md" />
+                </div>
+             </div>
+             
+             <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
+                <div className="p-4 border-b border-gray-100">
+                     <Skeleton className="h-6 w-48" />
+                </div>
+                <div className="p-4 space-y-4">
+                     {[...Array(5)].map((_, i) => (
+                        <div key={i} className="flex gap-4">
+                            <Skeleton className="h-12 w-full rounded-md" />
+                        </div>
+                     ))}
+                </div>
+             </div>
+        </main>
       </div>
     )
   }
@@ -418,16 +492,36 @@ export default function EnterScores() {
             <div className="bg-white rounded-lg shadow-lg overflow-hidden">
               <div className="p-4 md:p-6 border-b">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <h3 className="text-base md:text-lg font-bold text-gray-800">
-                    Enter Scores for {students.length} Students
-                  </h3>
+                  <div className="flex flex-col">
+                    <h3 className="text-base md:text-lg font-bold text-gray-800">
+                      Enter Scores for {students.length} Students
+                    </h3>
+                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                       {loadingScores ? (
+                         <span className="text-blue-600 animate-pulse">Loading saved scores...</span>
+                       ) : lastSaved ? (
+                         <span className="text-green-600">Last saved: {lastSaved.toLocaleTimeString()}</span>
+                       ) : (
+                         <span>Not saved yet this session</span>
+                       )}
+                       {isDirty && !saving && !loadingScores && (
+                          <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            Unsaved Changes
+                          </span>
+                       )}
+                    </div>
+                  </div>
                   <button
                     onClick={handleSaveScores}
-                    disabled={saving || Object.keys(scores).length === 0 || isReadOnly}
-                    className="btn-secondary flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
+                    disabled={saving || loadingScores || isReadOnly}
+                    className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-all w-full sm:w-auto ${
+                        isDirty 
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md' 
+                        : 'bg-ghana-green text-white hover:bg-ghana-green/90'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
-                    <Save className="w-4 h-4" />
-                    <span>{saving ? 'Saving...' : 'Save Scores'}</span>
+                    <Save className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
+                    <span>{saving ? 'Saving...' : isDirty ? 'Save Changes' : 'Save Scores'}</span>
                   </button>
                 </div>
               </div>
@@ -457,17 +551,21 @@ export default function EnterScores() {
                           {student.profiles?.full_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.1"
-                            disabled={isReadOnly}
-                            value={scores[student.id] || ''}
-                            onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                            className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 disabled:cursor-not-allowed"
-                            placeholder="0.0"
-                          />
+                          {loadingScores ? (
+                            <div className="w-24 h-10 mx-auto bg-gray-100 animate-pulse rounded" />
+                          ) : (
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              disabled={isReadOnly}
+                              value={scores[student.id] || ''}
+                              onChange={(e) => handleScoreChange(student.id, e.target.value)}
+                              className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 disabled:cursor-not-allowed"
+                              placeholder="0.0"
+                            />
+                          )}
                         </td>
                       </tr>
                     ))}

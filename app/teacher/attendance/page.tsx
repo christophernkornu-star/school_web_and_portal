@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { ArrowLeft, Save, Users, TrendingUp, AlertCircle, Search } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface Student {
   id: string
@@ -300,10 +303,21 @@ export default function AttendancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto"></div>
-          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+        <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 h-16 w-full">
+            <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+                <Skeleton className="w-32 h-6" />
+                <Skeleton className="w-24 h-9 rounded-md" />
+            </div>
+        </nav>
+        <div className="max-w-7xl mx-auto px-4 w-full py-8 space-y-8">
+             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Skeleton className="h-32 rounded-lg" />
+                <Skeleton className="h-32 rounded-lg" />
+                <Skeleton className="h-32 rounded-lg" />
+                <Skeleton className="h-32 rounded-lg" />
+            </div>
+            <Skeleton className="h-96 w-full rounded-lg" />
         </div>
       </div>
     )
@@ -315,24 +329,19 @@ export default function AttendancePage() {
         <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center h-16">
-              <Link
-                href="/teacher/dashboard"
-                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Dashboard</span>
-              </Link>
+              <BackButton 
+                label="Back to Dashboard" 
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              />
             </div>
           </div>
         </nav>
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <AlertCircle className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">No Class Teacher Assignment</h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              You must be assigned as a class teacher to record attendance.
-            </p>
-          </div>
+          <EmptyState 
+            title="No Class Teacher Assignment" 
+            description="You must be assigned as a class teacher to record attendance."
+            icon={AlertCircle}
+          />
         </main>
       </div>
     )
@@ -344,13 +353,10 @@ export default function AttendancePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Link
-                href="/teacher/dashboard"
-                className="flex items-center space-x-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
-              >
-                <ArrowLeft className="w-6 h-6" />
-                <span className="text-xs md:text-sm">Back to Dashboard</span>
-              </Link>
+              <BackButton 
+                label="Back to Dashboard" 
+                className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-xs md:text-sm"
+              />
             </div>
             <div className="flex items-center space-x-3">
               {hasUnsavedChanges && (
@@ -694,23 +700,21 @@ export default function AttendancePage() {
         )}
 
         {selectedClass && students.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-            <Users className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2">No Students Found</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              There are no active students in the selected class.
-            </p>
-          </div>
+          <EmptyState
+            title="No Students Found"
+            description="There are no active students in the selected class."
+            icon={Users}
+            className="bg-white dark:bg-gray-800 shadow p-12"
+          />
         )}
 
         {!selectedClass && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-            <AlertCircle className="w-16 h-16 text-gray-400 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white mb-2">Select a Class</h3>
-            <p className="text-gray-600 dark:text-gray-400">
-              Please select a class above to record attendance.
-            </p>
-          </div>
+          <EmptyState
+            title="Select a Class"
+            description="Please select a class above to record attendance."
+            icon={AlertCircle}
+            className="bg-white dark:bg-gray-800 shadow p-12"
+          />
         )}
       </main>
     </div>

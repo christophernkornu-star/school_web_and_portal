@@ -10,6 +10,8 @@ import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { getTeacherPermissions, getClassesForAttendance } from '@/lib/teaching-model-permissions'
 import { ClassPermissionCard } from '@/components/TeachingModelComponents'
 import { useTeacher } from '@/components/providers/TeacherContext'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 export default function TeacherDashboard() {
   const router = useRouter()
@@ -85,11 +87,38 @@ export default function TeacherDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+        <header className="sticky top-0 z-50 overflow-hidden shadow-md bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="h-1 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-pulse"></div>
+            <div className="container mx-auto px-4 py-3">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                        <Skeleton className="h-10 w-10 rounded-lg" />
+                        <div>
+                            <Skeleton className="h-4 w-48 mb-1" />
+                            <Skeleton className="h-3 w-24" />
+                        </div>
+                    </div>
+                    <Skeleton className="h-9 w-24 rounded-lg" />
+                </div>
+            </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-6 md:py-8">
+             <Skeleton className="h-40 w-full rounded-xl mb-8" />
+             
+             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {[...Array(4)].map((_, i) => (
+                    <Skeleton key={i} className="h-32 rounded-xl" />
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[...Array(6)].map((_, i) => (
+                    <Skeleton key={i} className="h-48 rounded-xl" />
+                ))}
+            </div>
+        </main>
       </div>
     )
   }
@@ -287,10 +316,13 @@ export default function TeacherDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
             {permissions.length === 0 ? (
-              <div className="col-span-full text-center py-12 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
-                <BookOpen className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-3" />
-                <p className="text-gray-500 dark:text-gray-400 font-medium">No class assignments found.</p>
-                <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Please contact the administrator for access.</p>
+              <div className="col-span-full">
+                <EmptyState 
+                    icon={BookOpen}
+                    title="No class assignments found"
+                    description="You don't have any classes assigned to you yet. Please contact the administrator for access."
+                    className="border-dashed border-2 py-12"
+                />
               </div>
             ) : (
               permissions.map((perm) => (
@@ -314,72 +346,71 @@ export default function TeacherDashboard() {
             <BarChart3 className="w-5 h-5 text-methodist-gold" />
             Quick Actions
           </h3>
-          {/* ...existing code... */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <Link href="/teacher/manage-scores" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-full mb-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
-              <FileText className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-400" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Manage Scores</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Assessments & Grades</p>
-          </Link>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
+            <Link href="/teacher/manage-scores" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-blue-50 dark:bg-blue-900/30 p-4 rounded-full mb-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/50 transition-colors">
+                <FileText className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-400" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Manage Scores</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Assessments & Grades</p>
+            </Link>
 
-          <Link href="/teacher/students" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-full mb-3 group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
-              <Users className="w-6 h-6 md:w-8 md:h-8 text-ghana-green dark:text-green-400" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">My Students</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">View student list</p>
-          </Link>
+            <Link href="/teacher/students" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-full mb-3 group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">
+                <Users className="w-6 h-6 md:w-8 md:h-8 text-ghana-green dark:text-green-400" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">My Students</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">View student list</p>
+            </Link>
 
-          <Link href="/teacher/performance" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-full mb-3 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 transition-colors">
-              <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-purple-600 dark:text-purple-400" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Analytics</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Track progress</p>
-          </Link>
+            <Link href="/teacher/performance" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-purple-50 dark:bg-purple-900/30 p-4 rounded-full mb-3 group-hover:bg-purple-100 dark:group-hover:bg-purple-900/50 transition-colors">
+                <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-purple-600 dark:text-purple-400" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Analytics</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Track progress</p>
+            </Link>
 
-          <Link href="/teacher/promotions" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-full mb-3 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
-              <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Promotions</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">End-of-year decisions</p>
-          </Link>
+            <Link href="/teacher/promotions" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-indigo-50 dark:bg-indigo-900/30 p-4 rounded-full mb-3 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50 transition-colors">
+                <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Promotions</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">End-of-year decisions</p>
+            </Link>
 
-          <Link href="/teacher/attendance" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-full mb-3 group-hover:bg-yellow-100 dark:group-hover:bg-yellow-900/50 transition-colors">
-              <Calendar className="w-6 h-6 md:w-8 md:h-8 text-yellow-600 dark:text-yellow-400" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Attendance</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Mark daily register</p>
-          </Link>
+            <Link href="/teacher/attendance" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-yellow-50 dark:bg-yellow-900/30 p-4 rounded-full mb-3 group-hover:bg-yellow-100 dark:group-hover:bg-yellow-900/50 transition-colors">
+                <Calendar className="w-6 h-6 md:w-8 md:h-8 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Attendance</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Mark daily register</p>
+            </Link>
 
-          <Link href="/teacher/reports" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-orange-50 dark:bg-orange-900/30 p-4 rounded-full mb-3 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50 transition-colors">
-              <Printer className="w-6 h-6 md:w-8 md:h-8 text-orange-600 dark:text-orange-400" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Reports</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Generate reports</p>
-          </Link>
+            <Link href="/teacher/reports" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-orange-50 dark:bg-orange-900/30 p-4 rounded-full mb-3 group-hover:bg-orange-100 dark:group-hover:bg-orange-900/50 transition-colors">
+                <Printer className="w-6 h-6 md:w-8 md:h-8 text-orange-600 dark:text-orange-400" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Reports</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Generate reports</p>
+            </Link>
 
-          <Link href="/teacher/fees" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-teal-50 dark:bg-teal-900/30 p-4 rounded-full mb-3 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 transition-colors">
-              <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-teal-600 dark:text-teal-400" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Fees</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Collection & Records</p>
-          </Link>
+            <Link href="/teacher/fees" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-teal-50 dark:bg-teal-900/30 p-4 rounded-full mb-3 group-hover:bg-teal-100 dark:group-hover:bg-teal-900/50 transition-colors">
+                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-teal-600 dark:text-teal-400" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Fees</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Collection & Records</p>
+            </Link>
 
-          <Link href="/teacher/settings" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
-            <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-full mb-3 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 transition-colors">
-              <Settings className="w-6 h-6 md:w-8 md:h-8 text-gray-600 dark:text-gray-300" />
-            </div>
-            <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Settings</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Password & Theme</p>
-          </Link>
-        </div>
+            <Link href="/teacher/settings" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-full mb-3 group-hover:bg-gray-100 dark:group-hover:bg-gray-600 transition-colors">
+                <Settings className="w-6 h-6 md:w-8 md:h-8 text-gray-600 dark:text-gray-300" />
+              </div>
+              <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Settings</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Password & Theme</p>
+            </Link>
+          </div>
         </div>
 
         {/* Recent Activity */}

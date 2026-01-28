@@ -6,6 +6,7 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ThemeInitializer from '@/components/ThemeInitializer'
 import { ScrollRestorationProvider } from '@/components/ScrollRestorationProvider'
 import { Toaster } from 'react-hot-toast'
+import { CommandPalette } from '@/components/CommandPalette'
 
 const inter = Inter({ subsets: ['latin'] })
 const poppins = Poppins({ 
@@ -40,12 +41,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} ${poppins.variable} font-sans`}>
-        <ThemeInitializer />
-        <InactivityHandler />
-        <PWAInstallPrompt />
-        <Toaster position="top-center" />
+      <body className={`${inter.className} ${poppins.variable} min-h-screen bg-gray-50 dark:bg-gray-900`}>
         <ScrollRestorationProvider>
+          <ThemeInitializer />
+          <PWAInstallPrompt />
+          <InactivityHandler />
+          <CommandPalette />
+          <Toaster position="top-right" />
           {children}
         </ScrollRestorationProvider>
       </body>
