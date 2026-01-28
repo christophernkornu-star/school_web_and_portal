@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function TeacherFeesPage() {
   const router = useRouter()
@@ -221,6 +222,50 @@ export default function TeacherFeesPage() {
     s.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.student_id.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Skeleton */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-10 w-10 rounded-lg" />
+              <div>
+                <Skeleton className="h-8 w-48 mb-2" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+            <div className="flex gap-4">
+               <Skeleton className="h-10 w-40 rounded-lg" />
+               <Skeleton className="h-10 w-32 rounded-lg" />
+            </div>
+          </div>
+
+          {/* Stats Cards Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+          </div>
+
+          {/* Main Content Skeleton */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden p-6 space-y-6">
+            <div className="flex justify-between">
+               <Skeleton className="h-10 w-64 rounded-lg" />
+            </div>
+            <div className="space-y-4">
+               <Skeleton className="h-12 w-full rounded" />
+               <Skeleton className="h-12 w-full rounded" />
+               <Skeleton className="h-12 w-full rounded" />
+               <Skeleton className="h-12 w-full rounded" />
+               <Skeleton className="h-12 w-full rounded" />
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
