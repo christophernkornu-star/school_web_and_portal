@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import BackButton from '@/components/ui/BackButton'
 import { ArrowLeft, Plus, Save, Trash2, GripVertical, CheckCircle2, Circle, HelpCircle, AlertCircle } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
@@ -447,9 +448,7 @@ export default function CreateQuizPage() {
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
         <div className="container mx-auto px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Link href="/teacher/assessments" className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex-shrink-0">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
+            <BackButton className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex-shrink-0" />
             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">Create Assessment</h1>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">

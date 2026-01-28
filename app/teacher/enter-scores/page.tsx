@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import BackButton from '@/components/ui/BackButton'
 import { GraduationCap, ArrowLeft, Save, Search, AlertCircle } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -286,10 +287,10 @@ export default function EnterScores() {
                 <p className="text-[10px] md:text-xs text-gray-600">Teacher Portal - Enter Scores</p>
               </div>
             </div>
-            <Link href="/teacher/dashboard" className="flex items-center space-x-2 text-gray-700 hover:text-ghana-green">
-              <ArrowLeft className="w-5 h-5" />
-              <span className="text-sm">Back to Dashboard</span>
-            </Link>
+            <BackButton 
+              label="Back to Dashboard" 
+              className="text-gray-700 hover:text-ghana-green gap-2" 
+            />
           </div>
         </nav>
         
