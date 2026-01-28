@@ -80,7 +80,7 @@ export default function EnterScores() {
 
         if (data) {
           const loadedScores: Record<string, number> = {}
-          data.forEach((item) => {
+          data.forEach((item: any) => {
             loadedScores[item.student_id] = item.score
           })
           setScores(loadedScores)
