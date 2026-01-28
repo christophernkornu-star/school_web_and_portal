@@ -335,7 +335,7 @@ export default function ReportsPage() {
           </div>
           <Link 
             href="/teacher/assessment-sheet" 
-            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shrink-0 text-xs md:text-base"
+            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shrink-0 text-xs md:text-base hidden"
           >
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">Assessment Sheet</span>

@@ -1047,8 +1047,7 @@ export default function TeacherStudentReportPage() {
 
           <!-- Footer Note -->
           <div class="footer-note">
-            Any student showing this document beside all right reserved @Biriwa Methodist School © school. In any circumstances, the paper in which in color with blue mixed texture of a tinted hachure.
-            Date generated: ${currentDate}
+            © Biriwa Methodist School. All rights reserved. This document is official only when presented in its original color format with the blue textured watermark. Generated on: 28/01/2026.
           </div>
           <div class="copyright-footer">@2025 FortSoft. All rights reserved.</div>
         </div>
