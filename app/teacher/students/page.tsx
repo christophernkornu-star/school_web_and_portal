@@ -7,6 +7,9 @@ import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, Lis
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
+import { Skeleton } from '@/components/ui/skeleton'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
 
 function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, selected, selectionMode, onSelect }: { 
   student: any, 
@@ -515,13 +518,14 @@ export default function MyStudentsPage() {
       }
 
       setResetSuccess(true)
+      toast.success('Password reset successfully')
       setTimeout(() => {
         setResetPasswordModal({ show: false, student: null })
         setResetSuccess(false)
       }, 2000)
     } catch (err: any) {
       console.error('Error resetting password:', err)
-      alert(`Failed to reset password: ${err.message}`)
+      toast.error(`Failed to reset password: ${err.message}`)
     } finally {
       setResetting(false)
     }
@@ -542,8 +546,9 @@ export default function MyStudentsPage() {
       // Remove from local state
       setStudents(students.filter(s => s.id !== deleteModal.student.id))
       setDeleteModal({ show: false, student: null })
+      toast.success('Student deleted successfully')
     } catch (err: any) {
-      alert('Failed to delete student: ' + err.message)
+      toast.error('Failed to delete student: ' + err.message)
     } finally {
       setDeleting(false)
     }
@@ -565,8 +570,9 @@ export default function MyStudentsPage() {
       setStudents(students.filter(s => !selectedStudents.includes(s.id)))
       setSelectedStudents([])
       setBulkDeleteModal(false)
+      toast.success('Selected students deleted')
     } catch (err: any) {
-      alert('Failed to delete students: ' + err.message)
+      toast.error('Failed to delete students: ' + err.message)
     } finally {
       setBulkDeleting(false)
     }
@@ -619,12 +625,12 @@ export default function MyStudentsPage() {
         }
       }
 
-      alert(`Password reset complete.\nSuccessful: ${successCount}\nFailed: ${failCount}`)
+      toast.success(`Password reset complete.\nSuccessful: ${successCount}\nFailed: ${failCount}`, { duration: 5000 })
       setSelectedStudents([])
       setSelectionMode(false)
       setBulkResetPasswordModal(false)
     } catch (err: any) {
-      alert('Failed to reset passwords: ' + err.message)
+      toast.error('Failed to reset passwords: ' + err.message)
     } finally {
       setBulkResetting(false)
     }
@@ -632,11 +638,41 @@ export default function MyStudentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading students...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <header className="ghana-flag-border bg-white dark:bg-gray-800 shadow-md">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div>
+                   <Skeleton className="w-48 h-6 mb-2" />
+                   <Skeleton className="w-32 h-4" />
+                </div>
+              </div>
+              <Skeleton className="w-24 h-10 rounded-lg" />
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6">
+           <Skeleton className="w-full h-16 rounded-lg" />
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+              {[...Array(8)].map((_, i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                      <div className="h-2 bg-gray-200 dark:bg-gray-700"></div>
+                      <div className="p-4 flex flex-col items-center text-center -mt-6">
+                          <Skeleton className="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 shadow-md mb-3" />
+                          <Skeleton className="w-3/4 h-5 mb-2" />
+                          <Skeleton className="w-1/2 h-4 mb-4" />
+                          <div className="w-full space-y-2">
+                             <Skeleton className="w-full h-8 rounded" />
+                             <Skeleton className="w-full h-8 rounded" />
+                          </div>
+                      </div>
+                  </div>
+              ))}
+           </div>
+        </main>
       </div>
     )
   }

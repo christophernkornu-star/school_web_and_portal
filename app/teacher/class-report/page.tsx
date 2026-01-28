@@ -8,6 +8,9 @@ import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import Image from 'next/image'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Student {
   id: string
@@ -79,7 +82,7 @@ export default function ClassReportPage() {
 
         const { data: teacherData, error: teacherError } = await getTeacherData(user.id)
         if (teacherError || !teacherData) {
-          alert('Teacher profile not found.')
+          toast.error('Teacher profile not found.')
           return
         }
 
@@ -216,16 +219,36 @@ export default function ClassReportPage() {
         termName
       })
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating report:', error)
-      alert('Failed to generate class report.')
+      toast.error('Failed to generate class report: ' + error.message)
     } finally {
       setGenerating(false)
     }
   }
 
   if (loading) {
-    return <div className="p-8 text-center">Loading...</div>
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <header className="bg-white shadow">
+            <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <Skeleton className="h-8 w-40" />
+                </div>
+                <Skeleton className="h-10 w-32 rounded" />
+            </div>
+        </header>
+        <main className="flex-1 container mx-auto px-4 py-8">
+            <div className="bg-white rounded-lg shadow p-6 mb-6">
+                 <div className="grid grid-cols-2 gap-4">
+                     <Skeleton className="h-10 w-full rounded" />
+                     <Skeleton className="h-10 w-full rounded" />
+                 </div>
+            </div>
+        </main>
+      </div>
+    )
   }
 
   if (classes.length === 0) {
@@ -246,9 +269,7 @@ export default function ClassReportPage() {
       <div className="max-w-[1400px] mx-auto mb-6 md:mb-8 print:hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <Link href="/teacher/dashboard" className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors inline-flex">
-              <ArrowLeft className="w-6 h-6 text-gray-800 dark:text-gray-200" />
-            </Link>
+            <BackButton className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors inline-flex text-gray-800 dark:text-gray-200" />
             <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Class Report Sheet</h1>
           </div>
           {sheetData && (

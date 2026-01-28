@@ -6,6 +6,8 @@ import { ArrowLeft, Plus, Edit, Trash2, Eye, Calendar, Clock, BookOpen } from 'l
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
 
 export default function AssessmentsPage() {
   const supabase = getSupabaseBrowserClient()
@@ -81,9 +83,27 @@ export default function AssessmentsPage() {
 
   if (loading) {
       return (
-          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
-          </div>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
+            <header className="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
+                <div className="container mx-auto px-4 md:px-6 py-3 sm:py-4">
+                    <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-3">
+                             <Skeleton className="h-10 w-10 rounded-full" />
+                             <Skeleton className="h-6 w-32" />
+                         </div>
+                         <Skeleton className="h-10 w-32 rounded-lg" />
+                    </div>
+                </div>
+            </header>
+            <main className="container mx-auto px-4 md:px-6 py-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 rounded-lg" />)}
+                </div>
+                <div className="grid gap-6">
+                    {[1,2,3].map(i => <Skeleton key={i} className="h-40 rounded-lg" />)}
+                </div>
+            </main>
+        </div>
       )
   }
 
@@ -93,9 +113,7 @@ export default function AssessmentsPage() {
         <div className="container mx-auto px-4 md:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <Link href="/teacher/dashboard" className="p-2 -ml-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
+              <BackButton />
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Assessments</h1>
               </div>

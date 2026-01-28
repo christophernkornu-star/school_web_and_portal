@@ -6,6 +6,10 @@ import Link from 'next/link'
 import { ArrowLeft, FileText, BarChart3, Download, Users, TrendingUp, Eye, Filter, CheckSquare, Square, Printer } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 
 interface Student {
   id: string
@@ -222,9 +226,9 @@ export default function ReportsPage() {
       // Open the student's report card page
       const reportCardUrl = `/teacher/reports/student/${studentId}?term=${selectedTerm}`
       router.push(reportCardUrl)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating report card:', error)
-      alert('Failed to generate report card')
+      toast.error('Failed to generate report card: ' + error.message)
     } finally {
       setGeneratingPDF(false)
       setSelectedStudentId(null)
@@ -252,7 +256,7 @@ export default function ReportsPage() {
   // Generate report cards for selected students (bulk)
   const generateBulkReportCards = async () => {
     if (selectedStudents.length === 0) {
-      alert('Please select at least one student')
+      toast.error('Please select at least one student')
       return
     }
 
@@ -262,9 +266,9 @@ export default function ReportsPage() {
       // Open a single window with all report cards for printing
       const reportUrl = `/teacher/reports/bulk?students=${selectedStudents.join(',')}&term=${selectedTerm}`
       router.push(reportUrl)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating bulk report cards:', error)
-      alert('Failed to generate report cards')
+      toast.error('Failed to generate report cards: ' + error.message)
     } finally {
       setBulkGenerating(false)
     }
@@ -288,11 +292,29 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8 transition-colors">
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+          <div className="container mx-auto px-4 py-4">
+             <div className="flex justify-between items-center mb-4">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-10 w-32 rounded-lg" />
+             </div>
+             <div className="flex gap-4">
+               <Skeleton className="h-10 w-48 rounded" />
+               <Skeleton className="h-10 w-32 rounded" />
+               <Skeleton className="h-10 w-32 rounded" />
+             </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <Skeleton className="h-32 rounded-lg" />
+                <Skeleton className="h-32 rounded-lg" />
+                <Skeleton className="h-32 rounded-lg" />
+            </div>
+            <Skeleton className="h-96 w-full rounded-lg" />
+        </main>
       </div>
     )
   }
@@ -305,9 +327,7 @@ export default function ReportsPage() {
       <header className="bg-white dark:bg-gray-800 shadow transition-colors">
         <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center gap-2">
           <div className="flex items-center space-x-2 md:space-x-4">
-            <Link href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 shrink-0">
-              <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
-            </Link>
+            <BackButton className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 shrink-0" />
             <div>
               <h1 className="text-base md:text-2xl font-bold text-gray-800 dark:text-white leading-tight">Class Performance Reports</h1>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">Generate report cards and analyze class performance</p>

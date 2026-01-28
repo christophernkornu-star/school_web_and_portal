@@ -9,6 +9,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import BackButton from '@/components/ui/BackButton'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { toast } from 'react-hot-toast'
 
 interface Student {
   id: string
@@ -180,7 +181,7 @@ export default function AttendancePage() {
   const applyToAll = () => {
     const days = parseInt(bulkDays)
     if (isNaN(days) || days < 0 || days > totalDays) {
-      alert(`Please enter a valid number between 0 and ${totalDays}`)
+      toast.error(`Please enter a valid number between 0 and ${totalDays}`)
       return
     }
 
@@ -191,7 +192,7 @@ export default function AttendancePage() {
     setAttendance(newAttendance)
     setHasUnsavedChanges(true)
     setBulkDays('')
-    alert(`Applied ${days} days to all ${students.length} students`)
+    toast.success(`Applied ${days} days to all ${students.length} students`)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
@@ -230,11 +231,11 @@ export default function AttendancePage() {
       if (error) throw error
 
       setHasUnsavedChanges(false)
-      alert('Attendance saved successfully!')
+      toast.success('Attendance saved successfully!')
       await loadStudents() // Reload to get updated records
     } catch (error: any) {
       console.error('Error saving attendance:', error)
-      alert(`Failed to save attendance: ${error.message}`)
+      toast.error(`Failed to save attendance: ${error.message}`)
     } finally {
       setSaving(false)
     }
