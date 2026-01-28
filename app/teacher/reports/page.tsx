@@ -327,7 +327,7 @@ export default function ReportsPage() {
       <header className="bg-white dark:bg-gray-800 shadow transition-colors">
         <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center gap-2">
           <div className="flex items-center space-x-2 md:space-x-4">
-            <BackButton className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 shrink-0" />
+            <BackButton href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 shrink-0" />
             <div>
               <h1 className="text-base md:text-2xl font-bold text-gray-800 dark:text-white leading-tight">Class Performance Reports</h1>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">Generate report cards and analyze class performance</p>

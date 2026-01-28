@@ -8,6 +8,7 @@ import signatureImg from '@/app/student/report-card/signature.png'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Import remarks from student report card (same system)
 const ATTITUDE_REMARKS = {
@@ -437,6 +438,35 @@ export default function TeacherStudentReportPage() {
       headTeacher: getAutoRemark('headTeacher', reportData.averageScore, attendancePercentage)
     }
     setRemarks(autoRemarks)
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8">
+        <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700">
+          <div className="container mx-auto px-4 py-4">
+             <div className="flex gap-4 items-center">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div>
+                   <Skeleton className="h-6 w-48 mb-2" />
+                   <Skeleton className="h-4 w-32" />
+                </div>
+             </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 py-8 max-w-5xl">
+             <div className="grid md:grid-cols-3 gap-6 mb-8">
+                 <Skeleton className="h-32 rounded-xl" />
+                 <Skeleton className="h-32 rounded-xl" />
+                 <Skeleton className="h-32 rounded-xl" />
+             </div>
+             <div className="space-y-6">
+                <Skeleton className="h-64 rounded-xl" />
+                <Skeleton className="h-96 rounded-xl" />
+             </div>
+        </main>
+      </div>
+    )
   }
 
   const downloadPDF = async () => {
@@ -1027,60 +1057,42 @@ export default function TeacherStudentReportPage() {
     `
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading report card...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!reportData || !student) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600">Failed to load report data</p>
-          <Link href="/teacher/reports" className="text-ghana-green hover:underline mt-4 inline-block">
-            Back to Reports
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/teacher/reports" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 transition-colors">
+      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-3 md:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+              <Link 
+                href="/teacher/reports" 
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex-shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-300" />
               </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h1>
-                <p className="text-sm text-gray-600">
-                  {reportData.termName} - {reportData.year} | {student.classes?.class_name}
+              <div className="min-w-0">
+                <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate">
+                  {student?.last_name} {student?.first_name}
+                </h1>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">
+                  {student?.student_id} • {reportData?.termName}
                 </p>
               </div>
             </div>
+            
             <button
               onClick={downloadPDF}
               disabled={downloading}
-              className="flex items-center gap-2 px-6 py-3 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-ghana-green text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm md:text-base font-medium shadow-sm active:scale-95"
             >
               {downloading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Generating...
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  <span>Generating...</span>
                 </>
               ) : (
                 <>
-                  <Download className="w-4 h-4" />
-                  Download Report Card
+                  <Download className="w-4 h-4 md:w-5 md:h-5" />
+                  <span>Generate Report Card</span>
                 </>
               )}
             </button>
@@ -1088,111 +1100,218 @@ export default function TeacherStudentReportPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        {/* Performance Summary */}
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-600 mb-1">Average Score</p>
-            <p className="text-3xl font-bold text-purple-600">{reportData.averageScore}%</p>
+      <main className="container mx-auto px-4 py-6 md:py-8 max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 dark:border-gray-700">
+             <div className="flex items-center justify-between">
+                <div>
+                   <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Average Score</p>
+                   <p className={`text-2xl md:text-3xl font-bold mt-1 ${
+                      reportData?.averageScore >= 80 ? 'text-green-600' :
+                      reportData?.averageScore >= 60 ? 'text-blue-600' :
+                      reportData?.averageScore >= 40 ? 'text-yellow-600' : 'text-red-600'
+                   }`}>{reportData?.averageScore}%</p>
+                </div>
+                {/* Visual Indicator */}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                      reportData?.averageScore >= 80 ? 'bg-green-100 text-green-600' :
+                      reportData?.averageScore >= 60 ? 'bg-blue-100 text-blue-600' :
+                      reportData?.averageScore >= 40 ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'
+                }`}>
+                   <span className="font-bold text-lg">{gradeDistribution[getPerformanceLevel(reportData?.averageScore || 0) === 'excellent' ? 'A' : getPerformanceLevel(reportData?.averageScore || 0) === 'good' ? 'B' : getPerformanceLevel(reportData?.averageScore || 0) === 'average' ? 'C' : 'F']}</span>
+                </div>
+             </div>
           </div>
-          {(reportData.aggregate !== null && reportData.aggregate !== undefined) && (
-            <div className="bg-white rounded-lg shadow p-6 text-center">
-              <p className="text-sm text-gray-600 mb-1">Aggregate</p>
-              <p className="text-3xl font-bold text-red-600">{reportData.aggregate}</p>
-            </div>
-          )}
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-600 mb-1">Class Position</p>
-            <p className="text-3xl font-bold text-orange-600">
-              {reportData.position}{getOrdinalSuffix(reportData.position)} / {reportData.totalClassSize}
-            </p>
+          
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 dark:border-gray-700">
+             <div>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Position</p>
+                <div className="flex items-baseline gap-1 mt-1">
+                   <p className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                      {reportData?.position || '-'}
+                      <span className="text-base md:text-lg font-normal text-gray-500 ml-0.5">
+                        {reportData?.position ? getOrdinalSuffix(reportData.position) : ''}
+                      </span>
+                   </p>
+                   <span className="text-sm md:text-base text-gray-500 dark:text-gray-400">/ {reportData?.totalClassSize}</span>
+                </div>
+             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-600 mb-1">Attendance</p>
-            <p className="text-3xl font-bold text-blue-600">
-              {reportData.daysPresent}/{reportData.totalDays}
-            </p>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 md:p-6 border border-gray-100 dark:border-gray-700">
+             <div>
+                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Performance Status</p>
+                <p className={`text-lg md:text-xl font-bold mt-2 inline-block px-3 py-1 rounded-lg ${
+                   getPerformanceLevel(reportData?.averageScore || 0) === 'excellent' ? 'bg-green-100 text-green-700' :
+                   getPerformanceLevel(reportData?.averageScore || 0) === 'good' ? 'bg-blue-100 text-blue-700' :
+                   getPerformanceLevel(reportData?.averageScore || 0) === 'average' ? 'bg-yellow-100 text-yellow-700' :
+                   'bg-red-100 text-red-700'
+                }`}>
+                   {getPerformanceLevel(reportData?.averageScore || 0).toUpperCase()}
+                </p>
+             </div>
           </div>
         </div>
 
-        {/* Grades Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-semibold text-gray-800">Subject Grades</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-ghana-green text-white">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Subject</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Class Score</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Exam Score</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Total</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Grade</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Remarks</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {reportData.grades.map((grade: any, index: number) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{grade.subject_name}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">{grade.class_score ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">{grade.exam_score ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.total ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.grade || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{grade.remarks || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        {/* Subjects Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden mb-8">
+           <div className="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base md:text-lg">Academic Performance</h3>
+           </div>
+           <div className="overflow-x-auto">
+              <table className="w-full">
+                 <thead className="bg-gray-50 dark:bg-gray-700/50 text-left">
+                    <tr>
+                       <th className="px-4 md:px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
+                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Class (30%)</th>
+                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Exam (70%)</th>
+                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Grade</th>
+                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Pos</th>
+                       <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Remarks</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                    {reportData?.grades.map((grade: any, index: number) => (
+                       <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                          <td className="px-4 md:px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{grade.subject_name}</td>
+                          <td className="px-4 md:px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300">{grade.class_score || '-'}</td>
+                          <td className="px-4 md:px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300">{grade.exam_score || '-'}</td>
+                          <td className="px-4 md:px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white">{grade.total || '-'}</td>
+                          <td className="px-4 md:px-6 py-4 text-center">
+                             <span className={`inline-block w-8 h-8 leading-8 text-xs font-bold rounded-full ${
+                                 grade.total >= 80 ? 'bg-green-100 text-green-700' :
+                                 grade.total >= 60 ? 'bg-blue-100 text-blue-700' :
+                                 grade.total >= 40 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                             }`}>
+                                {getGradeValue(grade.total || 0)}
+                             </span>
+                          </td>
+                          <td className="px-4 md:px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300 hidden sm:table-cell">
+                             {grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : '-'}
+                          </td>
+                          <td className="px-4 md:px-6 py-4 text-sm text-gray-600 dark:text-gray-300 hidden md:table-cell min-w-[200px]">
+                             {grade.remarks || grade.total >= 80 ? 'Excellent performance' : grade.total >= 60 ? 'Good work' : grade.total >= 50 ? 'Credit' : grade.total >= 40 ? 'Pass' : 'Fail'}
+                          </td>
+                       </tr>
+                    ))}
+                 </tbody>
+              </table>
+           </div>
         </div>
 
-        {/* Remarks Editor */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Edit Report Card Remarks</h3>
-            <button
-              onClick={applyAutoRemarks}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Apply Auto Remarks
-            </button>
-          </div>
+        {/* Remarks Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-6">
+           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h3 className="font-bold text-gray-900 dark:text-white text-base md:text-lg">Teacher's Remarks</h3>
+              <button
+                onClick={applyAutoRemarks}
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                 <RefreshCw className="w-4 h-4" />
+                 Regenerate Suggestions
+              </button>
+           </div>
+           
+           <div className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                 <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Conduct</label>
+                    <div className="relative">
+                       <input
+                          type="text"
+                          value={remarks.conduct}
+                          onChange={(e) => handleRemarkChange('conduct', e.target.value)}
+                          list="conduct-list"
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="Student's behavior..."
+                       />
+                       <datalist id="conduct-list">
+                          {getAllRemarks('conduct').map((r, i) => <option key={i} value={r} />)}
+                       </datalist>
+                    </div>
+                 </div>
 
-          <div className="space-y-4">
-            {[
-              { key: 'attitude', label: 'Attitude to Work' },
-              { key: 'interest', label: 'Interest' },
-              { key: 'conduct', label: 'Conduct' },
-              { key: 'classTeacher', label: "Class Teacher's Remarks" }
-            ].map(({ key, label }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-                <select
-                  value={remarks[key as keyof ReportRemarks]}
-                  onChange={(e) => handleRemarkChange(key as keyof ReportRemarks, e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
-                >
-                  {getAllRemarks(key).map((remark, index) => (
-                    <option key={index} value={remark}>{remark}</option>
-                  ))}
-                </select>
+                 <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attitude</label>
+                    <div className="relative">
+                       <input
+                          type="text"
+                          value={remarks.attitude}
+                          onChange={(e) => handleRemarkChange('attitude', e.target.value)}
+                          list="attitude-list"
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="Attitude towards learning..."
+                       />
+                       <datalist id="attitude-list">
+                          {getAllRemarks('attitude').map((r, i) => <option key={i} value={r} />)}
+                       </datalist>
+                    </div>
+                 </div>
+
+                 <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Interest</label>
+                    <div className="relative">
+                       <input
+                          type="text"
+                          value={remarks.interest}
+                          onChange={(e) => handleRemarkChange('interest', e.target.value)}
+                          list="interest-list"
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="Special interests..."
+                       />
+                       <datalist id="interest-list">
+                          {getAllRemarks('interest').map((r, i) => <option key={i} value={r} />)}
+                       </datalist>
+                    </div>
+                 </div>
+
+                 <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class Teacher's Remark</label>
+                    <div className="relative">
+                       <input
+                          type="text"
+                          value={remarks.classTeacher}
+                          onChange={(e) => handleRemarkChange('classTeacher', e.target.value)}
+                          list="teacher-list"
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                          placeholder="General performance remark..."
+                       />
+                       <datalist id="teacher-list">
+                          {getAllRemarks('classTeacher').map((r, i) => <option key={i} value={r} />)}
+                       </datalist>
+                    </div>
+                 </div>
               </div>
-            ))}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Headteacher's Remarks <span className="text-xs text-gray-500">(Auto-generated)</span>
-              </label>
-              <div className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
-                {remarks.headTeacher}
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Head Teacher's Remark (Suggestion)</label>
+                 <div className="relative">
+                    <input
+                       type="text"
+                       value={remarks.headTeacher}
+                       onChange={(e) => handleRemarkChange('headTeacher', e.target.value)}
+                       list="headteacher-list"
+                       className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                       placeholder="Remark for Head Teacher's approval..."
+                    />
+                    <datalist id="headteacher-list">
+                       {getAllRemarks('headTeacher').map((r, i) => <option key={i} value={r} />)}
+                    </datalist>
+                 </div>
               </div>
-            </div>
-          </div>
+           </div>
         </div>
+
       </main>
+
+      <style jsx global>{`
+        @media print {
+          @page { size: A4; margin: 0; }
+          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
     </div>
   )
 }
