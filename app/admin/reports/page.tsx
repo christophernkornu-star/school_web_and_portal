@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import BackButton from '@/components/ui/BackButton'
 import { ArrowLeft, BarChart3, FileDown, Printer, FileText } from 'lucide-react'
 
 export default function ReportsPage() {
@@ -18,9 +19,7 @@ export default function ReportsPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-methodist-gold hover:text-yellow-600">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Generate Reports</h1>
               <p className="text-xs md:text-sm text-gray-600">Create and export various school reports</p>

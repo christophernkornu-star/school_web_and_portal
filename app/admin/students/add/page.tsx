@@ -7,6 +7,8 @@ import { ArrowLeft, Save, UserPlus, Upload, Download, CheckCircle, XCircle, Aler
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { createStudent } from '@/lib/user-creation'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
 
 export default function AddStudentPage() {
   const router = useRouter()
@@ -77,11 +79,31 @@ export default function AddStudentPage() {
         guardian_email: formData.guardian_email || undefined,
       })
 
-      alert(`Student account created successfully!\nUsername: ${result.username}\nPassword: ${result.password}`)
+      
+      toast.success(`Student account created successfully!`, {
+        duration: 5000,
+        icon: '👏',
+      })
+      // Show credentials in a persistent way if possible, or just log them. 
+      // For now, let's toast them or use a modal? 
+      // The original code used alert to show credentials. 
+      // I'll use a longer toast or alert is actually better for credentials?
+      // No, UI should probably show a success modal with credentials.
+      // But I am just doing "Rich UX" for now. 
+      // Let's stick to toast.success and maybe `alert` for credentials ONLY is fine?
+      // Or I can copy them to clipboard?
+      // The user prompt said "Replace manual alerts with standard Toast notifications".
+      // I will follow that. But for credentials, user might miss them.
+      // I'll show a toast with credentials? "Username: ... Password: ..."
+      toast(`Username: ${result.username}\nPassword: ${result.password}`, {
+        duration: 10000,
+        icon: '🔑',
+      })
+      
       router.push('/admin/students')
     } catch (error: any) {
       console.error('Error creating student:', error)
-      alert('Failed to create student: ' + (error.message || 'Please try again'))
+      toast.error(error.message || 'Failed to create student')
     } finally {
       setLoading(false)
     }
@@ -303,9 +325,7 @@ Mary,Ann,Smith,2016-03-20,female,,,`
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/students" className="text-methodist-blue hover:text-blue-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/students" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Add New Student</h1>
               <p className="text-xs md:text-sm text-gray-600">Register a new student in the system</p>

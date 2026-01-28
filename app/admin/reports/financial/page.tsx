@@ -6,6 +6,8 @@ import { ArrowLeft, Calendar, DollarSign, Download, Filter, Search, TrendingUp, 
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { format, startOfDay, endOfDay, isSameDay, parseISO, subDays } from 'date-fns'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type Tab = 'overview' | 'collections' | 'debts'
 
@@ -192,41 +194,48 @@ export default function FinancialReportsPage() {
     return data
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+         <div className="text-center w-full max-w-7xl px-4">
+             <div className="space-y-4">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-48" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-12 mb-8">
+                     <Skeleton className="h-32 rounded-lg" />
+                     <Skeleton className="h-32 rounded-lg" />
+                     <Skeleton className="h-32 rounded-lg" />
+                     <Skeleton className="h-32 rounded-lg" />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Skeleton className="h-96 rounded-lg" />
+                    <Skeleton className="h-96 rounded-lg" />
+                </div>
+             </div>
+         </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div className="flex items-center">
-            <Link href="/admin/finance" className="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
-              <ArrowLeft className="w-6 h-6 text-gray-600" />
-            </Link>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <header className="bg-white shadow">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <BackButton href="/admin/reports" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Financial Reports</h1>
               <p className="text-sm md:text-base text-gray-600">Track collections and outstanding balances</p>
             </div>
           </div>
-          
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
-            <select 
-              className="w-full sm:w-auto bg-white border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-            >
-              <option value="today">Today</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="all">All Time</option>
-            </select>
-            <button 
-              onClick={() => window.print()}
-              className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Export
-            </button>
-          </div>
         </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

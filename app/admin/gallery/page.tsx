@@ -2,12 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { ArrowLeft, Plus, Edit, Trash2, Upload, X, Image as ImageIcon } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
 export default function AdminGalleryPage() {
   const supabase = getSupabaseBrowserClient()
   const [photos, setPhotos] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -25,12 +29,14 @@ export default function AdminGalleryPage() {
   }, [])
 
   const fetchPhotos = async () => {
+    setLoading(true)
     const { data } = await supabase
       .from('gallery_photos')
       .select('*')
       .order('created_at', { ascending: false })
     
     if (data) setPhotos(data)
+    setLoading(false)
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,12 +44,12 @@ export default function AdminGalleryPage() {
     if (file) {
       // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB')
+        toast.error('File size must be less than 5MB')
         return
       }
       // Check file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
+        toast.error('Please select an image file')
         return
       }
       setSelectedFile(file)
@@ -68,7 +74,7 @@ export default function AdminGalleryPage() {
 
       return data.publicUrl
     } catch (error: any) {
-      alert('Error uploading file: ' + error.message)
+      toast.error('Error uploading file: ' + error.message)
       return null
     }
   }
@@ -92,7 +98,7 @@ export default function AdminGalleryPage() {
 
       // Validate that we have a photo URL
       if (!photoUrl) {
-        alert('Please provide a photo URL or select a file to upload')
+        toast.error('Please provide a photo URL or select a file to upload')
         setUploading(false)
         return
       }
@@ -101,6 +107,7 @@ export default function AdminGalleryPage() {
         .from('gallery_photos')
         .insert([{ ...formData, photo_url: photoUrl }])
 
+      toast.success('Photo uploaded successfully')
       setShowModal(false)
       setFormData({
         title: '',
@@ -113,7 +120,7 @@ export default function AdminGalleryPage() {
       setUploadMethod('file')
       fetchPhotos()
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      toast.error('Error: ' + error.message)
     } finally {
       setUploading(false)
     }
@@ -121,8 +128,13 @@ export default function AdminGalleryPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this photo?')) {
-      await supabase.from('gallery_photos').delete().eq('id', id)
-      fetchPhotos()
+      try {
+        await supabase.from('gallery_photos').delete().eq('id', id)
+        toast.success('Photo deleted successfully')
+        fetchPhotos()
+      } catch (error) {
+        toast.error('Failed to delete photo')
+      }
     }
   }
 
@@ -135,12 +147,49 @@ export default function AdminGalleryPage() {
 
       if (error) throw error
       fetchPhotos()
+      toast.success(currentStatus ? 'Removed from spotlight' : 'Added to spotlight')
     } catch (error: any) {
-      alert('Error toggling spotlight: ' + error.message)
+      toast.error('Error toggling spotlight: ' + error.message)
     }
   }
 
   const albums = [...new Set(photos.map(p => p.album_name))]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div className="space-y-1">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+          <div className="grid md:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow overflow-hidden">
+                <Skeleton className="h-48 w-full" />
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -148,9 +197,7 @@ export default function AdminGalleryPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-800">Photo Gallery Management</h1>
                 <p className="text-sm text-gray-600">Upload and manage school photos</p>

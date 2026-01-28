@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Plus, Edit, Trash2, Check, X, AlertCircle } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
+import { ArrowLeft, Calendar, Plus, Edit, Trash2 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -27,7 +30,6 @@ export default function TermsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedTerm, setSelectedTerm] = useState<Term | null>(null)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
 
   const [formData, setFormData] = useState({
     name: 'Term 1',
@@ -60,10 +62,9 @@ export default function TermsPage() {
 
   const handleAdd = async () => {
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     if (!formData.name || !formData.academic_year || !formData.start_date || !formData.end_date) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields' })
+      toast.error('Please fill in all required fields')
       setSaving(false)
       return
     }
@@ -88,7 +89,7 @@ export default function TermsPage() {
       .single()
 
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
       if (formData.is_current && newTerm) {
         // Update academic_settings
@@ -130,7 +131,7 @@ export default function TermsPage() {
         }
       }
 
-      setMessage({ type: 'success', text: 'Term added successfully!' })
+      toast.success('Term added successfully!')
       setShowAddModal(false)
       resetForm()
       loadTerms()
@@ -141,7 +142,6 @@ export default function TermsPage() {
   const handleEdit = async () => {
     if (!selectedTerm) return
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     if (formData.is_current) {
       await supabase
@@ -162,7 +162,7 @@ export default function TermsPage() {
       .eq('id', selectedTerm.id)
 
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
       if (formData.is_current) {
         // Update academic_settings
@@ -196,17 +196,16 @@ export default function TermsPage() {
         } else {
           await supabase
             .from('system_settings')
-            .insert({ 
+            .insert({
               setting_key: 'current_term', 
               setting_value: selectedTerm.id,
               description: 'Current Academic Term ID'
             })
         }
       }
-
-      setMessage({ type: 'success', text: 'Term updated successfully!' })
+      
+      toast.success('Term updated successfully!')
       setShowEditModal(false)
-      resetForm()
       loadTerms()
     }
     setSaving(false)
@@ -222,9 +221,9 @@ export default function TermsPage() {
       .eq('id', selectedTerm.id)
 
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
-      setMessage({ type: 'success', text: 'Term deleted successfully!' })
+      toast.success('Term deleted successfully!')
       setShowDeleteModal(false)
       loadTerms()
     }
@@ -281,7 +280,7 @@ export default function TermsPage() {
     }
 
     loadTerms()
-    setMessage({ type: 'success', text: `${term.name} set as current term` })
+    toast.success(`${term.name} set as current term`)
   }
 
   const openEditModal = (term: Term) => {
@@ -322,8 +321,50 @@ export default function TermsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 md:px-6 py-8">
+          {[1, 2].map((i) => (
+            <div key={i} className="mb-8">
+              <Skeleton className="h-8 w-32 mb-4" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((j) => (
+                  <div key={j} className="bg-white rounded-lg shadow p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <Skeleton className="h-6 w-24 mb-2" />
+                        <Skeleton className="h-4 w-32" />
+                      </div>
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </div>
+                    <div className="space-y-2 mb-4">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                    <div className="flex justify-end space-x-2 pt-4 border-t">
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </main>
       </div>
     )
   }
@@ -334,9 +375,7 @@ export default function TermsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Academic Terms</h1>
                 <p className="text-xs md:text-sm text-gray-600">Manage academic terms and sessions</p>
@@ -357,18 +396,6 @@ export default function TermsPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: '', text: '' })} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
         {Object.keys(groupedTerms).length === 0 ? (
           <div className="bg-white rounded-lg shadow p-8 md:p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -515,12 +542,6 @@ export default function TermsPage() {
                 <label htmlFor="is_current" className="text-sm text-gray-700">Set as current term</label>
               </div>
             </div>
-
-            {message.text && message.type === 'error' && (
-              <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-lg text-sm">
-                {message.text}
-              </div>
-            )}
 
             <div className="flex justify-end space-x-3 mt-6">
               <button

@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, RefreshCw, TrendingUp } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -12,7 +15,6 @@ export default function HomepageStatsPage() {
   const supabase = getSupabaseBrowserClient()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState('')
   const [settings, setSettings] = useState({
     stats_title: '',
     stats_subtitle: '',
@@ -62,7 +64,6 @@ export default function HomepageStatsPage() {
 
   const handleSave = async () => {
     setSaving(true)
-    setMessage('')
 
     try {
       // Update each setting
@@ -79,11 +80,10 @@ export default function HomepageStatsPage() {
       )
 
       await Promise.all(updates)
-      setMessage('Settings saved successfully! Changes will appear on the homepage.')
-      setTimeout(() => setMessage(''), 5000)
+      toast.success('Settings saved successfully! Changes will appear on the homepage.')
     } catch (error) {
       console.error('Error saving settings:', error)
-      setMessage('Error saving settings. Please try again.')
+      toast.error('Error saving settings. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -91,8 +91,24 @@ export default function HomepageStatsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <div>
+                <Skeleton className="h-8 w-64 mb-1" />
+                <Skeleton className="h-4 w-96" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-6 py-8">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <Skeleton className="h-64 w-full rounded-lg" />
+            <Skeleton className="h-96 w-full rounded-lg" />
+          </div>
+        </main>
       </div>
     )
   }
@@ -102,9 +118,7 @@ export default function HomepageStatsPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/settings" className="text-gray-600 hover:text-gray-800">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/settings" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Homepage Statistics</h1>
               <p className="text-xs md:text-sm text-gray-600">Edit statistics displayed on the public website</p>
@@ -252,12 +266,6 @@ export default function HomepageStatsPage() {
                 <span>{saving ? 'Saving...' : 'Save Changes'}</span>
               </button>
             </div>
-
-            {message && (
-              <div className={`mt-4 p-3 rounded-lg ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                {message}
-              </div>
-            )}
           </div>
 
           {/* Preview Section */}

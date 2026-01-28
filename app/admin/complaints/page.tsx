@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase'
 import { cookies } from 'next/headers'
 import ComplaintsList from './ComplaintsList'
+import BackButton from '@/components/ui/BackButton'
+import { MessageSquare } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -34,13 +36,25 @@ export default async function AdminComplaintsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="mb-6 md:mb-8">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Complaints & Suggestions</h1>
-        <p className="text-xs md:text-sm text-gray-600">Manage and respond to user feedback</p>
-      </div>
-      
-      <ComplaintsList initialComplaints={complaints || []} />
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white shadow">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <BackButton href="/admin" />
+            <div className="flex items-center space-x-3">
+              <MessageSquare className="w-8 h-8 text-blue-600" />
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Complaints & Suggestions</h1>
+                <p className="text-xs md:text-sm text-gray-600">Manage and respond to user feedback</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-6 py-8">
+        <ComplaintsList initialComplaints={complaints || []} />
+      </main>
     </div>
   )
 }

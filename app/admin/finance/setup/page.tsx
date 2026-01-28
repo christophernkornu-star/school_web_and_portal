@@ -1,5 +1,8 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -26,7 +29,6 @@ export default function FeeSetupPage() {
     amount: '',
     academic_year: ''
   })
-  const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
     loadData()
@@ -93,9 +95,9 @@ export default function FeeSetupPage() {
       .insert(newType)
     
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
-      setMessage({ type: 'success', text: 'Fee type added successfully' })
+      toast.success('Fee type added successfully')
       setShowTypeModal(false)
       setNewType({ name: '', description: '' })
       loadData()
@@ -111,16 +113,16 @@ export default function FeeSetupPage() {
       .eq('id', id)
 
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
-      setMessage({ type: 'success', text: 'Fee type deleted successfully' })
+      toast.success('Fee type deleted successfully')
       loadData()
     }
   }
 
   const handleAddStructure = async () => {
     if (!newStructure.fee_type_id || !newStructure.amount || newStructure.class_ids.length === 0) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields' })
+      toast.error('Please fill in all required fields')
       return
     }
 
@@ -137,9 +139,9 @@ export default function FeeSetupPage() {
       .insert(inserts)
 
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
-      setMessage({ type: 'success', text: 'Fee structures created successfully' })
+      toast.success('Fee structures created successfully')
       setShowStructureModal(false)
       // Reset form but keep term/year
       setNewStructure(prev => ({
@@ -161,11 +163,72 @@ export default function FeeSetupPage() {
       .eq('id', id)
 
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
-      setMessage({ type: 'success', text: 'Deleted successfully' })
+      toast.success('Deleted successfully')
       loadData()
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header Skeleton */}
+        <div className="bg-white shadow sticky top-0 z-10">
+            <div className="container mx-auto px-4 md:px-6 py-4">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="w-8 h-8 rounded-full" />
+                    <div>
+                        <Skeleton className="w-32 h-6 mb-1" />
+                        <Skeleton className="w-48 h-4" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 py-8">
+             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                 {/* Left Column Skeleton */}
+                 <div className="lg:col-span-1">
+                     <div className="bg-white rounded-lg shadow p-6">
+                         <div className="flex justify-between items-center mb-4">
+                             <Skeleton className="w-24 h-6" />
+                             <Skeleton className="w-8 h-8 rounded-full" />
+                         </div>
+                         <div className="space-y-3">
+                             <Skeleton className="h-12 w-full rounded" />
+                             <Skeleton className="h-12 w-full rounded" />
+                             <Skeleton className="h-12 w-full rounded" />
+                         </div>
+                     </div>
+                 </div>
+
+                 {/* Right Column Skeleton */}
+                 <div className="lg:col-span-2">
+                     <div className="bg-white rounded-lg shadow p-6">
+                         <div className="flex justify-between items-center mb-6">
+                             <Skeleton className="w-48 h-6" />
+                             <Skeleton className="w-32 h-10 rounded-lg" />
+                         </div>
+                         <div className="space-y-4">
+                             {[1, 2, 3, 4].map((i) => (
+                                 <div key={i} className="flex justify-between items-center border-b pb-4">
+                                     <div className="space-y-2">
+                                         <Skeleton className="w-32 h-4" />
+                                         <Skeleton className="w-24 h-3" />
+                                     </div>
+                                     <Skeleton className="w-24 h-4" />
+                                     <Skeleton className="w-24 h-4" />
+                                     <Skeleton className="w-8 h-8 rounded" />
+                                 </div>
+                             ))}
+                         </div>
+                     </div>
+                 </div>
+             </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -173,9 +236,7 @@ export default function FeeSetupPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/finance" />
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-gray-800">Fee Setup</h1>
               <p className="text-xs md:text-sm text-gray-600">Manage fee types and amounts per class</p>
@@ -185,18 +246,6 @@ export default function FeeSetupPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: '', text: '' })} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           {/* Left Column: Fee Types */}
           <div className="lg:col-span-1">

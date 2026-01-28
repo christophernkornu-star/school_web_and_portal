@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, User, Trash2, AlertCircle } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -18,7 +21,6 @@ export default function EditStudentPage() {
   const [deleting, setDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [classes, setClasses] = useState<any[]>([])
-  const [message, setMessage] = useState({ type: '', text: '' })
   const [student, setStudent] = useState<any>(null)
 
   const [formData, setFormData] = useState({
@@ -64,7 +66,7 @@ export default function EditStudentPage() {
       .single() as { data: any, error: any }
 
     if (error || !studentData) {
-      setMessage({ type: 'error', text: 'Student not found' })
+      toast.error('Student not found')
       setLoading(false)
       return
     }
@@ -89,7 +91,6 @@ export default function EditStudentPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     try {
       // Update student record
@@ -121,11 +122,11 @@ export default function EditStudentPage() {
           .eq('id', student.profile_id)
       }
 
-      setMessage({ type: 'success', text: 'Student updated successfully!' })
+      toast.success('Student updated successfully!')
       setTimeout(() => router.push('/admin/students'), 1500)
     } catch (error: any) {
       console.error('Error updating student:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to update student' })
+      toast.error(error.message || 'Failed to update student')
     } finally {
       setSaving(false)
     }
@@ -133,7 +134,6 @@ export default function EditStudentPage() {
 
   const handleDelete = async () => {
     setDeleting(true)
-    setMessage({ type: '', text: '' })
 
     try {
       const response = await fetch('/api/admin/delete-student', {
@@ -146,15 +146,13 @@ export default function EditStudentPage() {
 
       const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete student')
-      }
+      if (!response.ok) throw new Error(data.error || 'Failed to delete student')
 
-      setMessage({ type: 'success', text: 'Student deleted successfully!' })
-      setTimeout(() => router.push('/admin/students'), 1500)
+      toast.success('Student deleted successfully')
+      router.push('/admin/students')
     } catch (error: any) {
       console.error('Error deleting student:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to delete student' })
+      toast.error(error.message || 'Failed to delete student')
       setShowDeleteModal(false)
     } finally {
       setDeleting(false)
@@ -163,8 +161,22 @@ export default function EditStudentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-6 py-8">
+           <Skeleton className="h-48 w-full mb-6 rounded-lg" />
+           <Skeleton className="h-96 w-full rounded-lg" />
+        </main>
       </div>
     )
   }
@@ -189,9 +201,7 @@ export default function EditStudentPage() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/admin/students" className="text-methodist-blue hover:text-blue-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/students" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Edit Student</h1>
                 <p className="text-xs md:text-sm text-gray-600">
@@ -212,17 +222,9 @@ export default function EditStudentPage() {
       </header>
 
       <main className="container mx-auto px-6 py-8">
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.text}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Account Info */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="bg-white rounded-lg shadow p-6 mb-6 lg:col-span-1">
             <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 flex items-center">
               <User className="w-5 h-5 mr-2 text-methodist-blue" />
               Account Information
@@ -244,7 +246,7 @@ export default function EditStudentPage() {
           </div>
 
           {/* Personal Information */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="bg-white rounded-lg shadow p-6 mb-6 lg:col-span-2">
             <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4">Personal Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -302,7 +304,7 @@ export default function EditStudentPage() {
           </div>
 
           {/* Academic Information */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="bg-white rounded-lg shadow p-6 mb-6 lg:col-span-2">
             <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4">Academic Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -338,7 +340,7 @@ export default function EditStudentPage() {
           </div>
 
           {/* Guardian Information */}
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="bg-white rounded-lg shadow p-6 mb-6 lg:col-span-2">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Guardian Information</h2>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -374,7 +376,7 @@ export default function EditStudentPage() {
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-4">
+          <div className="flex justify-end space-x-4 lg:col-span-3">
             <Link
               href="/admin/students"
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"

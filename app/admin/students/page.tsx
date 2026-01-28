@@ -7,6 +7,9 @@ import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircl
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { createUserAction } from '@/app/actions/create-user'
 import { useAdmin } from '@/components/providers/AdminContext'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 const PAGE_SIZE = 20
 
@@ -19,7 +22,6 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [classFilter, setClassFilter] = useState('all')
   const [classes, setClasses] = useState<any[]>([])
-  const [message, setMessage] = useState({ type: '', text: '' })
   
   // Pagination state
   const [page, setPage] = useState(1)
@@ -105,11 +107,11 @@ export default function StudentsPage() {
         throw new Error(data.error || 'Failed to delete student')
       }
 
-      setMessage({ type: 'success', text: 'Student deleted successfully!' })
+      toast.success('Student deleted successfully!')
       loadStudents() // Refresh the list
     } catch (error: any) {
       console.error('Error deleting student:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to delete student' })
+      toast.error(error.message || 'Failed to delete student')
     }
   }
 
@@ -127,10 +129,61 @@ export default function StudentsPage() {
 
   if (loading && students.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading students...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header Skeleton */}
+        <div className="bg-white shadow sticky top-0 z-10">
+          <div className="container mx-auto px-4 sm:px-6 py-4">
+              <div className="flex justify-between items-center gap-4">
+                  <div className="flex items-center gap-3">
+                      <Skeleton className="w-8 h-8 rounded-full" />
+                      <div>
+                          <Skeleton className="w-48 h-6 mb-1" />
+                          <Skeleton className="w-24 h-4" />
+                      </div>
+                  </div>
+                  <Skeleton className="w-32 h-10 rounded-lg" />
+              </div>
+          </div>
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="container mx-auto px-4 sm:px-6 py-6">
+            {/* Filters Skeleton */}
+            <div className="bg-white rounded-lg shadow p-4 mb-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                    <Skeleton className="h-10 w-full md:w-64" />
+                    <Skeleton className="h-10 w-full md:w-32" />
+                </div>
+            </div>
+
+            {/* Table Skeleton */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="p-4 border-b">
+                   <div className="flex justify-between items-center">
+                       <Skeleton className="w-1/4 h-6" />
+                       <Skeleton className="w-1/6 h-6" />
+                       <Skeleton className="w-1/6 h-6" />
+                       <Skeleton className="w-1/6 h-6" />
+                   </div>
+                </div>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <div key={i} className="p-4 border-b flex justify-between items-center bg-white">
+                        <div className="flex items-center gap-3 w-1/4">
+                             <Skeleton className="w-10 h-10 rounded-full" />
+                             <div>
+                                  <Skeleton className="w-32 h-5 mb-1" />
+                                  <Skeleton className="w-20 h-3" />
+                             </div>
+                        </div>
+                        <Skeleton className="w-1/6 h-4" />
+                        <Skeleton className="w-1/6 h-4" />
+                        <div className="flex gap-2 w-1/6 justify-end">
+                            <Skeleton className="w-8 h-8 rounded" />
+                            <Skeleton className="w-8 h-8 rounded" />
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
       </div>
     )
@@ -143,9 +196,7 @@ export default function StudentsPage() {
         <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
-              <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700 flex-shrink-0">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Student Management</h1>
                 <p className="text-xs sm:text-sm text-gray-600">View and manage all students</p>
@@ -166,17 +217,6 @@ export default function StudentsPage() {
 
       {/* Main Content */}
       <main className={`container mx-auto px-4 md:px-6 py-6 md:py-8 transition-opacity duration-200 ${loading && students.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
-        {/* Message Alert */}
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: '', text: '' })} className="ml-auto text-sm">×</button>
-          </div>
-        )}
-
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
           <div className="flex flex-col md:flex-row gap-4">

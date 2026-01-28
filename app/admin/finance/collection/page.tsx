@@ -1,5 +1,8 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -32,7 +35,6 @@ export default function FeeCollectionPage() {
     remarks: ''
   })
   const [submitting, setSubmitting] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
     loadClasses()
@@ -113,7 +115,7 @@ export default function FeeCollectionPage() {
 
   const handlePaymentSubmit = async () => {
     if (!paymentForm.fee_structure_id || !paymentForm.amount_paid) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields' })
+      toast.error('Please fill in all required fields')
       return
     }
 
@@ -134,7 +136,7 @@ export default function FeeCollectionPage() {
 
       if (error) throw error
 
-      setMessage({ type: 'success', text: 'Payment recorded successfully!' })
+      toast.success('Payment recorded successfully!')
       setShowPaymentModal(false)
       setPaymentForm({
         fee_structure_id: '',
@@ -144,7 +146,7 @@ export default function FeeCollectionPage() {
       })
       loadStudentFinancials(selectedStudent) // Refresh data
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } finally {
       setSubmitting(false)
     }
@@ -162,14 +164,73 @@ export default function FeeCollectionPage() {
     `${s.first_name} ${s.last_name} ${s.student_id}`.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  if (loading && classes.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header Skeleton */}
+        <div className="bg-white shadow sticky top-0 z-10">
+            <div className="container mx-auto px-4 md:px-6 py-4">
+                <div className="flex items-center gap-4">
+                    <Skeleton className="w-8 h-8 rounded-full" />
+                    <div>
+                        <Skeleton className="w-32 h-6 mb-1" />
+                        <Skeleton className="w-48 h-4" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 py-8">
+             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-100px)]">
+                 {/* Sidebar Skeleton */}
+                 <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-4 h-full">
+                     <div className="bg-white p-4 rounded-lg shadow space-y-4">
+                         <Skeleton className="w-full h-10 rounded" />
+                         <Skeleton className="w-full h-10 rounded" />
+                     </div>
+                     <div className="bg-white rounded-lg shadow flex-1 p-2 space-y-2">
+                         {[1, 2, 3, 4, 5, 6].map((i) => (
+                             <div key={i} className="flex items-center space-x-3 p-2">
+                                 <Skeleton className="w-8 h-8 rounded-full" />
+                                 <div className="flex-1">
+                                     <Skeleton className="w-24 h-4 mb-1" />
+                                     <Skeleton className="w-16 h-3" />
+                                 </div>
+                             </div>
+                         ))}
+                     </div>
+                 </div>
+
+                 {/* Main Content Skeleton */}
+                 <div className="lg:col-span-8 xl:col-span-9 bg-white rounded-lg shadow p-6 h-full">
+                     <div className="flex items-center gap-4 mb-8 border-b pb-6">
+                         <Skeleton className="w-16 h-16 rounded-full" />
+                         <div>
+                             <Skeleton className="w-48 h-8 mb-2" />
+                             <Skeleton className="w-32 h-4" />
+                         </div>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <Skeleton className="h-32 w-full rounded-lg" />
+                         <Skeleton className="h-32 w-full rounded-lg" />
+                     </div>
+                     <div className="mt-8">
+                         <Skeleton className="w-48 h-6 mb-4" />
+                         <Skeleton className="h-64 w-full rounded-lg" />
+                     </div>
+                 </div>
+             </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/finance" />
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-gray-800">Fee Collection</h1>
               <p className="text-xs md:text-sm text-gray-600">Record payments and view history</p>
@@ -178,19 +239,7 @@ export default function FeeCollectionPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.type === 'success' ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: '', text: '' })} className="ml-auto">
-              <AlertCircle className="w-4 h-4 rotate-45" />
-            </button>
-          </div>
-        )}
-
+      <main className={`container mx-auto px-4 md:px-6 py-6 md:py-8 transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-100px)]">
           {/* Sidebar */}
           <div className={`lg:col-span-4 xl:col-span-3 flex flex-col gap-4 h-full overflow-hidden ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>

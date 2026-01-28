@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Filter, Search, Users, ArrowRightLeft, UserCheck, AlertCircle, CheckSquare, Square, Calendar } from 'lucide-react'
+import { Filter, Search, Users, ArrowRightLeft, UserCheck, AlertCircle, CheckSquare, Square, Calendar } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
 
@@ -146,12 +148,12 @@ export default function EnrollmentsPage() {
 
       if (error) throw error
 
-      alert(`Successfully updated ${selectedStudents.size} students`)
+      toast.success(`Successfully updated ${selectedStudents.size} students`)
       setShowTransferModal(false)
       loadStudents()
       setSelectedStudents(new Set())
     } catch (err: any) {
-      alert(err.message)
+      toast.error(err.message)
     } finally {
       setSaving(false)
     }
@@ -159,8 +161,31 @@ export default function EnrollmentsPage() {
 
   if (loading && students.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50 pb-20">
+        <header className="bg-white shadow sticky top-0 z-30">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center space-x-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+              <Skeleton className="h-12 w-48 rounded-lg" />
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-4 md:px-6 py-8">
+          <Skeleton className="h-24 w-full mb-6 rounded-lg" />
+          
+          <div className="space-y-4">
+             {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+             ))}
+          </div>
+        </main>
       </div>
     )
   }
@@ -171,9 +196,7 @@ export default function EnrollmentsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Enrollment Management</h1>
                 <p className="text-xs md:text-sm text-gray-600">Bulk transfer and status updates</p>

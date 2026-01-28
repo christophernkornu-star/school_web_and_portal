@@ -141,7 +141,7 @@ export default function ClassReportPage() {
         .order('first_name')
 
       if (studentsError || !studentsData || studentsData.length === 0) {
-        alert('No students found in this class.')
+        toast.error('No students found in this class.')
         setGenerating(false)
         return
       }
@@ -154,7 +154,7 @@ export default function ClassReportPage() {
         .eq('term_id', selectedTerm)
 
       if (!scoresData || scoresData.length === 0) {
-        alert('No scores found for this class and term.')
+        toast.error('No scores found for this class and term.')
         setGenerating(false)
         return
       }
@@ -169,7 +169,7 @@ export default function ClassReportPage() {
         .order('name')
 
       if (!subjectsData || subjectsData.length === 0) {
-        alert('No subjects found.')
+        toast.error('No subjects found.')
         setGenerating(false)
         return
       }

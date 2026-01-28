@@ -378,7 +378,7 @@ export default function ReportCardPage() {
         console.error('No student record found for this user')
         // If user is admin/teacher trying to access student page, redirect or show message
         if (profile.role !== 'student') {
-          alert('You are logged in as ' + profile.role + '. This page is for students only.')
+          toast.error('You are logged in as ' + profile.role + '. This page is for students only.')
           router.push('/' + profile.role + '/dashboard') 
         }
         return
@@ -703,7 +703,7 @@ export default function ReportCardPage() {
       // Create print-friendly window
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
-        alert('Please allow pop-ups to download the report card')
+        toast('Please allow pop-ups to download the report card', { icon: 'ℹ️' })
         return
       }
 
@@ -718,7 +718,7 @@ export default function ReportCardPage() {
       }, 500)
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Failed to generate report card. Please try again.')
+      toast.error('Failed to generate report card. Please try again.')
     } finally {
       setDownloading(false)
     }

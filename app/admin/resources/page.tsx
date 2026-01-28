@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import BackButton from '@/components/ui/BackButton'
 import { ArrowLeft, FileText, Download } from 'lucide-react'
 
 export default function ResourcesPage() {
@@ -16,9 +17,7 @@ export default function ResourcesPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-methodist-gold hover:text-yellow-600">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">School Resources</h1>
               <p className="text-xs md:text-sm text-gray-600">Manage documents and resources</p>

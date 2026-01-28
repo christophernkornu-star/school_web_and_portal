@@ -1,5 +1,8 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, FileText, CheckCircle, XCircle } from 'lucide-react'
@@ -79,14 +82,81 @@ export default function AdmissionsPage() {
       setSelectedApp(null)
 
       if (newStatus === 'approved') {
-        alert('Application approved and student account created successfully!')
+        toast.success('Application approved and student account created successfully!')
+      } else {
+        toast.success(`Application status updated to ${newStatus}`)
       }
     } catch (error: any) {
       console.error('Error updating status:', error)
-      alert('Failed to update status: ' + (error.message || 'Unknown error'))
+      toast.error('Failed to update status: ' + (error.message || 'Unknown error'))
     } finally {
       setUpdating(false)
     }
+  }
+
+  if (loading && applications.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header Skeleton */}
+        <div className="bg-white shadow sticky top-0 z-10">
+            <div className="container mx-auto px-4 md:px-6 py-4">
+                <div className="flex justify-between items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <div>
+                            <Skeleton className="w-48 h-6 mb-1" />
+                            <Skeleton className="w-32 h-4" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 py-8">
+             {/* Stats Skeleton */}
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+                 {[1, 2, 3].map((i) => (
+                     <div key={i} className="bg-white rounded-lg shadow p-4 md:p-6">
+                         <div className="flex justify-between items-center">
+                             <div>
+                                 <Skeleton className="w-24 h-4 mb-2" />
+                                 <Skeleton className="w-16 h-8" />
+                             </div>
+                             <Skeleton className="w-12 h-12 rounded-full" />
+                         </div>
+                     </div>
+                 ))}
+             </div>
+
+             {/* Table Skeleton */}
+             <div className="bg-white rounded-lg shadow overflow-hidden">
+                 <div className="p-4 border-b">
+                     <div className="flex justify-between gap-4">
+                         <Skeleton className="w-1/4 h-6" />
+                         <Skeleton className="w-1/6 h-6" />
+                         <Skeleton className="w-1/6 h-6" />
+                         <Skeleton className="w-1/6 h-6" />
+                     </div>
+                 </div>
+                 {[1, 2, 3, 4, 5].map((i) => (
+                     <div key={i} className="p-4 border-b flex justify-between gap-4">
+                         <div className="flex items-center gap-3 w-1/4">
+                             <Skeleton className="w-10 h-10 rounded-full" />
+                             <div className="flex-1">
+                                 <Skeleton className="w-32 h-5 mb-1" />
+                                 <Skeleton className="w-24 h-3" />
+                             </div>
+                         </div>
+                         <Skeleton className="w-1/6 h-5" />
+                         <Skeleton className="w-1/6 h-5" />
+                         <Skeleton className="w-1/6 h-5" />
+                         <Skeleton className="w-1/6 h-5" />
+                     </div>
+                 ))}
+             </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -94,9 +164,7 @@ export default function AdmissionsPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-methodist-gold hover:text-yellow-600 shrink-0">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/dashboard" />
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-gray-800">Admission Applications</h1>
               <p className="text-xs md:text-sm text-gray-600">Review and process admission requests</p>
@@ -142,12 +210,8 @@ export default function AdmissionsPage() {
         </div>
 
         {/* Applications Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
-            </div>
-          ) : applications.length === 0 ? (
+        <div className={`bg-white rounded-lg shadow overflow-hidden transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+          {applications.length === 0 ? (
             <div className="text-center py-12">
               <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">No admission applications yet</p>

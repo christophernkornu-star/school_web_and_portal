@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Search, User, Users, Calendar } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
 
 export default function HistoricalRecordsPage() {
   const supabase = getSupabaseBrowserClient()
@@ -174,14 +176,36 @@ export default function HistoricalRecordsPage() {
     r.identifier.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+         <div className="text-center w-full max-w-7xl px-4">
+             <div className="space-y-4">
+                <Skeleton className="h-8 w-64 mx-auto" />
+                <Skeleton className="h-4 w-48 mx-auto" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 mb-8">
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-8">
+                    <Skeleton className="h-96 rounded-lg" />
+                </div>
+             </div>
+         </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 pb-20">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/results" className="text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/results" />
             <h1 className="text-2xl font-bold text-gray-800">Historical Records</h1>
           </div>
           

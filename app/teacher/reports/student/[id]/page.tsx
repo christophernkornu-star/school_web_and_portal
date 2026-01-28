@@ -7,6 +7,7 @@ import { ArrowLeft, Download, Save, RefreshCw } from 'lucide-react'
 import signatureImg from '@/app/student/report-card/signature.png'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { toast } from 'react-hot-toast'
 
 // Import remarks from student report card (same system)
 const ATTITUDE_REMARKS = {
@@ -259,7 +260,7 @@ export default function TeacherStudentReportPage() {
 
       if (studentError || !studentData) {
         console.error('Error loading student:', studentError)
-        alert('Student not found')
+        toast.error('Student not found')
         router.push('/teacher/reports')
         return
       }
@@ -500,7 +501,7 @@ export default function TeacherStudentReportPage() {
 
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
-        alert('Please allow popups to download report card')
+        toast('Please allow popups to download report card', { icon: 'ℹ️' })
         return
       }
 
@@ -515,7 +516,7 @@ export default function TeacherStudentReportPage() {
 
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Failed to generate report card')
+      toast.error('Failed to generate report card')
     } finally {
       setDownloading(false)
     }

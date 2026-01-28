@@ -6,6 +6,9 @@ import Link from 'next/link'
 import { ArrowLeft, Calendar as CalendarIcon, Plus, MapPin, Clock, Edit, Trash2 } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 export default function EventsPage() {
   const router = useRouter()
@@ -86,20 +89,20 @@ export default function EventsPage() {
           .eq('id', editingId)
 
         if (error) throw error
-        alert('Event updated successfully!')
+        toast.success('Event updated successfully!')
       } else {
         const { error } = await supabase
           .from('events')
           .insert([formData])
 
         if (error) throw error
-        alert('Event created successfully!')
+        toast.success('Event created successfully!')
       }
 
       setShowModal(false)
       loadData()
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      toast.error('Error: ' + error.message)
     } finally {
       setSaving(false)
     }
@@ -117,9 +120,9 @@ export default function EventsPage() {
       if (error) throw error
 
       setEvents(prev => prev.filter(e => e.id !== id))
-      alert('Event deleted successfully!')
+      toast.success('Event deleted successfully!')
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      toast.error('Error: ' + error.message)
     }
   }
 
@@ -136,7 +139,7 @@ export default function EventsPage() {
         prev.map(e => e.id === id ? { ...e, published: !currentStatus } : e)
       )
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      toast.error('Error: ' + error.message)
     }
   }
 
@@ -172,11 +175,47 @@ export default function EventsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading events...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3 md:space-x-4">
+                <Skeleton className="w-8 h-8 rounded-full" />
+                <div>
+                  <Skeleton className="h-8 w-32 mb-1" />
+                  <Skeleton className="h-4 w-48" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-32 rounded-lg" />
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow p-6">
+                <div className="flex items-start space-x-4">
+                  <Skeleton className="w-12 h-12 rounded-lg" />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <Skeleton className="h-6 w-32" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-4 w-full mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-4" />
+                    <div className="flex justify-between pt-4 border-t">
+                      <Skeleton className="h-8 w-20 rounded" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     )
   }
@@ -187,9 +226,7 @@ export default function EventsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">School Events</h1>
                 <p className="text-xs md:text-sm text-gray-600">Manage and schedule school events</p>

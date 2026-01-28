@@ -10,6 +10,7 @@ import {
   DollarSign, Users, Calendar, Search, Plus, FileText, 
   CheckCircle, AlertCircle, ChevronDown, Loader2, CreditCard, FileBarChart, ArrowLeft
 } from 'lucide-react'
+import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 
 export default function TeacherFeesPage() {
@@ -192,10 +193,10 @@ export default function TeacherFeesPage() {
         payment_method: 'Cash',
         remarks: ''
       })
-      alert('Payment recorded successfully')
+      toast.success('Payment recorded successfully')
     } catch (error) {
       console.error('Error recording payment:', error)
-      alert('Failed to record payment')
+      toast.error('Failed to record payment')
     } finally {
       setSubmitting(false)
     }

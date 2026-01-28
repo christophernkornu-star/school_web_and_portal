@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Search, Download, Printer, FileText, Users, User } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getCurrentUser, getUserProfile } from '@/lib/auth'
 
@@ -211,7 +214,7 @@ export default function CumulativeReportPage() {
 
       if (error) throw error
       if (!classStudents?.length) {
-        alert('No students found in this class')
+        toast.error('No students found in this class')
         setLoading(false)
         return
       }
@@ -227,6 +230,7 @@ export default function CumulativeReportPage() {
       setBulkReportData(reports.filter(r => r.data)) // Filter out failed fetches
     } catch (error) {
       console.error('Error generating class reports:', error)
+      toast.error('Failed to generate reports')
     } finally {
       setLoading(false)
     }
@@ -645,14 +649,31 @@ export default function CumulativeReportPage() {
     }, 500)
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+         <div className="text-center w-full max-w-4xl px-4">
+             <div className="space-y-4">
+                <Skeleton className="h-8 w-64 mx-auto" />
+                <Skeleton className="h-4 w-48 mx-auto" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+                     <Skeleton className="h-32 rounded-lg" />
+                     <Skeleton className="h-32 rounded-lg" />
+                     <Skeleton className="h-32 rounded-lg" />
+                </div>
+             </div>
+         </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
+    <div className="min-h-screen bg-gray-50 pb-20 print:bg-white print:pb-0">
+      <header className="bg-white shadow print:hidden">
+        <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/reports" className="text-purple-600 hover:text-purple-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/reports" />
             <div>
               <h1 className="text-2xl font-bold text-gray-800">Cumulative Report</h1>
               <p className="text-sm text-gray-600">Generate cumulative academic records</p>

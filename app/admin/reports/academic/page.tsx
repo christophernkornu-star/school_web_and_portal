@@ -2,15 +2,14 @@
 
 import Link from 'next/link'
 import { ArrowLeft, BarChart3 } from 'lucide-react'
+import BackButton from '@/components/ui/BackButton'
 
 export default function AcademicPerformancePage() {
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center mb-8">
-          <Link href="/admin/reports" className="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
-            <ArrowLeft className="w-6 h-6 text-gray-600" />
-          </Link>
+        <div className="flex items-center mb-8 gap-4">
+          <BackButton href="/admin/reports" />
           <div>
             <h1 className="text-2xl font-bold text-gray-800">Academic Performance</h1>
             <p className="text-gray-600">Class and subject performance analysis</p>

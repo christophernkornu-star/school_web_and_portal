@@ -8,6 +8,7 @@ import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import Image from 'next/image'
+import { toast } from 'react-hot-toast'
 
 interface Student {
   id: string
@@ -71,14 +72,14 @@ export default function AssessmentSheetPage() {
 
         const { data: teacherData, error: teacherError } = await getTeacherData(user.id)
         if (teacherError || !teacherData) {
-          alert('Teacher profile not found.')
+          toast.error('Teacher profile not found.')
           return
         }
         setTeacher(teacherData)
 
         // Get classes where the teacher is a CLASS TEACHER
         const classAccess = await getTeacherClassAccess(teacherData.profile_id)
-        // Filter for classes where is_class_teacher is true
+        // Filter for classes where is_class_teacher = true
         // Note: The RPC returns boolean true/false for is_class_teacher
         const classTeacherClasses = classAccess.filter(c => c.is_class_teacher === true)
         
@@ -145,7 +146,7 @@ export default function AssessmentSheetPage() {
 
       if (studentsError) {
         console.error('Error fetching students:', studentsError)
-        alert('Error fetching students: ' + studentsError.message)
+        toast.error('Error fetching students: ' + studentsError.message)
         setGenerating(false)
         return
       }
@@ -153,7 +154,7 @@ export default function AssessmentSheetPage() {
       console.log('Students found:', studentsData?.length)
 
       if (!studentsData || studentsData.length === 0) {
-        alert('No students found in this class.')
+        toast.error('No students found in this class.')
         setGenerating(false)
         return
       }
@@ -184,7 +185,7 @@ export default function AssessmentSheetPage() {
         .order('name')
 
       if (!subjectsData) {
-        alert('No subjects found for this class level.')
+        toast.error('No subjects found for this class level.')
         setGenerating(false)
         return
       }
@@ -252,7 +253,7 @@ export default function AssessmentSheetPage() {
 
     } catch (error) {
       console.error('Error generating sheet:', error)
-      alert('Failed to generate assessment sheet.')
+      toast.error('Failed to generate assessment sheet.')
     } finally {
       setGenerating(false)
     }

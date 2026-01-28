@@ -6,6 +6,7 @@ import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Printer, ArrowLeft } from 'lucide-react'
 import signatureImg from '@/app/student/report-card/signature.png'
+import { toast } from 'react-hot-toast'
 
 // Remarks options based on performance levels
 const ATTITUDE_REMARKS = {
@@ -155,7 +156,7 @@ function BulkReportCardsContent() {
       const termId = searchParams.get('term')
 
       if (!studentsParam || !termId) {
-        alert('Missing required parameters')
+        toast.error('Missing required parameters')
         router.push('/teacher/reports')
         return
       }
@@ -370,7 +371,7 @@ function BulkReportCardsContent() {
 
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
-        alert('Please allow popups to print report cards')
+        toast('Please allow popups to print report cards', { icon: 'ℹ️' })
         return
       }
 
@@ -385,7 +386,7 @@ function BulkReportCardsContent() {
 
     } catch (error) {
       console.error('Error printing report cards:', error)
-      alert('Failed to print report cards')
+      toast.error('Failed to print report cards')
     } finally {
       setPrinting(false)
     }

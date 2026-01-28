@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Search, FileText, Download, Users, Filter, Loader2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 export default function AdminStudentReportsPage() {
   const router = useRouter()
@@ -59,6 +62,7 @@ export default function AdminStudentReportsPage() {
 
     } catch (error) {
       console.error('Error loading initial data:', error)
+      toast.error('Failed to load initial data')
     } finally {
       setLoading(false)
     }
@@ -84,6 +88,7 @@ export default function AdminStudentReportsPage() {
       setStudents(studentsData || [])
     } catch (error) {
       console.error('Error loading students:', error)
+      toast.error('Failed to load students')
     } finally {
       setLoading(false)
     }
@@ -99,10 +104,8 @@ export default function AdminStudentReportsPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center mb-6">
-          <Link href="/admin/reports" className="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
-            <ArrowLeft className="w-6 h-6 text-gray-600" />
-          </Link>
-          <div>
+          <BackButton href="/admin/reports" />
+          <div className="ml-4">
             <h1 className="text-2xl font-bold text-gray-800">Student Report Cards</h1>
             <p className="text-gray-600">Generate and view individual student reports</p>
           </div>
@@ -175,12 +178,28 @@ export default function AdminStudentReportsPage() {
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
-                      <p className="mt-2 text-gray-500">Loading students...</p>
-                    </td>
-                  </tr>
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="ml-4 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-20" />
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <Skeleton className="h-4 w-16 mx-auto" />
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <Skeleton className="h-6 w-16 rounded-full mx-auto" />
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <Skeleton className="h-8 w-24 ml-auto rounded" />
+                      </td>
+                    </tr>
+                  ))
                 ) : filteredStudents.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center text-gray-500">

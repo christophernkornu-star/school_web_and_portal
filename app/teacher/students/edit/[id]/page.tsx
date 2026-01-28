@@ -7,6 +7,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
+import { toast } from 'react-hot-toast'
 
 export default function EditStudentPage() {
   const router = useRouter()
@@ -160,10 +161,11 @@ export default function EditStudentPage() {
 
       if (error) throw error
 
+      toast.success('Student information updated successfully')
       router.push('/teacher/students')
     } catch (err: any) {
       console.error('Error updating student:', err)
-      alert('Failed to update student: ' + err.message)
+      toast.error('Failed to update student: ' + err.message)
     } finally {
       setSaving(false)
     }

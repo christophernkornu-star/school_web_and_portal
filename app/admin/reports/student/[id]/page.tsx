@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { ArrowLeft, Download, RefreshCw } from 'lucide-react'
 import signatureImg from '@/app/student/report-card/signature.png'
 import { getCurrentUser } from '@/lib/auth'
@@ -213,7 +216,19 @@ export default function AdminStudentReportPage() {
   
   const [loading, setLoading] = useState(true)
   const [student, setStudent] = useState<any>(null)
-  const [reportData, setReportData] = useState<any>(null)
+  const [classData, setClassData] = useState<any>(null)
+  const [termData, setTermData] = useState<any>(null)
+  const [reportData, setReportData] = useState<any>({
+    assessments: [],
+    attendance: { present: 0, total: 0 },
+    stats: { 
+      average: 0, 
+      totalScore: 0, 
+      position: null,
+      classSize: 0,
+      aggregate: null
+    }
+  })
   const [academicSettings, setAcademicSettings] = useState<any>(null)
   const [downloading, setDownloading] = useState(false)
   
@@ -262,7 +277,7 @@ export default function AdminStudentReportPage() {
 
       if (studentError || !studentData) {
         console.error('Error loading student:', studentError)
-        alert('Student not found')
+        toast.error('Student not found')
         router.push('/admin/reports')
         return
       }
@@ -415,13 +430,36 @@ export default function AdminStudentReportPage() {
 
       setLoading(false)
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('Error loading report card:', error)
+      toast.error('Failed to load report card')
+    } finally {
       setLoading(false)
     }
   }
 
   const handleRemarkChange = (type: keyof ReportRemarks, value: string) => {
     setRemarks(prev => ({ ...prev, [type]: value }))
+  }
+
+  const handleSaveRemarks = async () => {
+    try {
+      if (!termData?.id) return
+
+      const { error } = await supabase
+        .from('student_remarks')
+        .upsert({
+          student_id: student.id,
+          term_id: termData.id,
+          academic_year: termData.academic_year,
+          ...remarks
+        })
+
+      if (error) throw error
+      toast.success('Remarks saved successfully')
+    } catch (error) {
+      console.error('Error saving remarks:', error)
+      toast.error('Failed to save remarks')
+    }
   }
 
   const applyAutoRemarks = () => {
@@ -503,7 +541,7 @@ export default function AdminStudentReportPage() {
 
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
-        alert('Please allow popups to download report card')
+        toast('Please allow popups to download report card', { icon: 'ℹ️' })
         return
       }
 
@@ -518,7 +556,7 @@ export default function AdminStudentReportPage() {
 
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Failed to generate report card')
+      toast.error('Failed to generate report card')
     } finally {
       setDownloading(false)
     }
@@ -1030,16 +1068,30 @@ export default function AdminStudentReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading report card...</p>
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-10 w-24 rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-lg" />
+          </div>
+          <div className="bg-white p-8 rounded-lg shadow space-y-8">
+            <div className="space-y-4 text-center">
+              <Skeleton className="h-16 w-16 rounded-full mx-auto" />
+              <Skeleton className="h-8 w-64 mx-auto" />
+              <Skeleton className="h-4 w-48 mx-auto" />
+            </div>
+            <div className="grid grid-cols-2 gap-8">
+              <Skeleton className="h-32 rounded-lg" />
+              <Skeleton className="h-32 rounded-lg" />
+            </div>
+            <Skeleton className="h-64 rounded-lg" />
+          </div>
         </div>
       </div>
     )
   }
 
-  if (!reportData || !student) {
+  if (!student || !termData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">

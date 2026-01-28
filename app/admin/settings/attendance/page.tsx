@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, Calendar, Users, TrendingUp } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -80,14 +83,14 @@ export default function AttendanceSettings() {
       const hasError = results.some(r => r.error)
 
       if (hasError) {
-        alert('Error saving some term settings. Please try again.')
+        toast.error('Error saving some term settings. Please try again.')
       } else {
-        alert('Attendance settings saved successfully!')
+        toast.success('Attendance settings saved successfully!')
         await loadTerms()
       }
     } catch (error) {
       console.error('Error saving settings:', error)
-      alert('Failed to save settings. Please try again.')
+      toast.error('Failed to save settings. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -103,27 +106,35 @@ export default function AttendanceSettings() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
+         <div className="text-center w-full max-w-4xl px-4">
+             <div className="space-y-4">
+                <Skeleton className="h-8 w-64 mx-auto" />
+                <Skeleton className="h-4 w-48 mx-auto" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
+                     <Skeleton className="h-32 rounded-lg" />
+                     <Skeleton className="h-32 rounded-lg" />
+                     <Skeleton className="h-32 rounded-lg" />
+                </div>
+             </div>
+         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <header className="bg-white shadow sticky top-0 z-30">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Link
-                href="/admin/settings"
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                <span>Back to Settings</span>
-              </Link>
+              <BackButton href="/admin/settings" />
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Attendance Settings</h1>
+                <p className="mt-2 text-xs md:text-sm text-gray-600">
+                  Set the total number of school days for each term. Teachers will record how many days each student was present.
+                </p>
+              </div>
             </div>
             <button
               onClick={handleSave}
@@ -135,16 +146,9 @@ export default function AttendanceSettings() {
             </button>
           </div>
         </div>
-      </nav>
+      </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Attendance Settings</h1>
-          <p className="mt-2 text-xs md:text-sm text-gray-600">
-            Set the total number of school days for each term. Teachers will record how many days each student was present.
-          </p>
-        </div>
-
         {/* Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
           <h3 className="font-semibold text-blue-900 mb-3">How It Works</h3>

@@ -151,17 +151,17 @@ export default function ProfilePage() {
 
       if (error) {
         console.error('Error updating profile:', error)
-        alert('Failed to update profile. Please try again.')
+        toast.error('Failed to update profile. Please try again.')
         return
       }
 
       // Reload profile
       await loadProfile()
       setEditMode(false)
-      alert('Profile updated successfully!')
+      toast.success('Profile updated successfully!')
     } catch (error) {
       console.error('Error saving profile:', error)
-      alert('An error occurred. Please try again.')
+      toast.error('An error occurred. Please try again.')
     } finally {
       setSaving(false)
     }

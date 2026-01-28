@@ -1,5 +1,8 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -118,13 +121,14 @@ export default function TeachersPage() {
       }
 
       setResetSuccess(true)
+      toast.success('Password reset successfully')
       setTimeout(() => {
         setResetPasswordModal({ show: false, teacher: null })
         setResetSuccess(false)
       }, 2000)
     } catch (err: any) {
       console.error('Error resetting password:', err)
-      alert(`Failed to reset password: ${err.message}`)
+      toast.error(`Failed to reset password: ${err.message}`)
     } finally {
       setResetting(false)
     }
@@ -155,10 +159,10 @@ export default function TeachersPage() {
       }
 
       setTeachers(prev => prev.filter(t => t.teacher_id !== teacherId))
-      alert('Teacher and their login account deleted successfully')
+      toast.success('Teacher and their login account deleted successfully')
       loadTeachers()
     } catch (error: any) {
-      alert('Failed to delete teacher: ' + error.message)
+      toast.error('Failed to delete teacher: ' + error.message)
     }
   }
 
@@ -268,11 +272,54 @@ export default function TeachersPage() {
 
   if (loading && teachers.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading teachers...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+          {/* Header Skeleton */}
+          <div className="bg-white shadow sticky top-0 z-10">
+              <div className="container mx-auto px-4 md:px-6 py-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center space-x-4">
+                          <Skeleton className="w-8 h-8 rounded-full" />
+                          <div>
+                              <Skeleton className="w-48 h-8 mb-1" />
+                              <Skeleton className="w-32 h-4" />
+                          </div>
+                      </div>
+                      <div className="flex gap-3">
+                          <Skeleton className="w-24 h-10 rounded-lg" />
+                          <Skeleton className="w-24 h-10 rounded-lg" />
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          <div className="container mx-auto px-4 md:px-6 py-8">
+              {/* Search Skeleton */}
+               <div className="bg-white rounded-lg shadow p-4 mb-6">
+                    <Skeleton className="h-10 w-full" />
+               </div>
+
+              {/* Grid Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                      <div key={i} className="bg-white rounded-lg shadow-md overflow-hidden p-6">
+                          <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center space-x-3">
+                                  <Skeleton className="w-12 h-12 rounded-full" />
+                                  <div>
+                                      <Skeleton className="w-32 h-5 mb-1" />
+                                      <Skeleton className="w-20 h-3" />
+                                  </div>
+                              </div>
+                          </div>
+                          <div className="space-y-3">
+                              <Skeleton className="w-full h-4" />
+                              <Skeleton className="w-3/4 h-4" />
+                              <Skeleton className="w-1/2 h-4" />
+                          </div>
+                      </div>
+                  ))}
+              </div>
+          </div>
       </div>
     )
   }
@@ -283,9 +330,7 @@ export default function TeachersPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Teacher Management</h1>
                 <p className="text-xs md:text-sm text-gray-600">View and manage all teachers</p>

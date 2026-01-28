@@ -11,6 +11,7 @@ import {
 import { signOut } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -62,11 +63,56 @@ export default function AdminDashboard() {
 
   if (contextLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-methodist-gold mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-yellow-700">
+           <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+               <div className="flex gap-4 items-center">
+                    <Skeleton className="w-10 h-10 rounded-lg bg-white/20" />
+                    <div>
+                        <Skeleton className="w-48 h-5 mb-1 bg-white/20" />
+                        <Skeleton className="w-24 h-3 bg-white/20" />
+                    </div>
+               </div>
+               <Skeleton className="w-24 h-10 rounded-lg bg-white/20" />
+           </div>
         </div>
+
+        <main className="container mx-auto px-4 py-8">
+            {/* Welcome Banner Skeleton */}
+            <div className="w-full h-32 md:h-40 rounded-xl bg-gray-200 animate-pulse mb-8" />
+
+            {/* Stats Grid Skeleton */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
+                {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="space-y-2">
+                                <Skeleton className="w-16 h-3" />
+                                <Skeleton className="w-12 h-8" />
+                            </div>
+                             <Skeleton className="w-10 h-10 rounded-lg" />
+                        </div>
+                         <Skeleton className="w-20 h-3" />
+                    </div>
+                ))}
+            </div>
+
+            {/* Menu Grid Skeleton */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {[1, 2, 3, 4, 5, 6].map((i) => (
+                   <div key={i} className="bg-white rounded-xl shadow-sm p-6 h-48 flex flex-col justify-between">
+                       <div className="flex justify-between items-start">
+                           <Skeleton className="w-12 h-12 rounded-lg" />
+                       </div>
+                       <div className="space-y-2">
+                            <Skeleton className="w-32 h-6" />
+                            <Skeleton className="w-full h-4" />
+                       </div>
+                   </div>
+               ))}
+            </div>
+        </main>
       </div>
     )
   }

@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, Search, Filter, Lock, Unlock, AlertTriangle, ChevronRight } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -143,7 +146,7 @@ export default function ResultsApprovalPage() {
 
       await Promise.all(promises)
 
-      setMessage(`Successfully updated ${updates.length} students`)
+      toast.success(`Successfully updated ${updates.length} students`)
       
       // Reset dirty state
       setStudents(prev => prev.map(s => ({ ...s, isDirty: false })))
@@ -155,11 +158,9 @@ export default function ResultsApprovalPage() {
         .eq('results_withheld', true)
         .eq('status', 'active')
       if (count !== null) setWithheldCount(count)
-      
-      setTimeout(() => setMessage(''), 3000)
     } catch (error) {
       console.error('Error saving:', error)
-      setMessage('Error saving changes')
+      toast.error('Error saving changes')
     } finally {
       setSaving(false)
     }
@@ -177,15 +178,37 @@ export default function ResultsApprovalPage() {
     return matchesSearch
   })
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+         <div className="text-center w-full max-w-7xl px-4">
+             <div className="space-y-4">
+                <Skeleton className="h-8 w-64 mx-auto" />
+                <Skeleton className="h-4 w-48 mx-auto" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 mb-8">
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-8">
+                    <Skeleton className="h-96 rounded-lg" />
+                </div>
+             </div>
+         </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 pb-20">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/results" className="text-gray-600 hover:text-gray-900">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="text-lg md:text-2xl font-bold text-gray-800">Results Approval & Withholding</h1>
+            <BackButton href="/admin/results" />
+            <h1 className="text-2xl font-bold text-gray-800">Results Approval</h1>
           </div>
           {message && (
             <div className={`px-4 py-2 rounded-lg text-sm ${message.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>

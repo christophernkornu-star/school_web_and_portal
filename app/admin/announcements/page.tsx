@@ -1,5 +1,8 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -66,14 +69,14 @@ export default function AnnouncementsPage() {
           .eq('id', editingId)
         
         if (error) throw error
-        alert('Announcement updated successfully!')
+        toast.success('Announcement updated successfully!')
       } else {
         const { error } = await supabase
           .from('announcements')
           .insert([announcementData])
         
         if (error) throw error
-        alert('Announcement created successfully!')
+        toast.success('Announcement created successfully!')
       }
 
       setShowModal(false)
@@ -90,7 +93,7 @@ export default function AnnouncementsPage() {
       setEditingId(null)
       loadAnnouncements()
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      toast.error('Error: ' + error.message)
     } finally {
       setSaving(false)
     }
@@ -120,15 +123,55 @@ export default function AnnouncementsPage() {
       .eq('id', id)
 
     if (!error) {
-      alert('Announcement deleted!')
+      toast.success('Announcement deleted!')
       loadAnnouncements()
     }
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header Skeleton */}
+        <div className="bg-white shadow sticky top-0 z-10">
+            <div className="container mx-auto px-4 md:px-6 py-4">
+                <div className="flex justify-between items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <div>
+                            <Skeleton className="w-48 h-6 mb-1" />
+                            <Skeleton className="w-32 h-4" />
+                        </div>
+                    </div>
+                    <Skeleton className="w-32 h-10 rounded-lg" />
+                </div>
+            </div>
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 py-8">
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-white rounded-lg shadow p-6">
+                        <div className="flex justify-between items-start mb-4">
+                             <div className="flex items-start gap-4 w-full">
+                                 <Skeleton className="w-10 h-10 rounded-lg" />
+                                 <div className="flex-1">
+                                     <Skeleton className="w-1/3 h-6 mb-2" />
+                                     <Skeleton className="w-full h-4 mb-2" />
+                                     <Skeleton className="w-2/3 h-4" />
+                                 </div>
+                             </div>
+                        </div>
+                        <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                             <Skeleton className="w-24 h-4" />
+                             <div className="flex gap-2">
+                                 <Skeleton className="w-8 h-8 rounded" />
+                                 <Skeleton className="w-8 h-8 rounded" />
+                             </div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
       </div>
     )
   }
@@ -139,9 +182,7 @@ export default function AnnouncementsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <Link href="/admin/dashboard" className="text-methodist-blue hover:text-blue-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Announcements</h1>
                 <p className="text-xs md:text-sm text-gray-600">Create and manage school announcements</p>

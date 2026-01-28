@@ -1,5 +1,8 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -27,7 +30,6 @@ export default function SubjectsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
 
   const [formData, setFormData] = useState({
     name: '',
@@ -64,10 +66,9 @@ export default function SubjectsPage() {
 
   const handleAdd = async () => {
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     if (!formData.name || !formData.code) {
-      setMessage({ type: 'error', text: 'Please fill in name and code' })
+      toast.error('Please fill in name and code')
       setSaving(false)
       return
     }
@@ -83,12 +84,12 @@ export default function SubjectsPage() {
 
     if (error) {
       if (error.message.includes('duplicate')) {
-        setMessage({ type: 'error', text: 'A subject with this code already exists' })
+         toast.error('A subject with this code already exists')
       } else {
-        setMessage({ type: 'error', text: error.message })
+         toast.error(error.message)
       }
     } else {
-      setMessage({ type: 'success', text: 'Subject added successfully!' })
+       toast.success('Subject added successfully!')
       setShowAddModal(false)
       resetForm()
       loadSubjects()
@@ -99,7 +100,6 @@ export default function SubjectsPage() {
   const handleEditSubmit = async () => {
     if (!selectedSubject) return
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     const { error } = await supabase
       .from('subjects')
@@ -113,12 +113,12 @@ export default function SubjectsPage() {
 
     if (error) {
       if (error.message.includes('duplicate')) {
-        setMessage({ type: 'error', text: 'A subject with this code already exists' })
+         toast.error('A subject with this code already exists')
       } else {
-        setMessage({ type: 'error', text: error.message })
+         toast.error(error.message)
       }
     } else {
-      setMessage({ type: 'success', text: 'Subject updated successfully!' })
+       toast.success('Subject updated successfully!')
       setShowEditModal(false)
       resetForm()
       loadSubjects()
@@ -136,9 +136,9 @@ export default function SubjectsPage() {
       .eq('id', selectedSubject.id)
 
     if (error) {
-      setMessage({ type: 'error', text: 'Cannot delete subject. It may be assigned to classes.' })
+       toast.error('Cannot delete subject. It may be assigned to classes.')
     } else {
-      setMessage({ type: 'success', text: 'Subject deleted successfully!' })
+       toast.success('Subject deleted successfully!')
       setShowDeleteModal(false)
       loadSubjects()
     }
@@ -178,8 +178,49 @@ export default function SubjectsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+          {/* Header Skeleton */}
+          <div className="bg-white shadow sticky top-0 z-10">
+              <div className="container mx-auto px-4 md:px-6 py-4">
+                  <div className="flex justify-between items-center gap-4">
+                      <div className="flex items-center gap-3">
+                          <Skeleton className="w-8 h-8 rounded-full" />
+                          <div>
+                              <Skeleton className="w-48 h-6 mb-1" />
+                              <Skeleton className="w-24 h-4" />
+                          </div>
+                      </div>
+                      <Skeleton className="w-32 h-10 rounded-lg" />
+                  </div>
+              </div>
+          </div>
+
+          <div className="container mx-auto px-4 md:px-6 py-8">
+               {/* Search Skeleton */}
+               <div className="mb-6">
+                   <Skeleton className="w-full h-10 rounded-lg" />
+               </div>
+
+               {/* Subjects Grid Skeleton */}
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {[1, 2, 3, 4, 5, 6].map((i) => (
+                       <div key={i} className="bg-white rounded-lg shadow-md p-6 h-40 flex flex-col justify-between">
+                           <div>
+                               <div className="flex justify-between items-start mb-2">
+                                   <Skeleton className="w-32 h-6" />
+                                   <Skeleton className="w-16 h-6 rounded-full" />
+                               </div>
+                               <Skeleton className="w-full h-4" />
+                               <Skeleton className="w-2/3 h-4 mt-1" />
+                           </div>
+                           <div className="flex justify-end gap-2 mt-4 border-t pt-3">
+                               <Skeleton className="w-8 h-8 rounded" />
+                               <Skeleton className="w-8 h-8 rounded" />
+                           </div>
+                       </div>
+                   ))}
+               </div>
+          </div>
       </div>
     )
   }
@@ -190,9 +231,7 @@ export default function SubjectsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Manage Subjects</h1>
                 <p className="text-xs md:text-sm text-gray-600">View and manage school subjects</p>
@@ -213,18 +252,6 @@ export default function SubjectsPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: '', text: '' })} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
         {/* Search */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
           <div className="relative max-w-md">
@@ -359,18 +386,11 @@ export default function SubjectsPage() {
               </div>
             </div>
 
-            {message.text && message.type === 'error' && (
-              <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-lg text-sm">
-                {message.text}
-              </div>
-            )}
-
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => {
                   setShowAddModal(false)
                   resetForm()
-                  setMessage({ type: '', text: '' })
                 }}
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
               >

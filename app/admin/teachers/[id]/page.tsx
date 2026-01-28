@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, Trash2, Key, Plus, X } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -340,11 +343,11 @@ export default function EditTeacherPage() {
          await supabase.from('teacher_subject_assignments').insert(Array.from(finalSubjectAssignments.values()))
       }
 
-      alert('Teacher updated successfully!')
+      toast.success('Teacher updated successfully!')
       router.push('/admin/teachers')
     } catch (error: any) {
       console.error('Error updating teacher:', error)
-      alert('Failed to update teacher: ' + (error.message || 'Please try again'))
+      toast.error('Failed to update teacher: ' + (error.message || 'Please try again'))
     } finally {
       setSaving(false)
     }
@@ -352,12 +355,12 @@ export default function EditTeacherPage() {
 
   async function handlePasswordReset() {
     if (newPassword !== confirmPassword) {
-      alert('Passwords do not match!')
+      toast.error('Passwords do not match!')
       return
     }
 
     if (newPassword.length < 8) {
-      alert('Password must be at least 8 characters long')
+      toast.error('Password must be at least 8 characters long')
       return
     }
 
@@ -373,12 +376,12 @@ export default function EditTeacherPage() {
 
       if (error) throw error
 
-      alert('Password reset request created. The teacher will be prompted to change their password on next login.')
+      toast.success('Password reset request created. The teacher will be prompted to change their password on next login.')
       setShowPasswordModal(false)
       setNewPassword('')
       setConfirmPassword('')
     } catch (error: any) {
-      alert('Failed to reset password: ' + error.message)
+      toast.error('Failed to reset password: ' + error.message)
     }
   }
 
@@ -396,10 +399,10 @@ export default function EditTeacherPage() {
 
       if (error) throw error
 
-      alert('Teacher deleted successfully')
+      toast.success('Teacher deleted successfully')
       router.push('/admin/teachers')
     } catch (error: any) {
-      alert('Failed to delete teacher: ' + error.message)
+      toast.error('Failed to delete teacher: ' + error.message)
     }
   }
 
@@ -440,11 +443,25 @@ export default function EditTeacherPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading teacher details...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-6 py-8">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               <Skeleton className="h-64 rounded-lg" />
+               <Skeleton className="h-64 rounded-lg" />
+               <Skeleton className="h-64 rounded-lg" />
+           </div>
+        </main>
       </div>
     )
   }
@@ -466,25 +483,14 @@ export default function EditTeacherPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/admin/teachers" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Edit Teacher</h1>
-                <p className="text-xs md:text-sm text-gray-600">
-                  {teacher.staff_id} - {teacher.first_name} {teacher.middle_name ? teacher.middle_name + ' ' : ''}{teacher.last_name}
-                </p>
-              </div>
+          <div className="flex items-center space-x-4">
+            <BackButton href="/admin/teachers" />
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800">Edit Teacher</h1>
+              <p className="text-xs md:text-sm text-gray-600">
+                Update details for {teacher?.first_name} {teacher?.last_name}
+              </p>
             </div>
-            <button
-              onClick={handleDelete}
-              className="w-full md:w-auto justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center space-x-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Delete Teacher</span>
-            </button>
           </div>
         </div>
       </header>

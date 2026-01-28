@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, TrendingUp, AlertCircle, CheckCircle, Users } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -17,7 +20,6 @@ export default function AcademicYearTransition() {
   const [newAcademicYear, setNewAcademicYear] = useState('')
   const [passingAverage, setPassingAverage] = useState(30)
   const [transitionResult, setTransitionResult] = useState<any>(null)
-  const [error, setError] = useState('')
 
   useEffect(() => {
     async function loadSettings() {
@@ -73,11 +75,10 @@ export default function AcademicYearTransition() {
 
   const handleTransition = async () => {
     if (!newAcademicYear.match(/^\d{4}\/\d{4}$/)) {
-      setError('Invalid academic year format. Use YYYY/YYYY format (e.g., 2025/2026)')
+      toast.error('Invalid academic year format. Use YYYY/YYYY format (e.g., 2025/2026)')
       return
     }
 
-    setError('')
     setTransitioning(true)
 
     try {
@@ -132,13 +133,15 @@ export default function AcademicYearTransition() {
           .eq('setting_key', 'current_term')
       } else {
         console.warn('First Term for new academic year not found. Please create it manually.')
+        toast.error('First Term for new academic year not found. Please create it manually in Terms settings.')
       }
 
       setTransitionResult(data[0])
       setCurrentAcademicYear(newAcademicYear)
+      toast.success('Academic year transition completed successfully!')
       
     } catch (err: any) {
-      setError(err.message || 'Failed to transition academic year')
+      toast.error(err.message || 'Failed to transition academic year')
       console.error('Transition error:', err)
     } finally {
       setTransitioning(false)
@@ -147,8 +150,50 @@ export default function AcademicYearTransition() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <div className="flex items-center space-x-3">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div>
+                  <Skeleton className="h-6 w-48 mb-1" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-6 py-8">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <Skeleton className="h-6 w-48 mb-4" />
+              <div className="flex items-center space-x-3">
+                <Skeleton className="h-12 w-12 rounded-lg" />
+                <div>
+                  <Skeleton className="h-8 w-32 mb-1" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="flex items-start space-x-3">
+                <Skeleton className="h-6 w-6 rounded-full" />
+                <div className="space-y-4 w-full">
+                  <Skeleton className="h-6 w-64" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     )
   }
@@ -158,9 +203,7 @@ export default function AcademicYearTransition() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/settings" className="text-gray-600 hover:text-gray-800">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/settings" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Academic Year Transition</h1>
               <p className="text-xs md:text-sm text-gray-600">Promote students to next academic year</p>
@@ -252,13 +295,6 @@ export default function AcademicYearTransition() {
               </p>
             </div>
           </div>
-
-          {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
-          )}
 
           <button
             onClick={handleTransition}

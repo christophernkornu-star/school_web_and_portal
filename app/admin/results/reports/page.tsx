@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { ArrowLeft, Printer, Search, Download, FileText, CheckSquare, Square } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useReactToPrint } from 'react-to-print'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // Types
 type Student = {
@@ -324,16 +326,38 @@ export default function ReportsPage() {
 
   const printReady = reportData.length > 0 && reportData.length === selectedStudentIds.size
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+         <div className="text-center w-full max-w-7xl px-4">
+             <div className="space-y-4">
+                <Skeleton className="h-8 w-64 mx-auto" />
+                <Skeleton className="h-4 w-48 mx-auto" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12 mb-8">
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                     <Skeleton className="h-24 rounded-lg" />
+                </div>
+
+                <div className="grid grid-cols-1 gap-8">
+                    <Skeleton className="h-96 rounded-lg" />
+                </div>
+             </div>
+         </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 flex flex-col">
-      <div className="max-w-6xl mx-auto w-full flex-1">
-        <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-            <Link href="/admin/results" className="text-gray-600 hover:text-gray-900 transition-colors">
-                <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-800">Print Reports</h1>
-            </div>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 pb-20">
+      <div className="max-w-[95%] mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 print:hidden">
+          <div className="flex items-center space-x-4">
+            <BackButton href="/admin/results" />
+            <h1 className="text-2xl font-bold text-gray-800">Student Report Cards</h1>
+          </div>
         </div>
 
         {/* Filters */}

@@ -7,6 +7,7 @@ import { ArrowLeft, FileText, Upload, AlertCircle, CheckCircle, Grid } from 'luc
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
+import { toast } from 'react-hot-toast'
 
 interface TeacherClass {
   class_id: string
@@ -329,7 +330,7 @@ function ClassScoresContent() {
     // Immediate validation
     const numVal = parseFloat(value)
     if (!isNaN(numVal) && numVal > 10) {
-        alert("Score cannot exceed 10")
+        toast.error("Score cannot exceed 10")
         return // Do not update state
     }
 
@@ -599,12 +600,12 @@ function ClassScoresContent() {
 
   async function downloadTemplate() {
     if (!selectedClass) {
-      alert('Please select a class first to download the template with student names.')
+      toast.error('Please select a class first to download the template with student names.')
       return
     }
 
     if (selectedSubjects.length === 0) {
-      alert('Please select at least one subject to include in the template.')
+      toast.error('Please select at least one subject to include in the template.')
       return
     }
 
@@ -658,7 +659,7 @@ function ClassScoresContent() {
       window.URL.revokeObjectURL(url)
     } catch (error) {
       console.error('Error generating template:', error)
-      alert('Failed to generate template')
+      toast.error('Failed to generate template')
     }
   }
 
@@ -1138,7 +1139,7 @@ function ClassScoresContent() {
                                                                             className="absolute top-1 right-1 cursor-help"
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                alert(`Assessment Check:\nStudent has taken ${scores.assessments_count} out of ${scores.total_assessments} assessments recorded for this subject.`);
+                                                                                toast(`Assessment Check: Student has taken ${scores.assessments_count} out of ${scores.total_assessments} assessments recorded for this subject.`, { icon: 'ℹ️' });
                                                                             }}
                                                                         >
                                                                             <AlertCircle className="w-3 h-3 text-amber-500" />
@@ -1158,7 +1159,7 @@ function ClassScoresContent() {
                                                                         onChange={(e) => {
                                                                             const val = parseFloat(e.target.value);
                                                                             if (val > 10) {
-                                                                                alert("Score cannot exceed 10");
+                                                                                toast.error("Score cannot exceed 10");
                                                                                 return;
                                                                             }
                                                                             handleGridScoreChange(student.id, subjectId, e.target.value)

@@ -1,5 +1,6 @@
 'use client'
 
+import BackButton from '@/components/ui/BackButton'
 import Link from 'next/link'
 import { ArrowLeft, Settings, DollarSign, CreditCard, PieChart, TrendingUp } from 'lucide-react'
 
@@ -9,9 +10,7 @@ export default function FinanceDashboard() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/dashboard" />
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-gray-800">Finance Management</h1>
               <p className="text-xs md:text-sm text-gray-600">Manage school fees and payments</p>

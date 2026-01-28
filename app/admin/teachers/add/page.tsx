@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
 import { getCurrentUser } from '@/lib/auth'
 import { createTeacher } from '@/lib/user-creation'
 
@@ -47,11 +49,11 @@ export default function AddTeacherPage() {
         staff_id: formData.staff_id || undefined,
       })
 
-      alert(`Teacher account created successfully!\nUsername: ${result.username}\nPassword: ${result.password}`)
+      toast.success(`Teacher account created successfully!\nUsername: ${result.username}\nPassword: ${result.password}`)
       router.push('/admin/teachers')
     } catch (error: any) {
       console.error('Error creating teacher:', error)
-      alert('Failed to create teacher: ' + (error.message || 'Please try again'))
+      toast.error('Failed to create teacher: ' + (error.message || 'Please try again'))
     } finally {
       setLoading(false)
     }
@@ -62,9 +64,7 @@ export default function AddTeacherPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/teachers" className="text-ghana-green hover:text-green-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/teachers" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Add New Teacher</h1>
               <p className="text-xs md:text-sm text-gray-600">Register a new teacher in the system</p>

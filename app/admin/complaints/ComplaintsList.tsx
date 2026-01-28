@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { updateComplaintStatus } from '@/app/actions/complaints'
+import { toast } from 'react-hot-toast'
 import { 
   Search, 
   Filter, 
@@ -50,6 +51,7 @@ export default function ComplaintsList({ initialComplaints }: { initialComplaint
     try {
       const result = await updateComplaintStatus(selectedComplaint.id, newStatus, response)
       if (result.success) {
+        toast.success(`Complaint marked as ${newStatus}`)
         // Update local state
         setComplaints(complaints.map(c => 
           c.id === selectedComplaint.id 
@@ -62,9 +64,12 @@ export default function ComplaintsList({ initialComplaints }: { initialComplaint
         if (newStatus === 'resolved') {
           // Optional: close modal
         }
+      } else {
+        toast.error('Failed to update status')
       }
     } catch (error) {
       console.error('Failed to update status', error)
+      toast.error('An error occurred while updating status')
     } finally {
       setIsUpdating(false)
     }
@@ -89,7 +94,8 @@ export default function ComplaintsList({ initialComplaints }: { initialComplaint
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)]">
       {/* List Section */}
       <div className={`flex-1 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col ${selectedComplaint ? 'hidden lg:flex' : 'flex'}`}>
         {/* Filters */}
@@ -287,6 +293,7 @@ export default function ComplaintsList({ initialComplaints }: { initialComplaint
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }

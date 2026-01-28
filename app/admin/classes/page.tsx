@@ -1,5 +1,8 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -43,7 +46,6 @@ export default function ClassesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedClass, setSelectedClass] = useState<Class | null>(null)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState({ type: '', text: '' })
 
   const [formData, setFormData] = useState({
     name: '',
@@ -136,7 +138,6 @@ export default function ClassesPage() {
 
   const handleAdd = async () => {
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     // Map category to level enum
     const categoryToLevel: Record<string, string> = {
@@ -160,12 +161,12 @@ export default function ClassesPage() {
 
     if (error) {
       if (error.code === '23505') {
-        setMessage({ type: 'error', text: 'A class with this name already exists' })
+        toast.error('A class with this name already exists')
       } else {
-        setMessage({ type: 'error', text: error.message })
+        toast.error(error.message)
       }
     } else {
-      setMessage({ type: 'success', text: 'Class added successfully!' })
+      toast.success('Class added successfully!')
       setShowAddModal(false)
       resetForm()
       loadData()
@@ -176,7 +177,6 @@ export default function ClassesPage() {
   const handleEdit = async () => {
     if (!selectedClass) return
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     // Map category to level enum
     const categoryToLevel: Record<string, string> = {
@@ -200,9 +200,9 @@ export default function ClassesPage() {
       .eq('id', selectedClass.id)
 
     if (error) {
-      setMessage({ type: 'error', text: error.message })
+      toast.error(error.message)
     } else {
-      setMessage({ type: 'success', text: 'Class updated successfully!' })
+      toast.success('Class updated successfully!')
       setShowEditModal(false)
       resetForm()
       loadData()
@@ -216,7 +216,7 @@ export default function ClassesPage() {
 
     // Check if class has students
     if (selectedClass.student_count && selectedClass.student_count > 0) {
-      setMessage({ type: 'error', text: 'Cannot delete class with enrolled students. Please transfer students first.' })
+      toast.error('Cannot delete class with enrolled students. Please transfer students first.')
       setSaving(false)
       setShowDeleteModal(false)
       return
@@ -228,9 +228,9 @@ export default function ClassesPage() {
       .eq('id', selectedClass.id)
 
     if (error) {
-      setMessage({ type: 'error', text: 'Cannot delete class. It may have related data.' })
+       toast.error('Cannot delete class. It may have related data.')
     } else {
-      setMessage({ type: 'success', text: 'Class deleted successfully!' })
+       toast.success('Class deleted successfully!')
       setShowDeleteModal(false)
       loadData()
     }
@@ -282,8 +282,57 @@ export default function ClassesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+          {/* Header Skeleton */}
+          <div className="bg-white shadow sticky top-0 z-10">
+              <div className="container mx-auto px-4 md:px-6 py-4">
+                  <div className="flex justify-between items-center gap-4">
+                      <div className="flex items-center gap-3">
+                          <Skeleton className="w-8 h-8 rounded-full" />
+                          <div>
+                              <Skeleton className="w-48 h-6 mb-1" />
+                              <Skeleton className="w-24 h-4" />
+                          </div>
+                      </div>
+                      <Skeleton className="w-32 h-10 rounded-lg" />
+                  </div>
+              </div>
+          </div>
+
+          <div className="container mx-auto px-4 md:px-6 py-8">
+               {/* Filter Skeleton */}
+               <div className="flex gap-4 mb-8">
+                   <Skeleton className="w-full md:w-64 h-10 rounded-lg" />
+                   <Skeleton className="w-32 h-10 rounded-lg" />
+               </div>
+
+               {/* Classes Grid Skeleton */}
+               <div className="space-y-8">
+                   {[1, 2].map((group) => (
+                       <div key={group}>
+                           <Skeleton className="w-48 h-8 mb-4" />
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                               {[1, 2, 3].map((card) => (
+                                   <div key={card} className="bg-white rounded-lg shadow-md p-6 h-48">
+                                       <div className="flex justify-between items-start mb-4">
+                                            <div>
+                                                <Skeleton className="w-32 h-6 mb-2" />
+                                                <Skeleton className="w-24 h-4" />
+                                            </div>
+                                            <Skeleton className="w-8 h-8 rounded-full" />
+                                       </div>
+                                       <Skeleton className="w-full h-2 rounded-full mt-8" />
+                                       <div className="mt-4 flex justify-between">
+                                            <Skeleton className="w-20 h-4" />
+                                            <Skeleton className="w-20 h-4" />
+                                       </div>
+                                   </div>
+                               ))}
+                           </div>
+                       </div>
+                   ))}
+               </div>
+          </div>
       </div>
     )
   }
@@ -294,9 +343,7 @@ export default function ClassesPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Manage Classes</h1>
                 <p className="text-xs md:text-sm text-gray-600">View and manage school classes</p>
@@ -317,17 +364,6 @@ export default function ClassesPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span>{message.text}</span>
-            <button onClick={() => setMessage({ type: '', text: '' })} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
@@ -507,18 +543,11 @@ export default function ClassesPage() {
               </div>
             </div>
 
-            {message.text && message.type === 'error' && (
-              <div className="mt-4 p-3 bg-red-50 text-red-800 rounded-lg text-sm">
-                {message.text}
-              </div>
-            )}
-
             <div className="flex justify-end space-x-3 mt-6">
               <button
                 onClick={() => {
                   setShowAddModal(false)
                   resetForm()
-                  setMessage({ type: '', text: '' })
                 }}
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
               >

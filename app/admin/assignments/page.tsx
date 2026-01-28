@@ -1,5 +1,7 @@
 'use client'
 
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -75,10 +77,50 @@ export default function AssignmentsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading assignments...</p>
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        {/* Header Skeleton */}
+        <div className="bg-white shadow sticky top-0 z-10">
+            <div className="container mx-auto px-4 md:px-6 py-4">
+                <div className="flex justify-between items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <Skeleton className="w-8 h-8 rounded-full" />
+                        <div>
+                            <Skeleton className="w-48 h-6 mb-1" />
+                            <Skeleton className="w-32 h-4" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div className="container mx-auto px-4 md:px-6 py-8">
+            <Skeleton className="h-24 w-full rounded-lg mb-6" />
+
+             {/* Teachers List Skeleton */}
+             <div className="bg-white rounded-lg shadow overflow-hidden">
+                 <div className="px-6 py-4 border-b border-gray-200">
+                     <Skeleton className="w-48 h-6" />
+                 </div>
+                 <div className="divide-y divide-gray-200">
+                     {[1, 2, 3, 4, 5].map((i) => (
+                         <div key={i} className="p-6">
+                             <div className="flex items-center justify-between">
+                                 <div className="flex-1">
+                                     <div className="flex items-center space-x-3 mb-2">
+                                         <Skeleton className="w-48 h-6" />
+                                         <Skeleton className="w-20 h-5 rounded" />
+                                     </div>
+                                     <div className="space-y-2">
+                                        <Skeleton className="w-64 h-4" />
+                                        <Skeleton className="w-48 h-4" />
+                                     </div>
+                                 </div>
+                                 <Skeleton className="w-32 h-10 rounded-lg" />
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+             </div>
         </div>
       </div>
     )
@@ -103,9 +145,7 @@ export default function AssignmentsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Class & Subject Assignments</h1>
                 <p className="text-xs md:text-sm text-gray-600">Manage teacher assignments to classes and subjects</p>

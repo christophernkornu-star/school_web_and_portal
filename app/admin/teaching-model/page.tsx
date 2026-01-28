@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { ArrowLeft, Save, Settings } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -55,10 +58,10 @@ export default function TeachingModelConfigPage() {
 
       if (error) throw error
 
-      alert('Teaching model configuration saved successfully!')
+      toast.success('Teaching model configuration saved successfully!')
     } catch (error: any) {
       console.error('Error saving settings:', error)
-      alert('Failed to save settings: ' + error.message)
+      toast.error('Failed to save settings: ' + error.message)
     } finally {
       setSaving(false)
     }
@@ -66,11 +69,23 @@ export default function TeachingModelConfigPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading settings...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 bg-opacity-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div className="space-y-1">
+                <Skeleton className="h-8 w-64" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8 max-w-4xl space-y-6">
+          <Skeleton className="h-48 rounded-lg" />
+          <Skeleton className="h-96 rounded-lg" />
+          <Skeleton className="h-48 rounded-lg" />
+        </main>
       </div>
     )
   }
@@ -80,9 +95,7 @@ export default function TeachingModelConfigPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin" />
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-gray-800">Teaching Model Configuration</h1>
               <p className="text-xs md:text-sm text-gray-600">Configure how classes are organized across school levels</p>

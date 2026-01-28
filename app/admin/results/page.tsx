@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import BackButton from '@/components/ui/BackButton'
 import { CheckCircle, ArrowLeft, FileText, ChevronRight } from 'lucide-react'
 
 export default function ResultsDashboardPage() {
@@ -8,9 +9,7 @@ export default function ResultsDashboardPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center space-x-4 mb-6">
-          <Link href="/admin/dashboard" className="text-gray-600 hover:text-gray-900 transition-colors">
-            <ArrowLeft className="w-6 h-6" />
-          </Link>
+          <BackButton href="/admin" />
           <h1 className="text-2xl font-bold text-gray-800">Results Management</h1>
         </div>
 

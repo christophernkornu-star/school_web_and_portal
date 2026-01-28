@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { ArrowLeft, Plus, Edit, Trash2, Eye, EyeOff, Image as ImageIcon, Upload } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import Image from 'next/image'
@@ -9,6 +12,7 @@ import Image from 'next/image'
 export default function AdminNewsPage() {
   const supabase = getSupabaseBrowserClient()
   const [news, setNews] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingNews, setEditingNews] = useState<any>(null)
   const [uploading, setUploading] = useState(false)
@@ -34,6 +38,7 @@ export default function AdminNewsPage() {
       .order('created_at', { ascending: false })
     
     if (data) setNews(data)
+    setLoading(false)
   }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,12 +46,12 @@ export default function AdminNewsPage() {
     if (file) {
       // Check file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB')
+        toast.error('File size must be less than 5MB')
         return
       }
       // Check file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
+        toast.error('Please select an image file')
         return
       }
       setSelectedFile(file)
@@ -71,7 +76,7 @@ export default function AdminNewsPage() {
 
       return data.publicUrl
     } catch (error: any) {
-      alert('Error uploading file: ' + error.message)
+      toast.error('Error uploading file: ' + error.message)
       return null
     }
   }
@@ -98,10 +103,12 @@ export default function AdminNewsPage() {
           .from('news')
           .update(dataToSubmit)
           .eq('id', editingNews.id)
+        toast.success('News updated successfully')
       } else {
         await supabase
           .from('news')
           .insert([dataToSubmit])
+        toast.success('News created successfully')
       }
 
       setShowModal(false)
@@ -118,7 +125,7 @@ export default function AdminNewsPage() {
       setUploadMethod('file')
       fetchNews()
     } catch (error: any) {
-      alert('Error: ' + error.message)
+      toast.error('Error: ' + error.message)
     } finally {
       setUploading(false)
     }
@@ -141,17 +148,66 @@ export default function AdminNewsPage() {
 
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this news item?')) {
-      await supabase.from('news').delete().eq('id', id)
-      fetchNews()
+      try {
+        await supabase.from('news').delete().eq('id', id)
+        toast.success('News deleted successfully')
+        fetchNews()
+      } catch (error) {
+        toast.error('Failed to delete news')
+      }
     }
   }
 
   const togglePublish = async (newsItem: any) => {
-    await supabase
-      .from('news')
-      .update({ published: !newsItem.published })
-      .eq('id', newsItem.id)
-    fetchNews()
+    try {
+      await supabase
+        .from('news')
+        .update({ published: !newsItem.published })
+        .eq('id', newsItem.id)
+      fetchNews()
+      toast.success(newsItem.published ? 'News unpublished' : 'News published')
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div className="space-y-1">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24 w-full rounded-lg" />
+            ))}
+          </div>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow p-4 md:p-6">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <Skeleton className="w-full md:w-32 h-48 md:h-24 rounded-lg flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -160,9 +216,7 @@ export default function AdminNewsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Link href="/admin/dashboard" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">News Management</h1>
                 <p className="text-xs md:text-sm text-gray-600">Create and manage school news</p>

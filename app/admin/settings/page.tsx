@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { ArrowLeft, Settings as SettingsIcon, School, Bell, Lock, Globe, Calendar } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -20,9 +23,6 @@ export default function SettingsPage() {
   const [fixingUsernames, setFixingUsernames] = useState(false)
   const [fixingPasswords, setFixingPasswords] = useState(false)
   const [fixingDuplicates, setFixingDuplicates] = useState(false)
-  const [fixResult, setFixResult] = useState<{message: string, type: 'success' | 'error'} | null>(null)
-  const [passwordFixResult, setPasswordFixResult] = useState<{message: string, type: 'success' | 'error'} | null>(null)
-  const [duplicateFixResult, setDuplicateFixResult] = useState<{message: string, type: 'success' | 'error'} | null>(null)
 
   useEffect(() => {
     async function loadOverview() {
@@ -62,7 +62,6 @@ export default function SettingsPage() {
     }
 
     setFixingUsernames(true)
-    setFixResult(null)
 
     try {
       const response = await fetch('/api/admin/fix-usernames')
@@ -70,15 +69,9 @@ export default function SettingsPage() {
 
       if (!response.ok) throw new Error(data.error || 'Failed to update usernames')
 
-      setFixResult({
-        message: `Success! Updated ${data.updated_count} students. Total processed: ${data.total_students}.`,
-        type: 'success'
-      })
+      toast.success(`Success! Updated ${data.updated_count} students. Total processed: ${data.total_students}.`)
     } catch (error: any) {
-      setFixResult({
-        message: error.message || 'An error occurred',
-        type: 'error'
-      })
+      toast.error(error.message || 'An error occurred')
     } finally {
       setFixingUsernames(false)
     }
@@ -90,23 +83,16 @@ export default function SettingsPage() {
     }
 
     setFixingPasswords(true)
-    setPasswordFixResult(null)
-
+    
     try {
       const response = await fetch('/api/admin/fix-passwords')
       const data = await response.json()
 
       if (!response.ok) throw new Error(data.error || 'Failed to update passwords')
 
-      setPasswordFixResult({
-        message: `Success! Updated ${data.updated_count} students. Total processed: ${data.total_students}.`,
-        type: 'success'
-      })
+      toast.success(`Success! Updated ${data.updated_count} students. Total processed: ${data.total_students}.`)
     } catch (error: any) {
-      setPasswordFixResult({
-        message: error.message || 'An error occurred',
-        type: 'error'
-      })
+      toast.error(error.message || 'An error occurred')
     } finally {
       setFixingPasswords(false)
     }
@@ -118,7 +104,6 @@ export default function SettingsPage() {
     }
 
     setFixingDuplicates(true)
-    setDuplicateFixResult(null)
 
     try {
       const response = await fetch('/api/admin/fix-duplicates')
@@ -126,15 +111,9 @@ export default function SettingsPage() {
 
       if (!response.ok) throw new Error(data.error || 'Failed to remove duplicates')
 
-      setDuplicateFixResult({
-        message: `Success! Removed ${data.duplicates_found} duplicate records.`,
-        type: 'success'
-      })
+      toast.success(`Success! Removed ${data.duplicates_found} duplicate records.`)
     } catch (error: any) {
-      setDuplicateFixResult({
-        message: error.message || 'An error occurred',
-        type: 'error'
-      })
+      toast.error(error.message || 'An error occurred')
     } finally {
       setFixingDuplicates(false)
     }
@@ -185,14 +164,53 @@ export default function SettingsPage() {
     },
   ]
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex items-center gap-4">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div className="space-y-1">
+                <Skeleton className="h-8 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+            <Skeleton className="h-24 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow p-6 space-y-4">
+                <div className="flex items-start justify-between">
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                  <Skeleton className="h-4 w-4 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/dashboard" className="text-gray-600 hover:text-gray-800">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">System Settings</h1>
               <p className="text-xs md:text-sm text-gray-600">Configure system preferences and settings</p>
@@ -238,11 +256,6 @@ export default function SettingsPage() {
                 {fixingUsernames ? 'Processing...' : 'Run Fix'}
               </button>
             </div>
-            {fixResult && (
-              <div className={`mt-4 p-3 rounded ${fixResult.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                {fixResult.message}
-              </div>
-            )}
           </div>
 
           <div className="border-t pt-4 mt-4">
@@ -259,11 +272,6 @@ export default function SettingsPage() {
                 {fixingPasswords ? 'Processing...' : 'Reset All'}
               </button>
             </div>
-            {passwordFixResult && (
-              <div className={`mt-4 p-3 rounded ${passwordFixResult.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                {passwordFixResult.message}
-              </div>
-            )}
           </div>
 
           <div className="border-t pt-4 mt-4">
@@ -280,11 +288,6 @@ export default function SettingsPage() {
                 {fixingDuplicates ? 'Processing...' : 'Remove Duplicates'}
               </button>
             </div>
-            {duplicateFixResult && (
-              <div className={`mt-4 p-3 rounded ${duplicateFixResult.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
-                {duplicateFixResult.message}
-              </div>
-            )}
           </div>
         </div>
 

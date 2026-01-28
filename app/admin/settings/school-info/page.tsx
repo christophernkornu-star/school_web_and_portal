@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, School } from 'lucide-react'
+import { toast } from 'react-hot-toast'
+import BackButton from '@/components/ui/BackButton'
+import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -81,14 +84,14 @@ export default function SchoolInfoSettings() {
         .eq('id', settingsId)
 
       if (error) {
-        alert('Failed to update settings: ' + error.message)
+        toast.error('Failed to update settings: ' + error.message)
       } else {
-        alert('School information updated successfully!')
+        toast.success('School information updated successfully!')
         router.push('/admin/settings')
       }
     } catch (error) {
       console.error('Error updating settings:', error)
-      alert('Failed to update settings. Please try again.')
+      toast.error('Failed to update settings. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -96,11 +99,38 @@ export default function SchoolInfoSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading settings...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <div>
+                <Skeleton className="h-8 w-48 mb-1" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-6 py-8 max-w-4xl">
+          <div className="space-y-6">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow p-6 space-y-4">
+                <Skeleton className="h-6 w-32" />
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     )
   }
@@ -110,9 +140,7 @@ export default function SchoolInfoSettings() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/settings" className="text-methodist-blue hover:text-blue-700">
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
+            <BackButton href="/admin/settings" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">School Information</h1>
               <p className="text-xs md:text-sm text-gray-600">Update school details and contact information</p>

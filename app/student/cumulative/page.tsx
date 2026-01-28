@@ -36,7 +36,7 @@ export default function StudentCumulativePage() {
         .maybeSingle()
       
       if (settingsData?.setting_value !== 'true') {
-        alert('Cumulative records are not currently available for download.')
+        toast.error('Cumulative records are not currently available for download.')
         router.push('/student/dashboard')
         return
       }

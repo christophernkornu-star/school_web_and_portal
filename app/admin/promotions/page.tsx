@@ -1,8 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 import { ArrowLeft, UserCheck, Users, Search, Filter, Check, X, AlertCircle, TrendingUp, Save } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -36,14 +39,13 @@ export default function PromotionsPage() {
   const [classFilter, setClassFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [academicYear, setAcademicYear] = useState('')
-  const [message, setMessage] = useState({ type: '', text: '' })
   const [promotionChanges, setPromotionChanges] = useState<{[key: string]: { status: string, remarks: string }}>({})
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
 
   useEffect(() => {
     loadData()
-  }, [router])
+  }, [])
 
   async function loadData() {
     const user = await getCurrentUser()
@@ -155,7 +157,6 @@ export default function PromotionsPage() {
 
   const handleSaveAll = async () => {
     setSaving(true)
-    setMessage({ type: '', text: '' })
 
     try {
       const user = await getCurrentUser()
@@ -167,7 +168,7 @@ export default function PromotionsPage() {
       })).filter(u => u.status)
 
       if (updates.length === 0) {
-        setMessage({ type: 'error', text: 'No changes to save' })
+        toast.error('No changes to save')
         setSaving(false)
         return
       }
@@ -185,12 +186,12 @@ export default function PromotionsPage() {
         if (error) throw error
       }
 
-      setMessage({ type: 'success', text: `Saved ${updates.length} promotion decisions!` })
+      toast.success(`Saved ${updates.length} promotion decisions!`)
       setPromotionChanges({})
       loadData()
     } catch (error: any) {
       console.error('Error saving promotions:', error)
-      setMessage({ type: 'error', text: error.message || 'Failed to save promotions' })
+      toast.error(error.message || 'Failed to save promotions')
     } finally {
       setSaving(false)
     }
@@ -227,7 +228,7 @@ export default function PromotionsPage() {
       handlePromotionChange(studentId, 'status', bulkStatus)
     })
     
-    setMessage({ type: 'success', text: `Applied '${bulkStatus}' to ${selectedStudents.length} students` })
+    toast.success(`Applied '${bulkStatus}' to ${selectedStudents.length} students`)
     setBulkStatus('')
     setSelectedStudents([])
   }
@@ -253,8 +254,55 @@ export default function PromotionsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue"></div>
+      <div className="min-h-screen bg-gray-50">
+        <header className="bg-white shadow">
+          <div className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex justify-between items-center bg-white">
+              <div className="flex items-center gap-4">
+                <Skeleton className="w-10 h-10 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+              <Skeleton className="w-32 h-10 rounded-lg" />
+            </div>
+          </div>
+        </header>
+        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+          <div className="bg-white rounded-lg shadow p-4 mb-6">
+            <div className="grid md:grid-cols-3 gap-4">
+              <Skeleton className="w-full h-10 rounded-lg" />
+              <Skeleton className="w-full h-10 rounded-lg" />
+              <div className="flex justify-end">
+                <Skeleton className="w-32 h-10 rounded-lg" />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-8">
+            {[1, 2].map((i) => (
+              <div key={i} className="mb-8">
+                <Skeleton className="h-8 w-48 mb-4" />
+                <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="divide-y divide-gray-200">
+                    {[1, 2, 3, 4].map((j) => (
+                      <div key={j} className="p-4 flex gap-4">
+                        <Skeleton className="w-4 h-4 rounded mt-1" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                        <Skeleton className="h-6 w-16" />
+                        <Skeleton className="h-8 w-32" />
+                        <Skeleton className="h-8 w-48" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </main>
       </div>
     )
   }
@@ -265,9 +313,7 @@ export default function PromotionsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <Link href="/admin/dashboard" className="text-purple-600 hover:text-purple-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
+              <BackButton href="/admin" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">Student Promotions</h1>
                 <p className="text-xs md:text-sm text-gray-600">Manage student promotion decisions for {academicYear}</p>
@@ -286,34 +332,6 @@ export default function PromotionsPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {message.text && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center space-x-2 ${
-            message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'
-          }`}>
-            {message.type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-            <span className="text-xs md:text-sm">{message.text}</span>
-            <button onClick={() => setMessage({ type: '', text: '' })} className="ml-auto">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Info Banner */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-start space-x-3">
-            <TrendingUp className="w-5 h-5 text-blue-600 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-blue-800 text-sm md:text-base">Promotion Guidelines</h3>
-              <ul className="text-xs md:text-sm text-blue-700 mt-1 space-y-1">
-                <li>• Students with 50% and above average: <strong>Promoted</strong></li>
-                <li>• Students with 40-49% average: <strong>Promoted on Trial</strong></li>
-                <li>• Students below 40%: <strong>To Repeat Class</strong></li>
-                <li>• Use "Auto" button to apply automatic promotion based on scores</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
         {/* Filters */}
         <div className="bg-white rounded-lg shadow p-4 mb-6">
           <div className="grid md:grid-cols-3 gap-4">
