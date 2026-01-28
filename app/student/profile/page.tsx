@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, GraduationCap, Save, Eye, EyeOff } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 interface StudentProfile {
   id: string
@@ -234,15 +237,34 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading profile...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-8 w-40 rounded" />
+               </div>
             </div>
-          </div>
-        </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+             <div className="max-w-4xl mx-auto space-y-8">
+                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div className="flex flex-col md:flex-row gap-6 items-center md:items-start mb-6">
+                         <Skeleton className="h-24 w-24 rounded-full" />
+                         <div className="space-y-4 flex-1 w-full">
+                            <Skeleton className="h-8 w-3/4" />
+                            <Skeleton className="h-4 w-1/2" />
+                         </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                 </div>
+             </div>
+          </main>
       </div>
     )
   }

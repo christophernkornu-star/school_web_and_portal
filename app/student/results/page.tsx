@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GraduationCap, ArrowLeft, Download, BookOpen } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 interface Grade {
   id: string
@@ -173,11 +176,34 @@ export default function StudentResults() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading results...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-8 w-40 rounded" />
+               </div>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+             <div className="max-w-6xl mx-auto space-y-8">
+                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <div>
+                           <Skeleton className="h-8 w-48 mb-2" />
+                           <Skeleton className="h-4 w-32" />
+                        </div>
+                        <Skeleton className="h-10 w-32 rounded-lg" />
+                    </div>
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-16 w-full rounded-lg" />
+                        <Skeleton className="h-16 w-full rounded-lg" />
+                        <Skeleton className="h-16 w-full rounded-lg" />
+                    </div>
+                 </div>
+             </div>
+          </main>
       </div>
     )
   }
@@ -197,10 +223,7 @@ export default function StudentResults() {
                 <p className="text-xs text-gray-600">Student Portal - Results</p>
               </div>
             </div>
-            <Link href="/student/dashboard" className="flex items-center space-x-2 text-gray-700 hover:text-methodist-blue">
-              <ArrowLeft className="w-5 h-5" />
-              <span>Back to Dashboard</span>
-            </Link>
+            <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-gray-700 hover:text-methodist-blue" />
           </div>
         </nav>
       </header>

@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Printer, FileText } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 export default function StudentCumulativePage() {
   const router = useRouter()
@@ -538,8 +541,33 @@ export default function StudentCumulativePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-8 w-40 rounded" />
+               </div>
+            </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 max-w-4xl mx-auto">
+                <div className="flex flex-col items-center gap-4 mb-8">
+                    <Skeleton className="h-20 w-20 rounded-full" />
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-6 w-48" />
+                </div>
+                <div className="space-y-6">
+                    <div className="grid grid-cols-4 gap-4 mb-8">
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-10 w-full" />
+                       <Skeleton className="h-10 w-full" />
+                    </div>
+                    <Skeleton className="h-64 w-full rounded" />
+                </div>
+             </div>
+          </main>
       </div>
     )
   }
@@ -549,10 +577,8 @@ export default function StudentCumulativePage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <Link href="/student/dashboard" className="text-purple-600 hover:text-purple-700">
-                <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
-              </Link>
+            <div className="flex items-center gap-4">
+              <BackButton href="/student/dashboard" className="text-purple-600 hover:text-purple-700" />
               <div>
                 <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800">Cumulative Record</h1>
                 <p className="text-xs md:text-sm text-gray-600">Your academic performance history</p>

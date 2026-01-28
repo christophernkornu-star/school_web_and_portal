@@ -7,6 +7,7 @@ import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, M
 import { signOut } from '@/lib/auth'
 import type { Student, Profile } from '@/lib/supabase'
 import { useStudent } from '@/components/providers/StudentContext'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface Announcement {
   id: string
@@ -76,10 +77,50 @@ export default function StudentDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading student dashboard...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
+        {/* Header Skeleton */}
+        <div className="bg-gradient-to-r from-methodist-light to-methodist-dark text-white pb-32">
+          <div className="container mx-auto px-4 py-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="w-16 h-16 rounded-full bg-white/20" />
+                  <div>
+                    <Skeleton className="h-6 w-48 bg-white/20 mb-2" />
+                    <Skeleton className="h-4 w-32 bg-white/20" />
+                  </div>
+               </div>
+               <Skeleton className="h-10 w-24 rounded-lg bg-white/20" />
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid Skeleton */}
+        <div className="container mx-auto px-4 -mt-16">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+               {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                      <div className="flex justify-between items-start mb-4">
+                         <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                           <Skeleton className="w-6 h-6" />
+                         </div>
+                      </div>
+                      <Skeleton className="h-8 w-24 mb-1" />
+                      <Skeleton className="h-4 w-32" />
+                  </div>
+               ))}
+           </div>
+           
+           {/* Content Skeleton */}
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
+                  <Skeleton className="h-64 w-full rounded-lg" />
+                  <Skeleton className="h-48 w-full rounded-lg" />
+              </div>
+              <div className="space-y-6">
+                 <Skeleton className="h-48 w-full rounded-lg" />
+                 <Skeleton className="h-48 w-full rounded-lg" />
+              </div>
+           </div>
         </div>
       </div>
     )

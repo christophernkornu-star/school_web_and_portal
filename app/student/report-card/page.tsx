@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Download, Printer, ArrowLeft, FileText, ChevronDown } from 'lucide-react'
 import signatureImg from './signature.png'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 // Remarks options based on performance levels
 const ATTITUDE_REMARKS = {
@@ -1219,15 +1222,39 @@ export default function ReportCardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading report cards...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-8 w-40 rounded" />
+               </div>
             </div>
-          </div>
-        </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+             <div className="max-w-6xl mx-auto space-y-8">
+                <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                     <Skeleton className="h-10 w-48 rounded" />
+                     <Skeleton className="h-10 w-32 rounded" />
+                </div>
+                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
+                    <div className="text-center mb-8 space-y-4">
+                         <Skeleton className="h-20 w-20 rounded-full mx-auto" />
+                         <Skeleton className="h-8 w-64 mx-auto" />
+                         <Skeleton className="h-6 w-48 mx-auto" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-8 mb-8">
+                         <Skeleton className="h-32 w-full rounded" />
+                         <Skeleton className="h-32 w-full rounded" />
+                    </div>
+                     <div className="space-y-4">
+                        <Skeleton className="h-12 w-full rounded" />
+                        <Skeleton className="h-12 w-full rounded" />
+                        <Skeleton className="h-12 w-full rounded" />
+                    </div>
+                 </div>
+             </div>
+          </main>
       </div>
     )
   }
@@ -1238,13 +1265,7 @@ export default function ReportCardPage() {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <button
-              onClick={() => router.push('/student/dashboard')}
-              className="flex items-center gap-2 text-methodist-blue hover:text-blue-700 mb-4"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
-            </button>
+            <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-methodist-blue hover:text-blue-700 mb-4" />
             <h1 className="text-3xl font-bold text-methodist-blue">Report Cards</h1>
           </div>
 
@@ -1274,13 +1295,7 @@ export default function ReportCardPage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6 md:mb-8">
-          <button
-            onClick={() => router.push('/student/dashboard')}
-            className="flex items-center gap-2 text-methodist-blue hover:text-blue-700 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
+          <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-methodist-blue hover:text-blue-700 mb-4" />
           <h1 className="text-2xl md:text-3xl font-bold text-methodist-blue">Report Cards</h1>
           <p className="text-gray-600 mt-2 text-sm md:text-base">View and download your academic reports</p>
         </div>

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Clock, Save, CheckCircle } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function TakeQuizPage() {
   const params = useParams()
@@ -288,7 +289,34 @@ export default function TakeQuizPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-center">Loading Assessment...</div>
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+          <header className="bg-white dark:bg-gray-800 shadow p-4 sticky top-0 z-10">
+               <div className="container mx-auto flex justify-between items-center">
+                    <div className="flex items-center gap-4">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-6 w-48" />
+                    </div>
+                    <Skeleton className="h-10 w-24 rounded-lg" />
+               </div>
+          </header>
+          <div className="container mx-auto max-w-3xl p-4 md:p-8 space-y-6">
+              {[1, 2, 3].map((i) => (
+                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-4">
+                      <Skeleton className="h-6 w-3/4" />
+                      <div className="space-y-3">
+                          <Skeleton className="h-12 w-full rounded" />
+                          <Skeleton className="h-12 w-full rounded" />
+                          <Skeleton className="h-12 w-full rounded" />
+                          <Skeleton className="h-12 w-full rounded" />
+                      </div>
+                  </div>
+              ))}
+          </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 relative">

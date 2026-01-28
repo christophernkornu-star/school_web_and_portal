@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ArrowLeft, Calendar, CheckCircle, Users } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
+import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 interface AttendanceRecord {
   id: string
@@ -152,15 +155,31 @@ export default function AttendancePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading attendance records...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
+          <header className="bg-white dark:bg-gray-800 shadow">
+            <div className="container mx-auto px-4 py-4">
+               <div className="flex items-center gap-4">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <Skeleton className="h-8 w-40 rounded" />
+               </div>
             </div>
-          </div>
-        </div>
+          </header>
+          <main className="flex-1 container mx-auto px-4 py-8">
+             <div className="max-w-6xl mx-auto space-y-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Skeleton className="h-32 w-full rounded-lg" />
+                    <Skeleton className="h-32 w-full rounded-lg" />
+                 </div>
+                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                    <Skeleton className="h-8 w-48 mb-6" />
+                    <div className="space-y-4">
+                        <Skeleton className="h-16 w-full rounded-lg" />
+                        <Skeleton className="h-16 w-full rounded-lg" />
+                        <Skeleton className="h-16 w-full rounded-lg" />
+                    </div>
+                 </div>
+             </div>
+          </main>
       </div>
     )
   }
@@ -170,13 +189,7 @@ export default function AttendancePage() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => router.push('/student/dashboard')}
-            className="flex items-center gap-2 text-methodist-blue hover:text-blue-700 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
+          <BackButton className="mb-4" />
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-methodist-blue">Attendance Records</h1>
           <p className="text-xs md:text-sm text-gray-600 mt-2">View your term-based attendance summary</p>
         </div>
