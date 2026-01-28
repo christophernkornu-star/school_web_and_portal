@@ -1118,7 +1118,11 @@ export default function TeacherStudentReportPage() {
                       reportData?.averageScore >= 60 ? 'bg-blue-100 text-blue-600' :
                       reportData?.averageScore >= 40 ? 'bg-yellow-100 text-yellow-600' : 'bg-red-100 text-red-600'
                 }`}>
-                   <span className="font-bold text-lg">{gradeDistribution[getPerformanceLevel(reportData?.averageScore || 0) === 'excellent' ? 'A' : getPerformanceLevel(reportData?.averageScore || 0) === 'good' ? 'B' : getPerformanceLevel(reportData?.averageScore || 0) === 'average' ? 'C' : 'F']}</span>
+                   <span className="font-bold text-lg">
+                      {reportData?.averageScore >= 80 ? 'A' : 
+                       reportData?.averageScore >= 60 ? 'B' : 
+                       reportData?.averageScore >= 40 ? 'C' : 'F'}
+                   </span>
                 </div>
              </div>
           </div>
