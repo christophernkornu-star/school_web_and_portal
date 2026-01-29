@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useReactToPrint } from 'react-to-print'
 import BackButton from '@/components/ui/BackButton'
 import { Skeleton } from '@/components/ui/skeleton'
+import Image from 'next/image'
 
 // Types
 type Student = {
@@ -67,7 +68,13 @@ const ReportCard = ({ data, termName, academicYear }: { data: ReportData, termNa
           <div className="w-24">
              {/* Photo Placeholder */}
              {data.student.photo_url ? (
-                 <img src={data.student.photo_url} alt="Student" className="w-24 h-24 object-cover border border-gray-300" />
+                 <Image 
+                   src={data.student.photo_url} 
+                   alt="Student" 
+                   width={96} 
+                   height={96} 
+                   className="w-24 h-24 object-cover border border-gray-300" 
+                 />
              ) : (
                 <div className="w-24 h-24 border border-gray-300 flex items-center justify-center text-xs text-gray-400">
                     Photo

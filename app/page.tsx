@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { GraduationCap, Calendar, FileText, Image as ImageIcon, Newspaper } from 'lucide-react'
 import { createClient } from '@supabase/supabase-js'
@@ -236,9 +237,11 @@ export default async function HomePage() {
             <div className="bg-white rounded-xl p-10 shadow-lg text-center hover:shadow-2xl transition-all duration-300 border-2 border-gray-100 hover:border-methodist-blue transform hover:scale-105">
               <div className="w-40 h-40 mx-auto mb-6 flex items-center justify-center bg-gradient-to-br from-ghana-red via-ghana-gold to-ghana-green rounded-full p-2">
                 <div className="bg-white rounded-full w-full h-full flex items-center justify-center overflow-hidden">
-                  <img 
+                  <Image 
                     src="/logo-GES.png" 
                     alt="Ghana Education Service Logo" 
+                    width={160}
+                    height={160}
                     className="w-full h-full object-contain p-2"
                   />
                 </div>
@@ -249,11 +252,13 @@ export default async function HomePage() {
 
             {/* Methodist Church Ghana */}
             <div className="bg-white rounded-xl p-10 shadow-lg text-center hover:shadow-2xl transition-all duration-300 border-2 border-gray-100 hover:border-methodist-blue transform hover:scale-105">
-              <div className="w-40 h-40 mx-auto mb-6 flex items-center justify-center bg-methodist-blue rounded-full p-2">
-                <div className="bg-white rounded-full w-full h-full flex items-center justify-center overflow-hidden">
-                  <img 
+                  <Image 
                     src="/chuch-logo.png" 
                     alt="Methodist Church Ghana Logo" 
+                    width={160}
+                    height={160}
+                    className="w-full h-full object-contain p-2"
+                  />alt="Methodist Church Ghana Logo" 
                     className="w-full h-full object-contain p-2"
                   />
                 </div>
