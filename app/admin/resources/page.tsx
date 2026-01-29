@@ -17,7 +17,7 @@ export default function ResourcesPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <BackButton href="/admin" />
+            <BackButton href="/admin/dashboard" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">School Resources</h1>
               <p className="text-xs md:text-sm text-gray-600">Manage documents and resources</p>

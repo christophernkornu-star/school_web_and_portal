@@ -40,7 +40,7 @@ export default async function AdminComplaintsPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center space-x-4">
-            <BackButton href="/admin" />
+            <BackButton href="/admin/dashboard" />
             <div className="flex items-center space-x-3">
               <MessageSquare className="w-8 h-8 text-blue-600" />
               <div>

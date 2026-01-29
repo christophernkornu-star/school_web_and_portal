@@ -216,7 +216,7 @@ export default function AdminNewsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
-              <BackButton href="/admin" />
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">News Management</h1>
                 <p className="text-xs md:text-sm text-gray-600">Create and manage school news</p>

@@ -226,7 +226,7 @@ export default function EventsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-3 md:space-x-4">
-              <BackButton href="/admin" />
+              <BackButton href="/admin/dashboard" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800">School Events</h1>
                 <p className="text-xs md:text-sm text-gray-600">Manage and schedule school events</p>
