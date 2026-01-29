@@ -1175,7 +1175,7 @@ export default function ExamScoresPage() {
       <header className="bg-white dark:bg-gray-800 shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center gap-4">
-            <BackButton href="/teacher/dashboard" />
+            <BackButton href="/teacher/manage-scores" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Exam Scores</h1>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Upload exam scores via CSV or use Spreadsheet View</p>

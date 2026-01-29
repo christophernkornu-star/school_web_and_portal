@@ -421,7 +421,7 @@ export default function ViewScoresPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <BackButton href="/teacher/dashboard" />
+              <BackButton href="/teacher/manage-scores" />
               <div>
                 <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">View & Edit Scores</h1>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Review and correct scores at a glance</p>

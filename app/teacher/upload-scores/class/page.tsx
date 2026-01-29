@@ -8,6 +8,7 @@ import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { toast } from 'react-hot-toast'
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface TeacherClass {
   class_id: string
@@ -941,10 +942,45 @@ function ClassScoresContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center transition-colors">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-ghana-green mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 transition-colors">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center space-x-2">
+            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-96" />
+          
+          <div className="flex space-x-2">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-32" />
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 space-y-6">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+            
+            <div className="space-y-4 pt-4">
+              <Skeleton className="h-8 w-32" />
+              <div className="space-y-2">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -955,11 +991,11 @@ function ClassScoresContent() {
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-8">
           <Link
-            href="/teacher/dashboard"
+            href="/teacher/manage-scores"
             className="inline-flex items-center text-ghana-green hover:text-green-700 dark:hover:text-green-400 mb-4 text-xs md:text-sm"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
+            Back to Manage Scores
           </Link>
           <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Class Scores</h1>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-2">
