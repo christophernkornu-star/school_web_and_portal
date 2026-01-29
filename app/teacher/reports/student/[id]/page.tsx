@@ -111,7 +111,16 @@ function getAutoRemark(remarkType: string, averageScore: number, attendancePerce
       break
   }
   
-  return remarks[Math.floor(Math.random() * remarks.length)]
+  let selectedRemark = remarks[Math.floor(Math.random() * remarks.length)]
+
+  // Append attendance remark for attitude if attendance is poor (50% or less)
+  if (remarkType === 'attitude' && attendancePercentage !== undefined && attendancePercentage <= 50) {
+    const poorAttendancePhrases = [". Not regular in school", ". Truant"];
+    const extraPhrase = poorAttendancePhrases[Math.floor(Math.random() * poorAttendancePhrases.length)];
+    selectedRemark += extraPhrase;
+  }
+  
+  return selectedRemark
 }
 
 function getAllRemarks(remarkType: string): string[] {
@@ -403,12 +412,16 @@ export default function TeacherStudentReportPage() {
       })
 
       // Generate auto remarks
+      const attendancePercentage = (termData?.total_days && daysPresent !== null) 
+        ? (daysPresent / termData.total_days) * 100 
+        : undefined
+
       const autoRemarks = {
-        attitude: getAutoRemark('attitude', averageScore),
-        interest: getAutoRemark('interest', averageScore),
-        conduct: getAutoRemark('conduct', averageScore),
-        classTeacher: getAutoRemark('classTeacher', averageScore),
-        headTeacher: getAutoRemark('headTeacher', averageScore)
+        attitude: getAutoRemark('attitude', averageScore, attendancePercentage),
+        interest: getAutoRemark('interest', averageScore, attendancePercentage),
+        conduct: getAutoRemark('conduct', averageScore, attendancePercentage),
+        classTeacher: getAutoRemark('classTeacher', averageScore, attendancePercentage),
+        headTeacher: getAutoRemark('headTeacher', averageScore, attendancePercentage)
       }
       setRemarks(autoRemarks)
 
