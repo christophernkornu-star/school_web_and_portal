@@ -106,7 +106,7 @@ export default function TeacherFeesPage() {
       // Fetch students
       const { data: studentsData } = await supabase
         .from('students')
-        .select('id, first_name, last_name, student_id, gender')
+        .select('id, first_name, last_name, middle_name, student_id, gender')
         .eq('class_id', classId)
         .order('last_name')
 
@@ -412,7 +412,9 @@ export default function TeacherFeesPage() {
                             {student.first_name[0]}{student.last_name[0]}
                           </div>
                           <div className="ml-4">
-                            <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">{student.last_name} {student.first_name}</div>
+                            <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
+                              {student.last_name} {student.middle_name ? `${student.middle_name} ` : ''}{student.first_name}
+                            </div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">{student.student_id}</div>
                           </div>
                         </div>
@@ -470,7 +472,7 @@ export default function TeacherFeesPage() {
               <div>
                 <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Manage Payments</h3>
                 <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                  {selectedStudent.last_name} {selectedStudent.first_name} ({selectedStudent.student_id})
+                  {selectedStudent.last_name} {selectedStudent.middle_name ? `${selectedStudent.middle_name} ` : ''}{selectedStudent.first_name} ({selectedStudent.student_id})
                 </p>
               </div>
               <div className="flex items-center gap-2">
