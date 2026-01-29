@@ -72,7 +72,7 @@ export const ClassFeeReport = React.forwardRef<HTMLDivElement, ClassFeeReportPro
                 <tr key={student.id} className="border-b border-gray-200 dark:border-gray-700">
                   <td className="p-2 border border-gray-300 dark:border-gray-600 text-center">{index + 1}</td>
                   <td className="p-2 border border-gray-300 dark:border-gray-600 font-medium">
-                    {student.last_name} {student.first_name}
+                    {student.last_name} {student.middle_name ? `${student.middle_name} ` : ''}{student.first_name}
                   </td>
                   <td className="p-2 border border-gray-300 dark:border-gray-600 font-mono text-xs">{student.student_id}</td>
                   <td className="p-2 border border-gray-300 dark:border-gray-600 text-right">{studentBill.toFixed(2)}</td>

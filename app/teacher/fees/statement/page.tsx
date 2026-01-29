@@ -6,6 +6,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ClassFeeReport } from '@/components/ClassFeeReport'
 import { Loader2, ArrowLeft, Printer } from 'lucide-react'
 import Link from 'next/link'
+import { Skeleton } from "@/components/ui/skeleton"
 
 function ClassStatementContent() {
   const searchParams = useSearchParams()
@@ -41,7 +42,7 @@ function ClassStatementContent() {
       // 2. Get Students
       const { data: studentsData } = await supabase
         .from('students')
-        .select('id, first_name, last_name, student_id, gender')
+        .select('id, first_name, last_name, middle_name, student_id, gender')
         .eq('class_id', classId)
         .order('last_name')
       
@@ -89,8 +90,38 @@ function ClassStatementContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 md:p-8">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="flex justify-between items-center">
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-10 w-40" />
+          </div>
+          
+          <div className="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden p-8 space-y-8">
+            <div className="space-y-4 text-center border-b pb-6">
+              <Skeleton className="h-8 w-3/4 mx-auto" />
+              <Skeleton className="h-6 w-1/2 mx-auto" />
+              <div className="flex justify-center gap-8">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+
+            <div className="space-y-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
