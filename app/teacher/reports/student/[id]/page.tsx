@@ -572,20 +572,44 @@ export default function TeacherStudentReportPage() {
         console.warn('Could not load signature image:', imgError)
       }
 
-      const printWindow = window.open('', '_blank')
-      if (!printWindow) {
-        toast('Please allow popups to download report card', { icon: 'ℹ️' })
-        return
-      }
-
       const html = generateReportHTML(watermarkBase64, logoBase64, methodistLogoBase64, signatureBase64)
-      printWindow.document.write(html)
-      printWindow.document.close()
+      
+      // Create a hidden iframe for printing to avoid opening new windows
+      const iframe = document.createElement('iframe')
+      iframe.style.position = 'fixed'
+      iframe.style.right = '0'
+      iframe.style.bottom = '0'
+      iframe.style.width = '0'
+      iframe.style.height = '0'
+      iframe.style.border = '0'
+      iframe.style.visibility = 'hidden'
+      document.body.appendChild(iframe)
 
-      setTimeout(() => {
-        printWindow.focus()
-        printWindow.print()
-      }, 500)
+      const doc = iframe.contentWindow?.document
+      if (doc) {
+        doc.open()
+        doc.write(html)
+        doc.close()
+
+        // Wait for content (fonts, images) to potentialy load then print
+        setTimeout(() => {
+          try {
+            iframe.contentWindow?.focus()
+            iframe.contentWindow?.print()
+          } catch (e) {
+            console.error('Print failed:', e)
+            toast.error('Printing failed. Please try again.')
+          } finally {
+            // Remove iframe after a delay to ensure print dialog is finished setup
+            // Note: On mobile this might need to stay longer or be handled differently
+            setTimeout(() => {
+              if (document.body.contains(iframe)) {
+                document.body.removeChild(iframe)
+              }
+            }, 3000)
+          }
+        }, 1000)
+      }
 
     } catch (error) {
       console.error('Error generating PDF:', error)
@@ -991,7 +1015,7 @@ export default function TeacherStudentReportPage() {
               <div class="info-cell"><span class="info-label">TERM:</span><span class="info-value">${reportData.termName}</span></div>
             </div>
             <div class="info-row">
-              <div class="info-cell"><span class="info-label">STD ID:</span><span class="info-value">${student.student_id || 'N/A'}</span></div>
+              <div class="info-cell"><span class="info-label">STD ID:</span><span class="info-value">${student.student_id || 'N/A'} &nbsp;/&nbsp; ${reportData.year || ''}</span></div>
               <div class="info-cell"><span class="info-label">AVG SCORE:</span><span class="info-value">${reportData.averageScore}%${(reportData.aggregate !== null && reportData.aggregate !== undefined) ? ` | AGG: ${reportData.aggregate}` : ''}</span></div>
             </div>
             <div class="info-row">
