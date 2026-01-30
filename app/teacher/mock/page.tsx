@@ -693,52 +693,57 @@ export default function MockExamsPage() {
                     if (pages.length === 0) pages.push([]); // Handle empty case if needed
 
                     return pages.map((pageStudents, pageIndex) => (
-                        <div key={pageIndex} className="max-w-[297mm] mx-auto p-4 md:p-8 print:p-0 page-container" style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
-                            <div className="text-center mb-2 border-b-2 border-black pb-1">
-                                <h1 className="text-xl font-bold font-serif uppercase tracking-wide">Biriwa Methodist "C" Basic School</h1>
-                                <h2 className="text-lg font-bold uppercase mt-0">
-                                    {currentMockData.academic_year} {currentMockData.name.replace(/mock/i, '').trim()} Mock Results
-                                </h2>
-                                <p className="text-xs text-right font-mono">Page {pageIndex + 1} of {pages.length}</p>
-                            </div>
+                        <div key={pageIndex} className={`max-w-[297mm] mx-auto p-2 md:p-8 print:p-0 page-container ${pageIndex > 0 ? 'print:mt-4' : ''}`}>
+                            {pageIndex === 0 && (
+                                <div className="text-center mb-2 border-b-2 border-black pb-1">
+                                    <h1 className="text-xl md:text-2xl font-bold font-serif uppercase tracking-wide">Biriwa Methodist "C" Basic School</h1>
+                                    <h2 className="text-lg md:text-xl font-bold uppercase mt-0">
+                                        {currentMockData.academic_year} {currentMockData.name.replace(/mock/i, '').trim()} Mock Results
+                                    </h2>
+                                </div>
+                            )}
 
-                            <table className="w-full border-collapse border border-black text-xs">
-                                <thead>
-                                    <tr className="bg-gray-100">
-                                        <th className="border border-black px-1 py-0.5 w-8 text-center">SN</th>
-                                        <th className="border border-black px-1 py-0.5 text-left">NAME</th>
-                                        {subjects.map(s => (
-                                            <th key={s.id} className="border border-black px-1 py-0.5 w-10 text-center rotate-heads">
-                                                {getShortSubjectName(s.name)}
-                                            </th>
-                                        ))}
-                                        <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50 font-bold whitespace-nowrap">TOT. SCO</th>
-                                        <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50">AVG</th>
-                                        <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-200">AGG</th>
-                                        <th className="border border-black px-1 py-0.5 w-8 text-center">POS</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {pageStudents.map((student, idx) => (
-                                        <tr key={student.id}>
-                                            <td className="border border-black px-1 py-0.5 text-center">{pageIndex * STUDENTS_PER_PAGE + idx + 1}</td>
-                                            <td className="border border-black px-1 py-0.5 font-medium uppercase whitespace-nowrap px-2 truncate max-w-[150px]">{student.fullname}</td>
+                            {/* Responsive Table Wrapper for Screen */}
+                            <div className="overflow-x-auto">
+                                <table className="w-full border-collapse border border-black text-[10px] md:text-xs min-w-[800px] md:min-w-0">
+                                    <thead>
+                                        <tr className="bg-gray-100">
+                                            <th className="border border-black px-1 py-0.5 w-8 text-center">SN</th>
+                                            <th className="border border-black px-1 py-0.5 text-left min-w-[150px]">NAME</th>
                                             {subjects.map(s => (
-                                                <td key={s.id} className="border border-black px-1 py-0.5 text-center">
-                                                    {student.scores[s.id] || '-'}
-                                                </td>
+                                                <th key={s.id} className="border border-black px-1 py-0.5 w-10 text-center rotate-heads">
+                                                    {getShortSubjectName(s.name)}
+                                                </th>
                                             ))}
-                                            <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-50">{student.totalScore}</td>
-                                            <td className="border border-black px-1 py-0.5 text-center font-bold">{student.average.toFixed(1)}</td>
-                                            <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-100">{student.aggregate}</td>
-                                            <td className="border border-black px-1 py-0.5 text-center font-bold">{student.position}</td>
+                                            <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50 font-bold whitespace-nowrap">TOT. SCO</th>
+                                            <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50">AVG</th>
+                                            <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-200">AGG</th>
+                                            <th className="border border-black px-1 py-0.5 w-8 text-center">POS</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {pageStudents.map((student, idx) => (
+                                            <tr key={student.id}>
+                                                <td className="border border-black px-1 py-0.5 text-center">{pageIndex * STUDENTS_PER_PAGE + idx + 1}</td>
+                                                <td className="border border-black px-1 py-0.5 font-medium uppercase whitespace-nowrap px-2 truncate max-w-[150px]">{student.fullname}</td>
+                                                {subjects.map(s => (
+                                                    <td key={s.id} className="border border-black px-1 py-0.5 text-center">
+                                                        {student.scores[s.id] || '-'}
+                                                    </td>
+                                                ))}
+                                                <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-50">{student.totalScore}</td>
+                                                <td className="border border-black px-1 py-0.5 text-center font-bold">{student.average.toFixed(1)}</td>
+                                                <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-100">{student.aggregate}</td>
+                                                <td className="border border-black px-1 py-0.5 text-center font-bold">{student.position}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                             
-                            <div className="mt-2 text-[10px] text-right text-gray-500">
-                                Generated on: {new Date().toLocaleDateString('en-GB')}
+                            <div className="mt-2 text-[10px] flex justify-between items-center text-gray-500">
+                                <span>Page {pageIndex + 1} of {pages.length}</span>
+                                <span>Generated on: {new Date().toLocaleDateString('en-GB')}</span>
                             </div>
                         </div>
                     ));
@@ -751,7 +756,7 @@ export default function MockExamsPage() {
                @page { size: landscape; margin: 5mm; }
                body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                .no-print { display: none; }
-               .page-container { break-after: page; height: 100vh; }
+               .page-container { break-after: page; }
                .page-container:last-child { break-after: auto; }
            }
         `}</style>
