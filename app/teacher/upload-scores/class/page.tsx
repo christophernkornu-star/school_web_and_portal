@@ -95,14 +95,53 @@ function ClassScoresContent() {
           throw new Error('Teacher profile not found')
         }
 
-        // Fetch grading settings
-        const { data: systemSettings } = await supabase
-          .from('system_settings')
-          .select('*')
-          .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
-        
-        if (systemSettings) {
-           systemSettings.forEach((setting: any) => {
+        setTeacher({
+          id: teacherData.id,
+          profile_id: teacherData.profile_id,
+          first_name: teacherData.first_name,
+          last_name: teacherData.last_name
+        })
+
+        // Fetch all initial data in parallel
+        const [
+          gradingSettingsRes,
+          classAccess,
+          subjectsRes,
+          termsRes,
+          currentTermRes
+        ] = await Promise.all([
+          // 1. Grading settings
+          supabase
+            .from('system_settings')
+            .select('*')
+            .in('setting_key', ['class_score_percentage', 'exam_score_percentage']),
+          
+          // 2. Class access
+          getTeacherClassAccess(teacherData.profile_id),
+          
+          // 3. Subjects
+          supabase
+            .from('subjects')
+            .select('id, name, code, level')
+            .order('name'),
+          
+          // 4. Terms
+          supabase
+            .from('academic_terms')
+            .select('*')
+            .order('created_at', { ascending: false }),
+          
+          // 5. Current term
+          supabase
+            .from('system_settings')
+            .select('setting_value')
+            .eq('setting_key', 'current_term')
+            .maybeSingle()
+        ])
+
+        // Process Grading Settings
+        if (gradingSettingsRes.data) {
+           gradingSettingsRes.data.forEach((setting: any) => {
              if (setting.setting_key === 'class_score_percentage') {
                setClassScorePercentage(Number(setting.setting_value))
              } else if (setting.setting_key === 'exam_score_percentage') {
@@ -111,49 +150,27 @@ function ClassScoresContent() {
            })
         }
 
-        setTeacher({
-          id: teacherData.id,
-          profile_id: teacherData.profile_id,
-          first_name: teacherData.first_name,
-          last_name: teacherData.last_name
-        })
-
-        const classAccess = await getTeacherClassAccess(teacherData.profile_id)
+        // Process Class Access
         setTeacherClasses(classAccess.map(c => ({
           class_id: c.class_id,
           class_name: c.class_name,
           level: c.level
         })))
 
-        // Load all subjects with level
-        const { data: subjectsData, error: subjectsError } = await supabase
-          .from('subjects')
-          .select('id, name, code, level')
-          .order('name') as { data: any[] | null; error: any }
-
-        if (!subjectsError && subjectsData) {
-          setSubjects(subjectsData)
+        // Process Subjects
+        if (!subjectsRes.error && subjectsRes.data) {
+          setSubjects(subjectsRes.data)
         }
 
-        // Load terms
-        const { data: termsData, error: termsError } = await supabase
-          .from('academic_terms')
-          .select('*')
-          .order('created_at', { ascending: false }) as { data: any[] | null; error: any }
-
-        if (!termsError && termsData) {
-          setTerms(termsData)
+        // Process Terms and Current Term
+        if (!termsRes.error && termsRes.data) {
+          setTerms(termsRes.data)
           
-          const { data: currentTermData } = await supabase
-            .from('system_settings')
-            .select('setting_value')
-            .eq('setting_key', 'current_term')
-            .maybeSingle() as { data: any }
-          
-          if (currentTermData?.setting_value) {
-            const matchingTerm = termsData.find((t: any) => t.id === currentTermData.setting_value)
+          const currentTermId = currentTermRes.data?.setting_value
+          if (currentTermId) {
+            const matchingTerm = termsRes.data.find((t: any) => t.id === currentTermId)
             if (matchingTerm) {
-              setSelectedTerm(currentTermData.setting_value)
+              setSelectedTerm(currentTermId)
               setCurrentTermName(`${matchingTerm.name} (${matchingTerm.academic_year})`)
             }
           }

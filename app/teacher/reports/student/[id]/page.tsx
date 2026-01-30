@@ -253,21 +253,42 @@ export default function TeacherStudentReportPage() {
         return
       }
 
-      const { data: teacherData } = await getTeacherData(user.id)
-      if (!teacherData) {
+      // 1. Initial Parallel Fetch (Authentication, Settings, Student Basic Info)
+      const [
+        teacherRes,
+        settingsRes,
+        studentRes,
+        academicSettingsRes
+      ] = await Promise.all([
+        getTeacherData(user.id),
+        supabase.from('system_settings').select('*').in('setting_key', ['class_score_percentage', 'exam_score_percentage']),
+        supabase.from('students').select('*, profiles(id, full_name, email), classes(id, name, level, category)').eq('id', studentId).single(),
+        supabase.from('academic_settings').select('*').single()
+      ])
+
+      // Validate & Set Basic Data
+      if (!teacherRes.data) {
         router.push('/login?portal=teacher')
         return
       }
-      setTeacher(teacherData)
+      setTeacher(teacherRes.data)
 
-      // Fetch grading settings
-      const { data: systemSettings } = await supabase
-        .from('system_settings')
-        .select('*')
-        .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
-      
-      if (systemSettings) {
-          systemSettings.forEach((setting: any) => {
+      if (studentRes.error || !studentRes.data) {
+        console.error('Error loading student:', studentRes.error)
+        toast.error('Student not found')
+        router.push('/teacher/reports')
+        return
+      }
+      setStudent(studentRes.data)
+      const studentData = studentRes.data
+
+      if (academicSettingsRes.data) {
+        setAcademicSettings(academicSettingsRes.data)
+      }
+
+      // Configure Grading Percentages
+      if (settingsRes.data) {
+          settingsRes.data.forEach((setting: any) => {
             if (setting.setting_key === 'class_score_percentage') {
               setClassScorePercentage(Number(setting.setting_value))
             } else if (setting.setting_key === 'exam_score_percentage') {
@@ -276,65 +297,40 @@ export default function TeacherStudentReportPage() {
           })
       }
 
-      // Get student info
-      const { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .select(`
-          *,
-          profiles(id, full_name, email),
-          classes(id, name, level, category)
-        `)
-        .eq('id', studentId)
-        .single()
+      // 2. Secondary Parallel Fetch (Report Data dependent on IDs)
+      const [
+        classSizeRes,
+        scoresDataRes,
+        attendanceRes,
+        termDataRes,
+        allTermScoresRes,
+        classScoresDataRes
+      ] = await Promise.all([
+        // Class Size
+        supabase.from('students').select('id', { count: 'exact', head: true }).eq('class_id', studentData.class_id),
+        // Student Scores
+        supabase.from('scores').select('*, subjects(id, name), academic_terms(name, academic_year)').eq('student_id', studentId).eq('term_id', termId).order('created_at'),
+        // Attendance
+        supabase.from('attendance').select('id', { count: 'exact' }).eq('student_id', studentId).in('status', ['present', 'late']),
+        // Term Metadata
+        fetch(`/api/term-data?termId=${termId}`).then(res => res.ok ? res.json() : null),
+        // Subject Ranks (All students in term)
+        supabase.from('scores').select('student_id, subject_id, total').eq('term_id', termId).not('total', 'is', null),
+        // Class Position (All students in term)
+        supabase.from('scores').select('student_id, total').eq('term_id', termId).not('total', 'is', null)
+      ])
 
-      if (studentError || !studentData) {
-        console.error('Error loading student:', studentError)
-        toast.error('Student not found')
-        router.push('/teacher/reports')
-        return
-      }
-      setStudent(studentData)
-
-      // Get total class size (number on roll)
-      const { count: classSize } = await supabase
-        .from('students')
-        .select('id', { count: 'exact', head: true })
-        .eq('class_id', studentData.class_id)
-
-      // Get scores for this student and term
-      const { data: scoresData } = await supabase
-        .from('scores')
-        .select(`
-          *,
-          subjects(id, name),
-          academic_terms(name, academic_year)
-        `)
-        .eq('student_id', studentId)
-        .eq('term_id', termId)
-        .order('created_at') as { data: any[] | null }
-
-      // Get attendance - count days where student was present or late
-      const { data: attendanceRecords, count: daysPresent } = await supabase
-        .from('attendance')
-        .select('id', { count: 'exact' })
-        .eq('student_id', studentId)
-        .in('status', ['present', 'late']) as { data: any[], count: number | null }
-
-      // Fetch term data via API route to bypass RLS
-      const termResponse = await fetch(`/api/term-data?termId=${termId}`)
-      const termData = termResponse.ok ? await termResponse.json() : null
+      const classSize = classSizeRes.count
+      const scoresData = scoresDataRes.data as any[] | null
+      const daysPresent = attendanceRes.count
+      const termData = termDataRes
+      const allTermScores = allTermScoresRes.data as any[] | null
+      const classScoresData = classScoresDataRes.data as any[] | null
 
       // Calculate average
       const validScores = scoresData?.filter(s => s.total !== null) || []
       const totalScore = Math.round(validScores.reduce((sum, s) => sum + (s.total || 0), 0) * 10) / 10
       const averageScore = validScores.length > 0 ? Math.round((totalScore / validScores.length) * 10) / 10 : 0
-
-      // Get all scores for the same term to calculate subject ranks
-      const { data: allTermScores } = await supabase
-        .from('scores')
-        .select('student_id, subject_id, total')
-        .eq('term_id', termId)
-        .not('total', 'is', null) as { data: any[] | null }
 
       // Calculate subject ranks
       const subjectRanks: { [subjectId: string]: { [studentId: string]: number } } = {}
@@ -358,13 +354,6 @@ export default function TeacherStudentReportPage() {
         })
       }
 
-      // Get class position (overall)
-      const { data: classScoresData } = await supabase
-        .from('scores')
-        .select('student_id, total')
-        .eq('term_id', termId)
-        .not('total', 'is', null) as { data: any[] | null }
-
       // Group by student and calculate averages
       const studentAverages: any = {}
       classScoresData?.forEach((score: any) => {
@@ -382,14 +371,6 @@ export default function TeacherStudentReportPage() {
 
       averages.sort((a: any, b: any) => b.average - a.average)
       const position = averages.findIndex((a: any) => a.student_id === studentId) + 1
-
-      // Get academic settings
-      const { data: settingsData } = await supabase
-        .from('academic_settings')
-        .select('*')
-        .single() as { data: any }
-
-      setAcademicSettings(settingsData)
 
       const grades = scoresData?.map(s => ({
         subject_name: s.subjects?.name || 'Unknown',

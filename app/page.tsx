@@ -14,37 +14,38 @@ const supabaseAdmin = createClient(
 )
 
 export default async function HomePage() {
-  // Fetch latest news
-  const { data: news } = await supabaseAdmin
-    .from('news')
-    .select('*')
-    .eq('published', true)
-    .order('created_at', { ascending: false })
-    .limit(3)
+  // Fetch all initial data in parallel
+  const [newsRes, settingsRes, eventsRes, galleryRes] = await Promise.all([
+    supabaseAdmin
+      .from('news')
+      .select('*')
+      .eq('published', true)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    supabaseAdmin
+      .from('school_settings')
+      .select('school_hours')
+      .single(),
+    supabaseAdmin
+      .from('events')
+      .select('*')
+      .order('event_date', { ascending: true })
+      .limit(3),
+    supabaseAdmin
+      .from('gallery_photos')
+      .select('*')
+      .eq('is_spotlight', true)
+      .order('created_at', { ascending: false })
+      .limit(10)
+  ])
 
-  // Fetch school settings
-  const { data: schoolSettings } = await supabaseAdmin
-    .from('school_settings')
-    .select('school_hours')
-    .single()
+  const news = newsRes.data
+  const schoolSettings = settingsRes.data
+  const events = eventsRes.data
+  let galleryPhotos = galleryRes.data
   
   const schoolHours = schoolSettings?.school_hours || 'Monday - Friday:\n7:30 AM - 3:00 PM'
 
-  // Fetch latest events
-  const { data: events } = await supabaseAdmin
-    .from('events')
-    .select('*')
-    .order('event_date', { ascending: true })
-    .limit(3)
-
-  // Fetch spotlight photos
-  let { data: galleryPhotos } = await supabaseAdmin
-    .from('gallery_photos')
-    .select('*')
-    .eq('is_spotlight', true)
-    .order('created_at', { ascending: false })
-    .limit(10)
-  
   if (!galleryPhotos || galleryPhotos.length === 0) {
     const { data: fallbackPhotos } = await supabaseAdmin
       .from('gallery_photos')

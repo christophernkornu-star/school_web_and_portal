@@ -66,21 +66,23 @@ export default function ViewScoresPage() {
         return
       }
 
-      const { data: teacherData } = await getTeacherData(user.id)
-      if (!teacherData) {
+      // Parallel Fetch: Teacher, Settings, Security, Terms
+      const [teacherRes, settingsRes, securityRes, termsRes] = await Promise.all([
+        getTeacherData(user.id),
+        supabase.from('system_settings').select('*').in('setting_key', ['class_score_percentage', 'exam_score_percentage']),
+        supabase.from('security_settings').select('allow_teacher_delete_scores').maybeSingle(),
+        supabase.from('academic_terms').select('*').order('academic_year', { ascending: false })
+      ])
+
+      if (!teacherRes.data) {
         router.push('/login?portal=teacher')
         return
       }
-      setTeacher(teacherData)
+      setTeacher(teacherRes.data)
 
-      // Fetch grading settings
-      const { data: systemSettings } = await supabase
-        .from('system_settings')
-        .select('*')
-        .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
-      
-      if (systemSettings) {
-          systemSettings.forEach((setting: any) => {
+      // Grading Settings
+      if (settingsRes.data) {
+          settingsRes.data.forEach((setting: any) => {
             if (setting.setting_key === 'class_score_percentage') {
               setClassScorePercentage(Number(setting.setting_value))
             } else if (setting.setting_key === 'exam_score_percentage') {
@@ -89,17 +91,19 @@ export default function ViewScoresPage() {
           })
       }
 
-      // Check delete permission
-      const { data: settingsData } = await supabase
-        .from('security_settings')
-        .select('allow_teacher_delete_scores')
-        .maybeSingle()
-      
-      if (settingsData) {
-        setCanDelete(settingsData.allow_teacher_delete_scores)
+      // Security Settings
+      if (securityRes.data) {
+        setCanDelete(securityRes.data.allow_teacher_delete_scores)
       }
 
-      const { data: assignmentsData, error: assignmentsError } = await getTeacherAssignments(teacherData.id) as { data: any[] | null, error: any }
+      // Terms
+      if (termsRes.data && termsRes.data.length > 0) {
+        setTerms(termsRes.data)
+        setSelectedTerm(termsRes.data[0].id)
+      }
+
+      // Dependent Fetch: Assignments
+      const { data: assignmentsData, error: assignmentsError } = await getTeacherAssignments(teacherRes.data.id) as { data: any[] | null, error: any }
       
       if (assignmentsError) {
         console.error('Error loading assignments:', assignmentsError)
@@ -138,22 +142,10 @@ export default function ViewScoresPage() {
         }
       }
 
-      // Load terms
-      const { data: termsData } = await supabase
-        .from('academic_terms')
-        .select('*')
-        .order('academic_year', { ascending: false }) as { data: any[] | null }
-      
-      if (termsData && termsData.length > 0) {
-        setTerms(termsData)
-        setSelectedTerm(termsData[0].id)
-      }
-
       setLoading(false)
     } catch (error) {
       console.error('Error loading data:', error)
-      setLoading(false
-      )
+      setLoading(false)
     }
   }
 

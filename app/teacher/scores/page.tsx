@@ -114,32 +114,61 @@ export default function ExamScoresPage() {
           return
         }
 
-        // Fetch grading settings
-        const { data: systemSettings } = await supabase
-          .from('system_settings')
-          .select('*')
-          .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
-        
-        if (systemSettings) {
-            systemSettings.forEach((setting: any) => {
-              if (setting.setting_key === 'class_score_percentage') {
-                setClassScorePercentage(Number(setting.setting_value))
-              } else if (setting.setting_key === 'exam_score_percentage') {
-                setExamScorePercentage(Number(setting.setting_value))
-              }
-            })
+        // Parallel Fetch: Settings, Teacher, Subjects, Terms, Current Term
+        // We start these requests simultaneously to avoid waterfall
+        const [
+          settingsRes,
+          teacherRes,
+          subjectsRes,
+          termsRes,
+          currentTermRes
+        ] = await Promise.all([
+          supabase.from('system_settings').select('*').in('setting_key', ['class_score_percentage', 'exam_score_percentage']),
+          getTeacherData(user.id),
+          supabase.from('subjects').select('id, name, code, level').order('name'),
+          supabase.from('academic_terms').select('*').order('created_at', { ascending: false }),
+          supabase.from('system_settings').select('setting_value').eq('setting_key', 'current_term').maybeSingle()
+        ])
+
+        // 1. Process Grading Settings
+        if (settingsRes.data) {
+          settingsRes.data.forEach((setting: any) => {
+            if (setting.setting_key === 'class_score_percentage') {
+              setClassScorePercentage(Number(setting.setting_value))
+            } else if (setting.setting_key === 'exam_score_percentage') {
+              setExamScorePercentage(Number(setting.setting_value))
+            }
+          })
         }
 
-        const { data: teacherData, error: teacherError } = await getTeacherData(user.id)
-        if (teacherError || !teacherData) {
+        // 2. Process Teacher Data
+        if (teacherRes.error || !teacherRes.data) {
           setError('Teacher profile not found. Please contact an administrator.')
           setLoading(false)
           return
         }
-
+        const teacherData = teacherRes.data
         setTeacher(teacherData)
 
-        // Load teacher's assigned classes
+        // 3. Process Subjects
+        if (subjectsRes.data) {
+          setSubjects(subjectsRes.data)
+        }
+
+        // 4. Process Terms & Current Term
+        if (termsRes.data) {
+          setTerms(termsRes.data)
+          
+          if (currentTermRes.data?.setting_value) {
+            const matchingTerm = termsRes.data.find((t: any) => t.id === currentTermRes.data.setting_value)
+            if (matchingTerm) {
+              setSelectedTerm(currentTermRes.data.setting_value)
+              setCurrentTermName(`${matchingTerm.name} (${matchingTerm.academic_year})`)
+            }
+          }
+        }
+
+        // 5. Load teacher's assigned classes (Dependent on Teacher ID)
         const classAccess = await getTeacherClassAccess(teacherData.profile_id)
         if (classAccess.length === 0) {
           setError('You are not assigned to any classes. Please contact an administrator.')
@@ -152,45 +181,6 @@ export default function ExamScoresPage() {
           class_name: c.class_name,
           level: c.level
         })))
-
-        // Load all subjects with level
-        const { data: subjectsData, error: subjectsError } = await supabase
-          .from('subjects')
-          .select('id, name, code, level')
-          .order('name') as { data: any[] | null; error: any }
-
-        if (!subjectsError && subjectsData) {
-          setSubjects(subjectsData)
-        }
-
-        // Load terms
-        const { data: termsData, error: termsError } = await supabase
-          .from('academic_terms')
-          .select('*')
-          .order('created_at', { ascending: false }) as { data: any[] | null; error: any }
-
-        if (!termsError && termsData) {
-          setTerms(termsData)
-          
-          // Auto-select current term from system settings
-          try {
-            const { data: currentTermData } = await supabase
-              .from('system_settings')
-              .select('setting_value')
-              .eq('setting_key', 'current_term')
-              .maybeSingle() as { data: any }
-            
-            if (currentTermData?.setting_value) {
-              const matchingTerm = termsData.find((t: any) => t.id === currentTermData.setting_value)
-              if (matchingTerm) {
-                setSelectedTerm(currentTermData.setting_value)
-                setCurrentTermName(`${matchingTerm.name} (${matchingTerm.academic_year})`)
-              }
-            }
-          } catch (err) {
-            console.error('Error loading current term:', err)
-          }
-        }
 
         setLoading(false)
       } catch (err: any) {

@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Camera, Upload, CheckCircle, XCircle, AlertCircle, Loader2, Eye, Image as ImageIcon } from 'lucide-react'
-import { createWorker } from 'tesseract.js'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -125,42 +124,34 @@ export default function OCRScoresPage() {
 
       setTeacher(teacherData)
 
-      // Load teacher's assigned classes
-      const classAccess = await getTeacherClassAccess(teacherData.profile_id)
+      // Fetch all initial data in parallel
+      const [classAccess, subjectsRes, termsRes, currentTermRes] = await Promise.all([
+        getTeacherClassAccess(teacherData.profile_id),
+        supabase.from('subjects').select('id, name, code, level').order('name'),
+        supabase.from('academic_terms').select('*').order('created_at', { ascending: false }),
+        supabase.from('system_settings').select('setting_value').eq('setting_key', 'current_term').maybeSingle()
+      ])
+
+      // Process classes
       setClasses(classAccess)
 
-      // Load subjects
-      const { data: subjectsData, error: subjectsError } = await supabase
-        .from('subjects')
-        .select('id, name, code, level')
-        .order('name')
-
-      if (!subjectsError && subjectsData) {
-        setAllSubjects(subjectsData)
-        setSubjects(subjectsData)
+      // Process subjects
+      if (!subjectsRes.error && subjectsRes.data) {
+        setAllSubjects(subjectsRes.data)
+        setSubjects(subjectsRes.data)
       }
 
-      // Load terms
-      const { data: termsData, error: termsError } = await supabase
-        .from('academic_terms')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (!termsError && termsData) {
-        setTerms(termsData)
+      // Process terms and current term
+      if (!termsRes.error && termsRes.data) {
+        setTerms(termsRes.data)
         
         // Auto-select current term from system settings
-        try {
-          const { data: currentTermData } = await supabase
-            .from('system_settings')
-            .select('setting_value')
-            .eq('setting_key', 'current_term')
-            .maybeSingle() as { data: any }
-          
-          if (currentTermData?.setting_value) {
-            const matchingTerm = termsData.find((t: any) => t.id === currentTermData.setting_value)
+        try {          
+          if (currentTermRes.data?.setting_value) {
+            const currentTermId = currentTermRes.data.setting_value
+            const matchingTerm = termsRes.data.find((t: any) => t.id === currentTermId)
             if (matchingTerm) {
-              setSelectedTerm(currentTermData.setting_value)
+              setSelectedTerm(currentTermId)
             }
           }
         } catch (err) {
@@ -327,6 +318,7 @@ export default function OCRScoresPage() {
       // Preprocess image for better OCR accuracy
       const preprocessedImage = await preprocessImage(image)
 
+      const { createWorker } = await import('tesseract.js')
       const worker = await createWorker('eng', 1, {
         logger: (m) => {
           if (m.status === 'recognizing text') {
