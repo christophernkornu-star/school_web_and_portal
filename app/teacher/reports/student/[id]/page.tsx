@@ -1244,8 +1244,8 @@ export default function TeacherStudentReportPage() {
                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-left">
                     <tr>
                        <th className="px-4 md:px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
-                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Class (30%)</th>
-                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Exam (70%)</th>
+                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Class ({classScorePercentage}%)</th>
+                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Exam ({examScorePercentage}%)</th>
                        <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
                        <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Grade</th>
                        <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Pos</th>
