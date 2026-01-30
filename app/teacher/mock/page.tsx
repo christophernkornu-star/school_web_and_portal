@@ -684,7 +684,8 @@ export default function MockExamsPage() {
 
                  {/* Pagination Logic */}
                  {(() => {
-                    const STUDENTS_PER_PAGE = 18;
+                    // Optimized for A4 Landscape with ~30 rows per page
+                    const STUDENTS_PER_PAGE = 30;
                     const pages = [];
                     for (let i = 0; i < processedData.length; i += STUDENTS_PER_PAGE) {
                         pages.push(processedData.slice(i, i + STUDENTS_PER_PAGE));
@@ -692,51 +693,51 @@ export default function MockExamsPage() {
                     if (pages.length === 0) pages.push([]); // Handle empty case if needed
 
                     return pages.map((pageStudents, pageIndex) => (
-                        <div key={pageIndex} className="max-w-[297mm] mx-auto p-4 md:p-8 print:p-0 page-container" style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto', minHeight: '200mm' }}>
-                            <div className="text-center mb-4 border-b-2 border-black pb-2">
+                        <div key={pageIndex} className="max-w-[297mm] mx-auto p-4 md:p-8 print:p-0 page-container" style={{ pageBreakAfter: pageIndex < pages.length - 1 ? 'always' : 'auto' }}>
+                            <div className="text-center mb-2 border-b-2 border-black pb-1">
                                 <h1 className="text-xl font-bold font-serif uppercase tracking-wide">Biriwa Methodist "C" Basic School</h1>
-                                <h2 className="text-lg font-bold uppercase mt-1">
+                                <h2 className="text-lg font-bold uppercase mt-0">
                                     {currentMockData.academic_year} {currentMockData.name.replace(/mock/i, '').trim()} Mock Results
                                 </h2>
-                                <p className="text-xs text-right mt-1 font-mono">Page {pageIndex + 1} of {pages.length}</p>
+                                <p className="text-xs text-right font-mono">Page {pageIndex + 1} of {pages.length}</p>
                             </div>
 
                             <table className="w-full border-collapse border border-black text-xs">
                                 <thead>
                                     <tr className="bg-gray-100">
-                                        <th className="border border-black p-1 w-8 text-center">SN</th>
-                                        <th className="border border-black p-1 text-left">NAME</th>
+                                        <th className="border border-black px-1 py-0.5 w-8 text-center">SN</th>
+                                        <th className="border border-black px-1 py-0.5 text-left">NAME</th>
                                         {subjects.map(s => (
-                                            <th key={s.id} className="border border-black p-1 w-10 text-center rotate-heads">
+                                            <th key={s.id} className="border border-black px-1 py-0.5 w-10 text-center rotate-heads">
                                                 {getShortSubjectName(s.name)}
                                             </th>
                                         ))}
-                                        <th className="border border-black p-1 w-10 text-center bg-gray-50 font-bold whitespace-nowrap">TOT. SCO</th>
-                                        <th className="border border-black p-1 w-10 text-center bg-gray-50">AVG</th>
-                                        <th className="border border-black p-1 w-10 text-center bg-gray-200">AGG</th>
-                                        <th className="border border-black p-1 w-8 text-center">POS</th>
+                                        <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50 font-bold whitespace-nowrap">TOT. SCO</th>
+                                        <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50">AVG</th>
+                                        <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-200">AGG</th>
+                                        <th className="border border-black px-1 py-0.5 w-8 text-center">POS</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {pageStudents.map((student, idx) => (
                                         <tr key={student.id}>
-                                            <td className="border border-black p-1 text-center">{pageIndex * STUDENTS_PER_PAGE + idx + 1}</td>
-                                            <td className="border border-black p-1 font-medium uppercase whitespace-nowrap px-2 truncate max-w-[150px]">{student.fullname}</td>
+                                            <td className="border border-black px-1 py-0.5 text-center">{pageIndex * STUDENTS_PER_PAGE + idx + 1}</td>
+                                            <td className="border border-black px-1 py-0.5 font-medium uppercase whitespace-nowrap px-2 truncate max-w-[150px]">{student.fullname}</td>
                                             {subjects.map(s => (
-                                                <td key={s.id} className="border border-black p-1 text-center">
+                                                <td key={s.id} className="border border-black px-1 py-0.5 text-center">
                                                     {student.scores[s.id] || '-'}
                                                 </td>
                                             ))}
-                                            <td className="border border-black p-1 text-center font-bold bg-gray-50">{student.totalScore}</td>
-                                            <td className="border border-black p-1 text-center font-bold">{student.average.toFixed(1)}</td>
-                                            <td className="border border-black p-1 text-center font-bold bg-gray-100">{student.aggregate}</td>
-                                            <td className="border border-black p-1 text-center font-bold">{student.position}</td>
+                                            <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-50">{student.totalScore}</td>
+                                            <td className="border border-black px-1 py-0.5 text-center font-bold">{student.average.toFixed(1)}</td>
+                                            <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-100">{student.aggregate}</td>
+                                            <td className="border border-black px-1 py-0.5 text-center font-bold">{student.position}</td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
                             
-                            <div className="mt-4 text-[10px] text-right text-gray-500">
+                            <div className="mt-2 text-[10px] text-right text-gray-500">
                                 Generated on: {new Date().toLocaleDateString('en-GB')}
                             </div>
                         </div>
