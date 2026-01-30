@@ -204,10 +204,10 @@ export default function ExamScoresPage() {
       try {
         const { data, error } = await supabase
           .from('students')
-          .select('id, student_id, first_name, last_name, class_id, gender')
+          .select('id, student_id, first_name, last_name, middle_name, class_id, gender')
           .eq('class_id', selectedClass)
           .eq('status', 'active')
-          .order('first_name') as { data: any[] | null; error: any }
+          .order('last_name') as { data: any[] | null; error: any }
 
         if (error) throw error
         setStudents(data || [])
@@ -1927,7 +1927,7 @@ export default function ExamScoresPage() {
                               <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
                                 <td className="px-2 md:px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-r-gray-600 shadow-sm">
                                   <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[120px] md:max-w-none">
-                                    {student.last_name} {student.first_name}
+                                    {student.last_name}, {student.first_name} {student.middle_name}
                                   </div>
                                   <div className="text-xs text-gray-500 dark:text-gray-400">
                                     {student.student_id}

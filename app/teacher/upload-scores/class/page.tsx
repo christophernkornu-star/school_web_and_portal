@@ -250,10 +250,10 @@ function ClassScoresContent() {
       // Load students
       const { data: studentsData } = await supabase
         .from('students')
-        .select('id, student_id, first_name, last_name')
+        .select('id, student_id, first_name, last_name, middle_name')
         .eq('class_id', selectedClass)
         .eq('status', 'active')
-        .order('first_name') as { data: any[] | null }
+        .order('last_name') as { data: any[] | null }
 
       if (studentsData) {
         setStudents(studentsData)
@@ -1192,7 +1192,7 @@ function ClassScoresContent() {
                                                 <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}>
                                                     <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-gray-600 shadow-sm">
                                                         <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                            {student.last_name} {student.first_name}
+                                                            {student.last_name}, {student.first_name} {student.middle_name}
                                                         </div>
                                                     </td>
                                                     {selectedSubjects.map(subjectId => {

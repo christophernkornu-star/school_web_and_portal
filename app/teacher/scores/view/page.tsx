@@ -159,13 +159,14 @@ export default function ViewScoresPage() {
           student_id,
           first_name,
           last_name,
+          middle_name,
           profile_id,
           profiles!students_profile_id_fkey(full_name),
           classes(id, name, level, category)
         `)
         .eq('class_id', selectedClass)
         .eq('status', 'active')
-        .order('first_name', { ascending: true })
+        .order('last_name', { ascending: true })
 
       if (studentsError || !studentsData) return
 
@@ -193,18 +194,19 @@ export default function ViewScoresPage() {
       // Create complete list with placeholders for students without scores
       const completeScores: any = studentsData.map((student: any) => {
         const existingScore = scoresMap.get(student.id)
+        
+        // Format name regardless of profile
+        const formattedName = `${student.last_name}, ${student.first_name}${student.middle_name ? ' ' + student.middle_name : ''}`
+        
         if (existingScore) {
           // Add student info to the score
           existingScore.students = {
             student_id: student.student_id,
-            profiles: student.profiles
+            profiles: { full_name: formattedName }
           }
           return existingScore
         }
         // Return placeholder for students without scores
-        const studentProfiles = student.profiles && !Array.isArray(student.profiles) 
-          ? student.profiles 
-          : { full_name: `${student.first_name} ${student.last_name}` }
         return {
           id: `placeholder-${student.id}`,
           student_id: student.id,
@@ -216,7 +218,7 @@ export default function ViewScoresPage() {
           grade: null,
           students: {
             student_id: student.student_id,
-            profiles: studentProfiles
+            profiles: { full_name: formattedName }
           },
           subjects: { name: assignments.find(a => a.subject_id === selectedSubject)?.subjects?.subject_name || 'Unknown' }
         }
