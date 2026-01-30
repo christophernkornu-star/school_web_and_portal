@@ -143,11 +143,26 @@ export default function ReportsPage() {
         .eq('term_id', selectedTerm)
         .in('student_id', (studentsData as any)?.map((s: any) => s.id) || [])
 
+      // Get total subjects for the class level to calculate accurate average
+      const classLevel = studentsData && studentsData.length > 0 ? (studentsData[0] as any).classes?.level : null
+      let totalSubjectsCount = 0
+      
+      if (classLevel) {
+        const { count } = await supabase
+          .from('subjects')
+          .select('*', { count: 'exact', head: true })
+          .eq('level', classLevel)
+        totalSubjectsCount = count || 0
+      }
+
       // Calculate performance for each student
       const studentsWithScores: Student[] = (studentsData || []).map((student: any) => {
         const studentScores = scoresData?.filter((s: any) => s.student_id === student.id) || []
         const totalScore = studentScores.reduce((sum: number, s: any) => sum + (s.total || 0), 0)
-        const averageScore = studentScores.length > 0 ? totalScore / studentScores.length : 0
+        
+        // Calculate average based on ALL subjects available for the level
+        const divisor = totalSubjectsCount > 0 ? totalSubjectsCount : (studentScores.length || 1)
+        const averageScore = totalScore / divisor
 
         return {
           id: student.id,

@@ -299,15 +299,16 @@ export default function TeacherStudentReportPage() {
 
       // 2. Secondary Parallel Fetch (Report Data dependent on IDs)
       const [
-        classSizeRes,
+        classStudentsRes,
         scoresDataRes,
         attendanceRes,
         termDataRes,
         allTermScoresRes,
-        classScoresDataRes
+        classScoresDataRes,
+        subjectsRes
       ] = await Promise.all([
-        // Class Size
-        supabase.from('students').select('id', { count: 'exact', head: true }).eq('class_id', studentData.class_id),
+        // Class Students (IDs for position calculation)
+        supabase.from('students').select('id').eq('class_id', studentData.class_id),
         // Student Scores
         supabase.from('scores').select('*, subjects(id, name), academic_terms(name, academic_year)').eq('student_id', studentId).eq('term_id', termId).order('created_at'),
         // Attendance
@@ -317,31 +318,41 @@ export default function TeacherStudentReportPage() {
         // Subject Ranks (All students in term)
         supabase.from('scores').select('student_id, subject_id, total').eq('term_id', termId).not('total', 'is', null),
         // Class Position (All students in term)
-        supabase.from('scores').select('student_id, total').eq('term_id', termId).not('total', 'is', null)
+        supabase.from('scores').select('student_id, total').eq('term_id', termId).not('total', 'is', null),
+        // All Subjects for Level
+        supabase.from('subjects').select('id, name').eq('level', studentData.classes?.level)
       ])
 
-      const classSize = classSizeRes.count
+      const classStudents = classStudentsRes.data || []
+      const classStudentIds = new Set(classStudents.map((s: any) => s.id))
+      const classSize = classStudents.length
+      
       const scoresData = scoresDataRes.data as any[] | null
       const daysPresent = attendanceRes.count
       const termData = termDataRes
       const allTermScores = allTermScoresRes.data as any[] | null
       const classScoresData = classScoresDataRes.data as any[] | null
+      const allSubjects = subjectsRes.data || []
 
-      // Calculate average
+      // Calculate average (Using all subjects available at level)
       const validScores = scoresData?.filter(s => s.total !== null) || []
       const totalScore = Math.round(validScores.reduce((sum, s) => sum + (s.total || 0), 0) * 10) / 10
-      const averageScore = validScores.length > 0 ? Math.round((totalScore / validScores.length) * 10) / 10 : 0
+      const totalSubjectsCount = allSubjects.length > 0 ? allSubjects.length : (validScores.length || 1)
+      const averageScore = Math.round((totalScore / totalSubjectsCount) * 10) / 10
 
-      // Calculate subject ranks
+      // Calculate subject ranks (Filtered by class)
       const subjectRanks: { [subjectId: string]: { [studentId: string]: number } } = {}
       if (allTermScores) {
         // Group scores by subject
         const subjectScores: { [subjectId: string]: { studentId: string, total: number }[] } = {}
         allTermScores.forEach(score => {
-          if (!subjectScores[score.subject_id]) {
-            subjectScores[score.subject_id] = []
+          // Only rank against class members
+          if (classStudentIds.has(score.student_id)) {
+            if (!subjectScores[score.subject_id]) {
+              subjectScores[score.subject_id] = []
+            }
+            subjectScores[score.subject_id].push({ studentId: score.student_id, total: score.total })
           }
-          subjectScores[score.subject_id].push({ studentId: score.student_id, total: score.total })
         })
 
         // Sort and assign ranks for each subject
@@ -354,35 +365,54 @@ export default function TeacherStudentReportPage() {
         })
       }
 
-      // Group by student and calculate averages
+      // Group by student and calculate averages (Filtered by class, using fixed subject count)
       const studentAverages: any = {}
-      classScoresData?.forEach((score: any) => {
-        if (!studentAverages[score.student_id]) {
-          studentAverages[score.student_id] = { total: 0, count: 0 }
-        }
-        studentAverages[score.student_id].total += score.total || 0
-        studentAverages[score.student_id].count += 1
+      
+      // Initialize all class students with 0
+      classStudentIds.forEach((sid: any) => {
+          studentAverages[sid] = 0
       })
 
-      const averages = Object.entries(studentAverages).map(([sid, data]: any) => ({
+      classScoresData?.forEach((score: any) => {
+        if (classStudentIds.has(score.student_id)) {
+           studentAverages[score.student_id] += (score.total || 0)
+        }
+      })
+
+      const averages = Object.entries(studentAverages).map(([sid, total]: any) => ({
         student_id: sid,
-        average: data.total / data.count
+        average: totalSubjectsCount > 0 ? (total as number) / totalSubjectsCount : 0
       }))
 
       averages.sort((a: any, b: any) => b.average - a.average)
       const position = averages.findIndex((a: any) => a.student_id === studentId) + 1
 
-      const grades = scoresData?.map(s => ({
-        subject_name: s.subjects?.name || 'Unknown',
-        subject_id: s.subjects?.id || s.subject_id,
-        class_score: s.class_score,
-        exam_score: s.exam_score,
-        total: s.total,
-        // Recalculate grade to ensure consistency with aggregate (BECE 1-9 Scale)
-        grade: s.total !== null ? getGradeValue(s.total).toString() : '-',
-        remarks: s.remarks,
-        rank: subjectRanks[s.subject_id]?.[studentId] || null
-      })) || []
+      // Map all subjects to grades, filling in missing ones
+      const grades = allSubjects.length > 0 
+        ? allSubjects.map((subject: any) => {
+            const score = scoresData?.find(s => s.subject_id === subject.id || s.subjects?.id === subject.id)
+            return {
+                subject_name: score?.subjects?.name || subject.name,
+                subject_id: subject.id,
+                class_score: score?.class_score || '-',
+                exam_score: score?.exam_score || '-',
+                total: score?.total || null,
+                grade: score?.total !== null && score?.total !== undefined ? getGradeValue(score.total).toString() : '-',
+                remarks: score?.remarks || '-',
+                rank: score ? (subjectRanks[subject.id]?.[studentId] || '-') : '-'
+            }
+        })
+        : (scoresData?.map(s => ({
+            subject_name: s.subjects?.name || 'Unknown',
+            subject_id: s.subjects?.id || s.subject_id,
+            class_score: s.class_score,
+            exam_score: s.exam_score,
+            total: s.total,
+            // Recalculate grade to ensure consistency with aggregate (BECE 1-9 Scale)
+            grade: s.total !== null ? getGradeValue(s.total).toString() : '-',
+            remarks: s.remarks,
+            rank: subjectRanks[s.subject_id]?.[studentId] || null
+          })) || [])
 
       // Calculate aggregate for JHS students
       const className = (studentData.classes?.name || studentData.classes?.class_name || '').toLowerCase()
