@@ -45,6 +45,8 @@ export default function ViewScoresPage() {
   const [saving, setSaving] = useState(false)
   const [filterText, setFilterText] = useState('')
   const [canDelete, setCanDelete] = useState(false)
+  const [classScorePercentage, setClassScorePercentage] = useState(40)
+  const [examScorePercentage, setExamScorePercentage] = useState(60)
 
   useEffect(() => {
     loadInitialData()
@@ -70,6 +72,22 @@ export default function ViewScoresPage() {
         return
       }
       setTeacher(teacherData)
+
+      // Fetch grading settings
+      const { data: systemSettings } = await supabase
+        .from('system_settings')
+        .select('*')
+        .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
+      
+      if (systemSettings) {
+          systemSettings.forEach((setting: any) => {
+            if (setting.setting_key === 'class_score_percentage') {
+              setClassScorePercentage(Number(setting.setting_value))
+            } else if (setting.setting_key === 'exam_score_percentage') {
+              setExamScorePercentage(Number(setting.setting_value))
+            }
+          })
+      }
 
       // Check delete permission
       const { data: settingsData } = await supabase
@@ -254,13 +272,13 @@ export default function ViewScoresPage() {
       const examScore = editValues.exam_score ?? 0
       
       // Validate scores
-      if (classScore < 0 || classScore > 30) {
-        toast.error('Class score must be between 0 and 30')
+      if (classScore < 0 || classScore > classScorePercentage) {
+        toast.error(`Class score must be between 0 and ${classScorePercentage}`)
         setSaving(false)
         return
       }
-      if (examScore < 0 || examScore > 70) {
-        toast.error('Exam score must be between 0 and 70')
+      if (examScore < 0 || examScore > examScorePercentage) {
+        toast.error(`Exam score must be between 0 and ${examScorePercentage}`)
         setSaving(false)
         return
       }

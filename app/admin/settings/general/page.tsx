@@ -29,6 +29,8 @@ export default function GeneralSettings() {
     allow_online_admission: true,
     allow_result_viewing: true,
     allow_cumulative_download: false,
+    class_score_percentage: 40,
+    exam_score_percentage: 60,
   })
 
   useEffect(() => {
@@ -82,6 +84,8 @@ export default function GeneralSettings() {
           allow_online_admission: academicSettings.allow_online_admission ?? true,
           allow_result_viewing: academicSettings.allow_result_viewing ?? true,
           allow_cumulative_download: systemSettingsMap.get('allow_cumulative_download') === 'true',
+          class_score_percentage: Number(systemSettingsMap.get('class_score_percentage')) || 40,
+          exam_score_percentage: Number(systemSettingsMap.get('exam_score_percentage')) || 60,
         })
       }
       
@@ -220,6 +224,32 @@ export default function GeneralSettings() {
         }, { onConflict: 'setting_key' })
 
       if (cumulativeError) throw new Error('Failed to update cumulative download setting: ' + cumulativeError.message)
+
+      // 4. Update class_score_percentage
+      const { error: classScoreError } = await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'class_score_percentage',
+          setting_value: String(formData.class_score_percentage),
+          setting_type: 'number',
+          description: 'Percentage weight for class score',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'setting_key' })
+
+      if (classScoreError) throw new Error('Failed to update class score percentage: ' + classScoreError.message)
+
+      // 5. Update exam_score_percentage
+      const { error: examScoreError } = await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'exam_score_percentage',
+          setting_value: String(formData.exam_score_percentage),
+          setting_type: 'number',
+          description: 'Percentage weight for exam score',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'setting_key' })
+
+      if (examScoreError) throw new Error('Failed to update exam score percentage: ' + examScoreError.message)
 
       // 4. Removed erroneous bulk update of academic years
       // Previous code force-updated all older terms to the current academic year, causing unique constraint violations.
@@ -456,6 +486,47 @@ export default function GeneralSettings() {
                 <div>• <strong>JHS (JHS 1-3):</strong> Always Subject Teacher Model</div>
               </div>
             </div>
+          </div>
+
+          {/* Grading Configuration */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-lg font-bold text-gray-800 mb-4">Grading Configuration</h2>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Important:</strong> These percentages must add up to 100%. They determine how final grades are calculated.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Class Score Percentage (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  required
+                  value={formData.class_score_percentage}
+                  onChange={(e) => setFormData({...formData, class_score_percentage: Number(e.target.value)})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Exam Score Percentage (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  required
+                  value={formData.exam_score_percentage}
+                  onChange={(e) => setFormData({...formData, exam_score_percentage: Number(e.target.value)})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                />
+              </div>
+            </div>
+            {formData.class_score_percentage + formData.exam_score_percentage !== 100 && (
+              <p className="text-red-600 text-sm mt-2">
+                ⚠️ Total percentage must be 100% (Currently: {formData.class_score_percentage + formData.exam_score_percentage}%)
+              </p>
+            )}
           </div>
 
           {/* System Preferences */}

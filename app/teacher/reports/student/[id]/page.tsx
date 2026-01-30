@@ -227,6 +227,9 @@ export default function TeacherStudentReportPage() {
   const [student, setStudent] = useState<any>(null)
   const [reportData, setReportData] = useState<any>(null)
   const [academicSettings, setAcademicSettings] = useState<any>(null)
+  const [classScorePercentage, setClassScorePercentage] = useState(40)
+  const [examScorePercentage, setExamScorePercentage] = useState(60)
+  
   const [downloading, setDownloading] = useState(false)
   const [saving, setSaving] = useState(false)
   
@@ -256,6 +259,22 @@ export default function TeacherStudentReportPage() {
         return
       }
       setTeacher(teacherData)
+
+      // Fetch grading settings
+      const { data: systemSettings } = await supabase
+        .from('system_settings')
+        .select('*')
+        .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
+      
+      if (systemSettings) {
+          systemSettings.forEach((setting: any) => {
+            if (setting.setting_key === 'class_score_percentage') {
+              setClassScorePercentage(Number(setting.setting_value))
+            } else if (setting.setting_key === 'exam_score_percentage') {
+              setExamScorePercentage(Number(setting.setting_value))
+            }
+          })
+      }
 
       // Get student info
       const { data: studentData, error: studentError } = await supabase
@@ -984,8 +1003,8 @@ export default function TeacherStudentReportPage() {
               <tr>
                 <th class="sn-col">S/N</th>
                 <th class="subject-col">SUBJECT</th>
-                <th class="score-col">CLASS SCORE<br/>40MARKS</th>
-                <th class="score-col">EXAM SCORE<br/>60MARKS</th>
+                <th class="score-col">CLASS SCORE<br/>${classScorePercentage}%</th>
+                <th class="score-col">EXAM SCORE<br/>${examScorePercentage}%</th>
                 <th class="total-col">TOTAL SCORE<br/>100MARKS</th>
                 <th class="rank-col">RANK</th>
                 <th class="remarks-col">REMARKS</th>

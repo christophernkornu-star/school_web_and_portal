@@ -67,6 +67,8 @@ function ClassScoresContent() {
   const [gridLoading, setGridLoading] = useState(false)
   const [gridChanges, setGridChanges] = useState<Set<string>>(new Set())
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false)
+  const [classScorePercentage, setClassScorePercentage] = useState(40)
+  const [examScorePercentage, setExamScorePercentage] = useState(60)
 
   const [submitting, setSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
@@ -91,6 +93,22 @@ function ClassScoresContent() {
         const { data: teacherData, error: teacherError } = await getTeacherData(user.id)
         if (teacherError || !teacherData) {
           throw new Error('Teacher profile not found')
+        }
+
+        // Fetch grading settings
+        const { data: systemSettings } = await supabase
+          .from('system_settings')
+          .select('*')
+          .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
+        
+        if (systemSettings) {
+           systemSettings.forEach((setting: any) => {
+             if (setting.setting_key === 'class_score_percentage') {
+               setClassScorePercentage(Number(setting.setting_value))
+             } else if (setting.setting_key === 'exam_score_percentage') {
+               setExamScorePercentage(Number(setting.setting_value))
+             }
+           })
         }
 
         setTeacher({
@@ -515,7 +533,7 @@ function ClassScoresContent() {
                   
                   let calculatedClassScore = 0
                   if (expectedScore > 0) {
-                      calculatedClassScore = (totalScoreGotten / expectedScore) * 40
+                      calculatedClassScore = (totalScoreGotten / expectedScore) * classScorePercentage
                   }
                   calculatedClassScore = Math.round(calculatedClassScore * 100) / 100
 
@@ -566,7 +584,7 @@ function ClassScoresContent() {
   }
 
   function convertClassScore(inputScore: number, maxScore: number = 100): number {
-    return Math.round((inputScore / maxScore) * 40 * 10) / 10
+    return Math.round((inputScore / maxScore) * classScorePercentage * 10) / 10
   }
 
   function calculateGradeAndRemark(total: number, classLevel: string): { grade: string, remark: string } {
@@ -887,7 +905,7 @@ function ClassScoresContent() {
               
               let calculatedClassScore = 0
               if (expectedScore > 0) {
-                calculatedClassScore = (totalScoreGotten / expectedScore) * 40
+                calculatedClassScore = (totalScoreGotten / expectedScore) * classScorePercentage
               }
               
               calculatedClassScore = Math.round(calculatedClassScore * 100) / 100
@@ -999,7 +1017,7 @@ function ClassScoresContent() {
           </Link>
           <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Class Scores</h1>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-2">
-            Record multiple class assessments. System automatically calculates final class score (max 40 marks).
+            Record multiple class assessments. System automatically calculates final class score (max {classScorePercentage} marks).
           </p>
         </div>
 
@@ -1144,7 +1162,7 @@ function ClassScoresContent() {
                                         <tr>
                                             {selectedSubjects.map(subjectId => (
                                                 <Fragment key={subjectId}>
-                                                    <th key={`${subjectId}-current`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 w-24 bg-gray-50 dark:bg-gray-700">Current (40%)</th>
+                                                    <th key={`${subjectId}-current`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 w-24 bg-gray-50 dark:bg-gray-700">Current ({classScorePercentage}%)</th>
                                                     <th key={`${subjectId}-add`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 w-24 border-r dark:border-gray-600 bg-gray-50 dark:bg-gray-700">Add (0-10)</th>
                                                 </Fragment>
                                             ))}

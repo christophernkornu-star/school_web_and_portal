@@ -53,6 +53,9 @@ export default function ExamScoresPage() {
   const [currentTermName, setCurrentTermName] = useState('')
   const [terms, setTerms] = useState<any[]>([])
   
+  const [classScorePercentage, setClassScorePercentage] = useState(40)
+  const [examScorePercentage, setExamScorePercentage] = useState(60)
+
   // Score type selection
   const [scoreType, setScoreType] = useState<'both' | 'class_only' | 'exam_only'>('both')
 
@@ -109,6 +112,22 @@ export default function ExamScoresPage() {
         if (!user) {
           router.push('/login?portal=teacher')
           return
+        }
+
+        // Fetch grading settings
+        const { data: systemSettings } = await supabase
+          .from('system_settings')
+          .select('*')
+          .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
+        
+        if (systemSettings) {
+            systemSettings.forEach((setting: any) => {
+              if (setting.setting_key === 'class_score_percentage') {
+                setClassScorePercentage(Number(setting.setting_value))
+              } else if (setting.setting_key === 'exam_score_percentage') {
+                setExamScorePercentage(Number(setting.setting_value))
+              }
+            })
         }
 
         const { data: teacherData, error: teacherError } = await getTeacherData(user.id)
@@ -372,20 +391,16 @@ export default function ExamScoresPage() {
     filterSubjects()
   }, [selectedClass, subjects, teacherClasses, selectedSubject, teacher])
 
-  // Score conversion functions
-  function convertClassScore(inputScore: number, maxScore: number = 100): number {
-    // Convert any class score to max 40
-    // Example: 80/100 -> (80/100) * 40 = 32/40
-    return Math.round((inputScore / maxScore) * 40 * 10) / 10 // Round to 1 decimal
-  }
-
-  function convertExamScore(inputScore: number): number {
-    // Convert exam score from 100 to 60
-    // Example: 85/100 -> (85/100) * 60 = 51/60
-    return Math.round((inputScore / 100) * 60 * 10) / 10 // Round to 1 decimal
-  }
-
-  // Auto-calculate total when scores change
+    // Score conversion functions
+    function convertClassScore(inputScore: number, maxScore: number = 100): number {
+      // Convert any class score to max {classScorePercentage}
+      return Math.round((inputScore / maxScore) * classScorePercentage * 10) / 10 // Round to 1 decimal
+    }
+  
+    function convertExamScore(inputScore: number): number {
+      // Convert any exam score to max {examScorePercentage}
+      return Math.round((inputScore / 100) * examScorePercentage * 10) / 10 // Round to 1 decimal
+    }  // Auto-calculate total when scores change
   useEffect(() => {
     const classScore = parseFloat(manualScores.class_score)
     const examScore = parseFloat(manualScores.exam_score)
@@ -469,12 +484,12 @@ export default function ExamScoresPage() {
 
     // Validate class score if provided
     if (manualScores.class_score && (isNaN(classScore) || classScore < 0 || classScore > 100)) {
-      errors.class_score = 'Class score must be between 0 and 100 (will be converted to max 40)'
+      errors.class_score = `Class score must be between 0 and 100 (will be converted to max ${classScorePercentage})`
     }
 
     // Validate exam score if provided
     if (manualScores.exam_score && (isNaN(examScore) || examScore < 0 || examScore > 100)) {
-      errors.exam_score = 'Exam score must be between 0 and 100 (will be converted to max 60)'
+      errors.exam_score = `Exam score must be between 0 and 100 (will be converted to max ${examScorePercentage})`
     }
 
     setFormErrors(errors)
@@ -570,7 +585,7 @@ export default function ExamScoresPage() {
       // Logic: Class scores are cumulative (added to existing), Exam scores are overwritten
       if (!isNaN(classScoreInput)) {
           const convertedInput = convertClassScore(classScoreInput)
-          finalClassScore = Math.min(40, currentClassScore + convertedInput)
+          finalClassScore = Math.min(classScorePercentage, currentClassScore + convertedInput)
       }
 
       if (!isNaN(examScoreInput)) {
@@ -934,17 +949,17 @@ export default function ExamScoresPage() {
       // Fill
       data?.forEach((score: any) => {
         if (scoresMap[score.student_id]) {
-            // Class score is raw (max 40)
+            // Class score is raw (max {classScorePercentage})
             let displayClassScore = ''
             if (score.class_score !== null && score.class_score !== undefined) {
                 displayClassScore = score.class_score.toString()
             }
 
-            // Convert exam score from 60-basis to 100-basis for display
+            // Convert exam score from {examScorePercentage}-basis to 100-basis for display
             let displayExamScore = ''
             if (score.exam_score !== null && score.exam_score !== undefined) {
-                // (Score / 60) * 100
-                const val = (parseFloat(score.exam_score) / 60) * 100
+                // (Score / {examScorePercentage}) * 100
+                const val = (parseFloat(score.exam_score) / examScorePercentage) * 100
                 displayExamScore = Math.round(val * 100) / 100 + '' // Round to 2 decimal places
             }
 
@@ -989,7 +1004,7 @@ export default function ExamScoresPage() {
 
     // Check ranges
     if (field === 'class_score') {
-        if (numVal < 0 || numVal > 40) {
+        if (numVal < 0 || numVal > classScorePercentage) {
             // Invalid class score - ignore input
             return
         }
@@ -1054,13 +1069,13 @@ export default function ExamScoresPage() {
 
             const scoreData = studentScores[subjectId]
             
-            // Class score is raw (max 40)
+            // Class score is raw (max {classScorePercentage})
             const inputClassScore = parseFloat(scoreData.class_score)
             const storedClassScore = !isNaN(inputClassScore) ? inputClassScore : NaN
 
-            // Convert input exam score (100-basis) to stored score (60-basis)
+            // Convert input exam score (100-basis) to stored score ({examScorePercentage}-basis)
             const inputExamScore = parseFloat(scoreData.exam_score)
-            const storedExamScore = !isNaN(inputExamScore) ? Math.round((inputExamScore / 100) * 60 * 100) / 100 : NaN
+            const storedExamScore = !isNaN(inputExamScore) ? Math.round((inputExamScore / 100) * examScorePercentage * 100) / 100 : NaN
             
             // Only save if at least one score is present or we are updating an existing record
             if (!isNaN(storedClassScore) || !isNaN(storedExamScore) || scoreData.id) {
@@ -1284,7 +1299,7 @@ export default function ExamScoresPage() {
                       }`}
                     >
                       <div className="font-medium">Class Score Only</div>
-                      <div className="text-xs mt-1">Max 40 marks</div>
+                      <div className="text-xs mt-1">Max {classScorePercentage} marks</div>
                     </button>
                     <button
                       type="button"
@@ -1296,7 +1311,7 @@ export default function ExamScoresPage() {
                       }`}
                     >
                       <div className="font-medium">Exam Score Only</div>
-                      <div className="text-xs mt-1">Max 60 marks</div>
+                      <div className="text-xs mt-1">Max {examScorePercentage} marks</div>
                     </button>
                   </div>
                 </div>
@@ -1313,8 +1328,8 @@ export default function ExamScoresPage() {
                     <li>Template includes columns <strong>only for selected subjects</strong> in the order you select them</li>
                     <li>Student names pre-filled in format: "LastName FirstName"</li>
                     {scoreType === 'both' && <li>Each subject has 2 columns: subject_class (0-100) and subject_exam (0-100)</li>}
-                    {scoreType === 'class_only' && <li>Each subject has 1 column: subject_class (0-100, converts to max 40)</li>}
-                    {scoreType === 'exam_only' && <li>Each subject has 1 column: subject_exam (0-100, converts to max 60)</li>}
+                    {scoreType === 'class_only' && <li>Each subject has 1 column: subject_class (0-100, converts to max {classScorePercentage})</li>}
+                    {scoreType === 'exam_only' && <li>Each subject has 1 column: subject_exam (0-100, converts to max {examScorePercentage})</li>}
                     <li>Leave cells empty to skip a subject for specific students</li>
                     <li>Scores auto-converted and total/grade/remarks calculated per grading scale</li>
                     <li>Maximum file size: 5MB</li>
@@ -1874,7 +1889,7 @@ export default function ExamScoresPage() {
                           <tr>
                             {selectedSubjects.map(subjectId => (
                                 <Fragment key={subjectId}>
-                                    <th key={`${subjectId}-class`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-20 bg-gray-50 dark:bg-gray-700">Class (40%)</th>
+                                    <th key={`${subjectId}-class`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-20 bg-gray-50 dark:bg-gray-700">Class ({classScorePercentage}%)</th>
                                     <th key={`${subjectId}-exam`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-20 bg-gray-50 dark:bg-gray-700">Exam (100%)</th>
                                     <th key={`${subjectId}-total`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-16 bg-gray-50 dark:bg-gray-700">Total</th>
                                     <th key={`${subjectId}-grade`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-16 border-r dark:border-r-gray-600 bg-gray-50 dark:bg-gray-700">Grade</th>
@@ -1932,8 +1947,8 @@ export default function ExamScoresPage() {
                                     const scores = gridScores[student.id]?.[subjectId] || { class_score: '', exam_score: '' }
                                     const classScore = parseFloat(scores.class_score) || 0
                                     const examScore = parseFloat(scores.exam_score) || 0
-                                    // Calculate total: Class + (Exam * 0.6)
-                                    const total = classScore + (examScore * 0.6)
+                                    // Calculate total: Class + (Exam * (examScorePercentage / 100))
+                                    const total = classScore + (examScore * (examScorePercentage / 100))
                                     const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
                                     const { grade } = calculateGradeAndRemark(total, className)
                                     const hasData = scores.class_score || scores.exam_score
