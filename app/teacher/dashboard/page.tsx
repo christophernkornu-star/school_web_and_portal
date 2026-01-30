@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, Users, FileText, BarChart3, LogOut, BookOpen, Calendar, AlertCircle, Camera, CheckCircle, TrendingUp, DollarSign, Printer, Settings, ArrowLeft } from 'lucide-react'
+import { GraduationCap, Users, FileText, BarChart3, LogOut, BookOpen, Calendar, AlertCircle, Camera, CheckCircle, TrendingUp, DollarSign, Printer, Settings, ArrowLeft, ClipboardList } from 'lucide-react'
 import { getTeacherAssignments, signOut } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -354,6 +354,21 @@ export default function TeacherDashboard() {
               <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Manage Scores</h3>
               <p className="text-xs text-gray-500 dark:text-gray-400">Assessments & Grades</p>
             </Link>
+
+            {permissions.some(p => {
+              const name = (p.class_name || '').toLowerCase()
+              return name.includes('basic 9') || 
+                     name.includes('jhs 3') || 
+                     name.includes('j.h.s. 3')
+            }) && (
+              <Link href="/teacher/mock" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
+                <div className="bg-cyan-50 dark:bg-cyan-900/30 p-4 rounded-full mb-3 group-hover:bg-cyan-100 dark:group-hover:bg-cyan-900/50 transition-colors">
+                  <ClipboardList className="w-6 h-6 md:w-8 md:h-8 text-cyan-600 dark:text-cyan-400" />
+                </div>
+                <h3 className="font-bold text-sm md:text-base text-gray-800 dark:text-gray-200 mb-1">Mock Exams</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Basic 9/JHS 3</p>
+              </Link>
+            )}
 
             <Link href="/teacher/students" className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-all border border-gray-100 dark:border-gray-700 group">
               <div className="bg-green-50 dark:bg-green-900/30 p-4 rounded-full mb-3 group-hover:bg-green-100 dark:group-hover:bg-green-900/50 transition-colors">

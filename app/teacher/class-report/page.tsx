@@ -16,6 +16,7 @@ interface Student {
   id: string
   first_name: string
   last_name: string
+  middle_name?: string
   gender: string
 }
 
@@ -135,7 +136,7 @@ export default function ClassReportPage() {
       // 2. Get Students
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
-        .select('id, first_name, last_name, gender')
+        .select('id, first_name, last_name, middle_name, gender')
         .eq('class_id', selectedClass)
         .eq('status', 'active')
         .order('first_name')
@@ -366,7 +367,7 @@ export default function ClassReportPage() {
                     <tr key={student.student.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
                       <td className="border border-blue-900 dark:border-blue-400 p-1 text-center">{index + 1}</td>
                       <td className="border border-blue-900 dark:border-blue-400 p-1 font-medium whitespace-nowrap">
-                        {student.student.last_name} {student.student.first_name}
+                        {student.student.last_name} {student.student.middle_name ? student.student.middle_name + ' ' : ''}{student.student.first_name}
                       </td>
                       {sheetData.subjects.map(subject => {
                         const score = student.scores[subject.id]
