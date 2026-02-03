@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Edit, Save, Trash2, User } from 'lucide-react'
+import { ArrowLeft, Edit, Save, Trash2, User, X, Check } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
 import BackButton from '@/components/ui/BackButton'
+import { toast } from 'react-hot-toast'
 
 export default function ReviewAssessmentDetail() {
   const params = useParams()
@@ -17,6 +18,11 @@ export default function ReviewAssessmentDetail() {
   const [assessment, setAssessment] = useState<any>(null)
   const [scores, setScores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Edit State
+  const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
+  const [editScore, setEditScore] = useState<string>('')
+  const [savingScore, setSavingScore] = useState(false)
 
   useEffect(() => {
     loadAssessmentDetails()
@@ -76,6 +82,61 @@ export default function ReviewAssessmentDetail() {
       console.error('Error loading assessment details:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const startEditing = (studentId: string, currentScore: number | undefined) => {
+    setEditingStudentId(studentId)
+    setEditScore(currentScore !== undefined ? currentScore.toString() : '')
+  }
+
+  const cancelEditing = () => {
+    setEditingStudentId(null)
+    setEditScore('')
+  }
+
+  const saveScore = async (studentId: string) => {
+    if (!assessment) return
+
+    const numScore = parseFloat(editScore)
+    if (isNaN(numScore) && editScore !== '') {
+        toast.error('Please enter a valid number')
+        return
+    }
+
+    if (numScore > assessment.max_score) {
+        toast.error(`Score cannot exceed max score of ${assessment.max_score}`)
+        return
+    }
+
+    setSavingScore(true)
+    try {
+        const { error } = await supabase
+            .from('student_scores')
+            .upsert({
+                assessment_id: assessmentId,
+                student_id: studentId,
+                score: editScore === '' ? null : numScore
+            }, {
+                onConflict: 'assessment_id,student_id'
+            })
+
+        if (error) throw error
+
+        toast.success('Score updated')
+        
+        // Update local state
+        setScores(scores.map(s => 
+            s.student_id === studentId 
+                ? { ...s, score: editScore === '' ? undefined : numScore }
+                : s
+        ))
+        setEditingStudentId(null)
+    } catch (error: any) {
+        console.error('Error saving score:', error)
+        toast.error('Failed to save score')
+    } finally {
+        setSavingScore(false)
     }
   }
 
@@ -154,7 +215,7 @@ export default function ReviewAssessmentDetail() {
                                 : 0
                               
                               return (
-                                  <tr key={score.student_id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                                  <tr key={score.student_id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors group">
                                       <td className="px-6 py-4">
                                           <div className="flex items-center">
                                               <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mr-3 text-gray-500">
@@ -169,12 +230,48 @@ export default function ReviewAssessmentDetail() {
                                           </div>
                                       </td>
                                       <td className="px-6 py-4 text-right">
-                                          {hasScore ? (
-                                              <span className="inline-block min-w-[3rem] py-1 px-2 bg-gray-100 dark:bg-gray-700 rounded font-mono font-medium">
-                                                  {score.score} <span className="text-gray-400 text-xs">/ {assessment.max_score}</span>
-                                              </span>
+                                          {editingStudentId === score.student_id ? (
+                                              <div className="flex items-center justify-end gap-2">
+                                                  <input 
+                                                      type="number" 
+                                                      value={editScore}
+                                                      onChange={e => setEditScore(e.target.value)}
+                                                      className="w-20 p-1 text-sm border rounded text-right dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                                      autoFocus
+                                                      min="0"
+                                                      max={assessment.max_score}
+                                                  />
+                                                  <button 
+                                                      onClick={() => saveScore(score.student_id)}
+                                                      disabled={savingScore}
+                                                      className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                                  >
+                                                      <Check className="w-4 h-4" />
+                                                  </button>
+                                                  <button 
+                                                      onClick={cancelEditing}
+                                                      className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                                  >
+                                                      <X className="w-4 h-4" />
+                                                  </button>
+                                              </div>
                                           ) : (
-                                              <span className="text-gray-400 text-sm italic">Not graded</span>
+                                              <div className="flex items-center justify-end gap-2">
+                                                  {hasScore ? (
+                                                      <span className="inline-block min-w-[3rem] py-1 px-2 bg-gray-100 dark:bg-gray-700 rounded font-mono font-medium">
+                                                          {score.score} <span className="text-gray-400 text-xs">/ {assessment.max_score}</span>
+                                                      </span>
+                                                  ) : (
+                                                      <span className="text-gray-400 text-sm italic">Not graded</span>
+                                                  )}
+                                                  <button 
+                                                      onClick={() => startEditing(score.student_id, score.score)}
+                                                      className="opacity-0 group-hover:opacity-100 p-1 text-blue-600 hover:bg-blue-50 rounded transition-opacity"
+                                                      title="Edit Score"
+                                                  >
+                                                      <Edit className="w-3 h-3" />
+                                                  </button>
+                                              </div>
                                           )}
                                       </td>
                                       <td className="px-6 py-4 text-right">

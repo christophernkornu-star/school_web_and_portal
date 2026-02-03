@@ -91,7 +91,6 @@ export default function StudentAssessmentsPage() {
                 .select(`
                     id,
                     title,
-                    assessment_name,
                     assessment_type,
                     max_score,
                     assessment_date,
