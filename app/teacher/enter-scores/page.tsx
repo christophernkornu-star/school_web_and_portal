@@ -1,17 +1,18 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import BackButton from '@/components/ui/BackButton'
 import { Skeleton } from '@/components/ui/skeleton'
-import { GraduationCap, ArrowLeft, Save, Search, AlertCircle } from 'lucide-react'
+import { GraduationCap, ArrowLeft, Save, Search, AlertCircle, Edit, Trash2 } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 
 export default function EnterScores() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = getSupabaseBrowserClient()
   const [teacher, setTeacher] = useState<any>(null)
   const [assignments, setAssignments] = useState<any[]>([])
@@ -26,6 +27,21 @@ export default function EnterScores() {
   const [saving, setSaving] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  
+  // New state for creating assessment
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newAssessmentName, setNewAssessmentName] = useState('')
+  const [newMaxScore, setNewMaxScore] = useState('100')
+  const [newAssessmentType, setNewAssessmentType] = useState('class_work')
+  const [creatingAssessment, setCreatingAssessment] = useState(false)
+
+  // Edit Assessment State
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editAssessmentName, setEditAssessmentName] = useState('')
+  const [editMaxScore, setEditMaxScore] = useState('100')
+  const [editAssessmentType, setEditAssessmentType] = useState('class_work')
+  const [updatingAssessment, setUpdatingAssessment] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const isReadOnly = teacher?.status === 'on_leave' || teacher?.status === 'on leave'
 
@@ -46,6 +62,13 @@ export default function EnterScores() {
         const { data: assignmentsData } = await getTeacherAssignments(teacherData.id)
         if (assignmentsData) {
           setAssignments(assignmentsData)
+          
+          // Pre-select values from query params if available
+          const classParam = searchParams.get('classId')
+          const subjectParam = searchParams.get('subjectId')
+          
+          if (classParam) setSelectedClass(classParam)
+          if (subjectParam) setSelectedSubject(subjectParam)
         }
       }
       
@@ -53,7 +76,151 @@ export default function EnterScores() {
     }
 
     loadData()
-  }, [router])
+  }, [router, searchParams])
+
+  // Add a new useEffect to handle assessment selection logic
+  useEffect(() => {
+     if (assessments.length > 0) {
+        const assessmentParam = searchParams.get('assessmentId')
+        if (assessmentParam && assessments.some(a => a.id === assessmentParam)) {
+            setSelectedAssessment(assessmentParam)
+        }
+     }
+  }, [assessments, searchParams])
+
+  const handleCreateAssessment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedClass || !selectedSubject) {
+        toast.error('Please select a class and subject first')
+        return
+    }
+    if (!newAssessmentName.trim()) {
+        toast.error('Assessment name is required')
+        return
+    }
+
+    setCreatingAssessment(true)
+    try {
+        // Get class_subject_id
+        const { data: classSubject } = await supabase
+          .from('class_subjects')
+          .select('id')
+          .eq('class_id', selectedClass)
+          .eq('subject_id', selectedSubject)
+          .single()
+        
+        if (!classSubject) throw new Error('Class subject not found')
+
+        // Get current term
+        const { data: terms } = await supabase
+            .from('academic_terms')
+            .select('id')
+            .eq('is_current', true)
+            .limit(1)
+        
+        const termId = terms?.[0]?.id
+        if (!termId) throw new Error('Current term not found')
+
+        const { data, error } = await supabase
+            .from('assessments')
+            .insert({
+                class_subject_id: classSubject.id,
+                term_id: termId,
+                title: newAssessmentName, // Using title as per schema
+                assessment_type: newAssessmentType,
+                max_score: parseFloat(newMaxScore),
+                assessment_date: new Date().toISOString().split('T')[0]
+            })
+            .select()
+            .single()
+
+        if (error) throw error
+
+        toast.success('Assessment created successfully')
+        setAssessments([data, ...assessments])
+        setSelectedAssessment(data.id)
+        setShowCreateModal(false)
+        setNewAssessmentName('')
+        setNewMaxScore('100')
+    } catch (error: any) {
+        console.error('Error creating assessment:', error)
+        toast.error('Failed to create assessment: ' + error.message)
+    } finally {
+        setCreatingAssessment(false)
+    }
+  }
+
+  const openEditModal = () => {
+    const assessment = assessments.find(a => a.id === selectedAssessment)
+    if (!assessment) return
+
+    setEditAssessmentName(assessment.title || assessment.assessment_name)
+    setEditMaxScore(assessment.max_score.toString())
+    setEditAssessmentType(assessment.assessment_type || 'class_work')
+    setShowEditModal(true)
+  }
+
+  const handleUpdateAssessment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedAssessment) return
+
+    setUpdatingAssessment(true)
+    try {
+        const { error } = await supabase
+            .from('assessments')
+            .update({
+                title: editAssessmentName,
+                assessment_type: editAssessmentType,
+                max_score: parseFloat(editMaxScore)
+            })
+            .eq('id', selectedAssessment)
+
+        if (error) throw error
+
+        toast.success('Assessment updated successfully')
+        
+        // Update local state
+        setAssessments(assessments.map(a => 
+            a.id === selectedAssessment
+                ? { ...a, title: editAssessmentName, assessment_name: editAssessmentName, assessment_type: editAssessmentType, max_score: parseFloat(editMaxScore) }
+                : a
+        ))
+        setShowEditModal(false)
+    } catch (error: any) {
+        console.error('Error updating assessment:', error)
+        toast.error('Failed to update assessment: ' + error.message)
+    } finally {
+        setUpdatingAssessment(false)
+    }
+  }
+
+  const handleDeleteAssessment = async () => {
+    if (!selectedAssessment) return
+    const assessment = assessments.find(a => a.id === selectedAssessment)
+    if (!assessment) return
+
+    if (!confirm(`Are you sure you want to delete "${assessment.title || assessment.assessment_name}"? This will remove all student scores associated with this assessment.`)) return
+
+    setDeletingId(selectedAssessment)
+    try {
+        const { error } = await supabase
+            .from('assessments')
+            .delete()
+            .eq('id', selectedAssessment)
+
+        if (error) throw error
+
+        toast.success('Assessment deleted successfully')
+        setAssessments(assessments.filter(a => a.id !== selectedAssessment))
+        setSelectedAssessment('') // Reset selection
+        setScores({}) // Clear visible scores
+    } catch (error: any) {
+        console.error('Error deleting assessment:', error)
+        toast.error('Failed to delete assessment: ' + error.message)
+    } finally {
+        setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     if (selectedClass && selectedSubject) {
@@ -104,6 +271,7 @@ export default function EnterScores() {
         student_id,
         first_name,
         last_name,
+        middle_name,
         profile_id,
         profiles!students_profile_id_fkey(full_name),
         classes(id, name, level, category)
@@ -133,9 +301,8 @@ export default function EnterScores() {
 
     const { data, error } = await supabase
       .from('assessments')
-      .select('*, assessment_types(*)')
+      .select('*')
       .eq('class_subject_id', classSubject.id)
-      .eq('teacher_id', teacher?.id)
       .order('assessment_date', { ascending: false })
 
     if (data) {
@@ -302,6 +469,13 @@ export default function EnterScores() {
       setIsDirty(false)
       setLastSaved(new Date())
       
+      // Redirect back to Review page if we were editing or created from there
+      setTimeout(() => {
+          if (searchParams.get('classId')) {
+             router.push(`/teacher/review-assessments`) // Or ideally maintain the selection state in review page, but simple redirect is fine
+          }
+      }, 1500)
+
     } catch (err: any) {
       console.error('Error saving scores:', err)
       toast.error('An error occurred while saving scores: ' + err.message, { id: toastId })
@@ -475,22 +649,177 @@ export default function EnterScores() {
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
                   Select Assessment
                 </label>
-                <select
-                  value={selectedAssessment}
-                  onChange={(e) => setSelectedAssessment(e.target.value)}
-                  className="input-field"
-                  disabled={!selectedSubject}
-                >
-                  <option value="">-- Select Assessment --</option>
-                  {assessments.map((assessment) => (
-                    <option key={assessment.id} value={assessment.id}>
-                      {assessment.assessment_name} ({assessment.assessment_types?.type_name})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={selectedAssessment}
+                    onChange={(e) => setSelectedAssessment(e.target.value)}
+                    className="input-field flex-1"
+                    disabled={!selectedSubject}
+                  >
+                    <option value="">-- Select Assessment --</option>
+                    {assessments.map((assessment) => (
+                      <option key={assessment.id} value={assessment.id}>
+                        {assessment.title || assessment.assessment_name} ({assessment.assessment_type || 'Assessment'})
+                      </option>
+                    ))}
+                  </select>
+                  
+                  {selectedAssessment && (
+                    <>
+                        <button
+                            onClick={openEditModal}
+                            disabled={isReadOnly}
+                            className="bg-gray-100 text-gray-700 border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-200 disabled:opacity-50"
+                            title="Edit Assessment"
+                        >
+                            <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                            onClick={handleDeleteAssessment}
+                            disabled={isReadOnly || deletingId === selectedAssessment}
+                            className="bg-red-50 text-red-600 border border-red-200 px-3 py-2 rounded-md hover:bg-red-100 disabled:opacity-50"
+                            title="Delete Assessment"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    disabled={!selectedSubject || isReadOnly}
+                    className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    title="Create New Assessment"
+                  >
+                    <span className="text-xl">+</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* Edit Assessment Modal */
+          showEditModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                    <h3 className="text-lg font-bold mb-4">Edit Assessment</h3>
+                    <form onSubmit={handleUpdateAssessment} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Title</label>
+                            <input 
+                                type="text" 
+                                value={editAssessmentName}
+                                onChange={e => setEditAssessmentName(e.target.value)}
+                                className="w-full p-2 border rounded"
+                                required 
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Type</label>
+                            <select 
+                                value={editAssessmentType}
+                                onChange={e => setEditAssessmentType(e.target.value)}
+                                className="w-full p-2 border rounded"
+                            >
+                                <option value="class_work">Class Work</option>
+                                <option value="homework">Homework</option>
+                                <option value="mid_term">Mid Term</option>
+                                <option value="project">Project</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Max Score</label>
+                            <input 
+                                type="number" 
+                                value={editMaxScore}
+                                onChange={e => setEditMaxScore(e.target.value)}
+                                className="w-full p-2 border rounded"
+                                min="1"
+                                required 
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button 
+                                type="button"
+                                onClick={() => setShowEditModal(false)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit"
+                                disabled={updatingAssessment}
+                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {updatingAssessment ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+          )}
+
+          {/* Create Assessment Modal */
+          showCreateModal && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                    <h3 className="text-lg font-bold mb-4">Create New Assessment</h3>
+                    <form onSubmit={handleCreateAssessment} className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Title</label>
+                            <input 
+                                type="text" 
+                                value={newAssessmentName}
+                                onChange={e => setNewAssessmentName(e.target.value)}
+                                className="w-full p-2 border rounded"
+                                placeholder="e.g. Class Exercise 1"
+                                required 
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Type</label>
+                            <select 
+                                value={newAssessmentType}
+                                onChange={e => setNewAssessmentType(e.target.value)}
+                                className="w-full p-2 border rounded"
+                            >
+                                <option value="class_work">Class Work</option>
+                                <option value="homework">Homework</option>
+                                <option value="mid_term">Mid Term</option>
+                                <option value="project">Project</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Max Score</label>
+                            <input 
+                                type="number" 
+                                value={newMaxScore}
+                                onChange={e => setNewMaxScore(e.target.value)}
+                                className="w-full p-2 border rounded"
+                                min="1"
+                                required 
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                            <button 
+                                type="button"
+                                onClick={() => setShowCreateModal(false)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit"
+                                disabled={creatingAssessment}
+                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                            >
+                                {creatingAssessment ? 'Creating...' : 'Create'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+          )}
 
           {/* Students Table */}
           {selectedClass && selectedSubject && selectedAssessment && (
@@ -553,7 +882,7 @@ export default function EnterScores() {
                           {student.student_id}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {student.profiles?.full_name}
+                          {student.last_name}, {student.middle_name ? student.middle_name + ', ' : ''}{student.first_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           {loadingScores ? (

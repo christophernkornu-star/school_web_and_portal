@@ -29,9 +29,10 @@ export default function ReviewAssessmentDetail() {
         .from('assessments')
         .select(`
             *,
-            classes(name),
-            subjects(name),
-            assessment_types(type_name)
+            class_subjects (
+                classes (name),
+                subjects (name)
+            )
         `)
         .eq('id', assessmentId)
         .single()
@@ -58,7 +59,7 @@ export default function ReviewAssessmentDetail() {
       if (scoresError) throw scoresError
 
       // Sort by name
-      const sortedScores = (scoresData || []).sort((a, b) => {
+      const sortedScores = (scoresData || []).sort((a: any, b: any) => {
           const nameA = `${a.students?.last_name} ${a.students?.first_name}`
           const nameB = `${b.students?.last_name} ${b.students?.first_name}`
           return nameA.localeCompare(nameB)
@@ -106,13 +107,13 @@ export default function ReviewAssessmentDetail() {
                 <BackButton href="/teacher/review-assessments" />
                 <div>
                    <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
-                      {assessment.assessment_name}
-                      <span className="text-sm font-normal px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">
-                          {assessment.assessment_types?.type_name}
+                      {assessment.title || assessment.assessment_name}
+                      <span className="text-sm font-normal px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full capitalize">
+                          {assessment.assessment_type?.replace('_', ' ') || 'Assessment'}
                       </span>
                    </h1>
                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {assessment.subjects?.name} • {assessment.classes?.name} • Max Score: {assessment.max_score}
+                      {assessment.class_subjects?.subjects?.name} • {assessment.class_subjects?.classes?.name} • Max Score: {assessment.max_score}
                    </p>
                 </div>
             </div>
@@ -155,7 +156,7 @@ export default function ReviewAssessmentDetail() {
                                               </div>
                                               <div>
                                                   <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                                      {score.students?.last_name}, {score.students?.first_name} {score.students?.middle_name || ''}
+                                                      {score.students?.last_name}, {score.students?.middle_name ? score.students?.middle_name + ', ' : ''}{score.students?.first_name}
                                                   </p>
                                                   <p className="text-xs text-gray-500">{score.students?.student_id}</p>
                                               </div>
