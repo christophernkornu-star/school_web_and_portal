@@ -60,8 +60,8 @@ export default function ReviewAssessmentDetail() {
       if (scoresError) throw scoresError
 
       // 4. Merge Data
-      const mergedScores = studentsData.map(student => {
-          const scoreRecord = scoresData?.find(s => s.student_id === student.id)
+      const mergedScores = studentsData.map((student: any) => {
+          const scoreRecord = scoresData?.find((s: any) => s.student_id === student.id)
           return {
               id: scoreRecord?.id, // Score ID if exists
               student_id: student.id,
