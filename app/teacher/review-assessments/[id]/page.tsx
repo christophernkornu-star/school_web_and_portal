@@ -30,6 +30,7 @@ export default function ReviewAssessmentDetail() {
         .select(`
             *,
             class_subjects (
+                class_id,
                 classes (name),
                 subjects (name)
             )
@@ -40,32 +41,36 @@ export default function ReviewAssessmentDetail() {
       if (assessmentError) throw assessmentError
       setAssessment(assessmentData)
 
-      // 2. Get Scores linked to Students
+      // 2. Get Class Students (to ensure we list everyone)
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('students')
+        .select('id, first_name, last_name, middle_name, student_id')
+        .eq('class_id', assessmentData.class_subjects?.class_id)
+        .eq('status', 'active')
+        .order('last_name', { ascending: true })
+
+      if (studentsError) throw studentsError
+
+      // 3. Get Scores (Flat query, no join to avoid relation errors)
       const { data: scoresData, error: scoresError } = await supabase
         .from('student_scores')
-        .select(`
-            id,
-            score,
-            student_id,
-            students (
-                first_name,
-                last_name,
-                middle_name,
-                student_id
-            )
-        `)
+        .select('id, score, student_id')
         .eq('assessment_id', assessmentId)
       
       if (scoresError) throw scoresError
 
-      // Sort by name
-      const sortedScores = (scoresData || []).sort((a: { students: any }, b: { students: any }) => {
-          const nameA = `${a.students?.last_name} ${a.students?.first_name}`
-          const nameB = `${b.students?.last_name} ${b.students?.first_name}`
-          return nameA.localeCompare(nameB)
+      // 4. Merge Data
+      const mergedScores = studentsData.map(student => {
+          const scoreRecord = scoresData?.find(s => s.student_id === student.id)
+          return {
+              id: scoreRecord?.id, // Score ID if exists
+              student_id: student.id,
+              score: scoreRecord?.score,
+              students: student // Attach student info for display
+          }
       })
 
-      setScores(sortedScores)
+      setScores(mergedScores)
 
     } catch (error) {
       console.error('Error loading assessment details:', error)
@@ -143,12 +148,13 @@ export default function ReviewAssessmentDetail() {
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                           {scores.map((score) => {
-                              const percentage = assessment.max_score > 0 
+                              const hasScore = score.score !== undefined && score.score !== null
+                              const percentage = hasScore && assessment.max_score > 0 
                                 ? Math.round((score.score / assessment.max_score) * 100) 
                                 : 0
                               
                               return (
-                                  <tr key={score.id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
+                                  <tr key={score.student_id} className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors">
                                       <td className="px-6 py-4">
                                           <div className="flex items-center">
                                               <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mr-3 text-gray-500">
@@ -163,16 +169,24 @@ export default function ReviewAssessmentDetail() {
                                           </div>
                                       </td>
                                       <td className="px-6 py-4 text-right">
-                                          <span className="inline-block min-w-[3rem] py-1 px-2 bg-gray-100 dark:bg-gray-700 rounded font-mono font-medium">
-                                              {score.score} <span className="text-gray-400 text-xs">/ {assessment.max_score}</span>
-                                          </span>
+                                          {hasScore ? (
+                                              <span className="inline-block min-w-[3rem] py-1 px-2 bg-gray-100 dark:bg-gray-700 rounded font-mono font-medium">
+                                                  {score.score} <span className="text-gray-400 text-xs">/ {assessment.max_score}</span>
+                                              </span>
+                                          ) : (
+                                              <span className="text-gray-400 text-sm italic">Not graded</span>
+                                          )}
                                       </td>
                                       <td className="px-6 py-4 text-right">
-                                          <span className={`text-sm font-medium ${
-                                              percentage >= 50 ? 'text-green-600' : 'text-red-600'
-                                          }`}>
-                                              {percentage}%
-                                          </span>
+                                           {hasScore ? (
+                                              <span className={`text-sm font-medium ${
+                                                  percentage >= 50 ? 'text-green-600' : 'text-red-600'
+                                              }`}>
+                                                  {percentage}%
+                                              </span>
+                                           ) : (
+                                              <span className="text-gray-300">-</span>
+                                           )}
                                       </td>
                                   </tr>
                               )
