@@ -230,7 +230,7 @@ export default function StudentAssessmentsPage() {
                                     {assessment.subject_name}
                                 </span>
                                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {assessment.assessment_date ? new Date(assessment.assessment_date).toLocaleDateString() : 'No Date'}
+                                    {assessment.assessment_date ? new Date(assessment.assessment_date).toLocaleDateString('en-GB') : 'No Date'}
                                 </span>
                              </div>
                              

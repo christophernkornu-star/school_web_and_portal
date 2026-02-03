@@ -59,7 +59,7 @@ export default function ReviewAssessmentDetail() {
       if (scoresError) throw scoresError
 
       // Sort by name
-      const sortedScores = (scoresData || []).sort((a: any, b: any) => {
+      const sortedScores = (scoresData || []).sort((a: { students: any }, b: { students: any }) => {
           const nameA = `${a.students?.last_name} ${a.students?.first_name}`
           const nameB = `${b.students?.last_name} ${b.students?.first_name}`
           return nameA.localeCompare(nameB)
