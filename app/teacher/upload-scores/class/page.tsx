@@ -569,6 +569,11 @@ function ClassScoresContent() {
                   const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
                   const { grade, remark } = calculateGradeAndRemark(total, className)
 
+                  if (!teacher?.id) {
+                      console.error("Teacher ID not found")
+                      continue
+                  }
+
                   await supabase
                     .from('scores')
                     .upsert({

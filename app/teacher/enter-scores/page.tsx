@@ -272,6 +272,11 @@ export default function EnterScores() {
               const total = calculatedClassScore + examScore
               const grade = calculateGrade(total)
 
+              if (!teacher?.id) {
+                console.error("Teacher ID not found")
+                return
+              }
+
               await supabase
                 .from('scores')
                 .upsert({

@@ -115,6 +115,21 @@ export default function ManageScoresPage() {
             </div>
           </Link>
 
+          {/* Review Assessments (Manual) */}
+          <Link href="/teacher/review-assessments" className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition-all group">
+            <div className="flex items-center justify-between mb-4">
+              <div className="bg-purple-100 dark:bg-purple-900/30 p-2 md:p-3 rounded-lg group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
+                <FileText className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+            <h3 className="text-base md:text-lg font-bold text-gray-800 dark:text-gray-100 mb-2">Review Raw Scores</h3>
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-4">View individual assessment raw scores (e.g. Quiz 1, Homework 2) before conversion.</p>
+            <div className="flex items-center space-x-2">
+              <Eye className="w-3 h-3 md:w-4 md:h-4 text-purple-600 dark:text-purple-400" />
+              <span className="text-xs md:text-sm text-purple-600 dark:text-purple-400 font-medium">Manual Review</span>
+            </div>
+          </Link>
+
           {/* View & Edit Scores */}
           <Link href="/teacher/scores/view" className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 md:p-6 hover:shadow-xl transition-all group">
             <div className="flex items-center justify-between mb-4">
