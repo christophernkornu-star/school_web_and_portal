@@ -531,23 +531,27 @@ function ClassScoresContent() {
           // Need to find assessments via class_subject_id
           const { data: termAssessments } = await supabase
             .from('assessments')
-            .select('id')
+            .select('id, max_score')
             .eq('class_subject_id', classSubjectId)
             .eq('term_id', selectedTerm)
           
           const assessmentIds = termAssessments?.map((a: any) => a.id) || []
+          const assessmentMap = new Map(termAssessments?.map((a: any) => [a.id, a.max_score]) || [])
 
           for (const update of updates) {
               const { data: studentScores } = await supabase
                   .from('student_scores')
-                  .select('score')
+                  .select('score, assessment_id')
                   .in('assessment_id', assessmentIds)
                   .eq('student_id', update.studentId)
               
               if (studentScores) {
                   const totalScoreGotten = studentScores.reduce((sum: number, s: any) => sum + (s.score || 0), 0)
-                  const numberOfAssessments = studentScores.length
-                  const expectedScore = numberOfAssessments * 10
+                  
+                  const expectedScore = studentScores.reduce((sum: number, s: any) => {
+                      const max = Number(assessmentMap.get(s.assessment_id)) || 10
+                      return sum + max
+                  }, 0)
                   
                   let calculatedClassScore = 0
                   if (expectedScore > 0) {

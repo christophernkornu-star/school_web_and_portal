@@ -314,11 +314,15 @@ export default function EnterScores() {
     if (isReadOnly) return
     const numValue = parseFloat(value)
     
+    // Find current assessment max score
+    const currentAssessment = assessments.find(a => a.id === selectedAssessment)
+    const maxScore = currentAssessment?.max_score || 10
+
     setIsDirty(true)
     
     if (!isNaN(numValue)) {
-      if (numValue > 10) {
-        toast.error('Score cannot be greater than 10')
+      if (numValue > maxScore) {
+        toast.error(`Score cannot be greater than ${maxScore}`)
         return
       }
       setScores({ ...scores, [studentId]: numValue })
@@ -391,35 +395,44 @@ export default function EnterScores() {
           // Get all assessments for this class, subject, and term
           const { data: termAssessments } = await supabase
             .from('assessments')
-            .select('id')
+            .select('id, max_score')
             .eq('class_subject_id', classSubject.id)
             .eq('term_id', termId)
 
           if (termAssessments && termAssessments.length > 0) {
           const assessmentIds = termAssessments.map((a: any) => a.id)
+          const assessmentMap = new Map(termAssessments.map((a: any) => [a.id, a.max_score]))
           const studentIds = Object.keys(scores)
+          
+          // Get grading settings
+          const { data: settings } = await supabase
+              .from('system_settings')
+              .select('setting_value')
+              .eq('setting_key', 'class_score_percentage')
+              .single()
+          
+          const classPercentage = settings?.setting_value ? Number(settings.setting_value) : 40
 
           // Process each student
           await Promise.all(studentIds.map(async (studentId) => {
             // Get all scores for this student in this term's assessments
             const { data: studentScores } = await supabase
               .from('student_scores')
-              .select('score')
+              .select('score, assessment_id')
               .in('assessment_id', assessmentIds)
               .eq('student_id', studentId)
 
             if (studentScores) {
               const totalScoreGotten = studentScores.reduce((sum: number, s: any) => sum + (s.score || 0), 0)
-              const numberOfAssessments = studentScores.length // Or termAssessments.length? "number of class scores recorded"
-              // User said: "number of class scores recorded * 10"
-              // This implies we count the scores actually recorded for the student, OR the total assessments available?
-              // "number of class scores recorded" usually means the count of entries.
               
-              const expectedScore = numberOfAssessments * 10
+              const expectedScore = studentScores.reduce((sum: number, s: any) => {
+                  const max = Number(assessmentMap.get(s.assessment_id)) || 10
+                  return sum + max
+              }, 0)
               
               let calculatedClassScore = 0
               if (expectedScore > 0) {
-                calculatedClassScore = (totalScoreGotten / expectedScore) * 40
+                calculatedClassScore = (totalScoreGotten / expectedScore) * classPercentage
               }
               
               // Round to 2 decimal places
