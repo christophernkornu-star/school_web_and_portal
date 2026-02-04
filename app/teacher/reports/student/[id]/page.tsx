@@ -1272,9 +1272,9 @@ export default function TeacherStudentReportPage() {
                           <td className="px-4 md:px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white">{grade.total || '-'}</td>
                           <td className="px-4 md:px-6 py-4 text-center">
                              <span className={`inline-block w-8 h-8 leading-8 text-xs font-bold rounded-full ${
-                                 grade.total >= 80 ? 'bg-green-100 text-green-700' :
-                                 grade.total >= 60 ? 'bg-blue-100 text-blue-700' :
-                                 grade.total >= 40 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                                 (grade.total || 0) >= 80 ? 'bg-green-100 text-green-700' :
+                                 (grade.total || 0) >= 60 ? 'bg-blue-100 text-blue-700' :
+                                 (grade.total || 0) >= 40 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
                              }`}>
                                 {getGradeValue(grade.total || 0)}
                              </span>
@@ -1283,7 +1283,14 @@ export default function TeacherStudentReportPage() {
                              {grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : '-'}
                           </td>
                           <td className="px-4 md:px-6 py-4 text-sm text-gray-600 dark:text-gray-300 hidden md:table-cell min-w-[200px]">
-                             {grade.remarks || grade.total >= 80 ? 'Excellent performance' : grade.total >= 60 ? 'Good work' : grade.total >= 50 ? 'Credit' : grade.total >= 40 ? 'Pass' : 'Fail'}
+                             {grade.remarks && grade.remarks !== '-' ? grade.remarks : (
+                                grade.total !== null && grade.total !== undefined ? (
+                                    grade.total >= 80 ? 'Excellent performance' : 
+                                    grade.total >= 60 ? 'Good work' : 
+                                    grade.total >= 50 ? 'Credit' : 
+                                    grade.total >= 40 ? 'Pass' : 'Fail'
+                                ) : '-'
+                             )}
                           </td>
                        </tr>
                     ))}
