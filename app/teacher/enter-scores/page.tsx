@@ -10,6 +10,18 @@ import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/aut
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 
+<style jsx global>{`
+  /* Hide spinner controls for number inputs */
+  input[type=number]::-webkit-inner-spin-button, 
+  input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
+`}</style>
+
 export default function EnterScores() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -356,7 +368,15 @@ export default function EnterScores() {
         toast.error(`Score cannot be greater than ${maxScore}`)
         return
       }
-      setScores({ ...scores, [studentId]: numValue })
+      // Fix: Handle 0 explicitly by checking for empty string instead of truthy
+      if (value === '') {
+          // If empty string, remove key
+          const newScores = { ...scores }
+          delete newScores[studentId]
+          setScores(newScores)
+      } else {
+         setScores({ ...scores, [studentId]: numValue })
+      }
     } else if (value === '') {
       const newScores = { ...scores }
       delete newScores[studentId]
@@ -938,7 +958,7 @@ export default function EnterScores() {
                               max="100"
                               step="0.1"
                               disabled={isReadOnly}
-                              value={scores[student.id] || ''}
+                              value={scores[student.id] !== undefined ? scores[student.id] : ''}
                               onChange={(e) => handleScoreChange(student.id, e.target.value)}
                               className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 disabled:cursor-not-allowed"
                               placeholder="0.0"
