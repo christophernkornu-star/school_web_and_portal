@@ -102,14 +102,37 @@ export default function EnterScores() {
     setCreatingAssessment(true)
     try {
         // Get class_subject_id
-        const { data: classSubject } = await supabase
+        let { data: classSubject } = await supabase
           .from('class_subjects')
           .select('id')
           .eq('class_id', selectedClass)
           .eq('subject_id', selectedSubject)
-          .single()
+          .maybeSingle()
         
-        if (!classSubject) throw new Error('Class subject not found')
+        // If class_subject doesn't exist, try to create it automatically
+        if (!classSubject) {
+            console.log('Class subject not found, attempting to create one...')
+            // We need the academic year for this.
+            const { data: terms } = await supabase.from('academic_terms').select('academic_year').eq('is_current', true).limit(1)
+            const academicYear = terms?.[0]?.academic_year || new Date().getFullYear().toString()
+            
+            const { data: newCS, error: createError } = await supabase
+                .from('class_subjects')
+                .insert({
+                    class_id: selectedClass,
+                    subject_id: selectedSubject,
+                    academic_year: academicYear,
+                    teacher_id: teacher?.id // Assign to current teacher
+                })
+                .select('id')
+                .single()
+            
+            if (createError) {
+                 console.error("Failed to auto-create class_subject:", createError)
+                 throw new Error('Class subject link missing and could not be created.')
+            }
+            classSubject = newCS
+        }
 
         // Get current term
         const { data: terms } = await supabase
