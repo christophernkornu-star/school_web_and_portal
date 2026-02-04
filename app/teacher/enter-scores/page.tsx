@@ -10,18 +10,6 @@ import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/aut
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 
-<style jsx global>{`
-  /* Hide spinner controls for number inputs */
-  input[type=number]::-webkit-inner-spin-button, 
-  input[type=number]::-webkit-outer-spin-button { 
-    -webkit-appearance: none; 
-    margin: 0; 
-  }
-  input[type=number] {
-    -moz-appearance: textfield;
-  }
-`}</style>
-
 export default function EnterScores() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -591,25 +579,38 @@ export default function EnterScores() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="ghana-flag-border bg-white shadow-md">
-        <nav className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-ghana-green" />
-              <div>
-                <h1 className="text-base md:text-xl font-bold text-ghana-green">
-                  Biriwa Methodist 'C' Basic School
-                </h1>
-                <p className="text-[10px] md:text-xs text-gray-600">Teacher Portal - Enter Scores</p>
+      <style jsx global>{`
+        /* Hide spinner controls for number inputs */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+          -webkit-appearance: none; 
+          margin: 0; 
+        }
+        input[type=number] {
+          -moz-appearance: textfield;
+        }
+      `}</style>
+      <header className="bg-white shadow">
+        {/* Header */}
+        <div className="ghana-flag-border bg-white shadow-md">
+          <nav className="container mx-auto px-4 md:px-6 py-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3">
+                <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-ghana-green" />
+                <div>
+                  <h1 className="text-base md:text-xl font-bold text-ghana-green">
+                    Biriwa Methodist 'C' Basic School
+                  </h1>
+                  <p className="text-[10px] md:text-xs text-gray-600">Teacher Portal - Enter Scores</p>
+                </div>
               </div>
+              <BackButton 
+                label="Back to Dashboard" 
+                className="text-gray-700 hover:text-ghana-green gap-2" 
+              />
             </div>
-            <BackButton 
-              label="Back to Dashboard" 
-              className="text-gray-700 hover:text-ghana-green gap-2" 
-            />
-          </div>
-        </nav>
+          </nav>
+        </div>
         
         <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {isReadOnly && (
