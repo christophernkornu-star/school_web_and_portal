@@ -126,10 +126,11 @@ export default function EnterScores() {
             .insert({
                 class_subject_id: classSubject.id,
                 term_id: termId,
-                title: newAssessmentName, // Using title as per schema
+                title: newAssessmentName,
                 assessment_type: newAssessmentType,
                 max_score: parseFloat(newMaxScore),
-                assessment_date: new Date().toISOString().split('T')[0]
+                assessment_date: new Date().toISOString().split('T')[0],
+                created_by: teacher?.id // Add created_by
             })
             .select()
             .single()
@@ -227,7 +228,7 @@ export default function EnterScores() {
       loadStudents()
       loadAssessments()
     }
-  }, [selectedClass, selectedSubject])
+  }, [selectedClass, selectedSubject, teacher])
 
   useEffect(() => {
     async function loadExistingScores() {
@@ -299,11 +300,18 @@ export default function EnterScores() {
       return
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('assessments')
       .select('*')
       .eq('class_subject_id', classSubject.id)
-      .order('assessment_date', { ascending: false })
+
+    // Filter by creator if available to ensure teachers only see their own assessments
+    // (or assessments created before this field was added)
+    if (teacher?.id) {
+      query = query.or(`created_by.eq.${teacher.id},created_by.is.null`)
+    }
+
+    const { data, error } = await query.order('assessment_date', { ascending: false })
 
     if (data) {
       setAssessments(data)
