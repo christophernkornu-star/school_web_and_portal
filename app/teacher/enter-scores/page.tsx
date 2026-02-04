@@ -446,7 +446,7 @@ export default function EnterScores() {
                 .eq('student_id', studentId)
                 .eq('subject_id', selectedSubject)
                 .eq('term_id', termId)
-                .single()
+                .maybeSingle()
 
               const examScore = existingScore?.exam_score || 0
               const total = calculatedClassScore + examScore
