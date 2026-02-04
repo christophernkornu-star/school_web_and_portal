@@ -17,6 +17,7 @@ export default function AddTeacherPage() {
     first_name: '',
     middle_name: '',
     last_name: '',
+    gender: '',
     email: '',
     phone: '',
     specialization: '',
@@ -41,6 +42,7 @@ export default function AddTeacherPage() {
         first_name: formData.first_name,
         middle_name: formData.middle_name || undefined,
         last_name: formData.last_name,
+        gender: formData.gender || undefined,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
         specialization: formData.specialization || undefined,
@@ -104,6 +106,19 @@ export default function AddTeacherPage() {
                 <input type="text" required value={formData.last_name}
                   onChange={(e) => setFormData({...formData, last_name: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green" />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Gender *</label>
+                <select 
+                  required
+                  value={formData.gender}
+                  onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-ghana-green bg-white"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
               </div>
               <div>
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Email</label>

@@ -27,7 +27,8 @@ export async function POST(request: NextRequest) {
       hireDate,
       status,
       username,
-      email
+      email,
+      gender // Add gender
     } = await request.json()
 
     if (!teacherId || !profileId) {
@@ -54,13 +55,15 @@ export async function POST(request: NextRequest) {
         first_name: firstName,
         middle_name: middleName || null,
         last_name: lastName,
-        phone: phone,
-        specialization: specialization,
-        qualification: qualification,
+        phone: phone || null,
+        specialization: specialization || null,
+        qualification: qualification || null,
         hire_date: hireDate,
         status: status,
+        gender: gender || null, // Update gender
+        updated_at: new Date().toISOString(),
       })
-      .eq('teacher_id', teacherId)
+      .eq('teacher_id', teacherId) // Using string ID
 
     if (teacherError) throw teacherError
 

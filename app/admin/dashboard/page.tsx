@@ -171,7 +171,7 @@ export default function AdminDashboard() {
 
         {/* Statistics Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-6 transition-all hover:shadow-md">
+          <Link href="/admin/students/analytics" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-6 transition-all hover:shadow-md cursor-pointer block">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wide mb-1">Students</p>
@@ -185,9 +185,9 @@ export default function AdminDashboard() {
                 <Users className="w-5 h-5 md:w-6 md:h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-          </div>
+          </Link>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-6 transition-all hover:shadow-md">
+          <Link href="/admin/teachers/analytics" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-6 transition-all hover:shadow-md cursor-pointer block">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wide mb-1">Teachers</p>
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
                 <GraduationCap className="w-5 h-5 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
-          </div>
+          </Link>
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 md:p-6 transition-all hover:shadow-md">
              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">

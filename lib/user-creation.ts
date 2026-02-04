@@ -1,4 +1,4 @@
- 'use client'
+'use client'
 
 import { getSupabaseBrowserClient } from './supabase-browser'
 import { createUserAction } from '@/app/actions/create-user'
@@ -89,6 +89,7 @@ export async function createTeacher(teacherData: {
   hire_date: string
   password?: string
   staff_id?: string | null
+  gender?: string // Add gender optional
 }) {
   const supabase = getSupabaseBrowserClient()
   console.log('📝 Creating teacher:', teacherData.first_name, teacherData.last_name)
@@ -134,6 +135,7 @@ export async function createTeacher(teacherData: {
     specialization: teacherData.specialization || null,
     qualification: teacherData.qualification || null,
     hire_date: teacherData.hire_date,
+    gender: teacherData.gender || null,
     status: 'active'
   }
   

@@ -36,6 +36,7 @@ export default function EditTeacherPage() {
     qualification: '',
     hire_date: '',
     status: 'active',
+    gender: '', // Add gender
     username: '',
     email: '',
   })
@@ -76,6 +77,7 @@ export default function EditTeacherPage() {
         qualification: teacherData.qualification || '',
         hire_date: teacherData.hire_date || '',
         status: teacherData.status || 'active',
+        gender: teacherData.gender || '', // Load gender
         username: teacherData.profiles?.username || '',
         email: teacherData.profiles?.email || '',
       })
@@ -197,6 +199,7 @@ export default function EditTeacherPage() {
           status: formData.status,
           username: formData.username,
           email: formData.email,
+          gender: formData.gender || null // Pass gender to API
         }),
       })
 
@@ -548,6 +551,19 @@ export default function EditTeacherPage() {
                   onChange={(e) => setFormData({...formData, hire_date: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+                <select 
+                  required
+                  value={formData.gender}
+                  onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue bg-white"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>

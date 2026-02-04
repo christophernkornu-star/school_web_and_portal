@@ -428,6 +428,10 @@ export default function TeachersPage() {
                     <span>{teacher.qualification}</span>
                   </div>
                 )}
+                <div className="flex items-center text-xs md:text-sm text-gray-600">
+                  <span className="font-medium mr-2">Gender:</span>
+                  <span>{teacher.gender || 'Unknown'}</span>
+                </div>
               </div>
 
               <div className="flex space-x-2 pt-4 border-t">
