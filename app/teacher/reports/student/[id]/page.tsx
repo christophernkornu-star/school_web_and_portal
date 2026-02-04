@@ -610,7 +610,9 @@ export default function TeacherStudentReportPage() {
     const methodistLogo = methodistLogoBase64 || ''
 
     // Get student name from profiles or construct from first/last name
-    const studentName = `${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`
+    // Format: Lastname, Middlename, Firstname
+    const nameParts = [student.last_name, student.middle_name, student.first_name].filter(part => part && part.trim() !== '')
+    const studentName = nameParts.join(', ')
     const className = student.classes?.name || student.classes?.class_name || ''
 
     // Determine promotion status
@@ -1169,7 +1171,7 @@ export default function TeacherStudentReportPage() {
               </Link>
               <div className="min-w-0">
                 <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate">
-                  {student?.last_name} {student?.first_name}
+                  {[student?.last_name, student?.middle_name, student?.first_name].filter(Boolean).join(', ')}
                 </h1>
                 <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate">
                   {student?.student_id} • {reportData?.termName}
