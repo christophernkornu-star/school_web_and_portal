@@ -66,24 +66,46 @@ export default function ReviewAssessmentsPage() {
   const loadAssessments = async () => {
     setLoadingAssessments(true)
     try {
-        // First get the most recent term
-        const { data: terms } = await supabase
-            .from('academic_terms')
-            .select('id')
-            .order('academic_year', { ascending: false })
-            .limit(1)
+        // First get the most recent term (prioritize active term)
+        let termId = null
+        let academicYear = null
 
-        const termId = terms?.[0]?.id
+        const { data: currentTerm } = await supabase
+            .from('academic_terms')
+            .select('id, academic_year')
+            .eq('is_current', true)
+            .limit(1)
+            .maybeSingle()
+
+        if (currentTerm) {
+            termId = currentTerm.id
+            academicYear = currentTerm.academic_year
+        } else {
+             // Fallback
+            const { data: terms } = await supabase
+                .from('academic_terms')
+                .select('id, academic_year')
+                .order('academic_year', { ascending: false })
+                .limit(1)
+            termId = terms?.[0]?.id
+            academicYear = terms?.[0]?.academic_year
+        }
 
         if (!termId) return
 
         // Get class_subject_id
-        const { data: classSubject } = await supabase
+        let query = supabase
             .from('class_subjects')
             .select('id')
             .eq('class_id', selectedClass)
             .eq('subject_id', selectedSubject)
-            .maybeSingle()
+        
+        // Filter by academic year if possible to avoid duplicates/stale links
+        if (academicYear) {
+            query = query.eq('academic_year', academicYear)
+        }
+
+        const { data: classSubject } = await query.maybeSingle()
 
         if (!classSubject) {
             setAssessments([])
