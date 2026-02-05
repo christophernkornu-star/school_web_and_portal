@@ -100,7 +100,7 @@ export default function ReviewAssessmentsPage() {
             .eq('class_id', selectedClass)
             .eq('subject_id', selectedSubject)
 
-        const classSubjectIds = classSubjects?.map(cs => cs.id) || []
+        const classSubjectIds = classSubjects?.map((cs: any) => cs.id) || []
 
         if (classSubjectIds.length === 0) {
             setAssessments([])
