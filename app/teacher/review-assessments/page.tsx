@@ -93,21 +93,16 @@ export default function ReviewAssessmentsPage() {
 
         if (!termId) return
 
-        // Get class_subject_id
-        let query = supabase
+        // Get class_subject_ids (handle potential duplicates or mismatched years)
+        const { data: classSubjects } = await supabase
             .from('class_subjects')
             .select('id')
             .eq('class_id', selectedClass)
             .eq('subject_id', selectedSubject)
-        
-        // Filter by academic year if possible to avoid duplicates/stale links
-        if (academicYear) {
-            query = query.eq('academic_year', academicYear)
-        }
 
-        const { data: classSubject } = await query.maybeSingle()
+        const classSubjectIds = classSubjects?.map(cs => cs.id) || []
 
-        if (!classSubject) {
+        if (classSubjectIds.length === 0) {
             setAssessments([])
             return
         }
@@ -116,7 +111,7 @@ export default function ReviewAssessmentsPage() {
         const { data, error } = await supabase
             .from('assessments')
             .select('*')
-            .eq('class_subject_id', classSubject.id)
+            .in('class_subject_id', classSubjectIds)
             .eq('term_id', termId)
             .order('created_at', { ascending: false })
 
