@@ -12,7 +12,7 @@ export default function OfflinePage() {
         <h1 className="text-2xl font-bold text-gray-800 mb-2">You are offline</h1>
         <p className="text-gray-600 mb-8">
           It seems you have lost your internet connection. Please check your network settings and try again.
-        </p> rn
+        </p>
         <button 
           onClick={() => window.location.reload()}
           className="bg-methodist-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-colors"
