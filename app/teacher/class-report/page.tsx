@@ -97,6 +97,7 @@ export default function ClassReportPage() {
         const { data: termsData } = await supabase
           .from('academic_terms')
           .select('*')
+          .order('start_date', { ascending: false })
           .order('created_at', { ascending: false })
         
         if (termsData) {

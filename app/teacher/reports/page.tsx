@@ -83,6 +83,7 @@ export default function ReportsPage() {
             const { data: termsData } = await supabase
               .from('academic_terms')
               .select('*')
+              .order('start_date', { ascending: false })
               .order('academic_year', { ascending: false }) as { data: any[] | null }
             
             if (termsData && termsData.length > 0) {

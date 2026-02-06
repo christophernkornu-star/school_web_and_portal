@@ -121,6 +121,7 @@ interface StudentReportData {
   averageScore: number
   position: number | null
   totalClassSize: number
+  promotionStatus?: string
   remarks: {
     attitude: string
     interest: string
@@ -273,6 +274,28 @@ function BulkReportCardsContent() {
           ? ((daysPresent || 0) / termData.total_days) * 100 
           : undefined
 
+        // Get promotion status if Third Term
+        let promotionStatus = undefined;
+        const isThirdTerm = termData?.name?.toLowerCase().includes('third') || 
+                            termData?.name?.toLowerCase().includes('term 3') || 
+                            termData?.name?.toLowerCase().includes('3rd') ||
+                            termData?.name?.toLowerCase().includes('final');
+        
+        if (isThirdTerm && termData?.academic_year) {
+            try {
+                const { data: promoData } = await supabase.rpc('get_or_create_promotion_status', {
+                    p_student_id: studentId,
+                    p_academic_year: termData.academic_year
+                });
+                
+                if (promoData && promoData.length > 0) {
+                    promotionStatus = promoData[0].promotion_status;
+                }
+            } catch (e) {
+                console.error('Error fetching promotion status', e);
+            }
+        }
+
         allReports.push({
           student,
           grades: scoresData?.map(s => ({
@@ -292,6 +315,7 @@ function BulkReportCardsContent() {
           averageScore: Math.round(averageScore * 10) / 10,
           position: positionMap[studentId] || null,
           totalClassSize: classSize || averages.length,
+          promotionStatus,
           remarks: {
             attitude: getAutoRemark('attitude', averageScore, attendancePercentage),
             interest: getAutoRemark('interest', averageScore, attendancePercentage),
@@ -405,10 +429,20 @@ function BulkReportCardsContent() {
     const logoImage = logoBase64 || ''
     const methodistLogo = methodistLogoBase64 || ''
 
-    const getPromotionStatusText = (avgScore: number, termName: string): string => {
+    const getPromotionStatusText = (avgScore: number, termName: string, dbStatus?: string): string => {
+      if (dbStatus) {
+         const status = dbStatus.toLowerCase();
+         if (status === 'promoted') return 'PROMOTED';
+         if (status === 'promoted_probation') return 'PROMOTED ON PROBATION';
+         if (status === 'repeated') return 'REPEATED';
+         if (status === 'graduated') return 'GRADUATED';
+         return status.toUpperCase();
+      }
+
       const isThirdTerm = termName?.toLowerCase().includes('third') || 
                           termName?.toLowerCase().includes('term 3') ||
-                          termName?.toLowerCase().includes('3rd')
+                          termName?.toLowerCase().includes('3rd') ||
+                          termName?.toLowerCase().includes('final');
       
       if (!isThirdTerm) return ''
       
@@ -509,7 +543,7 @@ function BulkReportCardsContent() {
               <div class="section-title">ATTENDANCE: ${report.daysPresent || 0} OUT OF ${report.totalDays || 0}</div>
             </div>
             <div class="promotion-box">
-              <div class="section-title">PROMOTION STATUS: ${getPromotionStatusText(report.averageScore, report.termName)}</div>
+              <div class="section-title">PROMOTION STATUS: ${getPromotionStatusText(report.averageScore, report.termName, report.promotionStatus)}</div>
             </div>
           </div>
 

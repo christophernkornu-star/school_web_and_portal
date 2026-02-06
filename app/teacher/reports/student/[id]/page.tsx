@@ -429,6 +429,31 @@ export default function TeacherStudentReportPage() {
         aggregate = calculateAggregate(grades)
       }
 
+      // Get promotion status if Third Term
+      let promotionStatus = null;
+      let teacherRemarks = null;
+      const isThirdTerm = termData?.name?.toLowerCase().includes('third') || 
+                          termData?.name?.toLowerCase().includes('term 3') || 
+                          termData?.name?.toLowerCase().includes('3rd') ||
+                          termData?.name?.toLowerCase().includes('final');
+      
+      if (isThirdTerm && termData?.academic_year) {
+         try {
+             // Use RPC to get or create status
+             const { data: promoData } = await supabase.rpc('get_or_create_promotion_status', {
+                 p_student_id: studentId,
+                 p_academic_year: termData.academic_year
+             });
+             
+             if (promoData && promoData.length > 0) {
+                 promotionStatus = promoData[0].promotion_status;
+                 teacherRemarks = promoData[0].teacher_remarks;
+             }
+         } catch(e) {
+             console.error('Error fetching promotion status', e);
+         }
+      }
+
       setReportData({
         grades,
         termName: termData?.name || '',
@@ -438,7 +463,9 @@ export default function TeacherStudentReportPage() {
         averageScore: Math.round(averageScore * 10) / 10,
         position: position > 0 ? position : null,
         totalClassSize: classSize || averages.length,
-        aggregate
+        aggregate,
+        promotionStatus,
+        promotionTeacherRemarks: teacherRemarks
       })
 
       // Generate auto remarks
@@ -617,14 +644,24 @@ export default function TeacherStudentReportPage() {
 
     // Determine promotion status
     const getPromotionStatusText = (): string => {
+      // Use database status if available
+      if (reportData.promotionStatus) {
+         const status = reportData.promotionStatus.toLowerCase();
+         if (status === 'promoted') return 'PROMOTED';
+         if (status === 'promoted_probation') return 'PROMOTED ON PROBATION';
+         if (status === 'repeated') return 'REPEATED';
+         if (status === 'graduated') return 'GRADUATED';
+         return status.toUpperCase();
+      }
+
       const isThirdTerm = reportData.termName?.toLowerCase().includes('third') || 
                           reportData.termName?.toLowerCase().includes('term 3') ||
-                          reportData.termName?.toLowerCase().includes('3rd')
+                          reportData.termName?.toLowerCase().includes('3rd') ||
+                          reportData.termName?.toLowerCase().includes('final')
       
       if (!isThirdTerm) return ''
       
-      // If we have explicit promotion status from DB, use it (TODO: Fetch this)
-      // For now, use the logic requested: Promoted if >= 30, Repeated if < 30
+      // If we have explicit promotion status from DB, use it
       const avg = reportData.averageScore || 0
       if (avg >= 30) return 'PROMOTED'
       return 'REPEATED'

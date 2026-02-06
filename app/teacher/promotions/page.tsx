@@ -139,55 +139,101 @@ function StudentPromotionsPage() {
     setError(null)
     
     try {
-      // Fetch students with pending promotion decisions (below 30% average)
+      // Fetch all active students in the class
+      // We left join student_promotions to see current status
       const { data, error } = await supabase
-        .from('student_promotions')
+        .from('students')
         .select(`
-          student_id,
-          average_score,
-          total_subjects,
-          total_score,
-          minimum_required_average,
-          meets_auto_promotion_criteria,
-          requires_teacher_decision,
-          next_class_id,
-          students!inner (
-            id,
-            first_name,
-            middle_name,
-            last_name
+          id,
+          first_name,
+          middle_name,
+          last_name,
+          student_promotions(
+            promotion_status,
+            average_score,
+            total_subjects,
+            total_score,
+            teacher_remarks,
+            requires_teacher_decision
           )
         `)
-        .eq('current_class_id', selectedClass)
-        .eq('academic_year', academicYear)
-        .eq('promotion_status', 'pending')
-        .eq('requires_teacher_decision', true) as { data: any[] | null; error: any }
-
+        .eq('class_id', selectedClass)
+        .eq('status', 'active')
+        // We can't easily filter the nested resource by academic_year here without !inner.
+        // Instead, we'll filter in memory or rely on the UI to handle the array.
+        // But since student_promotions has a composite key, we should get the right one if we could filter.
+        // Using a focused strategy:
+        
       if (error) throw error
 
-      // Transform data to match StudentRecommendation interface
-      const transformedData = data?.map((item: any) => ({
-        student_id: item.student_id,
-        student_name: `${(item.students as any).last_name} ${(item.students as any).middle_name ? (item.students as any).middle_name + ' ' : ''}${(item.students as any).first_name}`,
-        total_subjects: item.total_subjects,
-        total_score: item.total_score,
-        average_score: item.average_score,
-        minimum_required: item.minimum_required_average,
-        meets_criteria: item.meets_auto_promotion_criteria,
-        recommendation: 'teacher_decision'
-      })) || []
+      // Transform data
+      const transformedData: StudentRecommendation[] = []
+      const initialDecisions = new Map<string, PromotionDecision>()
+
+      // Get system passing average from settings or default to 50
+      // We can fetch this once or hardcode. Let's fetch alongside or just assume 30 as per context.
+      // Ideally we fetched settingsConfig earlier, but let's stick to the view logic.
+      const passMark = 30; // Based on previous conversations
+
+      // Clean fetching approach:
+      // 1. Get all students
+      // 2. Get their promotion records for this year
+      const studentIds = data?.map((s: any) => s.id) || [];
+      
+      const { data: promotions } = await supabase
+        .from('student_promotions')
+        .select('*')
+        .in('student_id', studentIds)
+        .eq('academic_year', academicYear)
+
+      const promoMap = new Map((promotions as any[])?.map((p: any) => [p.student_id, p]));
+
+      data?.forEach((student: any) => {
+        const promo: any = promoMap.get(student.id) || {};
+        
+        // Use promo stats if available, otherwise 0
+        const average = promo.average_score || 0;
+        const totalSub = promo.total_subjects || 0;
+        const totalScore = promo.total_score || 0;
+        const status = promo.promotion_status || 'pending'; // 'promoted', 'repeated', 'pending' or null
+        const remarks = promo.teacher_remarks || '';
+
+        const rec: StudentRecommendation = {
+          student_id: student.id,
+          student_name: `${student.last_name} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name}`,
+          total_subjects: totalSub,
+          total_score: totalScore,
+          average_score: average,
+          minimum_required: passMark,
+          meets_criteria: average >= passMark,
+          recommendation: (average >= passMark) ? 'promote' : 'repeat' // Auto recommendation
+        }
+        
+        transformedData.push(rec);
+
+        // Pre-fill decision if exists, otherwise use the auto-recommendation
+        let currentDecision: 'promote' | 'repeat' | null = null;
+        
+        if (status === 'promoted' || status === 'graduated') {
+          currentDecision = 'promote';
+        } else if (status === 'repeated') {
+          currentDecision = 'repeat';
+        } else {
+          // If no status yet (or pending), use the calculated recommendation
+          currentDecision = (average >= passMark) ? 'promote' : 'repeat';
+        }
+        
+        initialDecisions.set(student.id, {
+          student_id: student.id,
+          decision: currentDecision, 
+          remarks: remarks
+        })
+      });
+
+      // Sort by student name
+      transformedData.sort((a, b) => a.student_name.localeCompare(b.student_name));
 
       setRecommendations(transformedData)
-      
-      // Initialize decisions map
-      const initialDecisions = new Map<string, PromotionDecision>()
-      transformedData.forEach((rec: StudentRecommendation) => {
-        initialDecisions.set(rec.student_id, {
-          student_id: rec.student_id,
-          decision: null, // No default decision
-          remarks: ''
-        })
-      })
       setDecisions(initialDecisions)
 
     } catch (error: any) {
@@ -239,16 +285,16 @@ function StudentPromotionsPage() {
         .eq('current_class_id', selectedClass)
         .maybeSingle()
 
-      // Submit each decision using the execute_teacher_promotion_decision function
+      // Submit each decision using the execute_admin_promotion_decision function
       for (const [studentId, decision] of decisions.entries()) {
         if (!decision.decision) continue
 
         const { error: decisionError } = await (supabase
-          .rpc as any)('execute_teacher_promotion_decision', {
+          .rpc as any)('execute_admin_promotion_decision', {
             p_student_id: studentId,
             p_academic_year: academicYear,
-            p_teacher_id: teacher.id,
-            p_promote: decision.decision === 'promote',
+            p_user_id: teacher.profile_id, // Using profile_id (auth user id)
+            p_status: decision.decision === 'promote' ? 'promoted' : 'repeated',
             p_remarks: decision.remarks || ''
           })
 
@@ -400,17 +446,17 @@ function StudentPromotionsPage() {
             <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 md:p-6 mb-6">
               <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-3 flex items-center space-x-2 text-sm md:text-base">
                 <FileText className="w-4 h-4 md:w-5 md:h-5" />
-                <span>Students Requiring Your Decision</span>
+                <span>End of Year Promotion Settings</span>
               </h3>
               <div className="text-blue-800 dark:text-blue-200 space-y-2 text-xs md:text-sm">
                 <p>
-                  <strong>Automatic Promotion:</strong> Students with 30% or higher average (across 3 terms) are automatically promoted.
+                  <strong>System Decision:</strong> Students are automatically marked as "Promoted" (Average ≥ 30%) or "Repeated" based on their performance.
                 </p>
                 <p className="text-blue-700 dark:text-blue-300">
-                  <strong>Below 30%:</strong> Students listed below have not met the automatic promotion criteria and require your decision.
+                  <strong>Teacher Override:</strong> You can review and change these decisions below. For example, you may choose to repeat a student who passed but is not mature enough, or promote a student on probation.
                 </p>
                 <p className="text-blue-700 dark:text-blue-300 mt-3">
-                  You can choose to promote or repeat each student based on other factors (effort, attendance, potential, etc.).
+                  Click <strong>Submit</strong> to save your final decisions.
                 </p>
               </div>
             </div>
@@ -458,125 +504,202 @@ function StudentPromotionsPage() {
               </div>
             ) : recommendations.length === 0 ? (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center">
-                <CheckCircle className="w-12 h-12 md:w-16 md:h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-2">All Students Auto-Promoted!</h3>
+                <Users className="w-12 h-12 md:w-16 md:h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-2">No Students Found</h3>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                  All students in this class achieved 30% or higher average and have been automatically promoted.
-                </p>
-                <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  No decisions required from you.
+                  There are no active students in this class for the selected academic year.
                 </p>
               </div>
             ) : (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 dark:bg-gray-700">
-                      <tr>
-                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Student
-                        </th>
-                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Performance
-                        </th>
-                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Decision
-                        </th>
-                        <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                          Remarks
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {recommendations.map((rec) => {
-                        const decision = decisions.get(rec.student_id)
-                        return (
-                          <tr key={rec.student_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                              <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
-                                {rec.student_name}
-                              </div>
-                            </td>
-                            <td className="px-4 md:px-6 py-4">
-                              <div className="text-xs md:text-sm text-gray-900 dark:text-white">
-                                <div>Total: {rec.total_score.toFixed(2)} / {(rec.total_subjects * 100).toFixed(2)}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  Average: {rec.average_score.toFixed(2)} | Required: {rec.minimum_required.toFixed(2)}
+              <>
+                {/* Desktop/Tablet Table View */}
+                <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 dark:bg-gray-700">
+                        <tr>
+                          <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Student
+                          </th>
+                          <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Performance
+                          </th>
+                          <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Decision
+                          </th>
+                          <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                            Remarks
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                        {recommendations.map((rec) => {
+                          const decision = decisions.get(rec.student_id)
+                          return (
+                            <tr key={rec.student_id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                              <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {rec.student_name}
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                              {rec.meets_criteria ? (
-                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                                  Meets Criteria
-                                </span>
-                              ) : (
-                                <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
-                                  Below Threshold
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 md:px-6 py-4 whitespace-nowrap">
-                              <div className="flex space-x-2">
-                                <button
-                                  onClick={() => updateDecision(rec.student_id, 'promote')}
-                                  className={`px-3 py-1 rounded-lg text-xs md:text-sm font-medium transition ${
-                                    decision?.decision === 'promote'
-                                      ? 'bg-green-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                  }`}
-                                >
-                                  Promote
-                                </button>
-                                <button
-                                  onClick={() => updateDecision(rec.student_id, 'repeat')}
-                                  className={`px-3 py-1 rounded-lg text-xs md:text-sm font-medium transition ${
-                                    decision?.decision === 'repeat'
-                                      ? 'bg-red-600 text-white'
-                                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                  }`}
-                                >
-                                  Repeat
-                                </button>
-                              </div>
-                            </td>
-                            <td className="px-4 md:px-6 py-4">
-                              <input
-                                type="text"
-                                value={decision?.remarks || ''}
-                                onChange={(e) => updateDecision(rec.student_id, decision?.decision || null, e.target.value)}
-                                placeholder="Optional remarks..."
-                                className="w-full px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-xs md:text-sm focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                              />
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                              </td>
+                              <td className="px-4 md:px-6 py-4">
+                                <div className="text-sm text-gray-900 dark:text-white">
+                                  <div>Total: {rec.total_score.toFixed(2)} / {(rec.total_subjects * 100).toFixed(2)}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    Average: {rec.average_score.toFixed(2)} | Required: {rec.minimum_required.toFixed(2)}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                {rec.meets_criteria ? (
+                                  <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                    Meets Criteria
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                                    Below Threshold
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                                <div className="flex space-x-2">
+                                  <button
+                                    onClick={() => updateDecision(rec.student_id, 'promote')}
+                                    className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                                      decision?.decision === 'promote'
+                                        ? 'bg-green-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                    }`}
+                                  >
+                                    Promote
+                                  </button>
+                                  <button
+                                    onClick={() => updateDecision(rec.student_id, 'repeat')}
+                                    className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
+                                      decision?.decision === 'repeat'
+                                        ? 'bg-red-600 text-white'
+                                        : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                    }`}
+                                  >
+                                    Repeat
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="px-4 md:px-6 py-4">
+                                <input
+                                  type="text"
+                                  value={decision?.remarks || ''}
+                                  onChange={(e) => updateDecision(rec.student_id, decision?.decision || null, e.target.value)}
+                                  placeholder="Optional remarks..."
+                                  className="w-full px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                                />
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {recommendations.map((rec) => {
+                    const decision = decisions.get(rec.student_id)
+                    return (
+                      <div key={rec.student_id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">{rec.student_name}</h3>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                              Total: {rec.total_score.toFixed(1)} | Avg: {rec.average_score.toFixed(1)}%
+                            </div>
+                          </div>
+                          {rec.meets_criteria ? (
+                             <span className="px-2 py-0.5 inline-flex text-[10px] font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                               Criteria Met
+                             </span>
+                           ) : (
+                             <span className="px-2 py-0.5 inline-flex text-[10px] font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+                               Below
+                             </span>
+                           )}
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                           <button
+                              onClick={() => updateDecision(rec.student_id, 'promote')}
+                              className={`py-2 rounded-lg text-sm font-medium transition flex items-center justify-center space-x-1 ${
+                                decision?.decision === 'promote'
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <TrendingUp className="w-4 h-4" />
+                              <span>Promote</span>
+                            </button>
+                            <button
+                              onClick={() => updateDecision(rec.student_id, 'repeat')}
+                              className={`py-2 rounded-lg text-sm font-medium transition flex items-center justify-center space-x-1 ${
+                                decision?.decision === 'repeat'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              }`}
+                            >
+                              <TrendingDown className="w-4 h-4" />
+                              <span>Repeat</span>
+                            </button>
+                        </div>
+                        
+                        <input
+                            type="text"
+                            value={decision?.remarks || ''}
+                            onChange={(e) => updateDecision(rec.student_id, decision?.decision || null, e.target.value)}
+                            placeholder="Remarks (optional)..."
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        />
+                      </div>
+                    )
+                  })}
                 </div>
 
                 {/* Submit Button */}
-                <div className="bg-gray-50 dark:bg-gray-700 px-4 md:px-6 py-4 flex justify-end space-x-4">
-                  <Link
-                    href="/teacher/dashboard"
-                    className="px-4 md:px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition text-xs md:text-sm"
-                  >
-                    Cancel
-                  </Link>
-                  <button
-                    onClick={handleSubmit}
-                    disabled={submitting || recommendations.length === 0}
-                    className="px-4 md:px-6 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition text-xs md:text-sm"
-                  >
-                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                    <span>{submitting ? 'Submitting...' : 'Submit Promotion Decisions'}</span>
-                  </button>
+                <div className="sticky bottom-4 z-10">
+                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 flex justify-between items-center">
+                      <div className="text-sm hidden sm:block text-gray-600 dark:text-gray-300">
+                         {recommendations.length} students processed
+                      </div>
+                      <div className="flex space-x-3 w-full sm:w-auto justify-end">
+                        <Link
+                          href="/teacher/dashboard"
+                          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition text-sm"
+                        >
+                          Cancel
+                        </Link>
+                        <button
+                          onClick={handleSubmit}
+                          disabled={submitting || recommendations.length === 0}
+                          className="px-6 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition text-sm font-medium shadow-sm"
+                        >
+                          {submitting ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Submit Decisions</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                   </div>
                 </div>
-              </div>
+              </>
             )}
           </>
         )}

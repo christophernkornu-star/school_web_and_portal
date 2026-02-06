@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     .eq('id', session.user.id)
     .single()
 
-  if (profile?.role !== 'admin' && profile?.role !== 'teacher') {
+  if (profile?.role !== 'admin' && profile?.role !== 'teacher' && profile?.role !== 'student') {
     return NextResponse.json({ error: 'Forbidden: Access denied' }, { status: 403 })
   }
 
@@ -46,6 +46,7 @@ export async function GET(request: Request) {
     .from('students')
     .select('id')
     .eq('class_id', classId)
+    .eq('status', 'active')
   
   if (studentsError || !students) {
     return NextResponse.json({ error: studentsError?.message || 'No students found' }, { status: 500 })

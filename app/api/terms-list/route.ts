@@ -17,6 +17,7 @@ export async function GET() {
     const { data: termsData, error } = await supabase
       .from('academic_terms')
       .select('*')
+      .order('start_date', { ascending: false })
       .order('academic_year', { ascending: false })
 
     if (error) {

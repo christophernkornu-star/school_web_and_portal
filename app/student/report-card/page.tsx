@@ -260,7 +260,8 @@ function getPromotionStatusText(report: ReportCardData): string {
   // Check if this is Term 3 (Third Term)
   const isThirdTerm = report.termName?.toLowerCase().includes('third') || 
                       report.termName?.toLowerCase().includes('term 3') ||
-                      report.termName?.toLowerCase().includes('3rd')
+                      report.termName?.toLowerCase().includes('3rd') ||
+                      report.termName?.toLowerCase().includes('final')
   
   // If there's a promotion decision from the database, use it
   if (report.promotionDecision) {
@@ -486,7 +487,8 @@ export default function ReportCardPage() {
           // Load promotion status for Third Term reports
           const isThirdTerm = report.termName?.toLowerCase().includes('third') || 
                               report.termName?.toLowerCase().includes('term 3') ||
-                              report.termName?.toLowerCase().includes('3rd')
+                              report.termName?.toLowerCase().includes('3rd') ||
+                              report.termName?.toLowerCase().includes('final')
           
           const academicYear = report.year || '';
 
@@ -507,11 +509,10 @@ export default function ReportCardPage() {
              fetch(`/api/class-rankings?classId=${student.class_id}&termId=${report.termId}`),
             
              isThirdTerm ? supabase
-                .from('student_promotions')
-                .select('promotion_status, teacher_remarks')
-                .eq('student_id', student.id)
-                .eq('academic_year', academicYear)
-                .limit(1) : Promise.resolve({ data: [] })
+                .rpc('get_or_create_promotion_status', {
+                  p_student_id: student.id,
+                  p_academic_year: academicYear
+                }) : Promise.resolve({ data: [] })
           ]);
 
           
@@ -531,7 +532,12 @@ export default function ReportCardPage() {
 
           if (classScores && classScores.length > 0) {
             
-            // Calculate total scores per student (from classScores only)
+            // Deduce total unique subjects for the class (to approximate "All Subjects" for average calculation)
+            // This aligns with Teacher Portal which divides by Total Subjects for the Level
+            const uniqueSubjects = new Set(classScores.map((s: any) => s.subject_id))
+            const totalSubjectsCount = uniqueSubjects.size || 1
+
+            // Calculate total scores per student
             const studentTotals: { [studentId: string]: number } = {}
             classScores.forEach((score: any) => {
               if (!studentTotals[score.student_id]) {
@@ -540,12 +546,17 @@ export default function ReportCardPage() {
               studentTotals[score.student_id] += score.total || 0
             })
 
-            // Sort students by total score (descending)
+            // Calculate Averages and Sort
+            // We rank by Average Score to match Teacher Portal
             const sortedStudents = Object.entries(studentTotals)
-              .sort(([, totalA], [, totalB]) => totalB - totalA)
+              .map(([sid, total]) => ({
+                  sid, 
+                  average: total / totalSubjectsCount
+              }))
+              .sort((a, b) => b.average - a.average)
 
             // Find current student's position
-            const position = sortedStudents.findIndex(([sid]) => sid === student.id) + 1
+            const position = sortedStudents.findIndex((s) => s.sid === student.id) + 1
             report.position = position > 0 ? position : null
             
 
