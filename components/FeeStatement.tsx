@@ -50,7 +50,7 @@ export const FeeStatement = React.forwardRef<HTMLDivElement, FeeStatementProps>(
           </div>
           <div>
             <span className="text-gray-500 text-sm uppercase tracking-wider">Date</span>
-            <p className="font-medium">{format(new Date(), 'dd MMM yyyy')}</p>
+            <p className="font-medium" suppressHydrationWarning>{format(new Date(), 'dd MMM yyyy')}</p>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ export const FeeStatement = React.forwardRef<HTMLDivElement, FeeStatementProps>(
       {/* Footer */}
       <div className="mt-auto pt-8 border-t border-gray-200 text-center">
         <p className="text-xs text-gray-500 mb-1">This is a computer-generated document. No signature is required.</p>
-        <p className="text-xs text-gray-400">Generated on {format(new Date(), 'PPP p')}</p>
+        <p className="text-xs text-gray-400" suppressHydrationWarning>Generated on {format(new Date(), 'PPP p')}</p>
       </div>
     </div>
   )

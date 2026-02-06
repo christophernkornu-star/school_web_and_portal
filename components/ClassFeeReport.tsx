@@ -22,7 +22,7 @@ export const ClassFeeReport = React.forwardRef<HTMLDivElement, ClassFeeReportPro
         <h2 className="text-lg md:text-xl font-bold uppercase">Class Fee Report</h2>
         <div className="flex flex-col md:flex-row justify-center gap-2 md:gap-8 mt-4 text-sm font-medium text-gray-600 dark:text-gray-400">
           <p>Class: <span className="text-black dark:text-white font-bold">{className}</span></p>
-          <p>Date: <span className="text-black dark:text-white font-bold">{format(new Date(), 'dd MMM yyyy')}</span></p>
+          <p>Date: <span className="text-black dark:text-white font-bold" suppressHydrationWarning>{format(new Date(), 'dd MMM yyyy')}</span></p>
         </div>
       </div>
 
@@ -96,7 +96,7 @@ export const ClassFeeReport = React.forwardRef<HTMLDivElement, ClassFeeReportPro
         </table>
       </div>
 
-      <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500 dark:text-gray-400">
+      <div className="mt-8 pt-4 border-t border-gray-200 dark:border-gray-700 text-center text-xs text-gray-500 dark:text-gray-400" suppressHydrationWarning>
         Generated on {format(new Date(), 'PPP p')}
       </div>
     </div>
