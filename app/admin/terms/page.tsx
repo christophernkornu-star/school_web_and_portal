@@ -217,19 +217,22 @@ export default function TermsPage() {
     if (!selectedTerm) return
     setSaving(true)
 
-    const { error } = await supabase
-      .from('academic_terms')
-      .delete()
-      .eq('id', selectedTerm.id)
+    try {
+      const { data, error } = await supabase.rpc('delete_academic_term', {
+        p_term_id: selectedTerm.id
+      })
 
-    if (error) {
-      toast.error(error.message)
-    } else {
+      if (error) throw error
+
       toast.success('Term deleted successfully!')
       setShowDeleteModal(false)
       loadTerms()
+    } catch (error: any) {
+      console.error('Error deleting term:', error)
+      toast.error('Error deleting term: ' + error.message)
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   const handleSetCurrent = async (term: Term) => {
