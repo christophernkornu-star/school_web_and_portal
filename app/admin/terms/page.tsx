@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/BackButton'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, Calendar, Plus, Edit, Trash2 } from 'lucide-react'
+import { ArrowLeft, Calendar, Plus, Edit, Trash2, AlertTriangle } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -28,7 +28,9 @@ export default function TermsPage() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showDeleteYearModal, setShowDeleteYearModal] = useState(false)
   const [selectedTerm, setSelectedTerm] = useState<Term | null>(null)
+  const [selectedYear, setSelectedYear] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -283,6 +285,33 @@ export default function TermsPage() {
     toast.success(`${term.name} set as current term`)
   }
 
+  const handleDeleteYear = async () => {
+    if (!selectedYear) return
+    setSaving(true)
+
+    try {
+      const { data, error } = await supabase.rpc('delete_academic_year', {
+        p_academic_year: selectedYear
+      })
+
+      if (error) throw error
+
+      toast.success(`${selectedYear} Academic Year deleted completely`)
+      setShowDeleteYearModal(false)
+      loadTerms()
+    } catch (error: any) {
+      console.error('Error deleting year:', error)
+      toast.error('Error deleting year: ' + error.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const openDeleteYearModal = (year: string) => {
+    setSelectedYear(year)
+    setShowDeleteYearModal(true)
+  }
+
   const openEditModal = (term: Term) => {
     setSelectedTerm(term)
     setFormData({
@@ -411,8 +440,29 @@ export default function TermsPage() {
           </div>
         ) : (
           Object.entries(groupedTerms).map(([year, yearTerms]) => (
-            <div key={year} className="mb-6 md:mb-8">
-              <h2 className="text-lg md:text-xl font-bold text-gray-800 mb-4">{year} Academic Year</h2>
+            <div key={year} className="mb-6 md:mb-8 bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+              <div className="flex items-center justify-between mb-4 bg-white p-3 rounded-lg shadow-sm">
+                <div className="flex items-center space-x-3">
+                  <div className="bg-purple-100 p-2 rounded-lg">
+                    <Calendar className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <h2 className="text-lg md:text-xl font-bold text-gray-800">{year} Academic Year</h2>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-sm text-gray-500 hidden md:block mr-2">
+                    {yearTerms.length} Terms
+                  </div>
+                  <button
+                    onClick={() => openDeleteYearModal(year)}
+                    className="flex items-center space-x-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors text-sm font-medium border border-red-100"
+                    title="Delete entire academic year and all associated data"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="hidden md:inline">Delete Year</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {yearTerms.map((term) => (
                   <div key={term.id} className={`bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow ${
@@ -675,6 +725,66 @@ export default function TermsPage() {
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
               >
                 {saving ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Delete Year Modal */}
+      {showDeleteYearModal && selectedYear && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl border border-red-100">
+            <div className="flex items-center space-x-3 text-red-600 mb-4">
+              <div className="bg-red-100 p-2 rounded-full">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-800">Delete Academic Year?</h3>
+            </div>
+            
+            <div className="bg-red-50 border border-red-100 rounded-lg p-4 mb-6">
+              <p className="font-semibold text-red-800 mb-2">Warning: Destructive Action</p>
+              <p className="text-sm text-red-700 mb-2">
+                You are about to delete the entire <strong>{selectedYear}</strong> academic year.
+              </p>
+              <ul className="list-disc list-inside text-sm text-red-700 space-y-1 ml-2">
+                <li>All Terms in this year</li>
+                <li>All Student Scores & Grades</li>
+                <li>All Assessments & Exam Records</li>
+                <li>Promotion History & Status</li>
+                <li>Teacher Class Assignments for this year</li>
+              </ul>
+            </div>
+            
+            <p className="text-gray-600 text-sm mb-6">
+              This action cannot be undone. Please confirm you want to proceed.
+            </p>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteYearModal(false)
+                  setSelectedYear(null)
+                }}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteYear}
+                disabled={saving}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 font-medium flex items-center space-x-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Yes, Delete Everything</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
