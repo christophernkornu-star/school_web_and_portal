@@ -113,7 +113,7 @@ export default function AssessmentsPage() {
         <div className="container mx-auto px-4 md:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <BackButton />
+              <BackButton href="/teacher/dashboard" />
               <div>
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Assessments</h1>
               </div>

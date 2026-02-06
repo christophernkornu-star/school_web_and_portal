@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, UploadCloud, Users, CheckCircle, Clock, RotateCcw, Trash2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
+import { Skeleton } from '@/components/ui/skeleton'
 
 export default function QuizDetailsPage() {
   const params = useParams()
@@ -117,8 +118,33 @@ export default function QuizDetailsPage() {
 
   if (loading) {
       return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
+            <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
+                <div className="container mx-auto px-4 md:px-6 py-4">
+                    <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
+                        <div className="flex items-center space-x-4">
+                             <Skeleton className="h-8 w-8 rounded-full" />
+                             <div>
+                                 <Skeleton className="h-6 w-48 mb-2" />
+                                 <Skeleton className="h-4 w-32" />
+                             </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Skeleton className="h-10 w-20 rounded-lg" />
+                            <Skeleton className="h-10 w-32 rounded-lg" />
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+                      {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
+                 </div>
+                 <div className="space-y-4">
+                      <Skeleton className="h-10 w-48 mb-4" />
+                      {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
+                 </div>
+            </main>
         </div>
       )
   }
@@ -135,9 +161,13 @@ export default function QuizDetailsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
             <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
             <div className="flex items-center space-x-4 min-w-0">
-              <Link href="/teacher/assessments" className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex-shrink-0 transition-colors">
+              <button 
+                onClick={() => router.back()}
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex-shrink-0 transition-colors"
+                type="button"
+              >
                 <ArrowLeft className="w-6 h-6" />
-              </Link>
+              </button>
               <div className="min-w-0 overflow-hidden">
                 <h1 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 truncate leading-tight">{quiz.title}</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{quiz.classes?.name} • {quiz.subjects?.name}</p>
