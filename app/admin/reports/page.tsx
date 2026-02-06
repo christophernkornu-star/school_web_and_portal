@@ -19,7 +19,7 @@ export default function ReportsPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <BackButton href="/admin" />
+            <BackButton href="/admin/dashboard" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">Generate Reports</h1>
               <p className="text-xs md:text-sm text-gray-600">Create and export various school reports</p>

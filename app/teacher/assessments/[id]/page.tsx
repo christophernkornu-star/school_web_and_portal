@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import BackButton from '@/components/ui/BackButton'
 import { ArrowLeft, UploadCloud, Users, CheckCircle, Clock, RotateCcw, Trash2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
@@ -161,13 +162,7 @@ export default function QuizDetailsPage() {
         <div className="container mx-auto px-4 md:px-6 py-4">
             <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
             <div className="flex items-center space-x-4 min-w-0">
-              <button 
-                onClick={() => router.back()}
-                className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 flex-shrink-0 transition-colors"
-                type="button"
-              >
-                <ArrowLeft className="w-6 h-6" />
-              </button>
+              <BackButton href="/teacher/assessments" />
               <div className="min-w-0 overflow-hidden">
                 <h1 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 truncate leading-tight">{quiz.title}</h1>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{quiz.classes?.name} • {quiz.subjects?.name}</p>

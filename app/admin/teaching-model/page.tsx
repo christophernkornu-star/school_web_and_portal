@@ -95,7 +95,7 @@ export default function TeachingModelConfigPage() {
       <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <BackButton href="/admin" />
+            <BackButton href="/admin/dashboard" />
             <div>
               <h1 className="text-lg md:text-2xl font-bold text-gray-800">Teaching Model Configuration</h1>
               <p className="text-xs md:text-sm text-gray-600">Configure how classes are organized across school levels</p>

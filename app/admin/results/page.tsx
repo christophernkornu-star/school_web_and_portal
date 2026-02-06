@@ -9,7 +9,7 @@ export default function ResultsDashboardPage() {
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center space-x-4 mb-6">
-          <BackButton href="/admin" />
+          <BackButton href="/admin/dashboard" />
           <h1 className="text-2xl font-bold text-gray-800">Results Management</h1>
         </div>
 
