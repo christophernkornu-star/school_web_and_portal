@@ -1088,9 +1088,51 @@ export default function ReportCardPage() {
             font-style: italic;
             text-align: right;
           }
+          .print-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            gap: 10px;
+          }
+          .close-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          .close-btn:hover {
+            background-color: #dc2626;
+          }
+          .print-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+          }
+          .print-btn:hover {
+            background-color: #2563eb;
+          }
         </style>
       </head>
       <body>
+        <div class="print-controls no-print">
+          <button onclick="window.print()" class="print-btn">Print Report</button>
+          <button onclick="window.close()" class="close-btn">Close</button>
+        </div>
         <div class="report-card">
           <div class="watermark-overlay"></div>
           <!-- Header -->
