@@ -280,7 +280,7 @@ export default function HomepageStatsPage() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white p-6 rounded-lg shadow-md text-center">
-                  <div className="text-4xl font-bold text-methodist-blue mb-1">
+                  <div className="text-4xl font-bold text-methodist-blue mb-1" suppressHydrationWarning>
                     {new Date().getFullYear() - parseInt(settings.founding_year || '1960')}+
                   </div>
                   <div className="text-xs text-gray-600">Years of Excellence</div>

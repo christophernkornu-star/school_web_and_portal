@@ -227,7 +227,7 @@ export default function AdminGalleryPage() {
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-sm">This Month</p>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-green-600" suppressHydrationWarning>
               {photos.filter(p => new Date(p.created_at).getMonth() === new Date().getMonth()).length}
             </p>
           </div>

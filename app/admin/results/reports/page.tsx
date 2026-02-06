@@ -170,7 +170,7 @@ const ReportCard = ({ data, termName, academicYear }: { data: ReportData, termNa
           </div>
        </div>
        
-       <div className="mt-8 text-center text-[10px] text-gray-400">
+       <div className="mt-8 text-center text-[10px] text-gray-400" suppressHydrationWarning>
           Generated via Biriwa Methodist SMS on {new Date().toLocaleDateString()}
        </div>
        
