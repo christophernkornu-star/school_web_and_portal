@@ -12,6 +12,16 @@ export async function middleware(req: NextRequest) {
 
   const path = req.nextUrl.pathname
 
+  // 0. Bypass static files immediately
+  if (
+    path.startsWith('/_next') ||
+    path.startsWith('/static') ||
+    path.startsWith('/favicon.ico') ||
+    path.includes('.') // Any file with an extension
+  ) {
+    return NextResponse.next()
+  }
+
   // 1. Protect Admin Routes (and sensitive API routes)
   if (path.startsWith('/admin') || path.startsWith('/api/admin') || path.startsWith('/api/students')) {
     if (!session) {
@@ -127,6 +137,6 @@ export const config = {
      * - public folder
      * - api routes that don't need auth
      */
-    '/((?!_next/static|_next/image|favicon.ico|icons|images|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|workbox|.*\\.(?:svg|png|jpg|jpeg|gif|webp|js|css|json)$).*)',
   ],
 }
