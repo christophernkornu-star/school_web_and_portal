@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { ArrowLeft, BarChart3, FileDown, Printer, FileText } from 'lucide-react'
 
 export default function ReportsPage() {

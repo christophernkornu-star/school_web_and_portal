@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
   PieChart, Pie, Cell 

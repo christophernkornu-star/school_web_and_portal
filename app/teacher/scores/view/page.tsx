@@ -7,7 +7,7 @@ import { ArrowLeft, Edit2, Save, X, Filter, Download, Eye, AlertCircle, Trash2 }
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
 
 interface Score {

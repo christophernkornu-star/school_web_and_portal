@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Plus, BookOpen, Calendar, CheckCircle, XCircle, Eye, Trash2, Edit, Calculator, AlertCircle } from 'lucide-react'
 import AuthGuard from '@/app/components/AuthGuard'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
 
 interface Teacher {

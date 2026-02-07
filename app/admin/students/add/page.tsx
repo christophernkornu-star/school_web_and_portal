@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { createStudent } from '@/lib/user-creation'
 import { toast } from 'react-hot-toast'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 
 export default function AddStudentPage() {
   const router = useRouter()

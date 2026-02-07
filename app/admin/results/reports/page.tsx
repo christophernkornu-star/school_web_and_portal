@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, Printer, Search, Download, FileText, CheckSquare, Square } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useReactToPrint } from 'react-to-print'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import Image from 'next/image'
 

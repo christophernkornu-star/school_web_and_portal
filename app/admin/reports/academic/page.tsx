@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { ArrowLeft, BarChart3 } from 'lucide-react'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 
 export default function AcademicPerformancePage() {
   return (

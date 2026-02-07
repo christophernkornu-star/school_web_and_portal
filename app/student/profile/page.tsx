@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, GraduationCap, Save, Eye, EyeOff } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
 
 interface StudentProfile {

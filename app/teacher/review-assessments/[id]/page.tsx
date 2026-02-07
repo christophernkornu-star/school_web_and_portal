@@ -6,7 +6,7 @@ import { ArrowLeft, Edit, Save, Trash2, User, X, Check } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
 
 export default function ReviewAssessmentDetail() {

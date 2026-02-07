@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { ArrowLeft, FileText, Download } from 'lucide-react'
 
 export default function ResourcesPage() {

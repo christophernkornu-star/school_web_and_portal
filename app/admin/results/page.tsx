@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { CheckCircle, ArrowLeft, FileText, ChevronRight } from 'lucide-react'
 
 export default function ResultsDashboardPage() {

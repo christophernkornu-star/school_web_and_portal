@@ -1,6 +1,6 @@
 'use client'
 
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import Link from 'next/link'
 import { ArrowLeft, Settings, DollarSign, CreditCard, PieChart, TrendingUp } from 'lucide-react'
 

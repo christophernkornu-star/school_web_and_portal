@@ -7,7 +7,7 @@ import { ArrowLeft, Calendar as CalendarIcon, Plus, MapPin, Clock, Edit, Trash2 
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
 
 export default function EventsPage() {

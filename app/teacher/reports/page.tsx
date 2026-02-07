@@ -7,7 +7,7 @@ import { ArrowLeft, FileText, BarChart3, Download, Users, TrendingUp, Eye, Filte
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 
@@ -71,7 +71,7 @@ export default function ReportsPage() {
 
         // Load academic terms via API to bypass RLS
         try {
-          const termsResponse = await fetch('/api/terms-list')
+          const termsResponse = await fetch('/api/terms-list', { cache: 'no-store' })
           if (termsResponse.ok) {
             const termsData = await termsResponse.json()
             if (termsData && termsData.length > 0) {

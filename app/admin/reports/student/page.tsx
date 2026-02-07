@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Search, FileText, Download, Users, Filter, Loader2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
 
 export default function AdminStudentReportsPage() {

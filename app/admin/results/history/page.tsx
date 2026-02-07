@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, Search, User, Users, Calendar } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 
 export default function HistoricalRecordsPage() {
   const supabase = getSupabaseBrowserClient()

@@ -7,7 +7,7 @@ import { ArrowLeft, BookOpen, Calendar, ChevronRight, FileText, Search, Plus, Tr
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
 
 export default function ReviewAssessmentsPage() {

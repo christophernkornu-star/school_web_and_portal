@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase'
 import { cookies } from 'next/headers'
 import ComplaintsList from './ComplaintsList'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { MessageSquare } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'

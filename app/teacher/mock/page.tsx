@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, Save, Printer, FileSpreadsheet, Search, Trash2, Filter
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface Student {

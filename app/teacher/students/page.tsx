@@ -9,7 +9,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'react-hot-toast'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 
 function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, selected, selectionMode, onSelect }: { 
   student: any, 

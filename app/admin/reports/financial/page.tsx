@@ -6,7 +6,7 @@ import { ArrowLeft, Calendar, DollarSign, Download, Filter, Search, TrendingUp, 
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { format, startOfDay, endOfDay, isSameDay, parseISO, subDays } from 'date-fns'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import BackButton from '@/components/ui/BackButton'
+import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 type Tab = 'overview' | 'collections' | 'debts'
