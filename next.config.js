@@ -4,10 +4,29 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
   swcMinify: true,
-  disable: false,
+  disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
+    exclude: [
+      /middleware-manifest\.json$/,
+      /_next\/static\/.*(?<!\.js)$/, // exclude non-js files in static
+      /build-manifest\.json$/,
+      /react-loadable-manifest\.json$/
+    ],
+    // Force network for next static chunks to update cache on deployment
     runtimeCaching: [
+      {
+        urlPattern: /_next\/static\/.*/i,
+        handler: "NetworkFirst",
+        options: {
+          cacheName: "next-static-js-assets",
+          expiration: {
+            maxEntries: 200,
+            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+          },
+          networkTimeoutSeconds: 10,
+        },
+      },
       {
         urlPattern: /^https:\/\/okfawhokrtkaibhbcjdk\.supabase\.co\/rest\/v1\/.*/i,
         handler: "NetworkFirst",
