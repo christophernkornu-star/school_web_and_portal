@@ -387,7 +387,7 @@ export default function ClassReportPage() {
 
               {/* Footer */}
               <div className="mt-4 flex justify-end">
-                <div suppressHydrationWarning className="text-[10px] text-gray-500 dark:text-gray-400">
+                <div className="text-[10px] text-gray-500 dark:text-gray-400">
                   Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}
                 </div>
               </div>

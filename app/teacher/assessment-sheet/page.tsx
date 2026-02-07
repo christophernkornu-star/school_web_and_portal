@@ -458,7 +458,7 @@ export default function AssessmentSheetPage() {
               <div className="mt-8 flex justify-between text-sm font-bold">
                 <div>Class Teacher's Signature: _______________________</div>
                 <div>Head Teacher's Signature: _______________________</div>
-                <div suppressHydrationWarning>Date: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}</div>
+                <div>Date: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}</div>
               </div>
             </div>
           </div>
