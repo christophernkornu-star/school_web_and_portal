@@ -743,7 +743,7 @@ export default function MockExamsPage() {
                             
                             <div className="mt-2 text-[10px] flex justify-between items-center text-gray-500">
                                 <span>Page {pageIndex + 1} of {pages.length}</span>
-                                <span>Generated on: {new Date().toLocaleDateString('en-GB')}</span>
+                                <span suppressHydrationWarning>Generated on: {new Date().toLocaleDateString('en-GB')}</span>
                             </div>
                         </div>
                     ));

@@ -184,7 +184,7 @@ export default async function HomePage() {
           
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-5xl mx-auto">
             <div className="bg-gradient-to-br from-methodist-blue to-blue-800 rounded-xl p-4 md:p-6 shadow-lg text-white text-center transform hover:scale-105 transition-transform flex flex-col justify-center h-full">
-              <div className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{stats.yearsOfOperation}+</div>
+              <div suppressHydrationWarning className="text-3xl md:text-5xl font-extrabold mb-1 md:mb-2">{stats.yearsOfOperation}+</div>
               <div className="text-xs md:text-sm uppercase tracking-wider opacity-90">Years of Excellence</div>
             </div>
 

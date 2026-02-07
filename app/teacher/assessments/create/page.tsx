@@ -507,8 +507,8 @@ export default function CreateQuizPage() {
                         className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white appearance-none cursor-pointer"
                     >
                         <option value="">Select Class</option>
-                        {classes.map((c: any) => (
-                            <option key={c.id || `class-${Math.random()}`} value={c.id}>{c.name}</option>
+                        {classes.map((c: any, idx) => (
+                            <option key={c.id || `class-${idx}`} value={c.id}>{c.name}</option>
                         ))}
                     </select>
                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500 dark:text-gray-400">
