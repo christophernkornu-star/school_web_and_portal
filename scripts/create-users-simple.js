@@ -1,8 +1,14 @@
 const { createClient } = require('@supabase/supabase-js')
 
 // Initialize Supabase client with service role key
-const supabaseUrl = 'https://okfawhokrtkaibhbcjdk.supabase.co'
-const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9rZmF3aG9rcnRrYWliaGJjamRrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MzU4NjUzNSwiZXhwIjoyMDc5MTYyNTM1fQ.97ZPD5XS4sOJSVSukuO0YiTBl-oRZ8CLTgtoS27UHis'
+require('dotenv').config({ path: '.env.local' })
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Error: NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not found in environment variables')
+  process.exit(1)
+}
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
