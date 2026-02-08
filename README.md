@@ -65,4 +65,4 @@ See `database/schema.sql` for the complete database structure.
 
 ## License
 
-Proprietary - Biriwa Methodist 'C' Basic School
+Proprietary - Fortune Nkornu
