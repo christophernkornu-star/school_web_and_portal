@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { format } from 'date-fns'
 
 export default function LatestNews({ news }: { news: any[] }) {
   const [selectedNews, setSelectedNews] = useState<any>(null)
@@ -41,7 +42,7 @@ export default function LatestNews({ news }: { news: any[] }) {
                 <h4 className="text-xl font-bold text-gray-800 mt-2 mb-3">{item.title}</h4>
                 <p className="text-gray-600 text-sm mb-4">{item.summary || item.content.substring(0, 100) + '...'}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">{new Date(item.created_at).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-500">{format(new Date(item.created_at), 'dd MMM, yyyy')}</span>
                   <button className="text-methodist-blue hover:text-ghana-green font-semibold text-sm flex items-center gap-1">
                     Read More
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
