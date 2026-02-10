@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, Megaphone, Bell } from 'lucide-react'
+import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, Megaphone, Bell, Award } from 'lucide-react'
 import { signOut } from '@/lib/auth'
 import type { Student, Profile } from '@/lib/supabase'
 import { useStudent } from '@/components/providers/StudentContext'
@@ -328,6 +328,16 @@ export default function StudentDashboard() {
             <div>
               <h3 className="font-bold text-gray-800 group-hover:text-ghana-green transition-colors">Results</h3>
               <p className="text-sm text-gray-500 mt-1 leading-tight">Check your exam scores and grades</p>
+            </div>
+          </Link>
+
+          <Link href="/student/mock-results" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-pink-200 transition-all duration-300 flex items-start space-x-4">
+            <div className="bg-pink-50 p-3 rounded-xl group-hover:bg-pink-100 transition-colors">
+              <Award className="w-6 h-6 text-pink-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 group-hover:text-pink-600 transition-colors">Mock Results</h3>
+              <p className="text-sm text-gray-500 mt-1 leading-tight">View BECE mock performance</p>
             </div>
           </Link>
 
