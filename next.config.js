@@ -1,7 +1,7 @@
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   cacheOnFrontEndNav: true,
-  aggressiveFrontEndNavCaching: true,
+  aggressiveFrontEndNavCaching: false, // Changed to false to prevent blue screen/stale shell
   reloadOnOnline: true,
   swcMinify: true,
   disable: process.env.NODE_ENV === "development",
@@ -9,32 +9,32 @@ const withPWA = require("@ducanh2912/next-pwa").default({
     disableDevLogs: true,
     exclude: [
       /middleware-manifest\.json$/,
-      /_next\/static\/.*(?<!\.js)$/, // exclude non-js files in static
+      /_next\/static\/.*(?<!\.js)$/,
       /build-manifest\.json$/,
       /react-loadable-manifest\.json$/
     ],
-    // Force network for next static chunks to update cache on deployment
     runtimeCaching: [
       {
         urlPattern: /_next\/static\/.*/i,
-        handler: "NetworkFirst",
+        handler: "NetworkFirst", // Ensure we get fresh chunks
         options: {
           cacheName: "next-static-js-assets",
           expiration: {
             maxEntries: 200,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60,
           },
           networkTimeoutSeconds: 10,
         },
       },
       {
+         // Supabase API - reduced cache time significantly
         urlPattern: /^https:\/\/okfawhokrtkaibhbcjdk\.supabase\.co\/rest\/v1\/.*/i,
         handler: "NetworkFirst",
         options: {
           cacheName: "supabase-api-cache",
           expiration: {
             maxEntries: 200,
-            maxAgeSeconds: 24 * 60 * 60 * 30, // 30 Days
+            maxAgeSeconds: 60 * 60, // Reduced from 30 days to 1 hour
           },
           networkTimeoutSeconds: 10,
         },
