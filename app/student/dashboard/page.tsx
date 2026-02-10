@@ -172,6 +172,11 @@ export default function StudentDashboard() {
 
 
 
+  const isBasic9 = student?.classes?.name && (
+    student.classes.name.toLowerCase().includes('basic 9') || 
+    student.classes.name.toLowerCase().includes('jhs 3')
+  )
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -331,6 +336,7 @@ export default function StudentDashboard() {
             </div>
           </Link>
 
+          {isBasic9 && (
           <Link href="/student/mock-results" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-pink-200 transition-all duration-300 flex items-start space-x-4">
             <div className="bg-pink-50 p-3 rounded-xl group-hover:bg-pink-100 transition-colors">
               <Award className="w-6 h-6 text-pink-600" />
@@ -340,6 +346,7 @@ export default function StudentDashboard() {
               <p className="text-sm text-gray-500 mt-1 leading-tight">View BECE mock performance</p>
             </div>
           </Link>
+          )}
 
           <Link href="/student/attendance" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-purple-200 transition-all duration-300 flex items-start space-x-4">
             <div className="bg-purple-50 p-3 rounded-xl group-hover:bg-purple-100 transition-colors">
