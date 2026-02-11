@@ -7,6 +7,8 @@ import HeroCarousel from '@/components/HeroCarousel'
 import LatestNews from '@/components/LatestNews'
 import SiteHeader from '@/components/SiteHeader'
 
+export const dynamic = 'force-dynamic'
+
 // Service role client needed for public data fetching bypass
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
