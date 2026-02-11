@@ -7,6 +7,7 @@ import ThemeInitializer from '@/components/ThemeInitializer'
 import { ScrollRestorationProvider } from '@/components/ScrollRestorationProvider'
 import { Toaster } from 'react-hot-toast'
 import { CommandPalette } from '@/components/CommandPalette'
+import ServiceWorkerDevFix from '@/components/ServiceWorkerDevFix'
 
 const inter = Inter({ subsets: ['latin'] })
 const poppins = Poppins({ 
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className={`${inter.className} ${poppins.variable} min-h-screen bg-gray-50 dark:bg-gray-900`}>
         <ScrollRestorationProvider>
           <ThemeInitializer />
+          <ServiceWorkerDevFix />
           <PWAInstallPrompt />
           <InactivityHandler />
           <CommandPalette />

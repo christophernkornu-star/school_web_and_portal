@@ -129,11 +129,14 @@ export default function AdminGalleryPage() {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this photo?')) {
       try {
-        await supabase.from('gallery_photos').delete().eq('id', id)
+        const { error } = await supabase.from('gallery_photos').delete().eq('id', id)
+        if (error) throw error
+        
         toast.success('Photo deleted successfully')
         fetchPhotos()
-      } catch (error) {
-        toast.error('Failed to delete photo')
+      } catch (error: any) {
+        toast.error('Failed to delete photo: ' + (error.message || 'Unknown error'))
+        console.error(error)
       }
     }
   }
@@ -400,13 +403,42 @@ export default function AdminGalleryPage() {
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Album Name</label>
-                  <input
-                    type="text"
-                    value={formData.album_name}
-                    onChange={(e) => setFormData({...formData, album_name: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
-                    placeholder="e.g., Sports, Cultural Day, Graduation"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      list="existing-albums"
+                      value={formData.album_name}
+                      onChange={(e) => setFormData({...formData, album_name: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
+                      placeholder="Select existing or type new album name"
+                    />
+                    <datalist id="existing-albums">
+                      {albums.map((album) => (
+                        <option key={album} value={album} />
+                      ))}
+                    </datalist>
+                    
+                    {/* Quick Select Pills */}
+                    {albums.length > 0 && (
+                      <div className="flex flex-wrap gap-2 items-center">
+                        <span className="text-xs text-gray-500">Existing albums:</span>
+                        {albums.map(album => (
+                          <button
+                            key={album}
+                            type="button"
+                            onClick={() => setFormData(prev => ({ ...prev, album_name: album }))}
+                            className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                              formData.album_name === album
+                                ? 'bg-methodist-blue text-white border-methodist-blue'
+                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            {album}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 mt-1">Group photos into albums (default: General)</p>
                 </div>
                 <div>

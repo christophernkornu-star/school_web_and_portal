@@ -48,15 +48,6 @@ export default async function HomePage() {
   
   const schoolHours = schoolSettings?.school_hours || 'Monday - Friday:\n7:30 AM - 3:00 PM'
 
-  if (!galleryPhotos || galleryPhotos.length === 0) {
-    const { data: fallbackPhotos } = await supabaseAdmin
-      .from('gallery_photos')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(5)
-    galleryPhotos = fallbackPhotos || []
-  }
-
   // Fetch stats settings
   const { data: settings } = await supabaseAdmin
     .from('system_settings')
