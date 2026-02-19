@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { createUserAction } from '@/app/actions/create-user'
 import { useAdmin } from '@/components/providers/AdminContext'
 import { Skeleton } from '@/components/ui/skeleton'
-import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
+import { PageHeader } from '@/components/ui/page-header'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 const PAGE_SIZE = 20
 
@@ -92,364 +93,201 @@ export default function StudentsPage() {
   }
 
   const handleDeleteStudent = async (studentId: string, profileId: string) => {
+    if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) return
+    
     try {
       const response = await fetch('/api/admin/delete-student', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ studentId }),
+        body: JSON.stringify({ studentId, profileId }),
       })
 
-      const data = await response.json()
+      if (!response.ok) throw new Error('Failed to delete student')
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete student')
-      }
-
-      toast.success('Student deleted successfully!')
-      loadStudents() // Refresh the list
-    } catch (error: any) {
+      toast.success('Student deleted successfully')
+      loadStudents() // Reload list
+    } catch (error) {
       console.error('Error deleting student:', error)
-      toast.error(error.message || 'Failed to delete student')
+      toast.error('Failed to delete student')
     }
   }
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
-    setPage(1)
-  }
-
-  const handleClassFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setClassFilter(e.target.value)
-    setPage(1)
-  }
-
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
-
   if (loading && students.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Header Skeleton */}
-        <div className="bg-white shadow sticky top-0 z-10">
-          <div className="container mx-auto px-4 sm:px-6 py-4">
-              <div className="flex justify-between items-center gap-4">
-                  <div className="flex items-center gap-3">
-                      <Skeleton className="w-8 h-8 rounded-full" />
-                      <div>
-                          <Skeleton className="w-48 h-6 mb-1" />
-                          <Skeleton className="w-24 h-4" />
-                      </div>
-                  </div>
-                  <Skeleton className="w-32 h-10 rounded-lg" />
-              </div>
-          </div>
-        </div>
-
-        {/* Content Skeleton */}
-        <div className="container mx-auto px-4 sm:px-6 py-6">
-            {/* Filters Skeleton */}
-            <div className="bg-white rounded-lg shadow p-4 mb-6">
-                <div className="flex flex-col md:flex-row gap-4">
-                    <Skeleton className="h-10 w-full md:w-64" />
-                    <Skeleton className="h-10 w-full md:w-32" />
-                </div>
-            </div>
-
-            {/* Table Skeleton */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <div className="p-4 border-b">
-                   <div className="flex justify-between items-center">
-                       <Skeleton className="w-1/4 h-6" />
-                       <Skeleton className="w-1/6 h-6" />
-                       <Skeleton className="w-1/6 h-6" />
-                       <Skeleton className="w-1/6 h-6" />
-                   </div>
-                </div>
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                    <div key={i} className="p-4 border-b flex justify-between items-center bg-white">
-                        <div className="flex items-center gap-3 w-1/4">
-                             <Skeleton className="w-10 h-10 rounded-full" />
-                             <div>
-                                  <Skeleton className="w-32 h-5 mb-1" />
-                                  <Skeleton className="w-20 h-3" />
-                             </div>
-                        </div>
-                        <Skeleton className="w-1/6 h-4" />
-                        <Skeleton className="w-1/6 h-4" />
-                        <div className="flex gap-2 w-1/6 justify-end">
-                            <Skeleton className="w-8 h-8 rounded" />
-                            <Skeleton className="w-8 h-8 rounded" />
-                        </div>
-                    </div>
-                ))}
-            </div>
+      <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-8 space-y-6">
+        <Skeleton className="h-10 w-1/3 mb-6" />
+        <Skeleton className="h-32 w-full rounded-lg" />
+        <div className="space-y-4">
+             {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 w-full" />)}
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow sticky top-0 z-10">
-        <div className="container mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-3">
-              <BackButton href="/admin/dashboard" />
-              <div>
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 leading-tight">Student Management</h1>
-                <p className="text-xs sm:text-sm text-gray-600">View and manage all students</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <Link 
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <PageHeader 
+          title="Student Management" 
+          description="View and manage all students in the system."
+        >
+            <Link
                 href="/admin/students/add"
-                className="bg-methodist-blue text-white px-3 py-2 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2 flex-1 sm:flex-none text-sm whitespace-nowrap"
-              >
+                className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm"
+            >
                 <Plus className="w-4 h-4" />
                 <span>Add Student</span>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className={`container mx-auto px-4 md:px-6 py-6 md:py-8 transition-opacity duration-200 ${loading && students.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+            </Link>
+        </PageHeader>
+        
         {/* Filters */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by name or ID..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent"
-              />
-            </div>
-            <div className="relative md:w-64">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <select
-                value={classFilter}
-                onChange={handleClassFilter}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent appearance-none"
-              >
-                <option value="all">All Classes</option>
-                {classes.map(cls => (
-                  <option key={cls.id} value={cls.id}>{cls.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center justify-end md:w-auto">
-              <span className="text-gray-600 text-sm bg-gray-100 px-3 py-2 rounded-lg whitespace-nowrap">
-                <strong>{totalCount}</strong> students
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Card View */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:hidden">
-          {students.map((student) => (
-            <div key={student.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex flex-col">
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg">{student.first_name} {student.middle_name ? `${student.middle_name} ` : ''}{student.last_name}</h3>
-                  <p className="text-sm text-gray-500 font-mono">{student.student_id}</p>
-                </div>
-                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {student.status}
-                </span>
+        <Card>
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+              <div className="relative w-full sm:w-auto flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search by name or ID..."
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
               
-              <div className="space-y-2 text-sm text-gray-600 mb-4 flex-grow">
-                <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                  <span className="font-medium text-gray-500">Class</span>
-                  <span className="font-semibold text-gray-900">{student.classes?.name || 'N/A'}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                  <span className="font-medium text-gray-500">Gender</span>
-                  <span>{student.gender}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                  <span className="font-medium text-gray-500">Guardian</span>
-                  <span className="text-right truncate max-w-[150px]">{student.guardian_name}</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="font-medium text-gray-500">Phone</span>
-                  <span className="font-mono">{student.guardian_phone}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-3 border-t mt-auto">
-                <Link 
-                  href={`/admin/students/${student.id}`} 
-                  className="flex items-center justify-center space-x-2 text-methodist-blue hover:bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 transition-colors"
+              <div className="relative w-full sm:w-auto min-w-[200px]">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <select
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  value={classFilter}
+                  onChange={(e) => setClassFilter(e.target.value)}
                 >
-                  <Edit className="w-4 h-4" />
-                  <span className="text-sm font-medium">Edit</span>
-                </Link>
-                <button 
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete ${student.first_name} ${student.last_name}?`)) {
-                      handleDeleteStudent(student.id, student.profile_id)
-                    }
-                  }}
-                  className="flex items-center justify-center space-x-2 text-red-600 hover:bg-red-50 px-3 py-2 rounded-lg border border-red-200 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="text-sm font-medium">Delete</span>
-                </button>
+                  <option value="all">All Classes</option>
+                  {classes.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
-          ))}
-        </div>
+          </CardContent>
+        </Card>
 
-        {/* Desktop Table View */}
-        <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Class</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Guardian</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {students.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {student.student_id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{student.first_name} {student.middle_name ? `${student.middle_name} ` : ''}{student.last_name}</div>
-                      <div className="text-sm text-gray-500">{student.profiles?.email}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {student.classes?.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {student.gender}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{student.guardian_name}</div>
-                      <div className="text-sm text-gray-500">{student.guardian_phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {student.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link href={`/admin/students/${student.id}`} className="text-methodist-blue hover:text-blue-700">
-                          <Edit className="w-4 h-4" />
-                        </Link>
-                        <button 
-                          onClick={() => {
-                            if (confirm(`Are you sure you want to delete ${student.first_name} ${student.last_name}?`)) {
-                              handleDeleteStudent(student.id, student.profile_id)
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+        {/* Table */}
+        <Card>
+          <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-900 dark:text-gray-300 border-b dark:border-gray-700">
+                  <tr>
+                    <th scope="col" className="px-6 py-3 font-semibold">Student Info</th>
+                    <th scope="col" className="px-6 py-3 font-semibold hidden md:table-cell">Details</th>
+                    <th scope="col" className="px-6 py-3 font-semibold">Class</th>
+                    <th scope="col" className="px-6 py-3 font-semibold text-center">Status</th>
+                    <th scope="col" className="px-6 py-3 font-semibold text-right">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {students.length === 0 && !loading && (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-            <p className="text-gray-600 mb-6">
-              {searchTerm || classFilter !== 'all' 
-                ? 'Try adjusting your search or filters' 
-                : 'Get started by adding your first student'}
-            </p>
-            <Link 
-              href="/admin/students/add"
-              className="inline-flex items-center px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              Add Student
-            </Link>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {totalCount > 0 && (
-          <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-4 rounded-lg shadow">
-            <div className="flex flex-1 justify-between sm:hidden">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{students.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0}</span> to <span className="font-medium">{Math.min(page * PAGE_SIZE, totalCount)}</span> of{' '}
-                  <span className="font-medium">{totalCount}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                  <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                  </button>
-                  
-                  <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                    Page {page} of {totalPages || 1}
-                  </span>
-
-                  <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page >= totalPages}
-                    className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Next</span>
-                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                  </button>
-                </nav>
-              </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                  {students.map((student) => (
+                    <tr key={student.id} className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">
+                            {student.first_name[0]}{student.last_name[0]}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-gray-900 dark:text-white">
+                              {student.last_name} {student.first_name}
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center text-xs text-gray-500 dark:text-gray-400 sm:gap-2">
+                               <span>{student.student_id}</span>
+                               <span className="hidden sm:inline">•</span>
+                               <span className="truncate max-w-[150px]">{student.email || 'No Email'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 hidden md:table-cell">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                              <div className="flex items-center gap-1">
+                                  <span className="font-medium">DOB:</span>
+                                  <span>{student.date_of_birth || 'N/A'}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                  <span className="font-medium">Gender:</span>
+                                  <span className="capitalize">{student.gender || 'N/A'}</span>
+                              </div>
+                          </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="secondary" className="font-medium">
+                          {student.classes?.name || 'Unassigned'}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                          <Badge variant={student.status === 'active' ? 'success' : 'secondary'}>
+                              {student.status || 'Active'}
+                          </Badge>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link 
+                              href={`/admin/students/${student.id}`}
+                              className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/40 dark:text-gray-400 dark:hover:text-blue-400 rounded-md transition-colors"
+                              title="View Details"
+                          >
+                              <Edit className="w-4 h-4" />
+                          </Link>
+                          <button
+                              onClick={() => handleDeleteStudent(student.id, student.profile_id)}
+                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 dark:text-gray-400 dark:hover:text-red-400 rounded-md transition-colors"
+                              title="Delete Student"
+                          >
+                              <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* Empty State */}
+              {students.length === 0 && !loading && (
+                  <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                      <p>No students found matching your criteria.</p>
+                  </div>
+              )}
             </div>
           </div>
-        )}
-      </main>
+          
+          {/* Pagination Footer */}
+          <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
+               <div className="text-sm text-gray-500 dark:text-gray-400">
+                   Showing {students.length} of {totalCount} students
+               </div>
+               <div className="flex gap-2">
+                   <button 
+                      disabled={page === 1}
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors text-gray-700 dark:text-gray-300"
+                   >
+                       Previous
+                   </button>
+                   <button 
+                      disabled={students.length < PAGE_SIZE}
+                      onClick={() => setPage(p => p + 1)}
+                      className="px-3 py-1 border border-gray-200 dark:border-gray-700 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50 transition-colors text-gray-700 dark:text-gray-300"
+                   >
+                       Next
+                   </button>
+               </div>
+          </div>
+        </Card>
+      </div>
     </div>
   )
 }

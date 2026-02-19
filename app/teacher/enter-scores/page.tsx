@@ -538,8 +538,8 @@ export default function EnterScores() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="ghana-flag-border bg-white shadow-md mb-8">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <header className="ghana-flag-border bg-white dark:bg-gray-800 shadow-md mb-8">
             <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
                  <div className="flex items-center space-x-3">
                     <Skeleton className="w-10 h-10 rounded-full" />
@@ -552,7 +552,7 @@ export default function EnterScores() {
             </div>
         </header>
         <main className="max-w-7xl mx-auto px-4 space-y-8">
-             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Skeleton className="h-10 w-full rounded-md" />
                     <Skeleton className="h-10 w-full rounded-md" />
@@ -560,8 +560,8 @@ export default function EnterScores() {
                 </div>
              </div>
              
-             <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100">
-                <div className="p-4 border-b border-gray-100">
+             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
+                <div className="p-4 border-b border-gray-100 dark:border-gray-700">
                      <Skeleton className="h-6 w-48" />
                 </div>
                 <div className="p-4 space-y-4">
@@ -578,7 +578,7 @@ export default function EnterScores() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <style jsx global>{`
         /* Hide spinner controls for number inputs */
         input[type=number]::-webkit-inner-spin-button, 
@@ -590,9 +590,10 @@ export default function EnterScores() {
           -moz-appearance: textfield;
         }
       `}</style>
-      <header className="bg-white shadow">
-        {/* Header */}
-        <div className="ghana-flag-border bg-white shadow-md">
+      
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+        <div className="ghana-flag-border bg-white dark:bg-gray-800 shadow-md">
           <nav className="container mx-auto px-4 md:px-6 py-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center space-x-3">
@@ -601,18 +602,19 @@ export default function EnterScores() {
                   <h1 className="text-base md:text-xl font-bold text-ghana-green">
                     Biriwa Methodist 'C' Basic School
                   </h1>
-                  <p className="text-[10px] md:text-xs text-gray-600">Teacher Portal - Enter Scores</p>
+                  <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">Teacher Portal - Enter Scores</p>
                 </div>
               </div>
               <BackButton 
                 label="Back to Dashboard" 
-                className="text-gray-700 hover:text-ghana-green gap-2" 
+                className="text-gray-700 dark:text-gray-300 hover:text-ghana-green gap-2" 
               />
             </div>
           </nav>
         </div>
-        
-        <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      </div>
+      
+      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
           {isReadOnly && (
             <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow-sm">
               <div className="flex items-center">
@@ -630,10 +632,10 @@ export default function EnterScores() {
           {/* Header */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 mb-2">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
                 Enter Student Scores
               </h2>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {selectedClass && selectedSubject && selectedAssessment
                   ? `Class: ${assignments.find(a => a.class_id === selectedClass)?.classes?.name} | Subject: ${assignments.find(a => a.subject_id === selectedSubject)?.subjects?.name} | Assessment: ${assessments.find(a => a.id === selectedAssessment)?.assessment_name}` 
                   : 'Please select a class, subject, and assessment to begin.'}
@@ -642,16 +644,16 @@ export default function EnterScores() {
           </div>
 
           {/* Selection Filters */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-100 dark:border-gray-700">
             <div className="grid md:grid-cols-3 gap-4 mb-4">
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Select Class
                 </label>
                 <select
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="input-field"
+                  className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-gold focus:border-transparent transition-colors"
                 >
                   <option value="">-- Select Class --</option>
                   {Array.from(new Set(assignments.map(a => a.class_id))).map((classId) => {
@@ -666,13 +668,13 @@ export default function EnterScores() {
               </div>
 
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Select Subject
                 </label>
                 <select
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="input-field"
+                  className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-gold focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!selectedClass}
                 >
                   <option value="">-- Select Subject --</option>
@@ -711,14 +713,14 @@ export default function EnterScores() {
               </div>
 
               <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Select Assessment
                 </label>
                 <div className="flex gap-2">
                   <select
                     value={selectedAssessment}
                     onChange={(e) => setSelectedAssessment(e.target.value)}
-                    className="input-field flex-1"
+                    className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-gold focus:border-transparent transition-colors flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!selectedSubject}
                   >
                     <option value="">-- Select Assessment --</option>
@@ -732,9 +734,9 @@ export default function EnterScores() {
                   {selectedAssessment && (
                     <>
                         <button
-                            onClick={openEditModal}
+                            onClick={() => setShowEditModal(true)}
                             disabled={isReadOnly}
-                            className="bg-gray-100 text-gray-700 border border-gray-300 px-3 py-2 rounded-md hover:bg-gray-200 disabled:opacity-50"
+                            className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
                             title="Edit Assessment"
                         >
                             <Edit className="w-4 h-4" />
@@ -742,7 +744,7 @@ export default function EnterScores() {
                         <button
                             onClick={handleDeleteAssessment}
                             disabled={isReadOnly || deletingId === selectedAssessment}
-                            className="bg-red-50 text-red-600 border border-red-200 px-3 py-2 rounded-md hover:bg-red-100 disabled:opacity-50"
+                            className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50 transition-colors"
                             title="Delete Assessment"
                         >
                             <Trash2 className="w-4 h-4" />
@@ -763,28 +765,28 @@ export default function EnterScores() {
             </div>
           </div>
 
-          {/* Edit Assessment Modal */
-          showEditModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                    <h3 className="text-lg font-bold mb-4">Edit Assessment</h3>
+          {/* Edit Assessment Modal */}
+          {showEditModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Edit Assessment</h3>
                     <form onSubmit={handleUpdateAssessment} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Title</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Title</label>
                             <input 
                                 type="text" 
                                 value={editAssessmentName}
                                 onChange={e => setEditAssessmentName(e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                 required 
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Type</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Type</label>
                             <select 
                                 value={editAssessmentType}
                                 onChange={e => setEditAssessmentType(e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="class_work">Class Work</option>
                                 <option value="homework">Homework</option>
@@ -793,12 +795,12 @@ export default function EnterScores() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Max Score</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Max Score</label>
                             <input 
                                 type="number" 
                                 value={editMaxScore}
                                 onChange={e => setEditMaxScore(e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                 min="1"
                                 required 
                             />
@@ -807,7 +809,7 @@ export default function EnterScores() {
                             <button 
                                 type="button"
                                 onClick={() => setShowEditModal(false)}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             >
                                 Cancel
                             </button>
@@ -824,29 +826,29 @@ export default function EnterScores() {
             </div>
           )}
 
-          {/* Create Assessment Modal */
-          showCreateModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                    <h3 className="text-lg font-bold mb-4">Create New Assessment</h3>
+          {/* Create Assessment Modal */}
+          {showCreateModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Create New Assessment</h3>
                     <form onSubmit={handleCreateAssessment} className="space-y-4">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Title</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Title</label>
                             <input 
                                 type="text" 
                                 value={newAssessmentName}
                                 onChange={e => setNewAssessmentName(e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
                                 placeholder="e.g. Class Exercise 1"
                                 required 
                             />
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Type</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Type</label>
                             <select 
                                 value={newAssessmentType}
                                 onChange={e => setNewAssessmentType(e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                             >
                                 <option value="class_work">Class Work</option>
                                 <option value="homework">Homework</option>
@@ -855,12 +857,12 @@ export default function EnterScores() {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium mb-1">Max Score</label>
+                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Max Score</label>
                             <input 
                                 type="number" 
                                 value={newMaxScore}
                                 onChange={e => setNewMaxScore(e.target.value)}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                 min="1"
                                 required 
                             />
@@ -869,7 +871,7 @@ export default function EnterScores() {
                             <button 
                                 type="button"
                                 onClick={() => setShowCreateModal(false)}
-                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded"
+                                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                             >
                                 Cancel
                             </button>
@@ -888,14 +890,14 @@ export default function EnterScores() {
 
           {/* Students Table */}
           {selectedClass && selectedSubject && selectedAssessment && (
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="p-4 md:p-6 border-b">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+              <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex flex-col">
-                    <h3 className="text-base md:text-lg font-bold text-gray-800">
+                    <h3 className="text-base md:text-lg font-bold text-gray-800 dark:text-gray-100">
                       Enter Scores for {students.length} Students
                     </h3>
-                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-2">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
                        {loadingScores ? (
                          <span className="text-blue-600 animate-pulse">Loading saved scores...</span>
                        ) : lastSaved ? (
@@ -926,7 +928,7 @@ export default function EnterScores() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-ghana-green text-white">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
@@ -940,18 +942,18 @@ export default function EnterScores() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {students.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
+                      <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100">
                           {student.student_id}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                           {student.last_name}, {student.middle_name ? student.middle_name + ', ' : ''}{student.first_name}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
                           {loadingScores ? (
-                            <div className="w-24 h-10 mx-auto bg-gray-100 animate-pulse rounded" />
+                            <div className="w-24 h-10 mx-auto bg-gray-100 dark:bg-gray-700 animate-pulse rounded" />
                           ) : (
                             <input
                               type="number"
@@ -961,7 +963,7 @@ export default function EnterScores() {
                               disabled={isReadOnly}
                               value={scores[student.id] !== undefined ? scores[student.id] : ''}
                               onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                              className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 disabled:cursor-not-allowed"
+                              className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed placeholder-gray-400 dark:placeholder-gray-500"
                               placeholder="0.0"
                             />
                           )}
@@ -975,15 +977,14 @@ export default function EnterScores() {
           )}
 
           {(!selectedClass || !selectedSubject || !selectedAssessment) && (
-            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-12 text-center border border-gray-100 dark:border-gray-700">
+              <Search className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">
                 Please select a class, subject, and assessment to begin entering scores.
               </p>
             </div>
           )}
         </main>
-      </header>
     </div>
   )
 }

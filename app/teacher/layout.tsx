@@ -2,6 +2,7 @@
 
 import { TeacherProvider } from '@/components/providers/TeacherContext'
 import { TeacherStatusBanner } from './components/TeacherStatusBanner'
+import { TeacherLayoutShell } from '@/components/teacher/TeacherLayoutShell'
 
 export default function TeacherLayout({
   children,
@@ -10,8 +11,10 @@ export default function TeacherLayout({
 }) {
   return (
     <TeacherProvider>
-      <TeacherStatusBanner />
-      {children}
+      <TeacherLayoutShell>
+        <TeacherStatusBanner />
+        {children}
+      </TeacherLayoutShell>
     </TeacherProvider>
   )
 }

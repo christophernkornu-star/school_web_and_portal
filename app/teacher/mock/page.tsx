@@ -52,12 +52,12 @@ const getShortSubjectName = (name: string) => {
 function getGradeValue(score: number): number {
   if (score >= 80) return 1
   if (score >= 70) return 2
-  if (score >= 60) return 3
-  if (score >= 55) return 4
-  if (score >= 50) return 5
-  if (score >= 45) return 6
-  if (score >= 40) return 7
-  if (score >= 35) return 8
+  if (score >= 65) return 3
+  if (score >= 60) return 4
+  if (score >= 55) return 5
+  if (score >= 50) return 6
+  if (score >= 45) return 7
+  if (score >= 40) return 8
   return 9
 }
 

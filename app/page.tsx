@@ -14,11 +14,13 @@ import HomeAbout from '@/app/components/home/HomeAbout'
 import HomeFooter from '@/app/components/home/HomeFooter'
 import { HeroSkeleton, NewsSkeleton, EventsSkeleton, StatsSkeleton } from '@/app/components/home/Skeletons'
 
+import { PortalFooter } from '@/components/PortalFooter'
+
 export const dynamic = 'force-dynamic'
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative pb-10">
       <SiteHeader />
 
       {/* Hero Section */}
@@ -198,6 +200,8 @@ export default function HomePage() {
       <Suspense fallback={<div className="h-64 bg-methodist-blue animate-pulse" />}>
         <HomeFooter />
       </Suspense>
+      {/* Footer */}
+      <PortalFooter className="fixed bottom-0 left-0 right-0 border-t shadow-lg" />
     </div>
   )
 }

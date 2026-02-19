@@ -6,6 +6,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { User, Lock, AlertCircle, Menu, X, Eye, EyeOff } from 'lucide-react'
 import { signInWithUsername } from '@/lib/auth'
+import { PortalFooter } from '@/components/PortalFooter'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -72,9 +73,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 overflow-hidden">
+      <header className="sticky top-0 z-50 overflow-hidden flex-none">
         {/* Ghana Flag Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-ghana-red via-ghana-gold to-ghana-green"></div>
         
@@ -192,7 +193,7 @@ export default function LoginPage() {
       </header>
 
       {/* Login Form */}
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto">
         <div className="max-w-md w-full space-y-8">
           {/* School Crest */}
           <div className="text-center">
@@ -310,6 +311,9 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
+      </div>
+      <div className="flex-none">
+        <PortalFooter />
       </div>
     </div>
   )

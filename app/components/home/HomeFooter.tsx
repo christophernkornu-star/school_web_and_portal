@@ -58,8 +58,8 @@ export default async function HomeFooter() {
             <p className="text-gray-300 text-sm whitespace-pre-line">{schoolHours}</p>
           </div>
         </div>
-        <div className="border-t border-gray-600 mt-8 pt-6 text-center text-sm text-gray-300">
-          <p>&copy; 2025 Biriwa Methodist 'C' Basic School. All rights reserved.</p>
+        <div className="border-t border-gray-600 mt-8 pt-6 flex flex-col items-center justify-center gap-2 text-center text-sm text-gray-300 pb-12">
+          <p>&copy; 2026 Biriwa SMS. All rights reserved.</p>
         </div>
       </div>
     </footer>

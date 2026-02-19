@@ -1,6 +1,7 @@
 'use client'
 
 import { AdminProvider } from '@/components/providers/AdminContext'
+import { AdminLayoutShell } from '@/components/admin/AdminLayoutShell'
 
 export default function AdminLayout({
   children,
@@ -9,7 +10,9 @@ export default function AdminLayout({
 }) {
   return (
     <AdminProvider>
-      {children}
+      <AdminLayoutShell>
+        {children}
+      </AdminLayoutShell>
     </AdminProvider>
   )
 }

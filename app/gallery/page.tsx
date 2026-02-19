@@ -57,6 +57,27 @@ export default function GalleryPage() {
         </div>
       </section>
 
+      {/* Leadership Promo */}
+      <section className="bg-white py-12 border-b border-gray-100">
+        <div className="container mx-auto px-6">
+          <div className="bg-gradient-to-r from-blue-50 to-yellow-50 rounded-2xl p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 shadow-sm border border-blue-100/50">
+            <div className="space-y-4 max-w-2xl">
+              <h2 className="text-2xl md:text-3xl font-bold text-blue-900">Meet Our School Leadership</h2>
+              <p className="text-lg text-gray-600">
+                Get to know the dedicated Headteacher, Staff, and Student Prefects who are steering our school towards academic and moral excellence.
+              </p>
+            </div>
+            <Link 
+              href="/leadership" 
+              className="flex-shrink-0 bg-blue-900 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold text-base md:text-lg hover:bg-blue-800 transition-all transform hover:scale-105 shadow-md flex items-center gap-2"
+            >
+              <span>View Leadership & Staff</span>
+              <Star className="w-5 h-5 text-yellow-400 fill-current" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* Featured/Spotlight Photos */}
       {spotlightPhotos.length > 0 && (
         <section className="py-12 bg-gradient-to-b from-white to-gray-50">

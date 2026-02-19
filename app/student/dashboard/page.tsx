@@ -8,6 +8,7 @@ import { signOut } from '@/lib/auth'
 import type { Student, Profile } from '@/lib/supabase'
 import { useStudent } from '@/components/providers/StudentContext'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PortalFooter } from '@/components/PortalFooter'
 
 interface Announcement {
   id: string
@@ -178,9 +179,9 @@ export default function StudentDashboard() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 relative overflow-hidden">
+      <header className="sticky top-0 z-50 relative overflow-hidden flex-none">
         {/* Ghana Flag Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-ghana-red via-ghana-gold to-ghana-green"></div>
         
@@ -213,7 +214,8 @@ export default function StudentDashboard() {
     </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      <main className="flex-1 overflow-y-auto w-full">
+        <div className="container mx-auto px-6 py-8">
         {/* Welcome Section */}
         <div className="bg-gradient-to-br from-methodist-blue to-blue-900 text-white rounded-2xl p-6 md:p-10 mb-8 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
@@ -469,7 +471,11 @@ export default function StudentDashboard() {
             )}
           </div>
         </div>
+        </div>
       </main>
+      <div className="flex-none">
+        <PortalFooter />
+      </div>
     </div>
   )
 }
