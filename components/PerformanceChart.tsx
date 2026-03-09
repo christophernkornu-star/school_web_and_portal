@@ -13,17 +13,23 @@ interface PerformanceChartProps {
   title: string
   lineColor?: string
   showMaxScore?: boolean
+  primaryLineName?: string
+  secondaryLineName?: string
+  className?: string
 }
 
 export default function PerformanceChart({ 
   data, 
   title, 
   lineColor = '#1e40af',
-  showMaxScore = false 
+  showMaxScore = false,
+  primaryLineName = "Your Score",
+  secondaryLineName = "Class Average",
+  className = ""
 }: PerformanceChartProps) {
   if (!data || data.length < 2) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
         <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
         <div className="flex items-center justify-center h-64 text-gray-500">
           <p>Performance trends will appear after 2 or more terms</p>
@@ -33,7 +39,7 @@ export default function PerformanceChart({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className={`bg-white rounded-lg border border-gray-200 p-6 ${className}`}>
       <h3 className="text-lg font-semibold text-gray-800 mb-4">{title}</h3>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -55,7 +61,7 @@ export default function PerformanceChart({
               borderRadius: '8px',
               padding: '8px 12px'
             }}
-            formatter={(value: number) => [`${value.toFixed(1)}%`, 'Score']}
+            formatter={(value: number, name: string) => [`${value.toFixed(1)}%`, name]}
           />
           <Legend 
             wrapperStyle={{ fontSize: '14px' }}
@@ -67,7 +73,7 @@ export default function PerformanceChart({
             strokeWidth={3}
             dot={{ fill: lineColor, r: 5 }}
             activeDot={{ r: 7 }}
-            name="Your Score"
+            name={primaryLineName}
           />
           {showMaxScore && (
             <Line 
@@ -77,7 +83,7 @@ export default function PerformanceChart({
               strokeWidth={2}
               strokeDasharray="5 5"
               dot={{ fill: '#9ca3af', r: 3 }}
-              name="Class Average"
+              name={secondaryLineName}
             />
           )}
         </LineChart>

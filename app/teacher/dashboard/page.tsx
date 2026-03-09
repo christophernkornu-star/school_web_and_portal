@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import PerformanceChart from '@/components/PerformanceChart'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  GraduationCap, 
   Users, 
   FileText, 
   BarChart3, 
@@ -13,24 +13,222 @@ import {
   AlertCircle, 
   CheckCircle, 
   ClipboardList,
-  UserCheck
+  Clock,
+  Bell,
+  TrendingUp,
+  LayoutDashboard
 } from 'lucide-react'
-import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useTeacher } from '@/components/providers/TeacherContext'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PageHeader } from '@/components/ui/page-header'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Tooltip } from '@/components/ui/tooltip-custom'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
 export default function TeacherDashboard() {
-  const router = useRouter()
-  const { user, teacher, profile, loading: contextLoading, dashboardData, fetchDashboardData } = useTeacher()
-  const [assignments, setAssignments] = useState<any[]>([])
+  const router = useRouter() // Re-added router
+  
+  const { user, teacher, loading: contextLoading, dashboardData, fetchDashboardData } = useTeacher()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [studentCount, setStudentCount] = useState(0)
-  const [currentTerm, setCurrentTerm] = useState<string>('N/A')
-  const [attendanceRate, setAttendanceRate] = useState<string>('-')
+  const [currentTime, setCurrentTime] = useState(new Date())
+  const [greeting, setGreeting] = useState('')
+  const [announcements, setAnnouncements] = useState<any[]>([])
+  const [announcementsLoading, setAnnouncementsLoading] = useState(true)
+  
+  // Performance Chart Data State
+  const [performanceData, setPerformanceData] = useState<any[]>([])
+  const [performanceLoading, setPerformanceLoading] = useState(true)
+
+  // Load Performance Data
+  useEffect(() => {
+    async function loadPerformanceStats() {
+       if (!dashboardData?.assignments || !teacher?.teacher_id) return;
+
+       setPerformanceLoading(true);
+       const supabase = getSupabaseBrowserClient();
+
+       try {
+           // 1. Try Optimized RPC Call first
+           const { data: rpcData, error: rpcError } = await supabase.rpc('get_teacher_performance_overview', {
+               p_teacher_id: teacher.teacher_id
+           });
+
+           if (!rpcError && rpcData && rpcData.length > 0) {
+               // Map RPC data to chart format
+               const chartData = rpcData.map((d: any) => ({
+                   termName: d.term_name,
+                   score: Math.round(d.average_score),
+                   maxScore: Math.round(d.max_score || 0)
+               }));
+               setPerformanceData(chartData);
+               setPerformanceLoading(false);
+               return; // Exit if RPC succeeded
+           } else if (rpcError) {
+               console.warn("RPC Optimization failed/not found, falling back to manual aggregation:", rpcError.message);
+               // Continue to fallback...
+           } else if (rpcData && rpcData.length === 0) {
+              // RPC returned empty, maybe no data. Fallback might find same, but let's try just in case logic differs.
+              // Actually if RPC returns empty, it means no data found.
+              console.log("RPC returned no data, checking fallback manually just in case...");
+           }
+
+       } catch (err) {
+           console.error("Error attempting optimized query:", err);
+       }
+
+       // --- FALBACK: Manual Waterfall (Existing Logic) ---
+
+       try {
+            // 1. Get Teacher's Class IDs
+            const classIds = dashboardData.assignments.map((a: any) => a.class_id).filter(Boolean);
+            if (classIds.length === 0) {
+                setPerformanceData([]);
+                setPerformanceLoading(false);
+                return;
+            }
+
+            // 2. Fetch Last 4 Terms
+            const { data: terms, error: termsError } = await supabase
+                .from('academic_terms')
+                .select('id, name, start_date')
+                .order('start_date', { ascending: false }) // Most recent first
+                .limit(4);
+                
+            if (termsError || !terms || terms.length === 0) {
+                console.error("Error fetching terms or no terms found:", termsError);
+                setPerformanceLoading(false);
+                return;
+            }
+            
+            // Reverse to chronological order for chart (Oldest -> Newest)
+            const sortedTerms = [...terms].reverse();
+            const termIds = sortedTerms.map((t: any) => t.id);
+
+            // 3. Fetch Student IDs in Classes
+            // Validate UUIDs to prevent "operator does not exist" errors
+            const validClassIds = classIds.filter((id: string) => 
+                /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+            );
+
+            if (validClassIds.length === 0) { 
+                setPerformanceLoading(false);
+                return;
+            }
+
+            const { data: students, error: studentsError } = await supabase
+                .from('students')
+                .select('id')
+                .in('class_id', validClassIds) // Use validated IDs
+                .eq('status', 'active');
+                
+            if (studentsError) {
+                console.error("Error fetching students:", studentsError);
+                setPerformanceLoading(false);
+                return;
+            }
+
+            const studentIds = students?.map((s: any) => s.id) || [];
+            if (studentIds.length === 0) {
+                setPerformanceLoading(false);
+                return;
+            }
+
+            // 4. Fetch Scores
+            const { data: scores, error: scoresError } = await supabase
+                .from('scores')
+                .select('total, term_id')
+                .in('term_id', termIds)
+                .in('student_id', studentIds);
+                
+            if (scoresError) {
+                console.error("Error fetching scores:", scoresError);
+                setPerformanceLoading(false);
+                return;
+            }
+
+            if (!scores) {
+                setPerformanceLoading(false);
+                return;
+            }
+
+            // 5. Aggregate Data per Term
+            const chartData = sortedTerms.map((term: any) => {
+                const termScores = scores
+                    .filter((s: any) => s.term_id === term.id)
+                    .map((s: any) => s.total || 0);
+
+                if (termScores.length === 0) {
+                    // Use previous term's average or 0 if none
+                    return { termName: term.name, score: 0, maxScore: 0 };
+                }
+
+                const avg = termScores.reduce((a: number, b: number) => a + b, 0) / termScores.length;
+                const max = Math.max(...termScores);
+
+                return {
+                    termName: term.name,
+                    score: Math.round(avg),
+                    maxScore: Math.round(max)
+                };
+            });
+
+            setPerformanceData(chartData);
+
+       } catch (fallbackError) {
+           console.error("Fallback aggregation failed:", fallbackError);
+       } finally {
+            setPerformanceLoading(false);
+       }
+    }
+
+    if (!contextLoading && dashboardData && teacher) {
+        loadPerformanceStats();
+    }
+  }, [contextLoading, dashboardData, teacher]);
+
+  // Update time and greeting
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
+    
+    // Initial set
+    const updateGreeting = () => {
+      const hour = new Date().getHours()
+      if (hour < 12) setGreeting('Good Morning')
+      else if (hour < 18) setGreeting('Good Afternoon')
+      else setGreeting('Good Evening')
+    }
+    
+    updateGreeting()
+    
+    return () => clearInterval(timer)
+  }, [])
+
+  // Load Announcements
+  useEffect(() => {
+    const loadAnnouncements = async () => {
+      const supabase = getSupabaseBrowserClient()
+      try {
+        const { data } = await supabase
+            .from('announcements')
+            .select('*')
+            .eq('published', true)
+            .or(`expires_at.is.null,expires_at.gte.${new Date().toISOString()}`)
+            .order('priority', { ascending: false }) // orders based on text unfortunately if not enum, but usually works if urgent/high/normal
+            .order('created_at', { ascending: false })
+            .limit(5)
+        
+        if (data) setAnnouncements(data)
+      } catch (err) {
+        console.error("Failed to load announcements", err)
+      } finally {
+        setAnnouncementsLoading(false)
+      }
+    }
+    
+    loadAnnouncements()
+  }, [])
 
   useEffect(() => {
     if (contextLoading) return
@@ -47,12 +245,7 @@ export default function TeacherDashboard() {
     }
 
     if (dashboardData) {
-      setAssignments(dashboardData.assignments)
-      setStudentCount(dashboardData.stats.studentCount)
-      setAttendanceRate(dashboardData.stats.attendanceRate)
-      if (dashboardData.currentTerm) setCurrentTerm(dashboardData.currentTerm)
       setLoading(false)
-      
       if (Date.now() - dashboardData.lastFetched > 60 * 1000) {
         fetchDashboardData()
       }
@@ -61,9 +254,7 @@ export default function TeacherDashboard() {
     }
   }, [user, teacher, contextLoading, dashboardData, fetchDashboardData, router])
 
-  if (loading) {
-    return <DashboardSkeleton />
-  }
+  if (loading) return <DashboardSkeleton />
 
   if (error || !teacher) {
     return (
@@ -77,183 +268,343 @@ export default function TeacherDashboard() {
             <CardDescription>{error || 'Teacher profile not found.'}</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              Retry Connection
-            </button>
+            <Button onClick={() => window.location.reload()}>Retry Connection</Button>
           </CardContent>
         </Card>
       </div>
     )
   }
 
+  const assignmentsCount = dashboardData?.assignments?.length || 0
+  const studentCount = dashboardData?.stats?.studentCount || 0
+  const attendanceRate = dashboardData?.stats?.attendanceRate || '0%'
+  const currentTerm = dashboardData?.currentTerm || 'Term 1'
+  
+  // Logic for displaying classes
+  const assignedClasses = dashboardData?.assignments?.map((a: any) => a.classes?.class_name).filter(Boolean) || []
+  let classDisplayStr = 'No Classes'
+  let classTooltipStr = ''
+  
+  if (assignedClasses.length === 1) {
+    classDisplayStr = assignedClasses[0]
+    classTooltipStr = assignedClasses[0]
+  } else if (assignedClasses.length > 1) {
+    classDisplayStr = `${assignedClasses.length} Classes`
+    classTooltipStr = assignedClasses.join(', ')
+  }
+
+  // Calculate unique subjects taught
+  const subjectsTaughtList = Array.from(new Set(
+    (dashboardData?.assignments || []).reduce((acc: string[], curr: any) => {
+        return [...acc, ...(curr.subjects || [])];
+    }, []) as string[]
+  ));
+
+  const getPriorityColor = (priority: string) => {
+      switch(priority?.toLowerCase()) {
+          case 'urgent': return 'text-red-500 bg-red-50 dark:bg-red-900/20'
+          case 'high': return 'text-orange-500 bg-orange-50 dark:bg-orange-900/20'
+          default: return 'text-blue-500 bg-blue-50 dark:bg-blue-900/20'
+      }
+  }
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="bg-gray-50/50 dark:bg-gray-900 min-h-screen pb-10">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
       
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-br from-blue-900 to-blue-800 text-white rounded-xl p-6 md:p-8 shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 bg-white/5 backdrop-blur-sm opacity-10"></div>
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight">
-                Welcome, {teacher.first_name}!
-              </h2>
-              <div className="flex flex-wrap items-center gap-3 text-blue-100 text-sm font-medium">
-                <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-sm">
-                  ID: {teacher.teacher_id}
-                </Badge>
-                <span className="opacity-60">•</span>
-                <span>{teacher.specialization || 'General Education'}</span>
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-xl mt-6">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl"></div>
+          
+          <div className="relative z-10 p-8 md:p-10">
+            <div className="flex flex-col md:flex-row justify-between gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+                    {greeting}, {(teacher.gender === 'Male' ? 'Sir ' : teacher.gender === 'Female' ? 'Madam ' : '')}{teacher.first_name}
+                  </h1>
+                  <p className="text-blue-200 text-lg flex items-center gap-2">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                    Ready for another productive day?
+                  </p>
+                </div>
+                
+                <div className="flex flex-wrap gap-3">
+                  <Badge variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-0 px-3 py-1">
+                    <Calendar className="w-3 h-3 mr-2" />
+                    {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-0 px-3 py-1">
+                    <Clock className="w-3 h-3 mr-2" />
+                    {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-100 border-0 px-3 py-1">
+                    {currentTerm}
+                  </Badge>
+                </div>
               </div>
-            </div>
-            <div className="hidden md:block">
-              <div className="bg-white/10 p-3 rounded-full backdrop-blur-sm ring-1 ring-white/20">
-                 <GraduationCap className="w-8 h-8 text-yellow-400" />
+
+              <div className="hidden md:block">
+                 <div className="backdrop-blur-md bg-white/10 p-4 rounded-xl border border-white/10 shadow-inner">
+                    <div className="text-sm text-blue-200 mb-1">Weekly Attendance</div>
+                    <div className="text-3xl font-bold text-white flex items-end gap-2">
+                       {attendanceRate}
+                       <span className="text-xs text-green-300 font-medium mb-1 flex items-center">
+                         <TrendingUp className="w-3 h-3 mr-1" /> On Track
+                       </span>
+                    </div>
+                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard 
-            title="My Classes" 
-            value={assignments.length} 
-            icon={BookOpen} 
-            color="text-blue-600 dark:text-blue-400"
-            bg="bg-blue-50 dark:bg-blue-900/20"
-          />
-          <StatsCard 
-            title="Total Students" 
-            value={studentCount} 
-            icon={Users} 
-            color="text-green-600 dark:text-green-400"
-            bg="bg-green-50 dark:bg-green-900/20"
-          />
-          <StatsCard 
-            title="Avg Attendance" 
-            value={attendanceRate} 
-            icon={UserCheck} 
-            color="text-yellow-600 dark:text-yellow-400"
-            bg="bg-yellow-50 dark:bg-yellow-900/20" 
-          />
-          <StatsCard 
-            title="Current Term" 
-            value={currentTerm} 
-            icon={Calendar} 
-            color="text-purple-600 dark:text-purple-400"
-            bg="bg-purple-50 dark:bg-purple-900/20"
-          />
+        {/* Quick Actions Grid */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-5 flex items-center gap-2">
+            <LayoutDashboard className="w-5 h-5 text-blue-600" />
+            Quick Actions
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <QuickActionCard 
+              href="/teacher/attendance"
+              title="Mark Attendance" 
+              description="Daily Roll Call"
+              icon={CheckCircle} 
+              color="text-emerald-600 dark:text-emerald-400"
+              bg="bg-emerald-50 dark:bg-emerald-900/20"
+              borderColor="hover:border-emerald-200 dark:hover:border-emerald-800"
+            />
+            <QuickActionCard 
+              href="/teacher/enter-scores"
+              title="Enter Scores" 
+              description="Record Results"
+              icon={ClipboardList} 
+              color="text-blue-600 dark:text-blue-400"
+              bg="bg-blue-50 dark:bg-blue-900/20"
+              borderColor="hover:border-blue-200 dark:hover:border-blue-800"
+            />
+            <QuickActionCard 
+              href="/teacher/assessments"
+              title="Assessments" 
+              description="Manage Tests"
+              icon={FileText} 
+              color="text-purple-600 dark:text-purple-400"
+              bg="bg-purple-50 dark:bg-purple-900/20"
+              borderColor="hover:border-purple-200 dark:hover:border-purple-800"
+            />
+            <QuickActionCard 
+              href="/teacher/reports"
+              title="Reports" 
+              description="View Progress"
+              icon={BarChart3} 
+              color="text-orange-600 dark:text-orange-400"
+              bg="bg-orange-50 dark:bg-orange-900/20"
+              borderColor="hover:border-orange-200 dark:hover:border-orange-800"
+            />
+          </div>
         </div>
 
-        {/* Main Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Assessment & Grading */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="w-5 h-5 text-blue-600" />
-                Assessments & Grading
-              </CardTitle>
-              <CardDescription>Manage exams, quizzes and scores</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-               <Link href="/teacher/assessments" className="block group">
-                  <div className="flex items-center p-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all border border-transparent hover:border-blue-100 dark:hover:border-blue-800">
-                     <div className="p-2 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg mr-4 group-hover:scale-110 transition-transform">
-                        <FileText className="w-5 h-5" />
-                     </div>
-                     <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">Online Assessments</h4>
-                        <p className="text-xs text-muted-foreground">Create and manage quizzes</p>
-                     </div>
-                  </div>
-               </Link>
-               <Link href="/teacher/enter-scores" className="block group">
-                  <div className="flex items-center p-3 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all border border-transparent hover:border-green-100 dark:hover:border-green-800">
-                     <div className="p-2 bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 rounded-lg mr-4 group-hover:scale-110 transition-transform">
-                        <ClipboardList className="w-5 h-5" />
-                     </div>
-                     <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">Enter Class Scores</h4>
-                        <p className="text-xs text-muted-foreground">Record exam and test results</p>
-                     </div>
-                  </div>
-               </Link>
-            </CardContent>
-          </Card>
+        {/* Dashboard Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-8">
+          
+          {/* Main Info Column */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Overview Stats */}
+            <div className="grid sm:grid-cols-2 gap-4">
+               <Card>
+                 <CardContent className="p-6 flex items-center space-x-4">
+                    <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full dark:bg-indigo-900/30 dark:text-indigo-400">
+                       <BookOpen className="w-6 h-6" />
+                    </div>
+                    <div>
+                       <p className="text-sm font-medium text-muted-foreground">My Classes</p>
+                       <Tooltip content={assignedClasses.length > 0 ? assignedClasses.join(', ') : 'No classes assigned'}>
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white cursor-help decoration-dotted underline hover:text-indigo-600 transition-colors inline-block">
+                            {assignedClasses.length}
+                          </h3>
+                       </Tooltip>
+                    </div>
+                 </CardContent>
+               </Card>
+               <Card>
+                 <CardContent className="p-6 flex items-center space-x-4">
+                    <div className="p-3 bg-pink-100 text-pink-600 rounded-full dark:bg-pink-900/30 dark:text-pink-400">
+                       <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                       <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{studentCount}</h3>
+                    </div>
+                 </CardContent>
+               </Card>
+            </div>
 
-          {/* Class Management */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="w-5 h-5 text-yellow-600" />
-                Class Management
-              </CardTitle>
-              <CardDescription>Daily routines and reporting</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-               <Link href="/teacher/attendance" className="block group">
-                  <div className="flex items-center p-3 rounded-lg hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all border border-transparent hover:border-yellow-100 dark:hover:border-yellow-800">
-                     <div className="p-2 bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-lg mr-4 group-hover:scale-110 transition-transform">
-                        <CheckCircle className="w-5 h-5" />
+            {/* Performance Analysis Chart */}
+            <PerformanceChart 
+              data={performanceData}
+              title="Class Performance Overview"
+              lineColor="#8b5cf6" 
+              showMaxScore={true}
+              primaryLineName="Class Average"
+              secondaryLineName="Target"
+              className="border-l-4 border-l-purple-500 shadow-sm"
+            />
+
+          </div>
+
+          {/* Sidebar Column */}
+          <div className="space-y-6">
+            
+            {/* Notices / Announcements */}
+            <Card className="h-full border-none shadow-md bg-white dark:bg-gray-800 max-h-[500px] flex flex-col">
+               <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
+                 <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Bell className="w-4 h-4 text-orange-500" />
+                      Notice Board
+                    </CardTitle>
+                    <Link href="/teacher/announcements" className="text-xs text-blue-600 hover:underline">
+                      View All
+                    </Link>
+                 </div>
+               </CardHeader>
+               <CardContent className="pt-4 overflow-y-auto flex-1">
+                 {announcementsLoading ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </div>
+                 ) : announcements.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-40 text-muted-foreground text-sm text-center">
+                        <Bell className="w-8 h-8 mb-2 opacity-20" />
+                        <p>No new announcements</p>
+                    </div>
+                 ) : (
+                    <div className="space-y-4">
+                        {announcements.map((announcement) => (
+                         <div key={announcement.id} className="pb-3 border-b border-gray-50 dark:border-gray-700/50 last:border-0 last:pb-0">
+                           <div className="flex items-center justify-between mb-1">
+                              <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${getPriorityColor(announcement.priority)}`}>
+                                 {announcement.priority || 'Notice'}
+                              </span>
+                              <span className="text-[10px] text-gray-400">
+                                 {new Date(announcement.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              </span>
+                           </div>
+                           <h4 className="text-sm font-medium mb-1 leading-snug">{announcement.title}</h4>
+                           <p className="text-xs text-gray-500 line-clamp-2">{announcement.content}</p>
+                        </div>
+                        ))}
+                    </div>
+                 )}
+               </CardContent>
+            </Card>
+
+            {/* Profile Summary */}
+             <Card className="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+               <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                     <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-lg">
+                        {teacher.first_name[0]}{teacher.last_name[0]}
                      </div>
-                     <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">Mark Attendance</h4>
-                        <p className="text-xs text-muted-foreground">Daily student roll call</p>
+                     <div className="overflow-hidden">
+                        <Tooltip content={`${teacher.first_name} ${teacher.last_name}`}>
+                           <div className="font-semibold truncate">{teacher.first_name} {teacher.last_name}</div>
+                        </Tooltip>
+                        <Tooltip content={`Teacher ID: ${teacher.teacher_id}`}>
+                           <div className="text-xs text-muted-foreground truncate">{teacher.teacher_id}</div>
+                        </Tooltip>
                      </div>
                   </div>
-               </Link>
-               <Link href="/teacher/reports" className="block group">
-                  <div className="flex items-center p-3 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all border border-transparent hover:border-purple-100 dark:hover:border-purple-800">
-                     <div className="p-2 bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 rounded-lg mr-4 group-hover:scale-110 transition-transform">
-                        <BarChart3 className="w-5 h-5" />
-                     </div>
-                     <div>
-                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">View Reports</h4>
-                        <p className="text-xs text-muted-foreground">Generate student report cards</p>
-                     </div>
+                  <div className="grid grid-cols-2 gap-2 text-center h-20 mb-2">
+                     <Tooltip content={classTooltipStr} className="h-full">
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors h-full flex flex-col justify-center">
+                           <div className="text-xs text-gray-500 uppercase mb-1">Class</div>
+                           <div className="font-bold text-gray-800 dark:text-gray-200 text-sm break-words line-clamp-2">
+                              {classDisplayStr}
+                           </div>
+                        </div>
+                     </Tooltip>
+                     
+                     <Tooltip content={teacher.specialization || 'General Education'} className="h-full">
+                        <div className="bg-white dark:bg-gray-800 p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors h-full flex flex-col justify-center">
+                           <div className="text-xs text-gray-500 uppercase mb-1">Area of Specialization</div>
+                           <div className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate px-1">
+                              {teacher.specialization || 'General'}
+                           </div>
+                        </div>
+                     </Tooltip>
                   </div>
-               </Link>
-            </CardContent>
-          </Card>
+                  
+                  <Tooltip content={subjectsTaughtList.join(', ')} className="block w-full">
+                      <div className="bg-white dark:bg-gray-800 p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors w-full text-center">
+                         <div className="text-xs text-gray-500 uppercase mb-1">Assigned Subjects</div>
+                         <div className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate px-1">
+                            {subjectsTaughtList.length > 0 ? (
+                                <span className={subjectsTaughtList.length > 3 ? 'text-xs' : ''}>
+                                    {subjectsTaughtList.slice(0, 3).join(', ')}
+                                    {subjectsTaughtList.length > 3 && ` +${subjectsTaughtList.length - 3}`}
+                                </span>
+                            ) : (
+                                <span className="text-gray-400 italic font-normal">None Assigned</span>
+                            )}
+                         </div>
+                      </div>
+                  </Tooltip>
+               </CardContent>
+            </Card>
+
+          </div>
         </div>
       </div>
     </div>
   )
 }
 
-function StatsCard({ title, value, icon: Icon, color, bg }: any) {
+function QuickActionCard({ 
+  href, 
+  title, 
+  description, 
+  icon: Icon, 
+  color, 
+  bg,
+  borderColor 
+}: any) {
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">{title}</p>
-            <h3 className="text-2xl font-bold">{value}</h3>
+    <Link href={href} className="block group h-full">
+      <Card className={`h-full transition-all duration-300 hover:shadow-lg border-2 border-transparent ${borderColor} hover:-translate-y-1`}>
+        <CardContent className="p-6 flex flex-col items-center text-center h-full justify-center">
+          <div className={`p-4 rounded-xl ${bg} ${color} mb-4 group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className="w-8 h-8" />
           </div>
-          <div className={`p-2 rounded-lg ${bg}`}>
-            <Icon className={`w-5 h-5 ${color}`} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-1">{title}</h3>
+          <p className="text-xs text-muted-foreground">{description}</p>
+        </CardContent>
+      </Card>
+    </Link>
   )
 }
 
 function DashboardSkeleton() {
   return (
-    <div className="container mx-auto px-4 py-8 space-y-6">
-      <Skeleton className="h-40 w-full rounded-xl" />
+    <div className="container mx-auto px-4 py-8 space-y-8">
+      <Skeleton className="h-48 w-full rounded-2xl" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[1,2,3,4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
+        {[1,2,3,4].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
       </div>
-      <div className="grid md:grid-cols-2 gap-6">
-        <Skeleton className="h-64 rounded-xl" />
-        <Skeleton className="h-64 rounded-xl" />
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
+           <Skeleton className="h-40 rounded-xl" />
+           <Skeleton className="h-64 rounded-xl" />
+        </div>
+        <div className="space-y-6">
+           <Skeleton className="h-64 rounded-xl" />
+           <Skeleton className="h-40 rounded-xl" />
+        </div>
       </div>
     </div>
   )

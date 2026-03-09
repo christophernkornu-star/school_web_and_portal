@@ -7,6 +7,8 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
+    skipWaiting: true, // Force new SW to activate immediately
+    clientsClaim: true, // Take control of clients immediately
     exclude: [
       /middleware-manifest\.json$/,
       /_next\/static\/.*(?<!\.js)$/,
@@ -18,7 +20,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /_next\/static\/.*/i,
         handler: "NetworkFirst", // Ensure we get fresh chunks
         options: {
-          cacheName: "next-static-js-assets",
+          cacheName: "next-static-js-assets-v2", // Bump version to invalidate old cache
           expiration: {
             maxEntries: 200,
             maxAgeSeconds: 24 * 60 * 60,
@@ -31,19 +33,19 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /^https:\/\/okfawhokrtkaibhbcjdk\.supabase\.co\/rest\/v1\/.*/i,
         handler: "NetworkFirst",
         options: {
-          cacheName: "supabase-api-cache",
+          cacheName: "supabase-api-cache-v2", // Bump version
           expiration: {
             maxEntries: 200,
-            maxAgeSeconds: 60 * 60, // Reduced from 30 days to 1 hour
+            maxAgeSeconds: 60 * 5, // Reduced to 5 minutes for faster updates
           },
-          networkTimeoutSeconds: 10,
+          networkTimeoutSeconds: 5, // Faster fallback if offline
         },
       },
       {
         urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
         handler: "CacheFirst",
         options: {
-          cacheName: "google-fonts",
+          cacheName: "google-fonts-v2",
           expiration: {
             maxEntries: 4,
             maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
@@ -54,7 +56,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
         handler: "StaleWhileRevalidate",
         options: {
-          cacheName: "static-font-assets",
+          cacheName: "static-font-assets-v2",
           expiration: {
             maxEntries: 4,
             maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
@@ -65,7 +67,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
         handler: "StaleWhileRevalidate",
         options: {
-          cacheName: "static-image-assets",
+          cacheName: "static-image-assets-v2",
           expiration: {
             maxEntries: 64,
             maxAgeSeconds: 24 * 60 * 60, // 24 hours
@@ -76,7 +78,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /\/_next\/image\?url=.+$/i,
         handler: "StaleWhileRevalidate",
         options: {
-          cacheName: "next-image",
+          cacheName: "next-image-v2",
           expiration: {
             maxEntries: 64,
             maxAgeSeconds: 24 * 60 * 60, // 24 hours
@@ -87,7 +89,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /\.(?:mp3|wav|m4a)$/i,
         handler: "CacheFirst",
         options: {
-          cacheName: "static-audio-assets",
+          cacheName: "static-audio-assets-v2",
           expiration: {
             maxEntries: 32,
             maxAgeSeconds: 24 * 60 * 60, // 24 hours
@@ -98,6 +100,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /\.(?:mp4|webm)$/i,
         handler: "CacheFirst",
         options: {
+
           cacheName: "static-video-assets",
           expiration: {
             maxEntries: 32,

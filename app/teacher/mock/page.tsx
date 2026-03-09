@@ -8,6 +8,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { getGradeValue, calculateAggregate, formatStudentName } from '@/lib/academic-utils'
 
 interface Student {
   id: string
@@ -48,68 +49,8 @@ const getShortSubjectName = (name: string) => {
   
   return name.substring(0, 4)
 }
+// Functions getGradeValue and calculateAggregate moved to @/lib/academic-utils
 
-function getGradeValue(score: number): number {
-  if (score >= 80) return 1
-  if (score >= 70) return 2
-  if (score >= 65) return 3
-  if (score >= 60) return 4
-  if (score >= 55) return 5
-  if (score >= 50) return 6
-  if (score >= 45) return 7
-  if (score >= 40) return 8
-  return 9
-}
-
-function calculateAggregate(scores: { subjectName: string, score: number }[]): number {
-  // Buckets for core subjects
-  let english: number | null = null
-  let math: number | null = null
-  let science: number | null = null
-  let social: number | null = null
-  
-  const others: number[] = []
-  
-  scores.forEach(s => {
-    const subject = (s.subjectName || '').toLowerCase()
-    const score = s.score
-    const gradeVal = getGradeValue(score)
-    
-    // Strict categorization for Core Subjects
-    if (subject.includes('english')) {
-      english = english === null ? gradeVal : Math.min(english, gradeVal)
-    } else if (subject.includes('mathematics') || subject.includes('math')) {
-      math = math === null ? gradeVal : Math.min(math, gradeVal)
-    } else if (subject.includes('integrated science') || subject === 'science' || subject === 'general science') {
-      science = science === null ? gradeVal : Math.min(science, gradeVal)
-    } else if (subject.includes('social studies') || subject.includes('social')) {
-      social = social === null ? gradeVal : Math.min(social, gradeVal)
-    } else {
-      others.push(gradeVal)
-    }
-  })
-  
-  // Calculate total from 4 cores + best 2 others
-  // If any core is missing, it counts as 9 (Wait, standard practice might be different, but let's assume 0 or 9? 9 is worst grade)
-  // Let's assume if missing, they get 9 for now or the user ensures data entry.
-  
-  const safeVal = (v: number | null) => v === null ? 9 : v
-
-  let total = 0
-  total += safeVal(english)
-  total += safeVal(math)
-  total += safeVal(science)
-  total += safeVal(social)
-  
-  // Sort others (ascending, lower is better) and take best 2
-  // If less than 2 others, fill with 9s
-  while (others.length < 2) others.push(9)
-  others.sort((a, b) => a - b)
-  
-  total += others[0] + others[1]
-  
-  return total
-}
 
 export default function MockExamsPage() {
   const router = useRouter()
@@ -261,7 +202,26 @@ export default function MockExamsPage() {
         .eq('level', cls.level)
         .order('name')
     
-    if (subjectsData) setSubjects(subjectsData)
+    if (subjectsData) {
+        // Sort: English, Math, Science, Social, others A-Z
+        const sortedSubjects = [...subjectsData].sort((a, b) => {
+            const getPriority = (name: string) => {
+                const n = name.toLowerCase()
+                if (n.includes('english')) return 1
+                if (n.includes('mathematics') || n.includes('maths')) return 2
+                if (n.includes('science') && !n.includes('computer')) return 3
+                if (n.includes('social')) return 4
+                return 100
+            }
+            
+            const pA = getPriority(a.name)
+            const pB = getPriority(b.name)
+            
+            if (pA !== pB) return pA - pB
+            return a.name.localeCompare(b.name)
+        })
+        setSubjects(sortedSubjects)
+    }
 
     // 2. Get Students
     const { data: studentsData } = await supabase
@@ -461,21 +421,20 @@ export default function MockExamsPage() {
           const divisor = subjects.length > 0 ? subjects.length : 1
           const average = total / divisor
           
-          const aggregate = calculateAggregate(scoreObjects)
+          const aggregate = calculateAggregate(scoreObjects).total
           
           return {
               ...student,
-              fullname: `${student.last_name}, ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name}`,
+              fullname: formatStudentName(student),
               scores: studentScores,
               totalScore: total,
               average,
               aggregate
           }
       }).sort((a, b) => {
-          // Sort by Aggregate (ASC), then Total Score (DESC)
-          if (a.aggregate !== b.aggregate) return a.aggregate - b.aggregate
-          return b.totalScore - a.totalScore
-      }).map((s, idx) => ({ ...s, position: idx + 1 }))
+          // Sort Alphabetically by name
+          return a.fullname.localeCompare(b.fullname);
+      })
   }
 
   if (loading) return <div className="p-8"><Skeleton className="h-12 w-full" /></div>
@@ -649,17 +608,32 @@ export default function MockExamsPage() {
                                            </td>
                                            {subjects.filter(s => allowedSubjects.includes(s.id)).map(sub => {
                                                const canEdit = allowedSubjects.includes(sub.id)
+                                               const currentScore = scores[s.id]?.[sub.id]
+                                               const grade = currentScore ? getGradeValue(parseInt(currentScore)) : null
+                                               
                                                return (
-                                                   <td key={sub.id} className="p-2 text-center">
-                                                       <input 
-                                                         type="number" 
-                                                         min="0" 
-                                                         max="100" 
-                                                         className={`w-14 md:w-16 p-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${!canEdit ? 'opacity-50 bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
-                                                         value={scores[s.id]?.[sub.id] || ''}
-                                                         onChange={e => handleScoreChange(s.id, sub.id, e.target.value)}
-                                                         disabled={!canEdit}
-                                                       />
+                                                   <td key={sub.id} className="p-2 text-center align-middle">
+                                                       <div className="flex flex-col items-center justify-center gap-1">
+                                                           <input 
+                                                             type="number" 
+                                                             min="0" 
+                                                             max="100" 
+                                                             className={`w-14 md:w-16 p-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${!canEdit ? 'opacity-50 bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                                             value={currentScore || ''}
+                                                             onChange={e => handleScoreChange(s.id, sub.id, e.target.value)}
+                                                             disabled={!canEdit}
+                                                           />
+                                                           {grade !== null && (
+                                                               <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                                                   grade === 1 ? 'bg-green-100 text-green-700' :
+                                                                   grade <= 3 ? 'bg-blue-100 text-blue-700' :
+                                                                   grade <= 6 ? 'bg-yellow-100 text-yellow-700' :
+                                                                   'bg-red-100 text-red-700'
+                                                               }`}>
+                                                                   Grade: {grade}
+                                                               </span>
+                                                           )}
+                                                       </div>
                                                    </td>
                                                )
                                            })}
@@ -675,17 +649,17 @@ export default function MockExamsPage() {
 
         {/* Sheet View for Printing */}
         {showSheet && selectedMock && currentMockData && (
-             <div className="bg-white text-black min-h-screen">
+             <div className="bg-white text-black min-h-screen fixed inset-0 z-50 overflow-auto">
                  {/* Print Controls */}
-                 <div className="fixed top-4 right-4 print:hidden flex gap-2 z-50">
+                 <div className="fixed top-4 right-4 print:hidden flex gap-2 z-[60]">
                      <button onClick={() => window.print()} className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">PRINT</button>
                      <button onClick={() => setShowSheet(false)} className="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700">CLOSE</button>
                  </div>
 
                  {/* Pagination Logic */}
                  {(() => {
-                    // Optimized for A4 Landscape with ~30 rows per page
-                    const STUDENTS_PER_PAGE = 30;
+                    // Optimized for A4 Landscape with ~25 rows per page to prevent overflow with larger font
+                    const STUDENTS_PER_PAGE = 25;
                     const pages = [];
                     for (let i = 0; i < processedData.length; i += STUDENTS_PER_PAGE) {
                         pages.push(processedData.slice(i, i + STUDENTS_PER_PAGE));
@@ -693,7 +667,7 @@ export default function MockExamsPage() {
                     if (pages.length === 0) pages.push([]); // Handle empty case if needed
 
                     return pages.map((pageStudents, pageIndex) => (
-                        <div key={pageIndex} className={`max-w-[297mm] mx-auto p-2 md:p-8 print:p-0 page-container ${pageIndex > 0 ? 'print:mt-4' : ''}`}>
+                        <div key={pageIndex} className={`max-w-[297mm] mx-auto p-2 md:p-8 print:p-0 page-container`}>
                             {pageIndex === 0 && (
                                 <div className="text-center mb-2 border-b-2 border-black pb-1">
                                     <h1 className="text-xl md:text-2xl font-bold font-serif uppercase tracking-wide">Biriwa Methodist "C" Basic School</h1>
@@ -705,7 +679,7 @@ export default function MockExamsPage() {
 
                             {/* Responsive Table Wrapper for Screen */}
                             <div className="overflow-x-auto">
-                                <table className="w-full border-collapse border border-black text-[10px] md:text-xs min-w-[800px] md:min-w-0">
+                                <table className="w-full border-collapse border border-black text-xs md:text-sm min-w-[800px] md:min-w-0">
                                     <thead>
                                         <tr className="bg-gray-100">
                                             <th className="border border-black px-1 py-0.5 w-8 text-center">SN</th>
@@ -718,7 +692,6 @@ export default function MockExamsPage() {
                                             <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50 font-bold whitespace-nowrap">TOT. SCO</th>
                                             <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-50">AVG</th>
                                             <th className="border border-black px-1 py-0.5 w-10 text-center bg-gray-200">AGG</th>
-                                            <th className="border border-black px-1 py-0.5 w-8 text-center">POS</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -726,15 +699,23 @@ export default function MockExamsPage() {
                                             <tr key={student.id}>
                                                 <td className="border border-black px-1 py-0.5 text-center">{pageIndex * STUDENTS_PER_PAGE + idx + 1}</td>
                                                 <td className="border border-black px-1 py-0.5 font-medium uppercase whitespace-nowrap px-2 truncate max-w-[150px]">{student.fullname}</td>
-                                                {subjects.map(s => (
-                                                    <td key={s.id} className="border border-black px-1 py-0.5 text-center">
-                                                        {student.scores[s.id] || '-'}
-                                                    </td>
-                                                ))}
+                                                {subjects.map(s => {
+                                                    const scoreVal = student.scores[s.id] ? parseInt(student.scores[s.id]) : null;
+                                                    const grade = scoreVal !== null ? getGradeValue(scoreVal) : null;
+                                                    return (
+                                                        <td key={s.id} className="border border-black px-1 py-0.5 text-center">
+                                                            {scoreVal !== null ? (
+                                                                <span className="inline-flex items-baseline gap-0.5">
+                                                                    <span>{scoreVal}</span>
+                                                                    <sup className="text-[9px] font-bold text-gray-700">{grade}</sup>
+                                                                </span>
+                                                            ) : '-'}
+                                                        </td>
+                                                    )
+                                                })}
                                                 <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-50">{student.totalScore}</td>
                                                 <td className="border border-black px-1 py-0.5 text-center font-bold">{student.average.toFixed(1)}</td>
                                                 <td className="border border-black px-1 py-0.5 text-center font-bold bg-gray-100">{student.aggregate}</td>
-                                                <td className="border border-black px-1 py-0.5 text-center font-bold">{student.position}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -756,8 +737,8 @@ export default function MockExamsPage() {
                @page { size: landscape; margin: 5mm; }
                body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                .no-print { display: none; }
-               .page-container { break-after: page; }
-               .page-container:last-child { break-after: auto; }
+               .page-container { break-inside: avoid; page-break-after: always; break-after: page; }
+               .page-container:last-child { page-break-after: auto; break-after: auto; }
            }
         `}</style>
     </div>

@@ -1,0 +1,1 @@
+SELECT id, teacher_id, first_name, last_name FROM teachers LIMIT 1;

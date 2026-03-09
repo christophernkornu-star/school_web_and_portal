@@ -5,7 +5,6 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Drop existing tables if they exist (in correct order to handle dependencies)
-DROP TABLE IF EXISTS timetables CASCADE;
 DROP TABLE IF EXISTS announcements CASCADE;
 DROP TABLE IF EXISTS events CASCADE;
 DROP TABLE IF EXISTS news CASCADE;
@@ -190,20 +189,7 @@ CREATE TABLE announcements (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 13. TIMETABLES
-CREATE TABLE timetables (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  class_id UUID NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
-  subject_id UUID NOT NULL REFERENCES subjects(id),
-  teacher_id UUID REFERENCES teachers(id),
-  day_of_week TEXT NOT NULL CHECK (day_of_week IN ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday')),
-  start_time TIME NOT NULL,
-  end_time TIME NOT NULL,
-  academic_year TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 14. NEWS TABLE
+-- 14. NEWS TABLE (Timetables removed)
 CREATE TABLE news (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title TEXT NOT NULL,

@@ -125,7 +125,8 @@ export function TeacherProvider({ children }: { children: React.ReactNode }) {
         class_id: cls.class_id,
         classes: {
           class_name: cls.class_name
-        }
+        },
+        subjects: cls.subjects_taught || []
       }))
 
       // Calculate Stats

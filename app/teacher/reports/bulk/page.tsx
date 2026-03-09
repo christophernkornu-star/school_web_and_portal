@@ -7,109 +7,12 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Printer, ArrowLeft } from 'lucide-react'
 import signatureImg from '@/app/student/report-card/signature.png'
 import { toast } from 'react-hot-toast'
+import { getOrdinalSuffix, isPromotionTerm, formatStudentName } from '@/lib/academic-utils'
+import { getAutoRemark } from '@/lib/remark-utils'
 
-// Remarks options based on performance levels
-const ATTITUDE_REMARKS = {
-  excellent: ['Excellent attitude towards learning', 'Shows great enthusiasm', 'Very positive and motivated', 'Exceptionally dedicated'],
-  good: ['Good attitude towards learning', 'Shows interest in studies', 'Positive and cooperative', 'Generally motivated'],
-  average: ['Satisfactory attitude', 'Needs to show more interest', 'Could be more enthusiastic', 'Average motivation'],
-  poor: ['Needs improvement in attitude', 'Shows little interest', 'Must develop better attitude', 'Requires motivation']
-}
+// Remarks logic moved to @/lib/remark-utils
 
-const INTEREST_REMARKS = {
-  excellent: [
-    'Enjoys reading storybooks and solving challenging math problems',
-    'Likes leading group discussions and helping peers with studies',
-    'Shows keen interest in science experiments and creative writing',
-    'Active in quiz competitions and enjoys learning new topics',
-    'Loves exploring library books and participating in class debates'
-  ],
-  good: [
-    'Enjoys playing football and participating in cultural activities',
-    'Likes drawing and engaging in creative arts',
-    'Shows interest in gardening and nature studies',
-    'Enjoys storytelling and listening to folklore',
-    'Likes participating in school worship and singing'
-  ],
-  average: [
-    'Likes playing with friends during break time',
-    'Enjoys traditional games like Ampe and Oware',
-    'Shows interest in practical agriculture and hands-on tasks',
-    'Likes drumming and dancing during cultural events',
-    'Enjoys listening to stories but needs to read more'
-  ],
-  poor: [
-    'Likes playing football but needs to focus more on reading',
-    'Enjoys running errands but should spend more time on homework',
-    'Likes playing excessively during class hours',
-    'Shows interest in games but lacks focus in academic work',
-    'Enjoys socialising but needs to develop interest in books'
-  ]
-}
-
-const CONDUCT_REMARKS = {
-  excellent: ['Excellent conduct', 'Well-behaved and respectful', 'A role model to others', 'Outstanding behaviour'],
-  good: ['Good conduct', 'Generally well-behaved', 'Respectful to teachers and peers', 'Behaves appropriately'],
-  average: ['Satisfactory conduct', 'Behaviour needs improvement', 'Occasionally disruptive', 'Must be more disciplined'],
-  poor: ['Poor conduct', 'Frequently misbehaves', 'Needs serious improvement', 'Must change behaviour']
-}
-
-const CLASS_TEACHER_REMARKS = {
-  excellent: ['An outstanding student! Keep up the excellent work', 'Exceptional performance. A pleasure to teach', 'Brilliant work this term. Very proud of you', 'Excellent results. Continue to aim high'],
-  good: ['Good performance this term. Keep it up', 'A hardworking student with good results', 'Well done! Continue to work hard', 'Good progress shown. Maintain the effort'],
-  average: ['Average performance. Can do better with more effort', 'Fair results. Needs to work harder', 'Satisfactory work but must improve', 'More effort needed to achieve better results'],
-  poor: ['Poor performance. Needs serious improvement', 'Must work much harder next term', 'Below expectations. Requires extra effort', 'Needs to focus more on studies']
-}
-
-const HEADTEACHER_REMARKS = {
-  excellent: ['Excellent performance! The school is proud of you', 'Outstanding achievement. Keep it up', 'A remarkable student. Continue the good work', 'Exceptional results. Well done!'],
-  good: ['Good performance. Continue to work hard', 'Well done. Maintain your good work', 'Commendable effort. Keep improving', 'Good progress. Stay focused'],
-  average: ['Average performance. More effort is required', 'Satisfactory but can do better', 'Needs to put in more effort', 'Fair results. Improvement expected'],
-  poor: ['Below average. Serious improvement needed', 'Performance not satisfactory. Must work harder', 'Disappointing results. Requires immediate attention', 'Needs to take studies more seriously']
-}
-
-function getPerformanceLevel(averageScore: number): 'excellent' | 'good' | 'average' | 'poor' {
-  if (averageScore >= 80) return 'excellent'
-  if (averageScore >= 60) return 'good'
-  if (averageScore >= 40) return 'average'
-  return 'poor'
-}
-
-function getAutoRemark(remarkType: string, averageScore: number, attendancePercentage?: number): string {
-  let level = getPerformanceLevel(averageScore)
-  
-  // Adjust level based on attendance for teacher remarks
-  if (attendancePercentage !== undefined && (remarkType === 'classTeacher' || remarkType === 'headTeacher')) {
-    if (attendancePercentage < 50) {
-      level = 'poor'
-    } else if (attendancePercentage < 70 && level !== 'poor') {
-      level = 'average'
-    } else if (attendancePercentage < 85 && level === 'excellent') {
-      level = 'good'
-    }
-  }
-
-  let remarks: string[] = []
-  
-  switch (remarkType) {
-    case 'attitude': remarks = ATTITUDE_REMARKS[level]; break
-    case 'interest': remarks = INTEREST_REMARKS[level]; break
-    case 'conduct': remarks = CONDUCT_REMARKS[level]; break
-    case 'classTeacher': remarks = CLASS_TEACHER_REMARKS[level]; break
-    case 'headTeacher': remarks = HEADTEACHER_REMARKS[level]; break
-  }
-  
-  return remarks[Math.floor(Math.random() * remarks.length)]
-}
-
-function getOrdinalSuffix(num: number): string {
-  const j = num % 10
-  const k = num % 100
-  if (j === 1 && k !== 11) return 'st'
-  if (j === 2 && k !== 12) return 'nd'
-  if (j === 3 && k !== 13) return 'rd'
-  return 'th'
-}
+// getOrdinalSuffix moved to @/lib/academic-utils
 
 interface StudentReportData {
   student: any
@@ -276,10 +179,7 @@ function BulkReportCardsContent() {
 
         // Get promotion status if Third Term
         let promotionStatus = undefined;
-        const isThirdTerm = termData?.name?.toLowerCase().includes('third') || 
-                            termData?.name?.toLowerCase().includes('term 3') || 
-                            termData?.name?.toLowerCase().includes('3rd') ||
-                            termData?.name?.toLowerCase().includes('final');
+        const isThirdTerm = isPromotionTerm(termData?.name || '');
         
         if (isThirdTerm && termData?.academic_year) {
             try {
@@ -439,19 +339,17 @@ function BulkReportCardsContent() {
          return status.toUpperCase();
       }
 
-      const isThirdTerm = termName?.toLowerCase().includes('third') || 
-                          termName?.toLowerCase().includes('term 3') ||
-                          termName?.toLowerCase().includes('3rd') ||
-                          termName?.toLowerCase().includes('final');
+      const isThirdTerm = isPromotionTerm(termName);
       
       if (!isThirdTerm) return ''
       
-      if (avgScore >= 30) return 'PROMOTED'
-      return 'REPEATED'
+      // Auto-calculate for Term 3 if no DB status
+      if (avgScore >= 30) return 'PROMOTED';
+      return 'REPEATED';
     }
 
     const generateSingleReport = (report: StudentReportData): string => {
-      const studentName = `${report.student.last_name || ''} ${report.student.middle_name ? report.student.middle_name + ' ' : ''}${report.student.first_name || ''}`
+      const studentName = formatStudentName(report.student)
       const className = report.student.classes?.name || ''
 
       return `

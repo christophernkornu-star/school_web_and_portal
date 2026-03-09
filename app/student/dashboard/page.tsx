@@ -9,6 +9,7 @@ import type { Student, Profile } from '@/lib/supabase'
 import { useStudent } from '@/components/providers/StudentContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PortalFooter } from '@/components/PortalFooter'
+import { getOrdinalSuffix } from '@/lib/academic-utils'
 
 interface Announcement {
   id: string
@@ -147,16 +148,8 @@ export default function StudentDashboard() {
     )
   }
 
-  // Helper for ordinal suffix (e.g., 1st, 2nd, 3rd)
-  function getOrdinalSuffix(num: number): string {
-    const j = num % 10
-    const k = num % 100
-    if (j === 1 && k !== 11) return 'st'
-    if (j === 2 && k !== 12) return 'nd'
-    if (j === 3 && k !== 13) return 'rd'
-    return 'th'
-  }
-
+  // Helper for ordinal suffix moved to utils
+  
   function formatTimeAgo(dateString: string): string {
     const date = new Date(dateString)
     const now = new Date()

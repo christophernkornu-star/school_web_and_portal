@@ -18,7 +18,9 @@ import {
   PenTool,
   Upload,
   UserCheck,
-  TrendingUp
+  TrendingUp,
+  FileSpreadsheet,
+  Banknote
 } from 'lucide-react'
 
 const sidebarItems = [
@@ -34,11 +36,13 @@ const sidebarItems = [
       { href: '/teacher/attendance', label: 'Attendance', icon: UserCheck },
       { href: '/teacher/students', label: 'My Students', icon: Users },
       { href: '/teacher/promotions', label: 'Promotions', icon: TrendingUp },
+      { href: '/teacher/fees/statement', label: 'Fees', icon: Banknote },
     ]
   },
   {
     group: 'Assessment & Grading',
     items: [
+      { href: '/teacher/mock', label: 'Mock Exams', icon: FileSpreadsheet },
       { href: '/teacher/assessments', label: 'Online Assessments', icon: PenTool },
       { href: '/teacher/enter-scores', label: 'Enter Scores', icon: ClipboardList },
       { href: '/teacher/upload-scores', label: 'Upload Scores', icon: Upload },
@@ -49,7 +53,7 @@ const sidebarItems = [
     group: 'Reports & Performance',
     items: [
       { href: '/teacher/reports', label: 'Report Cards', icon: ScrollText },
-      { href: '/teacher/performance', label: 'Performance Analytics', icon: BarChart3 },
+      { href: '/teacher/performance', label: 'Analytics', icon: BarChart3 },
     ]
   },
   {

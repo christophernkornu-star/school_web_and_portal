@@ -9,6 +9,7 @@ import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { isPromotionTerm } from '@/lib/academic-utils'
 
 export default function AcademicYearTransition() {
   const router = useRouter()
@@ -71,7 +72,7 @@ export default function AcademicYearTransition() {
     loadSettings()
   }, [router])
 
-  const isTerm3 = currentTerm.toLowerCase().includes('third') || currentTerm.toLowerCase().includes('term 3')
+  const isTerm3 = isPromotionTerm(currentTerm)
 
   const handleTransition = async () => {
     if (!newAcademicYear.match(/^\d{4}\/\d{4}$/)) {

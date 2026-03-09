@@ -4,17 +4,63 @@ import { ChevronDown } from "lucide-react"
 // A simple Select implementation using standard HTML select for robustness but styled
 // Note: Keep the API compatible with Shadcn UI where possible
 
-const SelectContext = React.createContext<{ value?: string; onValueChange?: (value: string) => void; open: boolean; setOpen: (o: boolean) => void }>({ open: false, setOpen: () => {} })
+const SelectContext = React.createContext<{ 
+    value?: string; 
+    onValueChange?: (value: string) => void; 
+    open: boolean; 
+    setOpen: (o: boolean) => void 
+}>({ 
+    open: false, 
+    setOpen: () => {} 
+})
+
+// Shared state or event listener to close other selects would differ, 
+// but for a simple fix we can use a click outside listener.
 
 const Select = React.forwardRef<
     HTMLDivElement,
     { value?: string; onValueChange?: (value: string) => void; children?: React.ReactNode, name?: string }
 >(({ value, onValueChange, children }, ref) => {
     const [open, setOpen] = React.useState(false)
+    const containerRef = React.useRef<HTMLDivElement | null>(null)
+
+    // Listen for custom event to close other selects
+    React.useEffect(() => {
+        const handleCloseOthers = (e: CustomEvent) => {
+            if (e.detail?.id !== containerRef.current?.id) {
+                setOpen(false)
+            }
+        }
+        document.addEventListener('close-other-selects', handleCloseOthers as EventListener)
+        return () => {
+            document.removeEventListener('close-other-selects', handleCloseOthers as EventListener)
+        }
+    }, [])
+
+    // Close on click outside
+    React.useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (open && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setOpen(false)
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside)
+        return () => {
+             document.removeEventListener("mousedown", handleClickOutside)
+        }
+    }, [open])
 
     return (
          <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
-            <div className="relative" ref={ref}>
+            <div 
+                className="relative" 
+                id={`select-${Math.random().toString(36).substr(2, 9)}`}
+                ref={(node) => {
+                    containerRef.current = node
+                    if (typeof ref === 'function') ref(node)
+                    else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node
+                }}
+            >
                 {children}
             </div>
          </SelectContext.Provider>
@@ -27,11 +73,23 @@ const SelectTrigger = React.forwardRef<
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, children, ...props }, ref) => {
     const { setOpen, open } = React.useContext(SelectContext)
+    
+    const handleClick = (e: React.MouseEvent) => {
+        if (!open) {
+            // Dispatch event to close others before opening this one
+            const event = new CustomEvent('close-other-selects', { 
+                detail: { id: (e.target as HTMLElement).closest('.relative')?.id } 
+            })
+            document.dispatchEvent(event)
+        }
+        setOpen(!open)
+    }
+
     return (
         <button 
             type="button"
             className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-            onClick={() => setOpen(!open)}
+            onClick={handleClick}
             ref={ref}
             {...props}
         >
@@ -64,7 +122,11 @@ const SelectContent = React.forwardRef<
     if (!open) return null
 
     return (
-         <div className="absolute top-full left-0 w-full z-50 bg-white dark:bg-gray-900 border rounded-md shadow-md mt-1 p-1 max-h-60 overflow-auto" {...props}>
+         <div 
+            ref={ref}
+            className={`absolute left-0 w-full z-50 bg-white dark:bg-gray-900 border rounded-md shadow-md mt-1 p-1 max-h-60 overflow-auto ${className || 'top-full'}`} 
+            {...props}
+        >
             {children}
          </div>
     )

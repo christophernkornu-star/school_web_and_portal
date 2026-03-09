@@ -88,8 +88,8 @@ export default function AdminNewsPage() {
     try {
       let featuredImage = formData.featured_image
 
-      // If using file upload and not editing, upload the file first
-      if (uploadMethod === 'file' && selectedFile && !editingNews) {
+      // If using file upload, upload the file first
+      if (uploadMethod === 'file' && selectedFile) {
         const uploadedUrl = await uploadFile(selectedFile)
         if (uploadedUrl) {
           featuredImage = uploadedUrl

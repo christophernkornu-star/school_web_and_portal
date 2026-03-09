@@ -8,14 +8,17 @@ const Dialog = React.forwardRef<
     if (!open) return null
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" {...props} ref={ref}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" ref={ref}>
             <div 
                 className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-all" 
                 onClick={() => onOpenChange?.(false)} 
             />
              {React.Children.map(children, (child) => {
                 if (React.isValidElement(child)) {
-                    return React.cloneElement(child, {  onOpenChange } as any)
+                    // Only pass onOpenChange to components that need it (like DialogContent)
+                    // Or wrap it in a context provider.
+                    // For now, let's just render the child. The cloneElement approach is risky for arbitrary children.
+                     return React.cloneElement(child, {  onOpenChange } as any)
                 }
                 return child
              })}

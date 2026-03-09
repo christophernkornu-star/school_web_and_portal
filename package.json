@@ -1,6 +1,6 @@
 {
   "name": "biriwa-methodist-sms",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "School Management System for Biriwa Methodist 'C' Basic School",
   "private": true,
   "scripts": {

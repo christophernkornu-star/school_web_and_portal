@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { FileText, ArrowLeft, Award, TrendingUp, AlertCircle, CheckCircle, BarChart3, LineChart as LineChartIcon, Radar as RadarIcon } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { getGradeValue, getGradeLabel, getRemark, calculateAggregate } from '@/lib/academic-utils'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import {
@@ -30,88 +31,7 @@ interface MockScore {
     code: string
   }
 }
-
-// ---- Grading Utilities (Mirrors Teacher Logic) ----
-
-function getGradeValue(score: number): number {
-  if (score >= 80) return 1
-  if (score >= 70) return 2
-  if (score >= 60) return 3
-  if (score >= 55) return 4
-  if (score >= 50) return 5
-  if (score >= 45) return 6
-  if (score >= 40) return 7
-  if (score >= 35) return 8
-  return 9
-}
-
-function getGradeLabel(grade: number): string {
-    if (grade === 1) return 'A1'; // Highest
-    if (grade === 2) return 'B2';
-    if (grade === 3) return 'B3';
-    if (grade === 4) return 'C4';
-    if (grade === 5) return 'C5';
-    if (grade === 6) return 'C6';
-    if (grade === 7) return 'D7';
-    if (grade === 8) return 'E8';
-    return 'F9';
-}
-
-function getRemark(grade: number): string {
-    if (grade === 1) return 'Excellent';
-    if (grade === 2) return 'Very Good';
-    if (grade === 3) return 'Good';
-    if (grade === 4) return 'Credit';
-    if (grade === 5) return 'Credit';
-    if (grade === 6) return 'Credit';
-    if (grade === 7) return 'Pass';
-    if (grade === 8) return 'Pass';
-    return 'Fail';
-}
-
-function calculateAggregate(scores: MockScore[]): { total: number, subjects: string[] } {
-  // Buckets for core subjects
-  let english: number | null = null
-  let math: number | null = null
-  let science: number | null = null
-  let social: number | null = null
-  
-  const others: { val: number, name: string }[] = []
-  
-  scores.forEach(s => {
-    const subject = (s.subjects?.name || '').toLowerCase()
-    const score = s.score
-    const gradeVal = getGradeValue(score)
-    
-    if (subject.includes('english')) {
-      english = english === null ? gradeVal : Math.min(english, gradeVal)
-    } else if (subject.includes('mathematics') || subject.includes('math')) {
-      math = math === null ? gradeVal : Math.min(math, gradeVal)
-    } else if (subject.includes('integrated science') || subject === 'science' || subject === 'general science') {
-      science = science === null ? gradeVal : Math.min(science, gradeVal)
-    } else if (subject.includes('social studies') || subject.includes('social')) {
-      social = social === null ? gradeVal : Math.min(social, gradeVal)
-    } else {
-      others.push({ val: gradeVal, name: s.subjects?.name || 'Unknown' })
-    }
-  })
-  
-  const safeVal = (v: number | null) => v === null ? 9 : v
-
-  let total = 0
-  total += safeVal(english)
-  total += safeVal(math)
-  total += safeVal(science)
-  total += safeVal(social)
-  
-  // Best 2 others
-  while (others.length < 2) others.push({ val: 9, name: '-' })
-  others.sort((a, b) => a.val - b.val)
-  
-  total += others[0].val + others[1].val
-  
-  return { total, subjects: others.slice(0, 2).map(o => o.name) }
-}
+// Grading Utilities moved to @/lib/academic-utils
 
 export default function StudentMockResults() {
   const router = useRouter()
@@ -245,7 +165,10 @@ export default function StudentMockResults() {
                       margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
                       data={[...mocks].reverse().map((m: MockExam) => ({
                         name: m.name,
-                        aggregate: calculateAggregate(mockScores[m.id] || []).total
+                        aggregate: calculateAggregate((mockScores[m.id] || []).map(s => ({
+                          subjectName: s.subjects?.name || '',
+                          score: s.score || 0
+                        }))).total
                     }))}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                         <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
@@ -354,7 +277,14 @@ export default function StudentMockResults() {
         <div className="space-y-8">
             {mocks.map(mock => {
                 const scores = mockScores[mock.id] || []
-                const { total: aggregate } = calculateAggregate(scores)
+                
+                // Convert to common format for calculator
+                const calcInput = scores.map(s => ({
+                   subjectName: s.subjects?.name || '',
+                   score: s.score
+                }))
+                
+                const { total: aggregate } = calculateAggregate(calcInput)
                 const sortedScores = [...scores].sort((a, b) => (a.subjects?.name || '').localeCompare(b.subjects?.name || ''))
 
                 // Analysis
