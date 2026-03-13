@@ -92,7 +92,7 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsOpen(true)}
-            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600"
+            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-methodist-blue dark:text-methodist-gold"
           >
             <Menu className="h-5 w-5" />
           </button>

@@ -42,13 +42,13 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white dark:bg-gray-900 border-b-4 border-yellow-500 shadow-sm">
+    <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-methodist-gold via-yellow-200 to-methodist-gold dark:from-yellow-900 dark:via-yellow-700 dark:to-yellow-900 shadow-sm">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         {/* Left: Mobile Toggle & Brand/Breadcrumb */}
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsOpen(true)}
-            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600"
+            className="lg:hidden p-2 hover:bg-white/20 dark:hover:bg-gray-800 rounded-lg text-methodist-blue dark:text-methodist-gold"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -66,11 +66,17 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
         {/* Right: Actions */}
         <div className="flex items-center gap-2 md:gap-4">
           {/* Search Trigger (Mock) */}
-          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-100 transition-colors w-48 lg:w-64">
+          <button 
+             onClick={() => document.dispatchEvent(new CustomEvent('open-command-palette'))}
+             className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-gray-700 dark:text-gray-400 bg-white/50 dark:bg-gray-800 border-none dark:border-gray-700 rounded-md hover:bg-white/80 dark:hover:bg-gray-700 transition-colors w-48 lg:w-64"
+          >
              <Search className="h-4 w-4" />
              <span>Search... (Ctrl+K)</span>
           </button>
-          <button className="sm:hidden p-2 text-gray-500">
+          <button 
+             onClick={() => document.dispatchEvent(new CustomEvent('open-command-palette'))}
+             className="sm:hidden p-2 text-black dark:text-gray-400"
+          >
              <Search className="h-5 w-5" />
           </button>
 
@@ -78,13 +84,13 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
           <div className="relative" ref={notificationRef}>
             <button 
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none"
+              className="relative p-2 text-black dark:text-gray-400 hover:bg-white/20 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none"
             >
               <Bell className="h-5 w-5" />
             </button>
-            {/* Dropdown would go here if we implemented notifications for teachers */}
+            {/* Dropdown */}
              {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 animate-in fade-in zoom-in-95 duration-200">
+              <div className="absolute right-0 mt-2 w-[85vw] sm:w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 animate-in fade-in zoom-in-95 duration-200 origin-top-right z-50">
                  <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
                     <h3 className="font-bold text-gray-900 dark:text-gray-100">Notifications</h3>
                  </div>
@@ -95,15 +101,15 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
             )}
           </div>
 
-          <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-700 mx-1"></div>
+          <div className="h-8 w-[1px] bg-black/10 dark:bg-gray-700 mx-1"></div>
 
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-1">
              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-none">
+                <p className="text-sm font-medium text-black dark:text-gray-100 leading-none">
                   {teacher?.first_name} {teacher?.last_name || 'Teacher'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1 truncate max-w-[150px]">
+                <p className="text-xs text-black/70 dark:text-gray-500 mt-1 truncate max-w-[150px]">
                   {teacher?.teacher_id || 'Staff'}
                 </p>
              </div>

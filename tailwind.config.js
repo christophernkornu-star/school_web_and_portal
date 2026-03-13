@@ -16,7 +16,7 @@ module.exports = {
         },
         methodist: {
           blue: '#003B5C',
-          gold: '#FFB81C',
+          gold: '#f2aa0d',
           red: '#CE1126',
         },
       },

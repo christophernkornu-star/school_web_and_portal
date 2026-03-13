@@ -511,7 +511,7 @@ export default function TeacherDashboard() {
                      <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-lg">
                         {teacher.first_name[0]}{teacher.last_name[0]}
                      </div>
-                     <div className="overflow-hidden">
+                     <div className="overflow-hidden flex flex-col gap-1">
                         <Tooltip content={`${teacher.first_name} ${teacher.last_name}`}>
                            <div className="font-semibold truncate">{teacher.first_name} {teacher.last_name}</div>
                         </Tooltip>

@@ -51,8 +51,15 @@ export function CommandPalette() {
       }
     }
 
+    const openPalette = () => setOpen(true)
+    
     document.addEventListener('keydown', down)
-    return () => document.removeEventListener('keydown', down)
+    document.addEventListener('open-command-palette', openPalette)
+    
+    return () => {
+      document.removeEventListener('keydown', down)
+      document.removeEventListener('open-command-palette', openPalette)
+    }
   }, [])
 
   useEffect(() => {
@@ -147,7 +154,10 @@ export function CommandPalette() {
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-[20vh] px-4 animate-in fade-in duration-200">
+    <div 
+        className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-start justify-center pt-[20vh] px-4 animate-in fade-in duration-200"
+        onClick={() => setOpen(false)}
+    >
       <div 
         className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 animate-in zoom-in-95 duration-200 ring-1 ring-gray-900/5"
         onClick={(e) => e.stopPropagation()}
@@ -163,9 +173,13 @@ export function CommandPalette() {
             placeholder="Search commands..."
             className="flex-1 bg-transparent outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 text-lg"
           />
-          <div className="text-xs font-medium text-gray-400 border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5">
-            ESC
-          </div>
+          <button 
+            onClick={() => setOpen(false)}
+            className="p-2 ml-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+             <span className="hidden sm:inline text-xs font-medium border border-gray-200 dark:border-gray-700 rounded px-1.5 py-0.5">ESC</span>
+             <span className="sm:hidden text-lg font-bold">×</span>
+          </button>
         </div>
 
         {/* Results */}
