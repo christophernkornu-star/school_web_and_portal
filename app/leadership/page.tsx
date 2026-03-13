@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
-import { GraduationCap, Award, Users, Mail, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { GraduationCap, Award, Users, Mail, User, ArrowLeft } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
 
 export default function LeadershipPage() {
+  const router = useRouter()
   const [teachers, setTeachers] = useState<any[]>([])
   const [prefects, setPrefects] = useState<any[]>([])
   const [ptaMembers, setPtaMembers] = useState<any[]>([])
@@ -64,11 +66,28 @@ export default function LeadershipPage() {
     loadData()
   }, [])
 
+  const adminStaff = teachers.filter(t => {
+      const pos = (t.position || '').toLowerCase();
+      // Match head teachers, principals, and assistants
+      return pos.includes('head') || pos.includes('principal') || pos.includes('assistant');
+  });
+
+  const teachingStaff = teachers.filter(t => !adminStaff.includes(t));
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         
        {/* Hero Section */}
-       <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-16">
+       <div className="bg-gradient-to-r from-blue-900 to-blue-800 text-white py-16 relative">
+          <div className="absolute top-4 left-4 md:top-8 md:left-8 z-10">
+            <button 
+              onClick={() => router.back()} 
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full backdrop-blur-sm"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Back</span>
+            </button>
+          </div>
           <div className="container mx-auto px-4 text-center space-y-4">
              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">Our Leadership</h1>
              <p className="text-xl text-blue-100 max-w-2xl mx-auto">
@@ -78,9 +97,134 @@ export default function LeadershipPage() {
        </div>
 
       <div className="container mx-auto px-4 py-12 space-y-16">
-        
-        {/* Student Leadership Section */}
+
+        {/* 1. School Administration Section */}
         <section className="space-y-8">
+            <div className="text-center space-y-4 max-w-2xl mx-auto">
+                <Badge variant="secondary" className="px-4 py-1.5 text-sm uppercase tracking-widest bg-blue-900 text-white border-blue-800">
+                    Administration
+                </Badge>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">School Administration</h2>
+                <div className="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
+                <p className="text-gray-500 dark:text-gray-400">
+                    Guiding our vision and ensuring academic excellence.
+                </p>
+            </div>
+
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
+                    {[1,2,3].map(i => <Skeleton key={i} className="h-96 w-full rounded-2xl" />)}
+                </div>
+            ) : adminStaff.length === 0 ? (
+                <div className="text-center py-12">
+                   <p className="text-gray-500">Administration details to be updated.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center max-w-5xl mx-auto">
+                     {adminStaff.map((teacher) => (
+                         <Card key={teacher.id} className="overflow-hidden border-none shadow-xl hover:shadow-2xl transition-all duration-300 bg-white dark:bg-gray-800 group transform hover:-translate-y-1">
+                            <div className="aspect-[4/5] relative bg-blue-50 dark:bg-blue-900/20 overflow-hidden">
+                                {teacher.image_url ? (
+                                    <Image 
+                                        src={teacher.image_url} 
+                                        alt={`${teacher.first_name} ${teacher.last_name}`}
+                                        fill
+                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-blue-200 dark:text-blue-800">
+                                        <User className="w-32 h-32 opacity-20" />
+                                    </div>
+                                )}
+                                {/* Rank/Position Badge Overlay */}
+                                {teacher.position && (
+                                    <div className="absolute bottom-4 left-4 right-4">
+                                        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm p-4 rounded-xl shadow-lg border-l-4 border-blue-600">
+                                            <p className="text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide text-xs mb-1">
+                                                {teacher.position}
+                                            </p>
+                                            <h3 className="font-bold text-lg text-gray-900 dark:text-white leading-tight">
+                                                {teacher.title ? `${teacher.title} ` : ''}{teacher.first_name} {teacher.last_name}
+                                            </h3>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                         </Card>
+                     ))}
+                </div>
+            )}
+        </section>
+
+        {/* 2. Teaching Body Section */}
+        <section className="space-y-8 pt-8 border-t border-gray-200 dark:border-gray-800">
+             <div className="text-center space-y-4 max-w-2xl mx-auto">
+                <Badge variant="secondary" className="px-4 py-1.5 text-sm uppercase tracking-widest bg-blue-100 text-blue-800 border-blue-200">
+                    Academic Staff
+                </Badge>
+                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Teaching Body</h2>
+                <div className="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
+                <p className="text-gray-500 dark:text-gray-400">
+                    Our committed educators shaping the future of our students.
+                </p>
+            </div>
+
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {[1,2,3,4].map(i => <Skeleton key={i} className="h-80 w-full rounded-2xl" />)}
+                </div>
+            ) : teachingStaff.length === 0 ? (
+                <div className="text-center py-12">
+                   <p className="text-gray-500">Teaching staff list to be updated.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                     {teachingStaff.map((teacher) => (
+                         <Card key={teacher.id} className="overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800 group">
+                            <div className="aspect-square relative bg-blue-50 dark:bg-blue-900/20 overflow-hidden">
+                                {teacher.image_url ? (
+                                    <Image 
+                                        src={teacher.image_url} 
+                                        alt={`${teacher.first_name} ${teacher.last_name}`}
+                                        fill
+                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-blue-200 dark:text-blue-800">
+                                        <GraduationCap className="w-24 h-24 opacity-20" />
+                                    </div>
+                                )}
+                                {teacher.position && (
+                                    <div className="absolute top-0 right-0 p-3">
+                                        <Badge className="bg-blue-900/90 hover:bg-blue-900 text-white border-none shadow-sm backdrop-blur-sm">
+                                            {teacher.position}
+                                        </Badge>
+                                    </div>
+                                )}
+                            </div>
+                            <CardContent className="p-6 text-center space-y-2 relative">
+                                <div className="absolute -top-5 left-1/2 transform -translate-x-1/2">
+                                     <div className="bg-blue-600 text-white p-2 rounded-full shadow-lg ring-4 ring-white dark:ring-gray-800">
+                                        <Award className="w-5 h-5" />
+                                     </div>
+                                </div>
+                                <div className="pt-3">
+                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                                        {teacher.title ? `${teacher.title} ` : ''}{teacher.first_name} {teacher.last_name}
+                                    </h3>
+                                    <p className="text-blue-600 dark:text-blue-400 font-medium text-sm">
+                                        {teacher.specialization || 'General Education'}
+                                    </p>
+                                </div>
+                            </CardContent>
+                         </Card>
+                     ))}
+                </div>
+            )}
+        </section>
+        
+        {/* 3. School Prefects Section */}
+        <section className="space-y-8 pt-8 border-t border-gray-200 dark:border-gray-800">
             <div className="text-center space-y-4 max-w-2xl mx-auto">
                 <Badge variant="secondary" className="px-4 py-1.5 text-sm uppercase tracking-widest bg-yellow-100 text-yellow-800 border-yellow-200">
                     Student Administration
@@ -134,70 +278,6 @@ export default function LeadershipPage() {
                             </div>
                         </div>
                     ))}
-                </div>
-            )}
-        </section>
-
-        {/* Staff Section */}
-        <section className="space-y-8 pt-8 border-t border-gray-200 dark:border-gray-800">
-             <div className="text-center space-y-4 max-w-2xl mx-auto">
-                <Badge variant="secondary" className="px-4 py-1.5 text-sm uppercase tracking-widest bg-blue-100 text-blue-800 border-blue-200">
-                    Academic Staff
-                </Badge>
-                <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Teaching Body</h2>
-                <div className="h-1 w-20 bg-blue-600 mx-auto rounded-full"></div>
-                <p className="text-gray-500 dark:text-gray-400">
-                    Our committed educators shaping the future of our students.
-                </p>
-            </div>
-
-            {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {[1,2,3,4].map(i => <Skeleton key={i} className="h-80 w-full rounded-2xl" />)}
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                     {teachers.map((teacher) => (
-                         <Card key={teacher.id} className="overflow-hidden border-none shadow-lg hover:shadow-xl transition-shadow bg-white dark:bg-gray-800 group">
-                            <div className="aspect-square relative bg-blue-50 dark:bg-blue-900/20 overflow-hidden">
-                                {teacher.image_url ? (
-                                    <Image 
-                                        src={teacher.image_url} 
-                                        alt={`${teacher.first_name} ${teacher.last_name}`}
-                                        fill
-                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-blue-200 dark:text-blue-800">
-                                        <GraduationCap className="w-24 h-24 opacity-20" />
-                                    </div>
-                                )}
-                                {/* Rank/Position Badge Overlay */}
-                                {teacher.position && (
-                                    <div className="absolute top-0 right-0 p-3">
-                                        <Badge className="bg-blue-900/90 hover:bg-blue-900 text-white border-none shadow-sm backdrop-blur-sm">
-                                            {teacher.position}
-                                        </Badge>
-                                    </div>
-                                )}
-                            </div>
-                            <CardContent className="p-6 text-center space-y-2 relative">
-                                <div className="absolute -top-5 left-1/2 transform -translate-x-1/2">
-                                     <div className="bg-blue-600 text-white p-2 rounded-full shadow-lg ring-4 ring-white dark:ring-gray-800">
-                                        <Award className="w-5 h-5" />
-                                     </div>
-                                </div>
-                                <div className="pt-3">
-                                    <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                                        {teacher.title ? `${teacher.title} ` : ''}{teacher.first_name} {teacher.last_name}
-                                    </h3>
-                                    <p className="text-blue-600 dark:text-blue-400 font-medium text-sm">
-                                        {teacher.specialization || 'General Education'}
-                                    </p>
-                                </div>
-                            </CardContent>
-                         </Card>
-                     ))}
                 </div>
             )}
         </section>
