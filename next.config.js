@@ -1,6 +1,6 @@
 const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
-  cacheOnFrontEndNav: true,
+  cacheOnFrontEndNav: false,
   aggressiveFrontEndNavCaching: false, // Changed to false to prevent blue screen/stale shell
   reloadOnOnline: true,
   swcMinify: true,
@@ -20,7 +20,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /_next\/static\/.*/i,
         handler: "NetworkFirst", // Ensure we get fresh chunks
         options: {
-          cacheName: "next-static-js-assets-v2", // Bump version to invalidate old cache
+          cacheName: "next-static-js-assets-v3", // Bump version
           expiration: {
             maxEntries: 200,
             maxAgeSeconds: 24 * 60 * 60,
@@ -29,126 +29,133 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         },
       },
       {
-         // Supabase API - reduced cache time significantly
+         // Supabase API
         urlPattern: /^https:\/\/okfawhokrtkaibhbcjdk\.supabase\.co\/rest\/v1\/.*/i,
         handler: "NetworkFirst",
         options: {
-          cacheName: "supabase-api-cache-v2", // Bump version
+          cacheName: "supabase-api-cache-v3", // Bump version
           expiration: {
             maxEntries: 200,
-            maxAgeSeconds: 60 * 5, // Reduced to 5 minutes for faster updates
+            maxAgeSeconds: 60 * 5, 
           },
-          networkTimeoutSeconds: 5, // Faster fallback if offline
+          networkTimeoutSeconds: 5, 
         },
       },
       {
         urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
         handler: "CacheFirst",
         options: {
-          cacheName: "google-fonts-v2",
+          cacheName: "google-fonts-v3",
           expiration: {
             maxEntries: 4,
-            maxAgeSeconds: 365 * 24 * 60 * 60, // 1 year
+            maxAgeSeconds: 365 * 24 * 60 * 60, 
           },
         },
       },
       {
         urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
-        handler: "StaleWhileRevalidate",
+        handler: "NetworkFirst",
         options: {
-          cacheName: "static-font-assets-v2",
+          cacheName: "static-font-assets-v3",
           expiration: {
             maxEntries: 4,
-            maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
+            maxAgeSeconds: 7 * 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
-        handler: "StaleWhileRevalidate",
+        handler: "NetworkFirst",
         options: {
-          cacheName: "static-image-assets-v2",
+          cacheName: "static-image-assets-v3",
           expiration: {
             maxEntries: 64,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\/_next\/image\?url=.+$/i,
-        handler: "StaleWhileRevalidate",
+        handler: "NetworkFirst",
         options: {
-          cacheName: "next-image-v2",
+          cacheName: "next-image-v3",
           expiration: {
             maxEntries: 64,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\.(?:mp3|wav|m4a)$/i,
-        handler: "CacheFirst",
+        handler: "NetworkFirst",
         options: {
-          cacheName: "static-audio-assets-v2",
+          cacheName: "static-audio-assets-v3",
           expiration: {
             maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\.(?:mp4|webm)$/i,
-        handler: "CacheFirst",
+        handler: "NetworkFirst",
         options: {
-
-          cacheName: "static-video-assets",
+          cacheName: "static-video-assets-v3",
           expiration: {
             maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\.(?:js)$/i,
-        handler: "StaleWhileRevalidate",
+        handler: "NetworkFirst",
         options: {
-          cacheName: "static-js-assets",
+          cacheName: "static-js-assets-v3",
           expiration: {
             maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\.(?:css|less)$/i,
-        handler: "StaleWhileRevalidate",
+        handler: "NetworkFirst",
         options: {
-          cacheName: "static-style-assets",
+          cacheName: "static-style-assets-v3",
           expiration: {
             maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\/_next\/data\/.+\/.+\.json$/i,
-        handler: "StaleWhileRevalidate",
+        handler: "NetworkFirst",
         options: {
-          cacheName: "next-data",
+          cacheName: "next-data-v3",
           expiration: {
             maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
+          networkTimeoutSeconds: 5,
         },
       },
       {
         urlPattern: /\/api\/.*$/i,
         handler: "NetworkFirst",
         options: {
-          cacheName: "apis",
+          cacheName: "apis-v3",
           expiration: {
             maxEntries: 16,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
           networkTimeoutSeconds: 10,
         },
@@ -157,10 +164,10 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         urlPattern: /.*/i,
         handler: "NetworkFirst",
         options: {
-          cacheName: "others",
+          cacheName: "others-v3",
           expiration: {
             maxEntries: 32,
-            maxAgeSeconds: 24 * 60 * 60, // 24 hours
+            maxAgeSeconds: 24 * 60 * 60, 
           },
           networkTimeoutSeconds: 10,
         },
