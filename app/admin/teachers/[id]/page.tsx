@@ -145,13 +145,9 @@ export default function EditTeacherPage() {
         setAssignedClasses(classAssignments.map((a: any) => a.class_id))
         
         // Determine class teacher status
-        // Auto-fix: If model is class_teacher, ensure they are marked as class teacher
+        // Trust the DB flag - do not auto-force based on model to avoid conflicts
         const ctIds = classAssignments
-          .filter((a: any) => {
-            if (a.is_class_teacher) return true
-            if (models[a.class_id] === 'class_teacher') return true
-            return false
-          })
+          .filter((a: any) => a.is_class_teacher)
           .map((a: any) => a.class_id)
           
         setClassTeacherFor(ctIds)

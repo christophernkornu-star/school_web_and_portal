@@ -110,15 +110,11 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo Area */}
-          <div className="h-16 flex items-center justify-between px-6 border-b border-gray-200 dark:border-gray-800 bg-blue-900 text-white">
-            <div className="flex items-center gap-2 font-bold text-lg">
-              <GraduationCap className="h-6 w-6 text-yellow-400" />
-              <span>Admin Portal</span>
-            </div>
+          {/* Logo Area removed as per request, just keeping close button for mobile if needed, or maybe just remove content */}
+          <div className="h-16 flex items-center justify-end px-6 border-b border-gray-200 dark:border-gray-800 bg-blue-900 text-white lg:hidden">
             <button 
               onClick={() => setIsOpen(false)}
-              className="lg:hidden p-1 hover:bg-white/10 rounded-md transition-colors"
+              className="p-1 hover:bg-white/10 rounded-md transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -140,13 +136,13 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
                         href={item.href}
                         onClick={() => setIsOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                          "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors group",
                           isActive 
                             ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" 
-                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-methodist-blue hover:text-white dark:hover:bg-methodist-gold dark:hover:text-black"
                         )}
                       >
-                        <item.icon className={cn("h-4 w-4", isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-500")} />
+                        <item.icon className={cn("h-4 w-4", isActive ? "text-blue-600 dark:text-blue-400" : "text-gray-500 group-hover:text-white dark:group-hover:text-black")} />
                         {item.label}
                       </Link>
                     )
@@ -155,11 +151,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
               </div>
             ))}
           </div>
-          
-          {/* Bottom Footer Area (Optional) */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800 text-xs text-center text-gray-500">
-            Biriwa Methodist Support
-          </div>
+          {/* Bottom Footer Area (Optional) - Removed */}
         </div>
       </aside>
     </>

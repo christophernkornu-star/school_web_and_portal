@@ -86,23 +86,23 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
   const totalNotifications = pendingAdmissions + unreadComplaints
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-white dark:bg-gray-900 border-b-4 border-yellow-500 shadow-sm">
+    <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         {/* Left: Mobile Toggle & Brand/Breadcrumb */}
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsOpen(true)}
-            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-methodist-blue dark:text-methodist-gold"
+            className="lg:hidden p-2 hover:bg-white/20 rounded-lg text-blue-900"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-6 w-6" />
           </button>
           
           <div className="hidden md:flex flex-col">
-             <span className="text-xl font-black text-blue-900 dark:text-blue-100 tracking-tight leading-none">
-               Biriwa Methodist 'C'
+             <span className="text-xl font-black text-blue-900 tracking-tight leading-none drop-shadow-sm">
+               Biriwa Methodist 'C' Basic School
              </span>
-             <span className="text-sm font-bold text-red-700 dark:text-red-400 tracking-wide uppercase">
-               Basic School
+             <span className="text-sm font-bold text-red-700 tracking-wider">
+               ADMIN PORTAL
              </span>
           </div>
         </div>
@@ -110,11 +110,11 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
         {/* Right: Actions */}
         <div className="flex items-center gap-2 md:gap-4">
           {/* Search Trigger (Mock) */}
-          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-100 transition-colors w-48 lg:w-64">
+          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-blue-900/70 bg-white/30 border border-blue-900/10 rounded-md hover:bg-white/50 transition-colors w-48 lg:w-64 placeholder-blue-900/50">
              <Search className="h-4 w-4" />
-             <span>Search... (Ctrl+K)</span>
+             <span className="font-medium">Search... (Ctrl+K)</span>
           </button>
-          <button className="sm:hidden p-2 text-gray-500">
+          <button className="sm:hidden p-2 text-blue-900 hover:bg-white/20 rounded-full">
              <Search className="h-5 w-5" />
           </button>
 
@@ -122,11 +122,11 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
           <div className="relative" ref={notificationRef}>
             <button 
               onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none"
+              className="relative p-2 text-blue-900 hover:bg-white/20 rounded-full transition-colors focus:outline-none"
             >
-              <Bell className={`h-5 w-5 ${totalNotifications > 0 ? 'text-blue-900 dark:text-blue-400' : ''}`} />
+              <Bell className="h-6 w-6" />
               {totalNotifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white border-2 border-white dark:border-gray-900">
+                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white border-2 border-yellow-500">
                   {totalNotifications > 9 ? '9+' : totalNotifications}
                 </span>
               )}
@@ -148,6 +148,7 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
                     {totalNotifications === 0 ? (
                       <div className="py-8 text-center text-gray-500">
                         <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
+
                         <p className="text-sm">No new notifications</p>
                       </div>
                     ) : (
@@ -200,20 +201,20 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
             )}
           </div>
 
-          <div className="h-8 w-[1px] bg-gray-200 dark:bg-gray-700 mx-1"></div>
+          <div className="h-8 w-[1px] bg-blue-900/10 mx-1"></div>
 
           {/* User Profile */}
           <div className="flex items-center gap-3 pl-1">
              <div className="hidden md:block text-right">
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 leading-none">
+                <p className="text-sm font-bold text-blue-900 leading-none">
                   {profile?.full_name || 'Administrator'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">Admin Portal</p>
+                <p className="text-xs text-blue-900/70 mt-1 font-medium">Admin Portal</p>
              </div>
              
              <button 
                 onClick={handleLogout}
-                className="flex items-center gap-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-2 text-sm text-red-700 bg-white/30 hover:bg-white/50 px-3 py-2 rounded-lg transition-colors font-semibold shadow-sm"
                 title="Logout"
              >
                 <LogOut className="h-4 w-4" />

@@ -18,6 +18,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow, differenceInDays } from 'date-fns'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { StudentStatsModal } from '@/components/admin/StudentStatsModal'
+import { TeacherStatsModal } from '@/components/admin/TeacherStatsModal'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -35,6 +37,8 @@ export default function AdminDashboard() {
   const [currentTerm, setCurrentTerm] = useState<any>(null)
   
   const [loading, setLoading] = useState(true)
+  const [showStatsModal, setShowStatsModal] = useState(false)
+  const [showTeacherModal, setShowTeacherModal] = useState(false)
 
   useEffect(() => {
     if (contextLoading) return
@@ -116,20 +120,24 @@ export default function AdminDashboard() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatsCard 
-            title="Total Students" 
-            value={stats.totalStudents} 
-            icon={Users} 
-            trend="+2.5% from last term"
-            description="Active Records"
-          />
-          <StatsCard 
-            title="Active Teachers" 
-            value={stats.totalTeachers} 
-            icon={GraduationCap} 
-            trend="All staff present"
-            description="Teaching Staff"
-          />
+          <div onClick={() => setShowStatsModal(true)} className="cursor-pointer transition-transform hover:scale-105">
+            <StatsCard 
+              title="Total Students" 
+              value={stats.totalStudents} 
+              icon={Users} 
+              trend="+2.5% from last term"
+              description="Active Records"
+            />
+          </div>
+          <div onClick={() => setShowTeacherModal(true)} className="cursor-pointer transition-transform hover:scale-105">
+            <StatsCard 
+              title="Active Teachers" 
+              value={stats.totalTeachers} 
+              icon={GraduationCap} 
+              trend="All staff present"
+              description="Teaching Staff"
+            />
+          </div>
           <StatsCard 
             title="Active Classes" 
             value={stats.totalClasses} 
@@ -145,6 +153,11 @@ export default function AdminDashboard() {
             description="Pending Review"
           />
         </div>
+        
+        {/* Student Stats Modal */}
+        <StudentStatsModal isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} />
+        {/* Teacher Stats Modal */}
+        <TeacherStatsModal isOpen={showTeacherModal} onClose={() => setShowTeacherModal(false)} />
 
         {/* Main Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

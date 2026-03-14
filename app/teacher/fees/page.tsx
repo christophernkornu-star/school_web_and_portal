@@ -8,7 +8,8 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { 
   DollarSign, Users, Calendar, Search, Plus, FileText, 
-  CheckCircle, AlertCircle, ChevronDown, Loader2, CreditCard, FileBarChart, ArrowLeft
+  CheckCircle, AlertCircle, ChevronDown, Loader2, CreditCard, FileBarChart, ArrowLeft,
+  Edit2, Trash2, X
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
@@ -34,6 +35,8 @@ export default function TeacherFeesPage() {
   })
   const [submitting, setSubmitting] = useState(false)
   const [isReadOnly, setIsReadOnly] = useState(false)
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null)
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null)
 
   useEffect(() => {
     loadInitialData()
@@ -168,40 +171,118 @@ export default function TeacherFeesPage() {
     e.preventDefault()
     if (!selectedStudent || !paymentForm.fee_structure_id || !paymentForm.amount_paid) return
 
+    const amount = parseFloat(paymentForm.amount_paid)
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Please enter a valid amount')
+      return
+    }
+
     setSubmitting(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
 
-      const { error } = await supabase
-        .from('fee_payments')
-        .insert({
-          student_id: selectedStudent.id,
-          fee_structure_id: paymentForm.fee_structure_id,
-          amount_paid: parseFloat(paymentForm.amount_paid),
-          payment_method: paymentForm.payment_method,
-          remarks: paymentForm.remarks,
-          recorded_by: user?.id
-        })
+      if (editingPaymentId) {
+        // Update existing payment
+        const { error } = await supabase
+          .from('fee_payments')
+          .update({
+            fee_structure_id: paymentForm.fee_structure_id,
+            amount_paid: amount,
+            payment_method: paymentForm.payment_method,
+            remarks: paymentForm.remarks
+          })
+          .eq('id', editingPaymentId)
 
-      if (error) throw error
+        if (error) throw error
+        toast.success('Payment updated successfully')
+      } else {
+        // Create new payment
+        const { error } = await supabase
+          .from('fee_payments')
+          .insert({
+            student_id: selectedStudent.id,
+            fee_structure_id: paymentForm.fee_structure_id,
+            amount_paid: amount,
+            payment_method: paymentForm.payment_method,
+            remarks: paymentForm.remarks,
+            recorded_by: user?.id
+          })
+
+        if (error) throw error
+        toast.success('Payment recorded successfully')
+      }
 
       // Refresh data
       loadClassData(selectedClass)
-      setShowPaymentModal(false)
+      // Only close if it was a new payment, or reset form if editing
+      if (editingPaymentId) {
+        setEditingPaymentId(null)
+      } else {
+        // Optional: keep modal open to add more? usually default to close or stay. 
+        // Let's keep modal open but reset form
+      }
+      
       setPaymentForm({
         fee_structure_id: '',
         amount_paid: '',
         payment_method: 'Cash',
         remarks: ''
       })
-      toast.success('Payment recorded successfully')
     } catch (error) {
-      console.error('Error recording payment:', error)
-      toast.error('Failed to record payment')
+      console.error('Error saving payment:', error)
+      toast.error('Failed to save payment')
     } finally {
       setSubmitting(false)
     }
   }
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) return
+
+    setDeletingPaymentId(paymentId)
+    try {
+      const { error } = await supabase
+        .from('fee_payments')
+        .delete()
+        .eq('id', paymentId)
+
+      if (error) throw error
+
+      toast.success('Payment deleted successfully')
+      loadClassData(selectedClass)
+      
+      // If we were editing this payment, cancel edit
+      if (editingPaymentId === paymentId) {
+        handleCancelEdit()
+      }
+    } catch (error) {
+      console.error('Error deleting payment:', error)
+      toast.error('Failed to delete payment')
+    } finally {
+      setDeletingPaymentId(null)
+    }
+  }
+
+  const handleEditClick = (payment: any) => {
+    setEditingPaymentId(payment.id)
+    setPaymentForm({
+      fee_structure_id: payment.fee_structure_id,
+      amount_paid: payment.amount_paid.toString(),
+      payment_method: payment.payment_method,
+      remarks: payment.remarks || ''
+    })
+  }
+
+  const handleCancelEdit = () => {
+    setEditingPaymentId(null)
+    setPaymentForm({
+      fee_structure_id: '',
+      amount_paid: '',
+      payment_method: 'Cash',
+      remarks: ''
+    })
+  }
+
 
   const getStudentPaymentStatus = (studentId: string, feeStructureId: string, totalAmount: number) => {
     const studentPayments = payments.filter(
@@ -477,24 +558,26 @@ export default function TeacherFeesPage() {
               </div>
               <div className="flex items-center gap-2">
                 <button 
-                  onClick={() => setShowPaymentModal(false)}
+                  onClick={() => {
+                    setShowPaymentModal(false)
+                    handleCancelEdit()
+                  }}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-2"
                 >
                   <span className="sr-only">Close</span>
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-6 h-6" />
                 </button>
               </div>
             </div>
             
             <div className="overflow-y-auto p-4 md:p-6 space-y-8">
-              {/* New Payment Form */}
+              {/* New Payment / Edit Form */}
               <section>
                 <h4 className="text-sm font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Plus className="w-4 h-4" /> Record New Payment
+                  <Plus className={`w-4 h-4 ${editingPaymentId ? 'text-blue-500' : 'text-green-500'}`} />
+                  {editingPaymentId ? 'Edit Payment Record' : 'Record New Payment'}
                 </h4>
-                <form onSubmit={handlePaymentSubmit} className="space-y-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-100 dark:border-gray-600">
+                <form onSubmit={handlePaymentSubmit} className={`space-y-4 p-4 rounded-lg border ${editingPaymentId ? 'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-800' : 'bg-gray-50 border-gray-100 dark:bg-gray-700 dark:border-gray-600'}`}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Fee Type</label>
@@ -550,21 +633,34 @@ export default function TeacherFeesPage() {
                     />
                   </div>
 
-                  <div className="flex justify-end pt-2">
+                  <div className="flex justify-end pt-2 gap-2">
+                    {editingPaymentId && (
+                      <button
+                        type="button"
+                        onClick={handleCancelEdit}
+                        className="px-4 py-2 bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 text-sm font-medium"
+                      >
+                        Cancel Edit
+                      </button>
+                    )}
                     <button
                       type="submit"
                       disabled={submitting}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                      className={`px-4 py-2 text-white rounded-lg disabled:opacity-50 flex items-center gap-2 text-sm font-medium ${
+                        editingPaymentId 
+                          ? 'bg-blue-600 hover:bg-blue-700' 
+                          : 'bg-green-600 hover:bg-green-700'
+                      }`}
                     >
                       {submitting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          Saving...
+                          {editingPaymentId ? 'Updating...' : 'Saving...'}
                         </>
                       ) : (
                         <>
                           <CheckCircle className="w-4 h-4" />
-                          Save Payment
+                          {editingPaymentId ? 'Update Payment' : 'Save Payment'}
                         </>
                       )}
                     </button>
@@ -585,13 +681,15 @@ export default function TeacherFeesPage() {
                         <th className="px-4 py-2 whitespace-nowrap">Fee Type</th>
                         <th className="px-4 py-2 whitespace-nowrap">Amount</th>
                         <th className="px-4 py-2 whitespace-nowrap">Method</th>
+                        <th className="px-4 py-2 whitespace-nowrap">Remarks</th>
                         <th className="px-4 py-2 whitespace-nowrap">Recorded By</th>
+                        <th className="px-4 py-2 whitespace-nowrap text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                       {payments.filter(p => p.student_id === selectedStudent.id).length === 0 ? (
                         <tr>
-                          <td colSpan={5} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                          <td colSpan={7} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                             No payments recorded yet.
                           </td>
                         </tr>
@@ -614,8 +712,35 @@ export default function TeacherFeesPage() {
                                 <td className="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
                                   {payment.payment_method}
                                 </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 max-w-[200px] truncate" title={payment.remarks}>
+                                  {payment.remarks || '-'}
+                                </td>
                                 <td className="px-4 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400 text-xs">
                                   {payment.profiles?.full_name || 'Unknown'}
+                                </td>
+                                <td className="px-4 py-2 whitespace-nowrap text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button
+                                      onClick={() => handleEditClick(payment)}
+                                      disabled={deletingPaymentId === payment.id || isReadOnly}
+                                      className="p-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/30 rounded-md transition-colors disabled:opacity-50"
+                                      title="Edit Payment"
+                                    >
+                                      <Edit2 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeletePayment(payment.id)}
+                                      disabled={deletingPaymentId === payment.id || isReadOnly}
+                                      className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-md transition-colors disabled:opacity-50"
+                                      title="Delete Payment"
+                                    >
+                                      {deletingPaymentId === payment.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             )

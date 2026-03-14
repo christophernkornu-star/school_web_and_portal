@@ -1,0 +1,362 @@
+'use client'
+
+import { useState, useEffect, useMemo } from 'react'
+import { X, Search, Filter, Loader2, Users, Baby, ChevronDown, ChevronRight } from 'lucide-react'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { differenceInYears } from 'date-fns'
+import { Button } from '@/components/ui/button'
+
+interface StudentStatsModalProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export function StudentStatsModal({ isOpen, onClose }: StudentStatsModalProps) {
+  const [loading, setLoading] = useState(true)
+  const [students, setStudents] = useState<any[]>([])
+  const [classes, setClasses] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'overview' | 'levels' | 'classes' | 'age'>('overview')
+  
+  // Age Calculation State
+  const [ageRange, setAgeRange] = useState({ min: 5, max: 15 })
+  const [ageStats, setAgeStats] = useState({ male: 0, female: 0, total: 0 })
+
+  const supabase = getSupabaseBrowserClient()
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchData()
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (activeTab === 'age' && students.length > 0) {
+      calculateAgeStats()
+    }
+  }, [ageRange, students, activeTab])
+
+  const fetchData = async () => {
+    setLoading(true)
+    try {
+      // Fetch active students with gender, dob, class info
+      const { data: studentsData, error: studentError } = await supabase
+        .from('students')
+        .select(`
+          id, gender, date_of_birth, status,
+          classes (id, name, level, category)
+        `)
+        .eq('status', 'active')
+
+      if (studentError) throw studentError
+      setStudents(studentsData || [])
+
+      // Fetch all classes for reference
+      const { data: classesData, error: classError } = await supabase
+        .from('classes')
+        .select('*')
+        .order('level', { ascending: true })
+
+      if (classError) throw classError
+      setClasses(classesData || [])
+
+    } catch (error) {
+      console.error('Error fetching student stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // --- Calculations ---
+
+  const totalStats = useMemo(() => {
+    const male = students.filter(s => s.gender === 'Male').length
+    const female = students.filter(s => s.gender === 'Female').length
+    return { male, female, total: students.length }
+  }, [students])
+
+  const levelStats = useMemo(() => {
+    // Categories: KG, Lower Primary, Upper Primary, JHS
+    const groups = {
+      KG: { male: 0, female: 0, total: 0 },
+      'Lower Primary': { male: 0, female: 0, total: 0 },
+      'Upper Primary': { male: 0, female: 0, total: 0 },
+      JHS: { male: 0, female: 0, total: 0 },
+      Other: { male: 0, female: 0, total: 0 }
+    }
+
+    students.forEach(s => {
+      const clsName = s.classes?.name || ''
+      let category = 'Other'
+
+      if (clsName.includes('KG') || clsName.includes('Kindergarten')) category = 'KG'
+      else if (clsName.match(/Basic [1-3]|Class [1-3]|P[1-3]/i)) category = 'Lower Primary'
+      else if (clsName.match(/Basic [4-6]|Class [4-6]|P[4-6]/i)) category = 'Upper Primary'
+      // JHS Match needs to be more robust or fallback if nothing else matches but has JHS in name
+      else if (clsName.match(/JHS|Junior High|Basic [7-9]|BS [7-9]/i)) category = 'JHS' 
+      
+      // Fallback for known JHS classes if regex misses
+      if (category === 'Other' && (clsName.includes('JHS') || clsName.includes('Basic 7') || clsName.includes('Basic 8') || clsName.includes('Basic 9'))) {
+          category = 'JHS'
+      }
+
+      if (s.gender === 'Male') groups[category as keyof typeof groups].male++
+      else if (s.gender === 'Female') groups[category as keyof typeof groups].female++
+      
+      groups[category as keyof typeof groups].total++
+    })
+
+    return groups
+  }, [students])
+
+  const classStats = useMemo(() => {
+    const stats: Record<string, { male: 0, female: 0, total: 0, id: string }> = {}
+
+    // Initialize with all classes to show even empty ones
+    classes.forEach(c => {
+      stats[c.name] = { male: 0, female: 0, total: 0, id: c.id }
+    })
+
+    students.forEach(s => {
+      const clsName = s.classes?.name
+      if (clsName && stats[clsName]) {
+        if (s.gender === 'Male') stats[clsName].male++
+        else if (s.gender === 'Female') stats[clsName].female++
+        stats[clsName].total++
+      }
+    })
+
+    return Object.entries(stats).sort((a, b) => {
+       // Try sort by level if available in classes array
+       const clsA = classes.find(c => c.name === a[0])
+       const clsB = classes.find(c => c.name === b[0])
+       return (clsA?.level || 0) - (clsB?.level || 0)
+    })
+  }, [students, classes])
+
+  const calculateAgeStats = () => {
+    const today = new Date()
+    let male = 0
+    let female = 0
+
+    students.forEach(s => {
+      if (!s.date_of_birth) return
+      const age = differenceInYears(today, new Date(s.date_of_birth))
+      
+      if (age >= ageRange.min && age <= ageRange.max) {
+        if (s.gender === 'Male') male++
+        else if (s.gender === 'Female') female++
+      }
+    })
+
+    setAgeStats({ male, female, total: male + female })
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
+        
+        {/* Header */}
+        <div className="p-4 md:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <Users className="w-6 h-6 text-blue-600" />
+              Student Demographics
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Detailed breakdown of student population</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors">
+            <X className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+            
+            {/* Sidebar Tabs */}
+            <div className="w-full md:w-64 bg-gray-50 dark:bg-gray-900/30 border-r border-gray-100 dark:border-gray-700 p-4 space-y-2 overflow-y-auto">
+              {['overview', 'levels', 'classes', 'age'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab as any)}
+                  className={`w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-between group ${
+                    activeTab === tab 
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <span className="capitalize">{tab.replace('-', ' ')} Breakdown</span>
+                  {activeTab === tab && <ChevronRight className="w-4 h-4 ml-2" />}
+                </button>
+              ))}
+            </div>
+
+            {/* Main Panel */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-white dark:bg-gray-800">
+              {loading ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                  <Loader2 className="w-8 h-8 animate-spin mb-4 text-blue-500" />
+                  <p>Analyzing student data...</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  
+                  {/* Overview Tab */}
+                  {activeTab === 'overview' && (
+                    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b pb-2">Total Population</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                         <StatCard title="Total Students" value={totalStats.total} color="bg-blue-50 text-blue-700 border-blue-200" icon={Users} />
+                         <StatCard title="Total Boys" value={totalStats.male} color="bg-cyan-50 text-cyan-700 border-cyan-200" icon={Users} />
+                         <StatCard title="Total Girls" value={totalStats.female} color="bg-pink-50 text-pink-700 border-pink-200" icon={Users} />
+                      </div>
+
+                      <div className="pt-8">
+                         <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Gender Distribution</h4>
+                         <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex">
+                            <div className="bg-cyan-500 h-full transition-all duration-1000" style={{ width: `${(totalStats.male / totalStats.total) * 100}%` }} />
+                            <div className="bg-pink-500 h-full transition-all duration-1000" style={{ width: `${(totalStats.female / totalStats.total) * 100}%` }} />
+                         </div>
+                         <div className="flex justify-between mt-2 text-sm font-medium">
+                            <span className="text-cyan-600">{((totalStats.male / totalStats.total) * 100).toFixed(1)}% Boys</span>
+                            <span className="text-pink-600">{((totalStats.female / totalStats.total) * 100).toFixed(1)}% Girls</span>
+                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                   {/* Levels Tab */}
+                   {activeTab === 'levels' && (
+                    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b pb-2">Level Breakdown</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {Object.entries(levelStats).map(([level, stats]) => (
+                           stats.total > 0 && (
+                            <div key={level} className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                              <div className="flex justify-between items-start mb-4">
+                                <div>
+                                  <h4 className="font-bold text-gray-800 dark:text-gray-200 text-lg">{level}</h4>
+                                  <span className="text-sm text-gray-500">{stats.total} Students</span>
+                                </div>
+                                <span className={`px-2 py-1 rounded bg-white dark:bg-gray-700 text-xs font-mono shadow-sm border dark:border-gray-600`}>
+                                   {((stats.total / totalStats.total) * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div className="bg-cyan-100/50 dark:bg-cyan-900/20 p-2 rounded flex flex-col">
+                                   <span className="text-cyan-700 dark:text-cyan-400 font-semibold">{stats.male}</span>
+                                   <span className="text-xs text-cyan-600/80 dark:text-cyan-500/80">Boys</span>
+                                </div>
+                                <div className="bg-pink-100/50 dark:bg-pink-900/20 p-2 rounded flex flex-col">
+                                   <span className="text-pink-700 dark:text-pink-400 font-semibold">{stats.female}</span>
+                                   <span className="text-xs text-pink-600/80 dark:text-pink-500/80">Girls</span>
+                                </div>
+                              </div>
+                            </div>
+                           )
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Classes Tab */}
+                  {activeTab === 'classes' && (
+                    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b pb-2">Class Breakdown</h3>
+                      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                        <table className="w-full text-sm text-left">
+                          <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-medium">
+                            <tr>
+                              <th className="px-4 py-3">Class Name</th>
+                              <th className="px-4 py-3 text-center text-cyan-600">Boys</th>
+                              <th className="px-4 py-3 text-center text-pink-600">Girls</th>
+                              <th className="px-4 py-3 text-right font-bold">Total</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                            {classStats.map(([className, stats]) => (
+                              <tr key={className} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-200">{className}</td>
+                                <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{stats.male}</td>
+                                <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{stats.female}</td>
+                                <td className="px-4 py-3 text-right font-bold text-gray-900 dark:text-white">{stats.total}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Age Tab */}
+                  {activeTab === 'age' && (
+                    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b pb-2">Age Distribution</h3>
+                      
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-100 dark:border-blue-800 space-y-4">
+                         <div className="flex flex-col md:flex-row gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Minimum Age (Years)</label>
+                               <input 
+                                 type="number" 
+                                 value={ageRange.min} 
+                                 onChange={(e) => setAgeRange({...ageRange, min: parseInt(e.target.value) || 0})}
+                                 className="w-full p-2 rounded-lg border dark:bg-gray-700 dark:border-gray-600"
+                               />
+                            </div>
+                            <div className="flex-1 space-y-2">
+                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Maximum Age (Years)</label>
+                               <input 
+                                 type="number" 
+                                 value={ageRange.max} 
+                                 onChange={(e) => setAgeRange({...ageRange, max: parseInt(e.target.value) || 20})}
+                                 className="w-full p-2 rounded-lg border dark:bg-gray-700 dark:border-gray-600"
+                               />
+                            </div>
+                            <Button 
+                              onClick={calculateAgeStats}
+                              className="bg-blue-600 text-white"
+                            >
+                              Calculate
+                            </Button>
+                         </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4">
+                         <StatCard 
+                            title={`Students Aged ${ageRange.min}-${ageRange.max}`} 
+                            value={ageStats.total} 
+                            color="bg-purple-50 text-purple-700 border-purple-200" 
+                            icon={Baby} 
+                            subtext={`${((ageStats.total / totalStats.total) * 100 || 0).toFixed(1)}% of total`}
+                         />
+                         <StatCard title="Boys in range" value={ageStats.male} color="bg-cyan-50 text-cyan-700 border-cyan-200" icon={Users} />
+                         <StatCard title="Girls in range" value={ageStats.female} color="bg-pink-50 text-pink-700 border-pink-200" icon={Users} />
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+              )}
+            </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function StatCard({ title, value, color, icon: Icon, subtext }: any) {
+  return (
+    <div className={`p-4 rounded-xl border ${color} flex flex-col justify-between h-24 sm:h-32 transition-transform hover:scale-105 duration-200`}>
+       <div className="flex justify-between items-start">
+         <h4 className="font-semibold text-sm opacity-80">{title}</h4>
+         <Icon className="w-5 h-5 opacity-60" />
+       </div>
+       <div>
+         <span className="text-3xl font-bold">{value}</span>
+         {subtext && <p className="text-xs opacity-70 mt-1">{subtext}</p>}
+       </div>
+    </div>
+  )
+}
