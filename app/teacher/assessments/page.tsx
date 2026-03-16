@@ -130,24 +130,24 @@ export default function AssessmentsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 md:px-6 py-6 font-sans">
+      <main className="container mx-auto px-4 md:px-6 py-4 md:py-6 font-sans">
         {/* Stats Overview */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">Total</p>
-            <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">{totalCount}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 md:p-4 border border-gray-100 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs font-medium uppercase tracking-wide">Total</p>
+            <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mt-1">{totalCount}</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">Published</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{publishedCount}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 md:p-4 border border-gray-100 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs font-medium uppercase tracking-wide">Published</p>
+            <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400 mt-1">{publishedCount}</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">Drafts</p>
-            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{draftCount}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 md:p-4 border border-gray-100 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs font-medium uppercase tracking-wide">Drafts</p>
+            <p className="text-xl md:text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">{draftCount}</p>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400 text-xs font-medium uppercase tracking-wide">Exams</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{examCount}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-3 md:p-4 border border-gray-100 dark:border-gray-700">
+            <p className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs font-medium uppercase tracking-wide">Exams</p>
+            <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">{examCount}</p>
           </div>
         </div>
 
@@ -158,7 +158,7 @@ export default function AssessmentsPage() {
                 <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`flex-1 min-w-[100px] px-4 md:px-6 py-3 text-sm font-medium transition-colors whitespace-nowrap text-center outline-none focus:bg-gray-50 dark:focus:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-700 ${
+                    className={`flex-1 min-w-[33%] md:min-w-[100px] px-2 md:px-6 py-3 text-xs md:text-sm font-medium transition-colors whitespace-nowrap text-center outline-none focus:bg-gray-50 dark:focus:bg-gray-700 active:bg-gray-100 dark:active:bg-gray-700 ${
                         filter === f 
                         ? 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border-b-2 border-blue-600 dark:border-blue-400' 
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 border-b-2 border-transparent'
@@ -172,15 +172,15 @@ export default function AssessmentsPage() {
 
         {/* Assessments List */}
         {filteredAssessments.length === 0 ? (
-            <div className="text-center py-16 sm:py-20 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mt-6">
-                <div className="mx-auto w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
-                    <BookOpen className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+            <div className="text-center py-12 md:py-20 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mt-6">
+                <div className="mx-auto w-12 h-12 md:w-16 md:h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+                    <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-blue-500 dark:text-blue-400" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">No assessments found</h3>
-                <p className="text-gray-500 dark:text-gray-400 mt-2 max-w-sm mx-auto px-4">Get started by creating a new assessment for your students.</p>
+                <h3 className="text-base md:text-lg font-medium text-gray-900 dark:text-white">No assessments found</h3>
+                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-2 max-w-sm mx-auto px-4">Get started by creating a new assessment for your students.</p>
                 <Link
                     href="/teacher/assessments/create"
-                    className="inline-flex items-center gap-2 mt-6 text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg transition-colors border border-blue-100 dark:border-blue-800"
+                    className="inline-flex items-center gap-2 mt-6 text-blue-600 dark:text-blue-400 font-semibold hover:text-blue-700 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-4 py-2 rounded-lg transition-colors border border-blue-100 dark:border-blue-800 text-sm md:text-base"
                 >
                     <Plus className="w-5 h-5" /> Create Assessment
                 </Link>
@@ -188,18 +188,15 @@ export default function AssessmentsPage() {
         ) : (
             <div className="space-y-4 mt-6">
             {filteredAssessments.map((assessment) => (
-                <div key={assessment.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 sm:p-5 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all">
+                <div key={assessment.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md transition-all">
                     <div className="flex flex-col md:flex-row gap-4">
                         <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
                                 <Link href={`/teacher/assessments/${assessment.id}`} className="group flex items-center gap-2 min-w-0 max-w-full cursor-pointer">
-                                    <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{assessment.title}</h3>
+                                    <h3 className="text-base font-bold text-gray-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{assessment.title}</h3>
                                 </Link>
                                 <div className="flex items-center gap-2">
-                                     <span className="md:hidden px-2 py-0.5 text-xs font-semibold rounded bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                                       {assessment.category}
-                                    </span>
-                                    <span className={`flex-shrink-0 px-2.5 py-0.5 text-xs font-bold rounded-full border ${
+                                    <span className={`flex-shrink-0 px-2.5 py-0.5 text-[10px] md:text-xs font-bold rounded-full border ${
                                     assessment.status === 'published' 
                                         ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800' 
                                         : assessment.status === 'closed'
@@ -211,56 +208,61 @@ export default function AssessmentsPage() {
                                 </div>
                             </div>
                             
-                            <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-sm text-gray-600 dark:text-gray-400 mt-3">
-                                <span className="hidden md:inline-block px-2 py-0.5 text-xs font-medium rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
+                            <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-y-2 gap-x-4 text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-3">
+                                <span className="col-span-2 sm:col-auto inline-block px-2 py-0.5 text-xs font-medium rounded bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800 w-fit">
                                     {assessment.category}
                                 </span>
-                                <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                                <div className="flex items-center gap-1.5">
                                     <BookOpen className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                                    <span className="truncate max-w-[120px] sm:max-w-[200px] font-medium">{assessment.subjects?.name || 'Unknown Subject'}</span>
+                                    <span className="truncate font-medium">{assessment.subjects?.name || 'Unknown Subject'}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs sm:text-sm">
+                                <div className="flex items-center gap-1.5">
                                     <div className="w-4 h-4 rounded bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-600">C</div>
                                     <span className="font-medium">{assessment.classes?.name || 'Unknown Class'}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                                     <Calendar className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                                     <span>{assessment.due_date ? new Date(assessment.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'No Due Date'}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                <div className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400">
                                     <Clock className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                                    <span>{assessment.duration_minutes ? assessment.duration_minutes + ' mins' : 'No Limit'}</span>
+                                    <span>{assessment.duration_minutes ? assessment.duration_minutes + ' min' : 'No Limit'}</span>
                                 </div>
                                 {assessment.total_points > 0 && (
-                                     <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 px-2 py-0.5 rounded border border-gray-100 dark:border-gray-700">
+                                     <div className="sm:hidden md:flex items-center gap-1.5 font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 px-2 py-0.5 rounded border border-gray-100 dark:border-gray-700 w-fit">
                                         <span>{assessment.total_points} Pts</span>
                                     </div>
                                 )}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 border-t md:border-t-0 border-gray-100 dark:border-gray-700 pt-3 md:pt-0 mt-2 md:mt-0 justify-end md:self-center">
-                            <Link 
-                                href={`/teacher/assessments/${assessment.id}`}
-                                className="flex items-center justify-center w-9 h-9 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800"
-                                title="View Details"
-                            >
-                                <Eye className="w-5 h-5" />
-                            </Link>
-                            <Link 
-                                href={`/teacher/assessments/edit/${assessment.id}`}
-                                className="flex items-center justify-center w-9 h-9 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
-                                title="Edit"
-                            >
-                                <Edit className="w-5 h-5" />
-                            </Link>
-                            <button 
-                                onClick={() => handleDelete(assessment.id)}
-                                className="flex items-center justify-center w-9 h-9 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
-                                title="Delete"
-                            >
-                                <Trash2 className="w-5 h-5" />
-                            </button>
+                        <div className="flex items-center gap-2 border-t md:border-t-0 border-gray-100 dark:border-gray-700 pt-3 md:pt-0 mt-2 md:mt-0 justify-between md:justify-end">
+                            <div className="md:hidden font-medium text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-700/50 px-2 py-0.5 rounded border border-gray-100 dark:border-gray-700 text-xs">
+                                {assessment.total_points} Pts
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Link 
+                                    href={`/teacher/assessments/${assessment.id}`}
+                                    className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-300 rounded-lg transition-colors border border-transparent hover:border-blue-100 dark:hover:border-blue-800"
+                                    title="View Details"
+                                >
+                                    <Eye className="w-4 h-4 md:w-5 md:h-5" />
+                                </Link>
+                                <Link 
+                                    href={`/teacher/assessments/edit/${assessment.id}`}
+                                    className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-lg transition-colors border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
+                                    title="Edit"
+                                >
+                                    <Edit className="w-4 h-4 md:w-5 md:h-5" />
+                                </Link>
+                                <button 
+                                    onClick={() => handleDelete(assessment.id)}
+                                    className="flex items-center justify-center w-8 h-8 md:w-9 md:h-9 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
+                                    title="Delete"
+                                >
+                                    <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

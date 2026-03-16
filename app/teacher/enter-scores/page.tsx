@@ -931,13 +931,13 @@ export default function EnterScores() {
                 <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-ghana-green text-white">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
-                        Student ID
+                      <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase w-20 md:w-auto">
+                        ID
                       </th>
-                      <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
-                        Student Name
+                      <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
+                        Name
                       </th>
-                      <th className="px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase">
+                      <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase w-24 md:w-auto">
                         Score
                       </th>
                     </tr>
@@ -945,15 +945,16 @@ export default function EnterScores() {
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                     {students.map((student) => (
                       <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100">
                           {student.student_id}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                          {student.last_name}, {student.middle_name ? student.middle_name + ', ' : ''}{student.first_name}
+                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                          <span className="md:hidden block truncate max-w-[120px] sm:max-w-xs">{student.last_name}, {student.first_name}</span>
+                          <span className="hidden md:block">{student.last_name}, {student.middle_name ? student.middle_name + ', ' : ''}{student.first_name}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-center">
                           {loadingScores ? (
-                            <div className="w-24 h-10 mx-auto bg-gray-100 dark:bg-gray-700 animate-pulse rounded" />
+                            <div className="w-16 md:w-24 h-8 md:h-10 mx-auto bg-gray-100 dark:bg-gray-700 animate-pulse rounded" />
                           ) : (
                             <input
                               type="number"
@@ -963,7 +964,7 @@ export default function EnterScores() {
                               disabled={isReadOnly}
                               value={scores[student.id] !== undefined ? scores[student.id] : ''}
                               onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                              className="w-24 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed placeholder-gray-400 dark:placeholder-gray-500"
+                              className="w-16 md:w-24 px-2 md:px-3 py-1 md:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed placeholder-gray-400 dark:placeholder-gray-500 text-sm"
                               placeholder="0.0"
                             />
                           )}

@@ -456,26 +456,30 @@ export default function TeacherFeesPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto relative">
+            <table className="w-full text-left border-collapse">
               <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-10 shadow-sm">Student</th>
+                  <th className="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px] max-w-[120px] md:min-w-[250px] md:max-w-none">
+                    Student
+                  </th>
                   {feeStructures.map(fee => (
-                    <th key={fee.id} className="px-4 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[150px]">
+                    <th key={fee.id} className="px-2 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[140px]">
                       {fee.fee_types?.name} <br/>
                       <span className="text-gray-400 dark:text-gray-500">GH₵ {fee.amount}</span>
                     </th>
                   ))}
-                  <th className="px-4 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                  <th className="px-2 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {loading ? (
                   <tr>
-                    <td colSpan={feeStructures.length + 2} className="px-4 md:px-6 py-12 text-center">
-                      <Loader2 className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400 animate-spin mx-auto" />
-                      <p className="mt-2 text-xs md:text-sm text-gray-500 dark:text-gray-400">Loading fee data...</p>
+                    <td colSpan={feeStructures.length + 2} className="px-4 md:px-6 py-12 text-center text-xs text-gray-500 dark:text-gray-400">
+                      <div className="flex flex-col items-center justify-center">
+                        <Loader2 className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400 animate-spin mb-2" />
+                        <p>Loading fee data...</p>
+                      </div>
                     </td>
                   </tr>
                 ) : filteredStudents.length === 0 ? (
@@ -487,23 +491,23 @@ export default function TeacherFeesPage() {
                 ) : (
                   filteredStudents.map(student => (
                     <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 shadow-sm">
+                      <td className="px-2 md:px-6 py-4 sticky left-0 bg-white dark:bg-gray-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px] max-w-[120px] md:min-w-[250px] md:max-w-none align-top md:align-middle">
                         <div className="flex items-center">
-                          <div className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 font-bold text-xs md:text-sm">
+                          <div className="hidden md:flex h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center text-gray-600 dark:text-gray-300 font-bold text-sm shrink-0">
                             {student.first_name[0]}{student.last_name[0]}
                           </div>
-                          <div className="ml-4">
-                            <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="md:ml-4 overflow-hidden w-full">
+                            <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white whitespace-normal break-words leading-tight">
                               {student.last_name} {student.middle_name ? `${student.middle_name} ` : ''}{student.first_name}
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{student.student_id}</div>
+                            <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{student.student_id}</div>
                           </div>
                         </div>
                       </td>
                       {feeStructures.map(fee => {
                         const status = getStudentPaymentStatus(student.id, fee.id, fee.amount)
                         return (
-                          <td key={fee.id} className="px-4 md:px-6 py-4 whitespace-nowrap text-center">
+                          <td key={fee.id} className="px-2 md:px-6 py-4 whitespace-nowrap text-center align-top md:align-middle">
                             <div className="flex flex-col items-center">
                               <span className={`px-2 py-1 text-[10px] md:text-xs font-semibold rounded-full ${
                                 status.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
@@ -519,7 +523,7 @@ export default function TeacherFeesPage() {
                           </td>
                         )
                       })}
-                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-center">
+                      <td className="px-2 md:px-6 py-4 whitespace-nowrap text-center align-top md:align-middle">
                         <button
                           onClick={() => {
                             if (!isReadOnly) {
@@ -533,7 +537,8 @@ export default function TeacherFeesPage() {
                           }`}
                         >
                           <Plus className="w-3 h-3 md:w-4 md:h-4" />
-                          Record Payment
+                          <span className="hidden md:inline">Record Payment</span>
+                          <span className="md:hidden">Pay</span>
                         </button>
                       </td>
                     </tr>

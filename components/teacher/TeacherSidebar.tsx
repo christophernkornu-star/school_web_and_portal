@@ -44,9 +44,8 @@ const sidebarItems = [
     items: [
       { href: '/teacher/mock', label: 'Mock Exams', icon: FileSpreadsheet },
       { href: '/teacher/assessments', label: 'Online Assessments', icon: PenTool },
-      { href: '/teacher/enter-scores', label: 'Enter Scores', icon: ClipboardList },
-      { href: '/teacher/upload-scores', label: 'Upload Scores', icon: Upload },
-      { href: '/teacher/scores', label: 'Score Sheets', icon: FileText },
+      { href: '/teacher/upload-scores/class', label: 'Class Assessment', icon: ClipboardList },
+      { href: '/teacher/manage-scores', label: 'Manage Scores', icon: FileText },
     ]
   },
   {

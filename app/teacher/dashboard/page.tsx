@@ -377,8 +377,8 @@ export default function TeacherDashboard() {
               borderColor="hover:border-emerald-200 dark:hover:border-emerald-800"
             />
             <QuickActionCard 
-              href="/teacher/enter-scores"
-              title="Enter Scores" 
+              href="/teacher/manage-scores"
+              title="Manage Scores" 
               description="Record Results"
               icon={ClipboardList} 
               color="text-blue-600 dark:text-blue-400"

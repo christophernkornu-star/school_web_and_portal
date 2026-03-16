@@ -1067,7 +1067,7 @@ function ClassScoresContent() {
         </div>
 
         {/* Forms based on method */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 transition-colors max-w-full overflow-hidden">
           {method === 'grid' && (
             <div className="space-y-6">
                 {/* Filters */}
@@ -1146,12 +1146,12 @@ function ClassScoresContent() {
                 {/* Grid Table */}
                 {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
                     <div>
-                        <div className="flex items-center justify-between mb-4">
+                        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-4">
                             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Enter Scores</h3>
                             <button
                                 onClick={saveGridScores}
                                 disabled={gridSaving || gridChanges.size === 0}
-                                className="bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition text-xs md:text-sm"
+                                className="w-full sm:w-auto bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition text-xs md:text-sm"
                             >
                                 {gridSaving ? 'Saving...' : `Save Changes (${gridChanges.size})`}
                             </button>
@@ -1163,20 +1163,21 @@ function ClassScoresContent() {
                                 <p className="text-gray-600 dark:text-gray-400">Loading scores...</p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto border dark:border-gray-700 rounded-lg max-h-[70vh]">
-                                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
-                                    <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-20 shadow-sm">
+                            <div className="border dark:border-gray-700 rounded-lg max-h-[70vh] w-full max-w-[calc(100vw-6rem)] md:max-w-full overflow-auto relative min-w-0 mx-auto">
+                                <table className="w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse table-auto">
+                                    <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-30 shadow-sm">
                                         <tr>
-                                            <th rowSpan={2} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-30 border-r dark:border-gray-600 border-b dark:border-gray-600">
+                                            <th rowSpan={2} className="px-1 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-40 border-r dark:border-gray-600 border-b dark:border-gray-600 w-[80px] min-w-[80px] max-w-[80px] md:w-auto md:min-w-[240px] md:max-w-none shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                                                 Student
                                             </th>
                                             {selectedSubjects.map(subjectId => {
                                                 const subject = filteredSubjects.find(s => s.id === subjectId)
                                                 const firstStudentId = students[0]?.id
                                                 const totalAssessments = gridScores[firstStudentId]?.[subjectId]?.total_assessments || 0
+                                                /* Lines 1205-1216 omitted */
                                                 return (
-                                                    <th key={subjectId} colSpan={2} className="px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-gray-600 border-r dark:border-gray-600 bg-gray-100 dark:bg-gray-800">
-                                                        <div>{subject?.name || 'Unknown'}</div>
+                                                    <th key={subjectId} colSpan={2} className="px-2 md:px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-gray-600 border-r dark:border-gray-600 bg-gray-100 dark:bg-gray-800 min-w-[140px]">
+                                                        <div className="truncate max-w-[140px] md:max-w-none mx-auto">{subject?.name || 'Unknown'}</div>
                                                         {totalAssessments > 0 && (
                                                             <div className="text-[10px] text-gray-500 dark:text-gray-400 font-normal mt-0.5">
                                                                 {totalAssessments} Assessments
@@ -1189,8 +1190,8 @@ function ClassScoresContent() {
                                         <tr>
                                             {selectedSubjects.map(subjectId => (
                                                 <Fragment key={subjectId}>
-                                                    <th key={`${subjectId}-current`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 w-24 bg-gray-50 dark:bg-gray-700">Current ({classScorePercentage}%)</th>
-                                                    <th key={`${subjectId}-add`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 w-24 border-r dark:border-gray-600 bg-gray-50 dark:bg-gray-700">Add (0-10)</th>
+                                                    <th key={`${subjectId}-current`} className="px-1 md:px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 min-w-[64px] md:min-w-[96px] bg-gray-50 dark:bg-gray-700">Current ({classScorePercentage}%)</th>
+                                                    <th key={`${subjectId}-add`} className="px-1 md:px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-gray-600 min-w-[64px] md:min-w-[96px] border-r dark:border-gray-600 bg-gray-50 dark:bg-gray-700">Add (0-10)</th>
                                                 </Fragment>
                                             ))}
                                         </tr>
@@ -1200,8 +1201,8 @@ function ClassScoresContent() {
                                             const hasChanges = gridChanges.has(student.id)
                                             return (
                                                 <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}>
-                                                    <td className="px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-gray-600 shadow-sm">
-                                                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                                    <td className="px-1 md:px-6 py-3 md:py-4 sticky left-0 bg-white dark:bg-gray-800 z-20 border-r dark:border-gray-600 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[80px] min-w-[80px] max-w-[80px] md:w-auto md:min-w-[240px] md:max-w-none">
+                                                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-normal break-words leading-tight">
                                                             {student.last_name}, {student.first_name} {student.middle_name}
                                                         </div>
                                                     </td>
@@ -1211,8 +1212,8 @@ function ClassScoresContent() {
                                                         
                                                         return (
                                                             <Fragment key={subjectId}>
-                                                                <td key={`${subjectId}-current`} className="px-2 py-4 whitespace-nowrap text-center relative group">
-                                                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                                                <td key={`${subjectId}-current`} className="px-1 md:px-2 py-3 md:py-4 whitespace-nowrap text-center relative group min-w-[60px]">
+                                                                    <span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
                                                                         {scores.current_score.toFixed(1)}
                                                                     </span>
                                                                     {showWarning ? (
@@ -1224,13 +1225,10 @@ function ClassScoresContent() {
                                                                             }}
                                                                         >
                                                                             <AlertCircle className="w-3 h-3 text-amber-500" />
-                                                                            <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap z-50 shadow-lg">
-                                                                                Taken: {scores.assessments_count}/{scores.total_assessments}
-                                                                            </div>
                                                                         </div>
                                                                     ) : null}
                                                                 </td>
-                                                                <td key={`${subjectId}-add`} className="px-2 py-4 whitespace-nowrap text-center border-r dark:border-gray-600">
+                                                                <td key={`${subjectId}-add`} className="px-1 md:px-2 py-3 md:py-4 whitespace-nowrap text-center border-r dark:border-gray-600 min-w-[70px]">
                                                                     <input
                                                                         type="number"
                                                                         min="0"
@@ -1245,7 +1243,7 @@ function ClassScoresContent() {
                                                                             }
                                                                             handleGridScoreChange(student.id, subjectId, e.target.value)
                                                                         }}
-                                                                        className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                                                        className="w-14 md:w-20 px-1 md:px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-xs md:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                                                         placeholder="+"
                                                                     />
                                                                 </td>

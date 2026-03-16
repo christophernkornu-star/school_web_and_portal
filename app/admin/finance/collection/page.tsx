@@ -323,7 +323,7 @@ export default function FeeCollectionPage() {
                   </button>
 
                   {/* Student Header */}
-                  <div className="bg-white p-6 rounded-lg shadow">
+                  <div className="bg-white p-4 md:p-6 rounded-lg shadow">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                       <div>
                         <h2 className="text-lg md:text-xl font-bold text-gray-800">
@@ -333,7 +333,7 @@ export default function FeeCollectionPage() {
                       </div>
                       <button
                         onClick={() => setShowPaymentModal(true)}
-                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-sm text-xs md:text-base"
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 shadow-sm text-xs md:text-base w-full md:w-auto justify-center"
                       >
                         <DollarSign className="w-5 h-5" />
                         Record Payment
@@ -343,23 +343,23 @@ export default function FeeCollectionPage() {
 
                   {/* Outstanding Fees */}
                   <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="px-6 py-4 border-b bg-gray-50">
+                    <div className="px-4 md:px-6 py-3 md:py-4 border-b bg-gray-50">
                       <h3 className="font-bold text-gray-800 text-xs md:text-base">Fee Status</h3>
                     </div>
                     <div className="divide-y">
                       {studentFees.map(fee => {
                         const balance = getFeeBalance(fee.id, fee.amount)
                         return (
-                          <div key={fee.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 gap-4">
+                          <div key={fee.id} className="p-4 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-gray-50 gap-2 md:gap-4">
                             <div>
-                              <div className="font-medium text-gray-900 text-xs md:text-base">{fee.fee_types?.name}</div>
-                              <div className="text-[10px] md:text-sm text-gray-500">
+                              <div className="font-medium text-gray-900 text-sm md:text-base">{fee.fee_types?.name}</div>
+                              <div className="text-xs md:text-sm text-gray-500">
                                 {fee.academic_terms?.name} ({fee.academic_year})
                               </div>
                             </div>
-                            <div className="text-left sm:text-right">
-                              <div className="text-[10px] md:text-sm text-gray-500">Total: GH₵ {fee.amount}</div>
-                              <div className={`font-bold text-xs md:text-base ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            <div className="text-left sm:text-right flex justify-between sm:block mt-2 sm:mt-0">
+                              <div className="text-xs md:text-sm text-gray-500">Total: GH₵ {fee.amount}</div>
+                              <div className={`font-bold text-sm md:text-base ${balance > 0 ? 'text-red-600' : 'text-green-600'}`}>
                                 {balance > 0 ? `Owing: GH₵ ${balance.toFixed(2)}` : 'Fully Paid'}
                               </div>
                             </div>
@@ -376,39 +376,39 @@ export default function FeeCollectionPage() {
 
                   {/* Payment History */}
                   <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="px-6 py-4 border-b bg-gray-50">
+                    <div className="px-4 md:px-6 py-3 md:py-4 border-b bg-gray-50">
                       <h3 className="font-bold text-gray-800 text-sm md:text-base">Payment History</h3>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full">
                         <thead className="bg-gray-50 text-[10px] md:text-xs uppercase text-gray-500">
                           <tr>
-                            <th className="px-6 py-3 text-left">Date</th>
-                            <th className="px-6 py-3 text-left">Fee Type</th>
-                            <th className="px-6 py-3 text-left">Amount</th>
-                            <th className="px-6 py-3 text-left">Method</th>
-                            <th className="px-6 py-3 text-left">Recorded By</th>
+                            <th className="px-3 md:px-6 py-3 text-left">Date</th>
+                            <th className="px-3 md:px-6 py-3 text-left">Fee Type</th>
+                            <th className="px-3 md:px-6 py-3 text-left">Amount</th>
+                            <th className="px-3 md:px-6 py-3 text-left">Method</th>
+                            <th className="px-3 md:px-6 py-3 text-left">Recorded By</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
                           {paymentHistory.map(payment => (
                             <tr key={payment.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                                 {new Date(payment.payment_date).toLocaleDateString('en-GB')}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                                 {payment.fee_structures?.fee_types?.name}
                                 <span className="text-[10px] md:text-xs text-gray-500 block">
                                   {payment.fee_structures?.academic_terms?.name}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-green-600">
+                              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium text-green-600">
                                 GH₵ {payment.amount_paid}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                                 {payment.payment_method}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                              <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
                                 {payment.profiles?.full_name || 'System'}
                               </td>
                             </tr>

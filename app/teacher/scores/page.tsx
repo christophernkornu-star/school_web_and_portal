@@ -1191,62 +1191,63 @@ export default function ExamScoresPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-6 py-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl xl:max-w-5xl w-full mx-auto">
           {/* OCR Option Banner */}
-          <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 md:gap-4">
               <div className="flex items-center space-x-3 w-full sm:w-auto">
-                <Camera className="w-8 h-8 text-ghana-green flex-shrink-0" />
+                <Camera className="w-6 h-6 md:w-8 md:h-8 text-ghana-green flex-shrink-0" />
                 <div>
-                  <h3 className="font-semibold text-gray-800 dark:text-gray-100">Can't type? Use OCR!</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Upload a photo of your handwritten scores and let AI extract them</p>
+                  <h3 className="font-semibold text-sm md:text-base text-gray-800 dark:text-gray-100">Can't type? Use OCR!</h3>
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Upload a photo of your handwritten scores and let AI extract them</p>
                 </div>
               </div>
               <Link
                 href="/teacher/scores/ocr"
-                className="w-full sm:w-auto bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center space-x-2"
+                className="w-full sm:w-auto bg-ghana-green text-white px-4 md:px-6 py-2 rounded-lg hover:bg-green-700 transition flex items-center justify-center space-x-2 text-sm md:text-base"
               >
-                <Camera className="w-5 h-5" />
+                <Camera className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Try OCR Entry</span>
               </Link>
             </div>
           </div>
 
           {/* Tab Navigation */}
-          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow border-b dark:border-gray-700 overflow-x-auto">
-            <div className="flex min-w-max">
+          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow border-b dark:border-gray-700 overflow-x-auto scrollbar-hide">
+            <div className="flex min-w-full md:min-w-max">
               <button
                 onClick={() => setActiveTab('csv')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-3 md:px-6 md:py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'csv'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
-                <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Upload CSV</span>
               </button>
               <button
                 onClick={() => setActiveTab('ungraded')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-3 md:px-6 md:py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'ungraded'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
-                <AlertCircle className="w-5 h-5" />
+                <AlertCircle className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Ungraded Subjects</span>
               </button>
               <button
                 onClick={() => setActiveTab('grid')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-6 py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-3 md:px-6 md:py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
                   activeTab === 'grid'
                     ? 'text-ghana-green border-b-2 border-ghana-green'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
-                <Grid className="w-5 h-5" />
-                <span>Spreadsheet View</span>
+                <Grid className="w-4 h-4 md:w-5 md:h-5" />
+                <span className="hidden md:inline">Spreadsheet View</span>
+                <span className="md:hidden">Grid</span>
               </button>
             </div>
           </div>
@@ -1255,8 +1256,8 @@ export default function ExamScoresPage() {
 
           {/* CSV Upload Tab */}
           {activeTab === 'csv' && (
-            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
-              <div className="space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-4 md:p-6">
+              <div className="space-y-4 md:space-y-6">
                 {formErrors.csv && (
                   <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-start space-x-3">
                     <XCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -1267,53 +1268,53 @@ export default function ExamScoresPage() {
                 {/* Score Type Selection */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Score Entry Type</h3>
-                  <div className="grid md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setScoreType('both')}
-                      className={`px-4 py-3 rounded-lg border-2 transition ${
+                      className={`px-3 py-3 md:px-4 rounded-lg border-2 transition ${
                         scoreType === 'both'
                           ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-500 text-blue-700 dark:text-blue-300'
                           : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
-                      <div className="font-medium">Both Scores</div>
+                      <div className="font-medium text-sm md:text-base">Both Scores</div>
                       <div className="text-xs mt-1">Class + Exam</div>
                     </button>
                     <button
                       type="button"
                       onClick={() => setScoreType('class_only')}
-                      className={`px-4 py-3 rounded-lg border-2 transition ${
+                      className={`px-3 py-3 md:px-4 rounded-lg border-2 transition ${
                         scoreType === 'class_only'
                           ? 'bg-ghana-green text-white border-ghana-green'
                           : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
-                      <div className="font-medium">Class Score Only</div>
+                      <div className="font-medium text-sm md:text-base">Class Score Only</div>
                       <div className="text-xs mt-1">Max {classScorePercentage} marks</div>
                     </button>
                     <button
                       type="button"
                       onClick={() => setScoreType('exam_only')}
-                      className={`px-4 py-3 rounded-lg border-2 transition ${
+                      className={`px-3 py-3 md:px-4 rounded-lg border-2 transition ${
                         scoreType === 'exam_only'
                           ? 'bg-ghana-red text-white border-ghana-red'
                           : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
-                      <div className="font-medium">Exam Score Only</div>
+                      <div className="font-medium text-sm md:text-base">Exam Score Only</div>
                       <div className="text-xs mt-1">Max {examScorePercentage} marks</div>
                     </button>
                   </div>
                 </div>
 
                 {/* Instructions */}
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center space-x-2">
-                    <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 md:p-4">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2 flex items-center space-x-2 text-sm md:text-base">
+                    <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
                     <span>CSV Upload Instructions</span>
                   </h3>
-                  <ul className="text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside ml-7">
+                  <ul className="text-xs md:text-sm text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside ml-2 md:ml-7">
                     <li><strong>Select score type above</strong> - Choose what scores to enter</li>
                     <li><strong>Select a class and subjects</strong> - Click subjects below to select them</li>
                     <li>Template includes columns <strong>only for selected subjects</strong> in the order you select them</li>
@@ -1328,9 +1329,9 @@ export default function ExamScoresPage() {
                 </div>
 
                 {/* Grading Scale Info */}
-                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Grading Scale</h3>
-                  <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 md:p-4">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2 text-sm md:text-base">Grading Scale</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs md:text-sm">
                     <div>
                       <p className="font-medium text-gray-700 dark:text-gray-300 mb-1">Primary (Basic 1-6):</p>
                       <ul className="space-y-1 text-gray-600 dark:text-gray-400">
@@ -1356,23 +1357,23 @@ export default function ExamScoresPage() {
                 </div>
 
                 {/* Download Template */}
-                <div>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                   <button
                     type="button"
                     onClick={downloadTemplate}
                     disabled={!selectedClass || selectedSubjects.length === 0}
-                    className="flex items-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center justify-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto text-sm md:text-base"
                   >
                     <Download className="w-5 h-5" />
                     <span className="font-medium">
                       {selectedSubjects.length > 0 
-                        ? `Download Template (${selectedSubjects.length} subject${selectedSubjects.length > 1 ? 's' : ''})`
-                        : 'Select subjects to download template'}
+                        ? `Download Template (${selectedSubjects.length})`
+                        : 'Download Template'}
                     </span>
                   </button>
                   {selectedClass && selectedSubjects.length > 0 && (
-                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
-                      Template includes: {selectedSubjects.map(id => filteredSubjects.find(s => s.id === id)?.name).filter(Boolean).join(', ')}
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      Include: {selectedSubjects.map(id => filteredSubjects.find(s => s.id === id)?.name).filter(Boolean).join(', ')}
                     </p>
                   )}
                 </div>
@@ -1380,7 +1381,7 @@ export default function ExamScoresPage() {
                 {/* Filter Selection */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Select Filters</h3>
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Class *
@@ -1591,9 +1592,9 @@ export default function ExamScoresPage() {
 
           {/* Ungraded Subjects Tab */}
           {activeTab === 'ungraded' && (
-            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-4 md:p-6">
               {/* Filters */}
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
                   <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Class *
@@ -1633,7 +1634,10 @@ export default function ExamScoresPage() {
                       {ungradedData.length} students with missing grades
                     </span>
                   </div>
-                  <div className="overflow-x-auto">
+                  <div
+                    className="overflow-x-auto w-full max-w-[calc(100vw-6rem)] md:max-w-full mx-auto"
+                    style={{ scrollbarGutter: 'stable both-edges' }}
+                  >
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
@@ -1707,9 +1711,9 @@ export default function ExamScoresPage() {
 
           {/* Spreadsheet View Tab */}
           {activeTab === 'grid' && (
-            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-4 md:p-6">
               {/* Filters */}
-              <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div>
                   <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Class *
@@ -1861,18 +1865,21 @@ export default function ExamScoresPage() {
                       <p className="text-gray-600 dark:text-gray-400">No students found in this class.</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto border dark:border-gray-700 rounded-lg max-h-[70vh]">
+                    <div
+                      className="border dark:border-gray-700 rounded-lg max-h-[70vh] w-full max-w-[calc(100vw-6rem)] md:max-w-full overflow-auto relative min-w-0 mx-auto"
+                      style={{ scrollbarGutter: 'stable both-edges' }}
+                    >
                       <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
-                        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-20 shadow-sm">
+                        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-30 shadow-sm">
                           <tr>
-                            <th rowSpan={2} className="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-30 border-r dark:border-r-gray-600 border-b dark:border-b-gray-600 min-w-[120px] md:min-w-[200px]">
+                            <th rowSpan={2} className="px-1 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-40 border-r dark:border-r-gray-600 border-b dark:border-b-gray-600 w-[80px] min-w-[80px] max-w-[80px] md:w-auto md:min-w-[200px] md:max-w-none shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                               Student
                             </th>
                             {selectedSubjects.map(subjectId => {
                                 const subject = filteredSubjects.find(s => s.id === subjectId)
                                 return (
-                                    <th key={subjectId} colSpan={4} className="px-2 md:px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-b-gray-600 border-r dark:border-r-gray-600 bg-gray-100 dark:bg-gray-600">
-                                        {subject?.name || 'Unknown Subject'}
+                                    <th key={subjectId} colSpan={4} className="px-2 md:px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-b-gray-600 border-r dark:border-r-gray-600 bg-gray-100 dark:bg-gray-600 min-w-[260px]">
+                                        <div className="truncate max-w-[260px] mx-auto">{subject?.name || 'Unknown Subject'}</div>
                                     </th>
                                 )
                             })}
@@ -1880,10 +1887,10 @@ export default function ExamScoresPage() {
                           <tr>
                             {selectedSubjects.map(subjectId => (
                                 <Fragment key={subjectId}>
-                                    <th key={`${subjectId}-class`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-20 bg-gray-50 dark:bg-gray-700">Class ({classScorePercentage}%)</th>
-                                    <th key={`${subjectId}-exam`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-20 bg-gray-50 dark:bg-gray-700">Exam (100%)</th>
-                                    <th key={`${subjectId}-total`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-16 bg-gray-50 dark:bg-gray-700">Total</th>
-                                    <th key={`${subjectId}-grade`} className="px-2 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 w-16 border-r dark:border-r-gray-600 bg-gray-50 dark:bg-gray-700">Grade</th>
+                                    <th key={`${subjectId}-class`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Class ({classScorePercentage}%)</th>
+                                    <th key={`${subjectId}-exam`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Exam (100%)</th>
+                                    <th key={`${subjectId}-total`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Total</th>
+                                    <th key={`${subjectId}-grade`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] border-r dark:border-r-gray-600 bg-gray-50 dark:bg-gray-700">Grade</th>
                                 </Fragment>
                             ))}
                           </tr>
@@ -1926,11 +1933,11 @@ export default function ExamScoresPage() {
                             const hasChanges = gridChanges.has(student.id)
                             return (
                               <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
-                                <td className="px-2 md:px-6 py-4 whitespace-nowrap sticky left-0 bg-white dark:bg-gray-800 z-10 border-r dark:border-r-gray-600 shadow-sm">
-                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate max-w-[120px] md:max-w-none">
+                                <td className="px-1 md:px-6 py-4 sticky left-0 bg-white dark:bg-gray-800 z-20 border-r dark:border-r-gray-600 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[80px] min-w-[80px] max-w-[80px] md:w-auto md:min-w-[200px] md:max-w-none">
+                                  <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-normal break-words leading-tight">
                                     {student.last_name}, {student.first_name} {student.middle_name}
                                   </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
                                     {student.student_id}
                                   </div>
                                 </td>
@@ -1946,7 +1953,7 @@ export default function ExamScoresPage() {
 
                                     return (
                                         <Fragment key={subjectId}>
-                                            <td key={`${subjectId}-class`} className="px-2 py-4 whitespace-nowrap text-center">
+                                            <td key={`${subjectId}-class`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
                                                 <input
                                                     type="number"
                                                     min="0"
@@ -1954,10 +1961,10 @@ export default function ExamScoresPage() {
                                                     step="0.1"
                                                     value={scores.class_score}
                                                     onChange={(e) => handleGridScoreChange(student.id, subjectId, 'class_score', e.target.value)}
-                                                    className="w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm dark:bg-gray-700 dark:text-white"
+                                                    className="w-14 md:w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-xs md:text-sm dark:bg-gray-700 dark:text-white"
                                                 />
                                             </td>
-                                            <td key={`${subjectId}-exam`} className="px-2 py-4 whitespace-nowrap text-center">
+                                            <td key={`${subjectId}-exam`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
                                                 <input
                                                     type="number"
                                                     min="0"
@@ -1965,16 +1972,16 @@ export default function ExamScoresPage() {
                                                     step="0.1"
                                                     value={scores.exam_score}
                                                     onChange={(e) => handleGridScoreChange(student.id, subjectId, 'exam_score', e.target.value)}
-                                                    className="w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-sm dark:bg-gray-700 dark:text-white"
+                                                    className="w-14 md:w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-xs md:text-sm dark:bg-gray-700 dark:text-white"
                                                 />
                                             </td>
-                                            <td key={`${subjectId}-total`} className="px-2 py-4 whitespace-nowrap text-center">
-                                                <span className={`text-sm font-medium ${total > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
+                                            <td key={`${subjectId}-total`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[60px]">
+                                                <span className={`text-xs md:text-sm font-medium ${total > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
                                                     {hasData ? total.toFixed(1) : '-'}
                                                 </span>
                                             </td>
-                                            <td key={`${subjectId}-grade`} className="px-2 py-4 whitespace-nowrap text-center border-r dark:border-r-gray-600">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                            <td key={`${subjectId}-grade`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center border-r dark:border-r-gray-600 min-w-[60px]">
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] md:text-xs font-medium ${
                                                     !hasData ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' :
                                                     total >= 50 ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
                                                 }`}>

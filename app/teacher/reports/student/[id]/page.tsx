@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Download, Save, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Download, Save, RefreshCw, Wand2, List } from 'lucide-react'
 import signatureImg from '@/app/student/report-card/signature.png'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -11,6 +11,13 @@ import { toast } from 'react-hot-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getGradeValue, calculateAggregate, getOrdinalSuffix, isPromotionTerm, formatStudentName } from '@/lib/academic-utils'
 import { getAutoRemark, getAllRemarks, getPerformanceLevel } from '@/lib/remark-utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Remarks logic moved to @/lib/remark-utils
 
@@ -1048,19 +1055,81 @@ export default function TeacherStudentReportPage() {
     return `bg-${color}-100`
   }
 
+  const RemarkField = ({ 
+    label, 
+    type, 
+    value, 
+    onChange 
+  }: { 
+    label: string, 
+    type: string, 
+    value: string, 
+    onChange: (val: string) => void 
+  }) => {
+    const handleGenerate = () => {
+        if (!reportData) return
+        const attendancePercentage = reportData.totalDays > 0 
+           ? (reportData.daysPresent / reportData.totalDays) * 100 
+           : undefined
+        // Add random seed to get variety on click, using timestamp to ensure uniqueness
+        const seed = Date.now().toString()
+        const remark = getAutoRemark(type, reportData.averageScore, attendancePercentage, seed)
+        onChange(remark)
+        toast.success(`Generated suggestion for ${label}`)
+    }
+
+    const remarksList = getAllRemarks(type)
+
+    return (
+        <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                   <button 
+                       onClick={handleGenerate}
+                       className="text-xs flex items-center gap-1.5 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium bg-blue-50 dark:bg-blue-900/30 px-3 py-2 rounded-md transition-colors border border-blue-100 dark:border-blue-800"
+                       title={`Auto-generate ${label} based on performance`}
+                   >
+                       <Wand2 className="w-3.5 h-3.5" />
+                       Generate
+                   </button>
+                    <Select onValueChange={onChange}>
+                        <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm w-auto min-w-[140px] bg-methodist-blue text-white border-transparent hover:bg-blue-900 focus:ring-2 focus:ring-methodist-blue px-3 gap-2 shadow-sm transition-all">
+                            <SelectValue placeholder="Select template..." />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                            {remarksList.map((r, i) => (
+                                <SelectItem key={i} value={r} className="text-xs py-2 cursor-pointer">
+                                    {r}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <textarea 
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-800 dark:text-white min-h-[85px] text-sm leading-relaxed resize-y"
+                placeholder={`Enter ${label.toLowerCase()}...`}
+            />
+        </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 transition-colors">
-      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 transition-colors overflow-x-hidden">
+      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 md:py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3 md:gap-4 overflow-hidden">
+            <div className="flex items-center gap-3 md:gap-4 overflow-hidden min-w-0">
               <Link 
                 href="/teacher/reports" 
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex-shrink-0"
               >
                 <ArrowLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-600 dark:text-gray-300" />
               </Link>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white truncate">
                   {[student?.last_name, student?.middle_name, student?.first_name].filter(Boolean).join(', ')}
                 </h1>
@@ -1073,7 +1142,7 @@ export default function TeacherStudentReportPage() {
             <button
               onClick={downloadPDF}
               disabled={downloading}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-ghana-green text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm md:text-base font-medium shadow-sm active:scale-95"
+              className="w-full sm:w-auto flex-shrink-0 flex items-center justify-center gap-2 bg-ghana-green text-white px-4 py-2.5 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 text-sm md:text-base font-medium shadow-sm active:scale-95"
             >
               {downloading ? (
                 <>
@@ -1143,27 +1212,80 @@ export default function TeacherStudentReportPage() {
            <div className="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-gray-700">
               <h3 className="font-bold text-gray-900 dark:text-white text-base md:text-lg">Academic Performance</h3>
            </div>
-           <div className="overflow-x-auto">
+           
+           {/* Mobile Card View */}
+           <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-700">
+              {reportData?.grades.map((grade: any, index: number) => (
+                <div key={index} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <div className="flex justify-between items-start mb-3">
+                    <h4 className="font-bold text-gray-900 dark:text-white text-base">{grade.subject_name}</h4>
+                    <span className={`inline-block px-2.5 py-0.5 text-xs font-bold rounded-full ${
+                        (grade.total || 0) >= 80 ? 'bg-green-100 text-green-700' :
+                        (grade.total || 0) >= 60 ? 'bg-blue-100 text-blue-700' :
+                        (grade.total || 0) >= 40 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+                    }`}>
+                      {getGradeValue(grade.total || 0)} ({grade.total || 0})
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-3 text-sm">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
+                      <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Class Score ({classScorePercentage}%)</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-200">{grade.class_score || '-'}</span>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
+                      <span className="block text-xs text-gray-500 dark:text-gray-400 mb-1">Exam Score ({examScorePercentage}%)</span>
+                      <span className="font-semibold text-gray-700 dark:text-gray-200">{grade.exam_score || '-'}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-sm border-t border-gray-50 dark:border-gray-700 pt-2 mt-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Position:</span>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : '-'}
+                      </span>
+                    </div>
+                     <div className="flex items-center gap-2 max-w-[60%] justify-end">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">Remark:</span>
+                      <span className="font-medium text-gray-900 dark:text-white truncate">
+                         {grade.remarks && grade.remarks !== '-' ? grade.remarks : (
+                            grade.total !== null && grade.total !== undefined ? (
+                                grade.total >= 80 ? 'Excellent' : 
+                                grade.total >= 60 ? 'Good' : 
+                                grade.total >= 50 ? 'Credit' : 
+                                grade.total >= 40 ? 'Pass' : 'Fail'
+                            ) : '-'
+                         )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+           </div>
+
+           {/* Desktop Table View */}
+           <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                  <thead className="bg-gray-50 dark:bg-gray-700/50 text-left">
                     <tr>
-                       <th className="px-4 md:px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
-                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Class ({classScorePercentage}%)</th>
-                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Exam ({examScorePercentage}%)</th>
-                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
-                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Grade</th>
-                       <th className="px-4 md:px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Pos</th>
-                       <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Remarks</th>
+                       <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Subject</th>
+                       <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Class ({classScorePercentage}%)</th>
+                       <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Exam ({examScorePercentage}%)</th>
+                       <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Total</th>
+                       <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Grade</th>
+                       <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Pos</th>
+                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[150px]">Remarks</th>
                     </tr>
                  </thead>
                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                     {reportData?.grades.map((grade: any, index: number) => (
                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                          <td className="px-4 md:px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{grade.subject_name}</td>
-                          <td className="px-4 md:px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300">{grade.class_score || '-'}</td>
-                          <td className="px-4 md:px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300">{grade.exam_score || '-'}</td>
-                          <td className="px-4 md:px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white">{grade.total || '-'}</td>
-                          <td className="px-4 md:px-6 py-4 text-center">
+                          <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white whitespace-nowrap">{grade.subject_name}</td>
+                          <td className="px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{grade.class_score || '-'}</td>
+                          <td className="px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">{grade.exam_score || '-'}</td>
+                          <td className="px-6 py-4 text-center text-sm font-bold text-gray-900 dark:text-white whitespace-nowrap">{grade.total || '-'}</td>
+                          <td className="px-6 py-4 text-center whitespace-nowrap">
                              <span className={`inline-block w-8 h-8 leading-8 text-xs font-bold rounded-full ${
                                  (grade.total || 0) >= 80 ? 'bg-green-100 text-green-700' :
                                  (grade.total || 0) >= 60 ? 'bg-blue-100 text-blue-700' :
@@ -1172,10 +1294,10 @@ export default function TeacherStudentReportPage() {
                                 {getGradeValue(grade.total || 0)}
                              </span>
                           </td>
-                          <td className="px-4 md:px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300 hidden sm:table-cell">
+                          <td className="px-6 py-4 text-center text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                              {grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : '-'}
                           </td>
-                          <td className="px-4 md:px-6 py-4 text-sm text-gray-600 dark:text-gray-300 hidden md:table-cell min-w-[200px]">
+                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
                              {grade.remarks && grade.remarks !== '-' ? grade.remarks : (
                                 grade.total !== null && grade.total !== undefined ? (
                                     grade.total >= 80 ? 'Excellent performance' : 
@@ -1206,91 +1328,44 @@ export default function TeacherStudentReportPage() {
            </div>
            
            <div className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Conduct</label>
-                    <div className="relative">
-                       <input
-                          type="text"
-                          value={remarks.conduct}
-                          onChange={(e) => handleRemarkChange('conduct', e.target.value)}
-                          list="conduct-list"
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                          placeholder="Student's behavior..."
-                       />
-                       <datalist id="conduct-list">
-                          {getAllRemarks('conduct').map((r, i) => <option key={i} value={r} />)}
-                       </datalist>
-                    </div>
-                 </div>
-
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Attitude</label>
-                    <div className="relative">
-                       <input
-                          type="text"
-                          value={remarks.attitude}
-                          onChange={(e) => handleRemarkChange('attitude', e.target.value)}
-                          list="attitude-list"
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                          placeholder="Attitude towards learning..."
-                       />
-                       <datalist id="attitude-list">
-                          {getAllRemarks('attitude').map((r, i) => <option key={i} value={r} />)}
-                       </datalist>
-                    </div>
-                 </div>
-
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Interest</label>
-                    <div className="relative">
-                       <input
-                          type="text"
-                          value={remarks.interest}
-                          onChange={(e) => handleRemarkChange('interest', e.target.value)}
-                          list="interest-list"
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                          placeholder="Special interests..."
-                       />
-                       <datalist id="interest-list">
-                          {getAllRemarks('interest').map((r, i) => <option key={i} value={r} />)}
-                       </datalist>
-                    </div>
-                 </div>
-
-                 <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Class Teacher's Remark</label>
-                    <div className="relative">
-                       <input
-                          type="text"
-                          value={remarks.classTeacher}
-                          onChange={(e) => handleRemarkChange('classTeacher', e.target.value)}
-                          list="teacher-list"
-                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                          placeholder="General performance remark..."
-                       />
-                       <datalist id="teacher-list">
-                          {getAllRemarks('classTeacher').map((r, i) => <option key={i} value={r} />)}
-                       </datalist>
-                    </div>
-                 </div>
+              <div className="grid md:grid-cols-2 gap-x-6 gap-y-8">
+                {/* Replaced manual fields with RemarkField component */}
+                <RemarkField 
+                    label="Conduct" 
+                    type="conduct" 
+                    value={remarks.conduct} 
+                    onChange={(val) => handleRemarkChange('conduct', val)} 
+                />
+                
+                <RemarkField 
+                    label="Attitude" 
+                    type="attitude" 
+                    value={remarks.attitude} 
+                    onChange={(val) => handleRemarkChange('attitude', val)} 
+                />
+                
+                <RemarkField 
+                    label="Interest" 
+                    type="interest" 
+                    value={remarks.interest} 
+                    onChange={(val) => handleRemarkChange('interest', val)} 
+                />
+                
+                <RemarkField 
+                    label="Class Teacher's Remark" 
+                    type="classTeacher" 
+                    value={remarks.classTeacher} 
+                    onChange={(val) => handleRemarkChange('classTeacher', val)} 
+                />
               </div>
 
-               <div>
-                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Head Teacher's Remark (Suggestion)</label>
-                 <div className="relative">
-                    <input
-                       type="text"
-                       value={remarks.headTeacher}
-                       onChange={(e) => handleRemarkChange('headTeacher', e.target.value)}
-                       list="headteacher-list"
-                       className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                       placeholder="Remark for Head Teacher's approval..."
-                    />
-                    <datalist id="headteacher-list">
-                       {getAllRemarks('headTeacher').map((r, i) => <option key={i} value={r} />)}
-                    </datalist>
-                 </div>
+               <div className="mt-8 border-t border-gray-100 dark:border-gray-700 pt-6">
+                 <RemarkField 
+                    label="Head Teacher's Remark (Suggestion)" 
+                    type="headTeacher" 
+                    value={remarks.headTeacher} 
+                    onChange={(val) => handleRemarkChange('headTeacher', val)} 
+                />
               </div>
            </div>
         </div>
