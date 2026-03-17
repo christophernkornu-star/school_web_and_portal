@@ -321,11 +321,11 @@ export default function TeacherDashboard() {
             <div className="flex flex-col md:flex-row justify-between gap-6">
               <div className="space-y-4">
                 <div>
-                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2">
+                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 break-words">
                     {greeting}, {(teacher.gender === 'Male' ? 'Sir ' : teacher.gender === 'Female' ? 'Madam ' : '')}{teacher.first_name}
                   </h1>
-                  <p className="text-blue-200 text-lg flex items-center gap-2">
-                    <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
+                  <p className="text-blue-200 text-lg flex items-center gap-2 flex-wrap">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"></span>
                     Ready for another productive day?
                   </p>
                 </div>
@@ -410,7 +410,7 @@ export default function TeacherDashboard() {
         <div className="grid lg:grid-cols-3 gap-8">
           
           {/* Main Info Column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6 min-w-0">
             
             {/* Overview Stats */}
             <div className="grid sm:grid-cols-2 gap-4">
@@ -456,7 +456,7 @@ export default function TeacherDashboard() {
           </div>
 
           {/* Sidebar Column */}
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             
             {/* Notices / Announcements */}
             <Card className="h-full border-none shadow-md bg-white dark:bg-gray-800 max-h-[500px] flex flex-col">
@@ -495,7 +495,7 @@ export default function TeacherDashboard() {
                                  {new Date(announcement.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                               </span>
                            </div>
-                           <h4 className="text-sm font-medium mb-1 leading-snug">{announcement.title}</h4>
+                           <h4 className="text-sm font-medium mb-1 leading-snug break-words">{announcement.title}</h4>
                            <p className="text-xs text-gray-500 line-clamp-2">{announcement.content}</p>
                         </div>
                         ))}

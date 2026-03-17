@@ -127,20 +127,20 @@ function ClassStatementContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-4 md:p-8 print:bg-white print:p-0">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-2 md:p-8 print:bg-white print:p-0">
       <div className="max-w-5xl mx-auto">
         {/* Toolbar - Hidden when printing */}
-        <div className="mb-6 flex items-center justify-between print:hidden">
+        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
           <Link 
             href="/teacher/fees"
-            className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+            className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white text-sm md:text-base"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Fees
           </Link>
           <button
             onClick={() => window.print()}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base"
           >
             <Printer className="w-4 h-4 mr-2" />
             Print Statement

@@ -20,12 +20,12 @@ export function TeacherLayoutShell({ children }: { children: React.ReactNode }) 
         <TeacherSidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       </div>
       
-      <div className="flex-1 lg:pl-64 flex flex-col h-full transition-all duration-300 print:pl-0 print:h-auto print:block">
+      <div className="flex-1 lg:pl-64 flex flex-col h-full transition-all duration-300 print:pl-0 print:h-auto print:block min-w-0">
         <div className="print:hidden">
             <TeacherHeader setIsOpen={setSidebarOpen} />
         </div>
         
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto print:p-0 print:overflow-visible print:h-auto print:block">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden print:p-0 print:overflow-visible print:h-auto print:block">
           {children}
         </main>
         
