@@ -224,13 +224,14 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
     }
 
     // Calculations
-    const validScores = report.grades
-        .map(g => g.total)
-        .filter((score): score is number => score !== null)
-    
-    report.totalScore = Math.round(validScores.reduce((sum, score) => sum + score, 0) * 10) / 10
-    report.averageScore = validScores.length > 0 
-        ? Math.round(report.totalScore / validScores.length * 10) / 10
+    // Calculate total score from all grades (treating null as 0)
+    const rawTotalScore = report.grades.reduce((sum, g) => sum + (g.total || 0), 0)
+    report.totalScore = Math.round(rawTotalScore * 10) / 10
+
+    // Average over ALL subjects (graded or not) per user request
+    const totalSubjects = report.grades.length
+    report.averageScore = totalSubjects > 0 
+        ? Math.round(report.totalScore / totalSubjects * 10) / 10
         : 0
 
     // Aggregate

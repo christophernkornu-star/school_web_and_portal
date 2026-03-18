@@ -26,17 +26,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check Role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single()
-
-    if (profile?.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden: Admins only' }, { status: 403 })
-    }
-
     const { students, classId } = await request.json()
 
     if (!students || !Array.isArray(students) || students.length === 0) {
@@ -51,6 +40,43 @@ export async function POST(request: NextRequest) {
         { error: 'Class ID is required' },
         { status: 400 }
       )
+    }
+
+    // Check Role
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+
+    if (profile?.role !== 'admin') {
+      // If not admin, check if teacher and class teacher for the target class
+      if (profile?.role === 'teacher') {
+        const { data: teacherData } = await supabase
+          .from('teachers')
+          .select('id')
+          .eq('profile_id', session.user.id)
+          .single()
+
+        if (!teacherData) {
+           return NextResponse.json({ error: 'Teacher profile not found' }, { status: 403 })
+        }
+
+        // Check if assigned as class teacher
+        const { data: assignment } = await supabase
+          .from('teacher_class_assignments')
+          .select('id')
+          .eq('teacher_id', teacherData.id)
+          .eq('class_id', classId)
+          .eq('is_class_teacher', true)
+          .single()
+        
+        if (!assignment) {
+           return NextResponse.json({ error: 'Forbidden: Only Class Teachers can add students to this class' }, { status: 403 })
+        }
+      } else {
+        return NextResponse.json({ error: 'Forbidden: Admins or Class Teachers only' }, { status: 403 })
+      }
     }
 
     // Get class capacity and current count

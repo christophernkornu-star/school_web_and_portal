@@ -166,7 +166,62 @@ export default function AdminStudentReportsPage() {
 
         {/* Student List */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
+          
+          {/* Mobile View */}
+          <div className="md:hidden">
+            {loading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="p-4 border-b border-gray-100 animate-pulse">
+                  <div className="flex items-center space-x-4">
+                    <div className="h-10 w-10 bg-gray-200 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-gray-200 rounded w-1/2" />
+                      <div className="h-3 bg-gray-200 rounded w-1/3" />
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : filteredStudents.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No students found in this class
+              </div>
+            ) : (
+              filteredStudents.map(student => (
+                <div key={student.id} className="p-4 border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm shrink-0">
+                        {student.first_name[0]}{student.last_name[0]}
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{student.last_name} {student.first_name}</div>
+                        <div className="text-sm text-gray-500">{student.student_id}</div>
+                      </div>
+                    </div>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 shrink-0">
+                      Active
+                    </span>
+                  </div>
+                  
+                  <div className="mt-4 flex items-center justify-between pl-14">
+                    <div className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded text-xs">
+                      {student.gender}
+                    </div>
+                    <Link 
+                      href={`/admin/reports/student/${student.id}?term=${selectedTerm}`}
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
+                    >
+                      <FileText className="w-3 h-3 mr-1.5" />
+                      View Report
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>

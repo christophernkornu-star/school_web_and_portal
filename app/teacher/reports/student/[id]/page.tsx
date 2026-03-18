@@ -67,16 +67,24 @@ export default function TeacherStudentReportPage() {
 
   // Sync remarks when report data loads
   useEffect(() => {
-    if (reportData?.remarks) {
+    if (reportData) {
+      const avgScore = reportData.averageScore || 0
+      const attendance = reportData.attendance
+      const attendancePercent = attendance && attendance.total > 0 
+        ? (attendance.present / attendance.total) * 100 
+        : undefined
+      
+      const seed = studentId // Use student ID for consistent auto-remarks
+
       setRemarks({
-          attitude: reportData.remarks.attitude || '',
-          interest: reportData.remarks.interest || '',
-          conduct: reportData.remarks.conduct || '',
-          classTeacher: reportData.remarks.classTeacher || '',
-          headTeacher: reportData.remarks.headTeacher || ''
+          attitude: reportData.remarks?.attitude || getAutoRemark('attitude', avgScore, attendancePercent, seed),
+          interest: reportData.remarks?.interest || getAutoRemark('interest', avgScore, attendancePercent, seed),
+          conduct: reportData.remarks?.conduct || getAutoRemark('conduct', avgScore, attendancePercent, seed),
+          classTeacher: reportData.remarks?.classTeacher || getAutoRemark('classTeacher', avgScore, attendancePercent, seed),
+          headTeacher: reportData.remarks?.headTeacher || getAutoRemark('headTeacher', avgScore, attendancePercent, seed)
       })
     }
-  }, [reportData])
+  }, [reportData, studentId])
 
   // Load Theme Images
   useEffect(() => {

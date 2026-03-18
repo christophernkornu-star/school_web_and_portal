@@ -45,16 +45,24 @@ export default function AdminStudentReportPage() {
 
   // Sync remarks when report data loads
   useEffect(() => {
-    if (reportData?.remarks) {
+    if (reportData) {
+      const avgScore = reportData.averageScore || 0
+      const attendance = reportData.attendance
+      const attendancePercent = attendance && attendance.total > 0 
+        ? (attendance.present / attendance.total) * 100 
+        : undefined
+      
+      const seed = studentId // Use student ID for consistent auto-remarks
+
       setRemarks({
-          attitude: reportData.remarks.attitude || '',
-          interest: reportData.remarks.interest || '',
-          conduct: reportData.remarks.conduct || '',
-          classTeacher: reportData.remarks.classTeacher || '',
-          headTeacher: reportData.remarks.headTeacher || ''
+          attitude: reportData.remarks?.attitude || getAutoRemark('attitude', avgScore, attendancePercent, seed),
+          interest: reportData.remarks?.interest || getAutoRemark('interest', avgScore, attendancePercent, seed),
+          conduct: reportData.remarks?.conduct || getAutoRemark('conduct', avgScore, attendancePercent, seed),
+          classTeacher: reportData.remarks?.classTeacher || getAutoRemark('classTeacher', avgScore, attendancePercent, seed),
+          headTeacher: reportData.remarks?.headTeacher || getAutoRemark('headTeacher', avgScore, attendancePercent, seed)
       })
     }
-  }, [reportData])
+  }, [reportData, studentId])
 
   // Load Theme Images
   useEffect(() => {
@@ -254,28 +262,39 @@ export default function AdminStudentReportPage() {
         </div>
 
         {/* Grades Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Class ({scoreSettings.classScorePercentage}%)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exam ({scoreSettings.examScorePercentage}%)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
+                   {/* Mobile: Compact Headers */}
+                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider md:px-6">Subject</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Class ({scoreSettings.classScorePercentage}%)</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exam ({scoreSettings.examScorePercentage}%)</th>
+                  <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider md:px-6">Total</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                  <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {reportData.grades.map((grade, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{grade.subject_name}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.class_score ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.total ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-blue-600">{grade.grade ?? '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{grade.remarks ?? '-'}</td>
+                    <td className="px-3 py-4 text-sm font-medium text-gray-900 md:px-6">
+                      <div className="flex flex-col">
+                        <span>{grade.subject_name}</span>
+                        {/* Mobile Only Details */}
+                        <div className="md:hidden text-xs text-gray-500 mt-1 space-y-1">
+                          <div>Class: {grade.class_score ?? '-'} | Exam: {grade.exam_score ?? '-'}</div>
+                          <div>Grade: <span className="text-blue-600 font-bold">{grade.grade ?? '-'}</span></div>
+                          <div className="italic text-gray-400">{grade.remarks ?? '-'}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="hidden md:table-cell px-6 py-4 text-center text-sm text-gray-500">{grade.class_score ?? '-'}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score ?? '-'}</td>
+                    <td className="px-3 py-4 text-center text-sm font-bold text-gray-900 md:px-6">{grade.total ?? '-'}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-center text-sm font-bold text-blue-600">{grade.grade ?? '-'}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-500">{grade.remarks ?? '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -285,19 +304,19 @@ export default function AdminStudentReportPage() {
 
         {/* Remarks Editor */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <h3 className="text-lg font-bold text-gray-800">Edit Remarks</h3>
-            <div className="flex gap-2">
+            <div className="flex w-full sm:w-auto gap-2">
                 <button
                 onClick={applyAutoRemarks}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transaction-colors"
+                className="flex-1 sm:flex-none justify-center items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transaction-colors"
                 >
                 <RefreshCw className="w-3.5 h-3.5" />
                 Auto Generate
                 </button>
                 <button
                 onClick={handleSaveRemarks}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transaction-colors"
+                className="flex-1 sm:flex-none justify-center items-center gap-2 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transaction-colors"
                 >
                 <Save className="w-3.5 h-3.5" />
                 Save Changes

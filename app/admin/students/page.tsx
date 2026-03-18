@@ -179,7 +179,66 @@ export default function StudentsPage() {
         {/* Table */}
         <Card>
           <div className="bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
+            
+            {/* Mobile View */}
+            <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-700">
+              {students.map((student) => (
+                <div key={student.id} className="p-4 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-sm uppercase">
+                        {student.first_name[0]}{student.last_name[0]}
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white">
+                          {student.last_name} {student.first_name}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                           {student.student_id}
+                        </div>
+                      </div>
+                    </div>
+                    <Badge variant={student.status === 'active' ? 'success' : 'secondary'}>
+                        {student.status || 'Active'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
+                      <span className="block font-medium mb-1">Class</span>
+                      <Badge variant="secondary" className="font-medium bg-white dark:bg-gray-800">
+                        {student.classes?.name || 'Unassigned'}
+                      </Badge>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
+                      <span className="block font-medium mb-1">Gender</span>
+                      <span className="capitalize">{student.gender || 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                     <span className="text-xs text-gray-400 truncate max-w-[150px]">{student.email || 'No Email'}</span>
+                     <div className="flex items-center gap-2">
+                          <Link 
+                              href={`/admin/students/${student.id}`}
+                              className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 rounded-md transition-colors text-xs font-medium px-3"
+                          >
+                              View
+                          </Link>
+                          <button
+                              onClick={() => handleDeleteStudent(student.id, student.profile_id)}
+                              className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-md transition-colors"
+                          >
+                              <Trash2 className="w-4 h-4" />
+                          </button>
+                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-900 dark:text-gray-300 border-b dark:border-gray-700">
                   <tr>
@@ -255,13 +314,14 @@ export default function StudentsPage() {
                 </tbody>
               </table>
               
-              {/* Empty State */}
-              {students.length === 0 && !loading && (
-                  <div className="p-12 text-center text-gray-500 dark:text-gray-400">
-                      <p>No students found matching your criteria.</p>
-                  </div>
-              )}
             </div>
+
+            {/* Empty State - Now outside the hidden md:block div so it shows everywhere */}
+            {students.length === 0 && !loading && (
+                <div className="p-12 text-center text-gray-500 dark:text-gray-400">
+                    <p>No students found matching your criteria.</p>
+                </div>
+            )}
           </div>
           
           {/* Pagination Footer */}
