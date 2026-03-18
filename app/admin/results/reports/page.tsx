@@ -4,10 +4,12 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Printer, Search, Download, FileText, CheckSquare, Square } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { useReactToPrint } from 'react-to-print'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import Image from 'next/image'
+import { generateBatchReportHTML } from '@/lib/reports/generator'
+import { ReportCardData, ReportCardTheme, ReportRemarks, Grade } from '@/lib/reports/types'
+import { toast } from 'react-hot-toast'
 
 // Types
 type Student = {
@@ -21,184 +23,39 @@ type Student = {
   status?: string
 }
 
-type Score = {
-  subject_id: string
-  subject_name: string
-  class_score: number
-  exam_score: number
-  total: number
-  grade: string
-  remarks: string
-  position?: string
+interface ExtendedReport {
+    student: any
+    reportData: ReportCardData
+    remarks: ReportRemarks
 }
 
-type ReportData = {
-  student: Student
-  scores: Score[]
-  attendance?: { present: number, total: number }
-  teacher_remarks?: string
-  headteacher_remarks?: string
-}
+// Removed ReportCard component - using shared generator
 
-// Report Card Component (Hidden/Print Only)
-const ReportCard = ({ data, termName, academicYear }: { data: ReportData, termName: string, academicYear: string }) => {
-  const schoolName = "Biriwa Methodist 'C' Basic School"
-  const schoolAddress = "P.O. Box 123, Biriwa" // Placeholder
-  
-  // Calculate aggregate stats
-  const totalScore = data.scores.reduce((sum, s) => sum + (s.total || 0), 0)
-  const average = data.scores.length > 0 ? (totalScore / data.scores.length).toFixed(1) : '0'
-
-  return (
-    <div className="bg-white p-8 max-w-[210mm] mx-auto min-h-[297mm] text-black print:text-black">
-      {/* Header */}
-      <div className="border-b-4 border-double border-gray-800 pb-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
-             {/* Logo Placeholder */}
-             <span className="text-xs text-center p-2">School Logo</span>
-          </div>
-          <div className="text-center flex-1 px-4">
-            <h1 className="text-2xl font-bold uppercase tracking-wide">{schoolName}</h1>
-            <p className="text-sm font-medium">{schoolAddress}</p>
-            <h2 className="text-xl font-bold mt-2 uppercase underline decoration-2 underline-offset-4">
-              Student Term Report
-            </h2>
-          </div>
-          <div className="w-24">
-             {/* Photo Placeholder */}
-             {data.student.photo_url ? (
-                 <Image 
-                   src={data.student.photo_url} 
-                   alt="Student" 
-                   width={96} 
-                   height={96} 
-                   className="w-24 h-24 object-cover border border-gray-300" 
-                 />
-             ) : (
-                <div className="w-24 h-24 border border-gray-300 flex items-center justify-center text-xs text-gray-400">
-                    Photo
-                </div>
-             )}
-          </div>
-        </div>
-      </div>
-
-      {/* Student Info */}
-      <div className="grid grid-cols-2 gap-x-8 gap-y-2 mb-6 text-sm">
-        <div className="flex bg-gray-50 p-2 rounded">
-          <span className="font-bold w-32">Name:</span>
-          <span className="uppercase">{data.student.last_name}, {data.student.first_name}</span>
-        </div>
-        <div className="flex bg-gray-50 p-2 rounded">
-          <span className="font-bold w-32">ID Number:</span>
-          <span>{data.student.student_id}</span>
-        </div>
-        <div className="flex bg-gray-50 p-2 rounded">
-          <span className="font-bold w-32">Class:</span>
-          <span>{data.student.class_name}</span>
-        </div>
-        <div className="flex bg-gray-50 p-2 rounded">
-          <span className="font-bold w-32">Term:</span>
-          <span>{termName} ({academicYear})</span>
-        </div>
-        <div className="flex bg-gray-50 p-2 rounded">
-          <span className="font-bold w-32">No. on Roll:</span>
-          <span>--</span>
-        </div>
-        <div className="flex bg-gray-50 p-2 rounded">
-            <span className="font-bold w-32">Position:</span>
-            <span>--</span> 
-        </div>
-      </div>
-
-      {/* Results Table */}
-      <table className="w-full border-collapse border border-gray-800 mb-6 text-sm">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-600 p-2 text-left">Subject</th>
-            <th className="border border-gray-600 p-2 text-center w-16">Class (30%)</th>
-            <th className="border border-gray-600 p-2 text-center w-16">Exam (70%)</th>
-            <th className="border border-gray-600 p-2 text-center w-16">Total (100%)</th>
-            <th className="border border-gray-600 p-2 text-center w-16">Grade</th>
-            <th className="border border-gray-600 p-2 text-left w-32">Remarks</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.scores.map((score, idx) => (
-            <tr key={idx}>
-              <td className="border border-gray-600 p-2 font-medium">{score.subject_name}</td>
-              <td className="border border-gray-600 p-2 text-center">{score.class_score}</td>
-              <td className="border border-gray-600 p-2 text-center">{score.exam_score}</td>
-              <td className="border border-gray-600 p-2 text-center font-bold">{score.total}</td>
-              <td className="border border-gray-600 p-2 text-center">{score.grade}</td>
-              <td className="border border-gray-600 p-2 text-left text-xs">{score.remarks}</td>
-            </tr>
-          ))}
-          {/* Summary Row */}
-          <tr className="bg-gray-50 font-bold">
-            <td className="border border-gray-600 p-2 text-right">AVERAGE</td>
-            <td className="border border-gray-600 p-2" colSpan={2}></td>
-            <td className="border border-gray-600 p-2 text-center">{average}</td>
-            <td className="border border-gray-600 p-2" colSpan={2}></td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* Remarks Section */}
-      <div className="space-y-6 mt-8">
-        <div className="border border-gray-300 p-4 rounded min-h-[80px]">
-          <p className="font-bold text-sm mb-2 border-b border-gray-200 pb-1 w-full">Class Teacher's Remarks:</p>
-          <p className="text-sm italic text-gray-600">Good performance...</p>
-        </div>
-        
-        <div className="border border-gray-300 p-4 rounded min-h-[80px]">
-           <p className="font-bold text-sm mb-2 border-b border-gray-200 pb-1 w-full">Head Teacher's Remarks:</p>
-           <p className="text-sm italic text-gray-600">Promoted to next class.</p>
-        </div>
-      </div>
-
-       {/* Signatures */}
-       <div className="flex justify-between mt-12 pt-8">
-          <div className="text-center w-48">
-             <div className="border-b border-black mb-2"></div>
-             <p className="text-xs uppercase font-bold">Class Teacher</p>
-          </div>
-          <div className="text-center w-48">
-             <div className="border-b border-black mb-2"></div>
-             <p className="text-xs uppercase font-bold">Head Teacher</p>
-          </div>
-       </div>
-       
-       <div className="mt-8 text-center text-[10px] text-gray-400" suppressHydrationWarning>
-          Generated via Biriwa Methodist SMS on {new Date().toLocaleDateString()}
-       </div>
-       
-       {/* Page Break for Print */}
-       <div className="break-after-page"></div>
-    </div>
-  )
-}
 
 export default function ReportsPage() {
   const supabase = getSupabaseBrowserClient()
-  const componentRef = useRef<HTMLDivElement>(null)
 
   // State
   const [loading, setLoading] = useState(true)
   const [fetchingResults, setFetchingResults] = useState(false)
+  
   const [classes, setClasses] = useState<any[]>([])
   const [terms, setTerms] = useState<any[]>([])
+  const [academicSettings, setAcademicSettings] = useState<any>(null)
+  const [scoreSettings, setScoreSettings] = useState({ classScorePercentage: 30, examScorePercentage: 70 })
   
   const [selectedClass, setSelectedClass] = useState('')
   const [selectedTerm, setSelectedTerm] = useState('')
   
   const [students, setStudents] = useState<Student[]>([])
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set())
-  const [reportData, setReportData] = useState<ReportData[]>([])
+  const [reportData, setReportData] = useState<ExtendedReport[]>([])
+  
+  const [theme, setTheme] = useState<ReportCardTheme>({})
 
   useEffect(() => {
     loadInitialData()
+    loadThemeImages()
   }, [])
   
   // Effect to load students when selection changes
@@ -211,11 +68,46 @@ export default function ReportsPage() {
     }
   }, [selectedClass])
 
+  async function loadThemeImages() {
+      // Helper to fetch base64
+      const loadBase64 = async (url: string) => {
+        try {
+          const response = await fetch(url)
+          if (!response.ok) throw new Error('Failed to fetch')
+          const blob = await response.blob()
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(blob)
+          })
+        } catch (e) {
+          console.error('Failed to load image', url)
+          return ''
+        }
+      }
+
+      const [watermark, logo, methodist, signature] = await Promise.all([
+        loadBase64('/school_crest-removebg-preview (2).png'),
+        loadBase64('/school_crest.png'),
+        loadBase64('/Methodist_logo.png'),
+        loadBase64('/signature.png') 
+      ])
+
+      setTheme({
+        watermarkImage: watermark,
+        logoImage: logo,
+        methodistLogoImage: methodist,
+        signatureImage: signature
+      })
+  }
+
   async function loadInitialData() {
     try {
-      const [classesRes, termsRes] = await Promise.all([
+      const [classesRes, termsRes, settingsRes, systemSettingsRes] = await Promise.all([
         supabase.from('classes').select('id, name').order('name'),
-        supabase.from('academic_terms').select('id, name, academic_year, is_current').order('start_date', { ascending: false })
+        supabase.from('academic_terms').select('id, name, academic_year, is_current').order('start_date', { ascending: false }),
+        supabase.from('academic_settings').select('*').single(),
+        supabase.from('system_settings').select('class_score_percentage, exam_score_percentage').single()
       ])
       
       if (classesRes.data) setClasses(classesRes.data)
@@ -225,6 +117,13 @@ export default function ReportsPage() {
           const active = termsRes.data.find((t: any) => t.is_current)
           if (active) setSelectedTerm(active.id)
           else if (termsRes.data.length > 0) setSelectedTerm(termsRes.data[0].id)
+      }
+      if (settingsRes.data) setAcademicSettings(settingsRes.data)
+      if (systemSettingsRes.data) {
+          setScoreSettings({
+            classScorePercentage: systemSettingsRes.data.class_score_percentage || 30,
+            examScorePercentage: systemSettingsRes.data.exam_score_percentage || 70
+          })
       }
     } catch (error) {
       console.error('Error loading options:', error)
@@ -241,7 +140,7 @@ export default function ReportsPage() {
           const { data: classData } = await supabase.from('classes').select('name').eq('id', selectedClass).single()
           const { data: stdData } = await supabase
             .from('students')
-            .select('id, first_name, last_name, student_id, gender, status')
+            .select('id, first_name, last_name, student_id, gender, status, photo_url')
             .eq('class_id', selectedClass)
             .eq('status', 'active')
             .order('last_name')
@@ -262,18 +161,21 @@ export default function ReportsPage() {
   async function prepareReports() {
      if (!selectedTerm || selectedStudentIds.size === 0) return
      setFetchingResults(true)
+     
      try {
-         // Get selected term details
+         // Get selected term and class details
          const term = terms.find(t => t.id === selectedTerm)
+         const classData = classes.find(c => c.id === selectedClass)
          
-         const reportPromises = Array.from(selectedStudentIds).map(async (studentId) => {
-             const student = students.find(s => s.id === studentId)
-             if (!student) return null
-             
-             // Fetch scores
-             const { data: scores } = await supabase
+         // 1. Fetch ALL students scores in the class to calculate positions
+         const allStudentIds = students.map(s => s.id)
+
+         // Fetch all scores AND class subjects
+         const [scoresRes, classSubjectsRes] = await Promise.all([
+             supabase
                 .from('scores')
                 .select(`
+                    student_id,
                     subject_id,
                     subjects(name),
                     class_score,
@@ -282,38 +184,159 @@ export default function ReportsPage() {
                     grade,
                     remarks
                 `)
-                .eq('student_id', studentId)
-                .eq('term_id', selectedTerm)
+                .in('student_id', allStudentIds)
+                .eq('term_id', selectedTerm),
              
-             const formattedScores: Score[] = scores?.map((s: any) => ({
-                 subject_id: s.subject_id,
-                 subject_name: s.subjects?.name || 'Unknown',
-                 class_score: s.class_score,
-                 exam_score: s.exam_score,
-                 total: s.total,
-                 grade: s.grade,
-                 remarks: s.remarks
-             })) || []
+             supabase
+                .from('class_subjects')
+                .select('subject_id, subjects(name)')
+                .eq('class_id', selectedClass)
+                .eq('academic_year', term?.academic_year)
+         ])
+         
+         if (scoresRes.error) throw scoresRes.error
+         const allScores = scoresRes.data
+         const classSubjects = classSubjectsRes.data
              
-             return {
-                 student,
-                 scores: formattedScores
-             }
+         // 2. Calculate aggregates for ranking
+         const studentAggregates = new Map<string, { total: number, average: number }>()
+
+         // Group scores by student
+         const scoresByStudent = new Map<string, any[]>()
+         if (allScores) {
+             allScores.forEach((s: any) => {
+                 const list = scoresByStudent.get(s.student_id) || []
+                 list.push(s)
+                 scoresByStudent.set(s.student_id, list)
+             })
+         }
+         
+         allStudentIds.forEach(id => {
+             const sScores = scoresByStudent.get(id) || []
+             const total = sScores.reduce((sum, s) => sum + (s.total || 0), 0)
+             const average = sScores.length > 0 ? total / sScores.length : 0
+             studentAggregates.set(id, { total, average })
          })
          
-         const reports = (await Promise.all(reportPromises)).filter(Boolean) as ReportData[]
+         // Sort IDs by average descending to determine rank
+         const sortedIds = [...allStudentIds].sort((a, b) => {
+             return (studentAggregates.get(b)?.average || 0) - (studentAggregates.get(a)?.average || 0)
+         })
+         
+         // 3. Build data for SELECTED students
+         const reports: ExtendedReport[] = []
+         
+         for (const studentId of Array.from(selectedStudentIds)) {
+             const student = students.find(s => s.id === studentId)
+             if (!student) continue
+             
+             const sScores = scoresByStudent.get(studentId) || []
+             const aggs = studentAggregates.get(studentId) || { total: 0, average: 0 }
+             const position = sortedIds.indexOf(studentId) + 1
+             
+             // Map scores to Grade objects matching shared type
+             const grades: Grade[] = sScores.map((s: any) => ({
+                 subject_name: s.subjects?.name || 'Unknown',
+                 class_score: s.class_score || 0,
+                 exam_score: s.exam_score || 0,
+                 total: s.total || 0,
+                 grade: s.grade || '-',
+                 remarks: s.remarks || '',
+                 rank: 0,
+                 position: 0
+             }))
+             
+             // Add missing subjects from classSubjects
+             if (classSubjects) {
+                 const currentSubjectIds = new Set(sScores.map((s: any) => s.subject_id))
+                 classSubjects.forEach((cs: any) => {
+                     if (!currentSubjectIds.has(cs.subject_id)) {
+                         grades.push({
+                             subject_name: cs.subjects?.name || 'Unknown',
+                             class_score: null,
+                             exam_score: null,
+                             total: null,
+                             grade: null,
+                             remarks: null,
+                             rank: 0,
+                             position: 0
+                         })
+                     }
+                 })
+                 // Sort alphabetically
+                 grades.sort((a, b) => a.subject_name.localeCompare(b.subject_name))
+             }
+             
+             // Construct ReportCardData strict type
+             const reportDataObj: ReportCardData = {
+                 termId: selectedTerm,
+                 termName: term?.name || '',
+                 year: term?.academic_year || '',
+                 grades: grades,
+                 totalScore: aggs.total,
+                 averageScore: Number(aggs.average.toFixed(2)),
+                 position: position,
+                 totalClassSize: students.length,
+                 attendance: { present: 0, total: 0 },
+                 remarks: {
+                     attitude: '',
+                     interest: '',
+                     conduct: '',
+                     classTeacher: '',
+                     headTeacher: ''
+                 }
+             }
+
+             // Enhance student object for generator compatibility
+             // The generator expects: student.profiles.full_name, student.classes.name
+             const enhancedStudent = {
+                 ...student,
+                 classes: { name: classData?.name },
+                 profiles: { full_name: `${student.last_name}, ${student.first_name}` }
+             }
+             
+             reports.push({
+                 student: enhancedStudent,
+                 reportData: reportDataObj,
+                 remarks: reportDataObj.remarks as ReportRemarks
+             })
+         }
+         
          setReportData(reports)
+         toast.success(`Prepared ${reports.length} reports`)
          
      } catch (err) {
          console.error(err)
+         toast.error('Failed to prepare reports')
      } finally {
          setFetchingResults(false)
      }
   }
 
-  const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-  } as any)
+  const handlePrint = () => {
+      if (reportData.length === 0) return
+      
+      try {
+        const htmlContent = generateBatchReportHTML(
+            reportData, 
+            academicSettings, 
+            theme,
+            scoreSettings.classScorePercentage,
+            scoreSettings.examScorePercentage
+        )
+        
+        const printWindow = window.open('', '_blank')
+        if (printWindow) {
+            printWindow.document.write(htmlContent)
+            printWindow.document.close()
+        } else {
+            toast.error('Pop-up blocked. Please allow pop-ups for this site to print.')
+        }
+      } catch (err: any) {
+        console.error('Print error:', err)
+        toast.error('Failed to initiate print: ' + err.message)
+      }
+  }
 
   // Toggle selection
   const toggleStudent = (id: string) => {
@@ -331,7 +354,7 @@ export default function ReportsPage() {
       }
   }
 
-  const printReady = reportData.length > 0 && reportData.length === selectedStudentIds.size
+  const printReady = reportData.length > 0
 
   if (loading) {
     return (
@@ -488,22 +511,7 @@ export default function ReportsPage() {
 
       </div>
       
-      {/* Hidden Print Container */}
-      <div style={{ display: 'none' }}>
-        <div ref={componentRef}>
-            {reportData.map((data, idx) => {
-                const term = terms.find(t => t.id === selectedTerm)
-                return (
-                    <ReportCard 
-                        key={idx} 
-                        data={data} 
-                        termName={term?.name || ''} 
-                        academicYear={term?.academic_year || ''}
-                    />
-                )
-            })}
-        </div>
-      </div>
+
     </div>
   )
 }

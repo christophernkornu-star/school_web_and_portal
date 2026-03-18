@@ -387,7 +387,7 @@ export default function TeacherDashboard() {
             />
             <QuickActionCard 
               href="/teacher/assessments"
-              title="Assessments" 
+              title="Online Assessment" 
               description="Manage Tests"
               icon={FileText} 
               color="text-purple-600 dark:text-purple-400"

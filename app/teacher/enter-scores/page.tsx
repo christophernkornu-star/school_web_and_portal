@@ -42,6 +42,10 @@ export default function EnterScores() {
   const [editAssessmentType, setEditAssessmentType] = useState('class_work')
   const [updatingAssessment, setUpdatingAssessment] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('')
+  const [genderFilter, setGenderFilter] = useState('')
 
   const isReadOnly = teacher?.status === 'on_leave' || teacher?.status === 'on leave'
 
@@ -296,6 +300,7 @@ export default function EnterScores() {
         first_name,
         last_name,
         middle_name,
+        gender,
         profile_id,
         profiles!students_profile_id_fkey(full_name),
         classes(id, name, level, category)
@@ -536,6 +541,23 @@ export default function EnterScores() {
     setSaving(false)
   }
 
+  // Filter Logic
+  const filteredStudents = students.filter(student => {
+    // Search filter
+    const fullName = (student.profiles?.full_name || `${student.first_name} ${student.last_name}`).toLowerCase()
+    
+    // Gender filter
+    const genderMatch = !genderFilter || student.gender?.toLowerCase() === genderFilter.toLowerCase()
+    
+    if (!searchQuery) return genderMatch
+    
+    return ((fullName.includes(searchQuery.toLowerCase())) || 
+           (student.student_id?.toLowerCase().includes(searchQuery.toLowerCase()))) && genderMatch
+  })
+
+  // Group by gender if no filter (optional, but requested in previous prompts)
+  // For now let's just sort or filter.
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -763,6 +785,36 @@ export default function EnterScores() {
                 </div>
               </div>
             </div>
+            
+            {/* Filter Tools */}
+            {selectedAssessment && (
+             <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                <div className="w-full sm:w-auto relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 text-gray-400" />
+                    <input 
+                      type="text" 
+                      placeholder="Search student..." 
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                </div>
+                <div className="w-full sm:w-auto min-w-[150px]">
+                    <select 
+                      value={genderFilter}
+                      onChange={(e) => setGenderFilter(e.target.value)}
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                        <option value="">All Genders</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select>
+                </div>
+                <div className="w-full sm:w-auto text-sm text-gray-500">
+                    Showing {filteredStudents.length} of {students.length} students
+                </div>
+             </div>
+            )}
           </div>
 
           {/* Edit Assessment Modal */}
@@ -937,13 +989,23 @@ export default function EnterScores() {
                       <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
                         Name
                       </th>
+                      <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase hidden md:table-cell w-24">
+                        Gender
+                      </th>
                       <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase w-24 md:w-auto">
                         Score
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {students.map((student) => (
+                    {filteredStudents.length === 0 ? (
+                      <tr>
+                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                           No students found matching your filters.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredStudents.map((student) => (
                       <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100">
                           {student.student_id}
@@ -951,6 +1013,9 @@ export default function EnterScores() {
                         <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                           <span className="md:hidden block truncate max-w-[120px] sm:max-w-xs">{student.last_name}, {student.first_name}</span>
                           <span className="hidden md:block">{student.last_name}, {student.middle_name ? student.middle_name + ', ' : ''}{student.first_name}</span>
+                        </td>
+                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 hidden md:table-cell">
+                          {student.gender || 'N/A'}
                         </td>
                         <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-center">
                           {loadingScores ? (
@@ -970,7 +1035,8 @@ export default function EnterScores() {
                           )}
                         </td>
                       </tr>
-                    ))}
+                    ))
+                   )}
                   </tbody>
                 </table>
               </div>

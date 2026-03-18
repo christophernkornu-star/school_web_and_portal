@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import BackButton from '@/components/ui/back-button'
-import { ArrowLeft, UploadCloud, Users, CheckCircle, Clock, RotateCcw, Trash2 } from 'lucide-react'
+import { ArrowLeft, UploadCloud, Users, CheckCircle, Clock, RotateCcw, Trash2, Search, Filter } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -20,6 +20,10 @@ export default function QuizDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null) // State for delete operation
+
+  // Filter States
+  const [searchQuery, setSearchQuery] = useState('')
+  const [genderFilter, setGenderFilter] = useState('') // '' (All), 'Male', 'Female'
 
   useEffect(() => {
     async function loadData() {
@@ -47,7 +51,8 @@ export default function QuizDetailsPage() {
             students (
                 first_name,
                 last_name,
-                middle_name
+                middle_name,
+                gender
             )
           `)
           .eq('quiz_id', quizId)
@@ -152,6 +157,24 @@ export default function QuizDetailsPage() {
 
   if (!quiz) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Quiz not found</div>
 
+  // Filter Logic
+  const filteredAttempts = attempts.filter((attempt) => {
+    const s = attempt.students
+    const fullName = `${s.first_name || ''} ${s.last_name || ''} ${s.middle_name || ''}`.toLowerCase()
+    
+    // Search
+    if (searchQuery && !fullName.includes(searchQuery.toLowerCase())) {
+        return false
+    }
+
+    // Gender
+    if (genderFilter && s.gender?.toLowerCase() !== genderFilter.toLowerCase()) {
+        return false
+    }
+    
+    return true
+  })
+
   const avgScore = attempts.length > 0 
     ? (attempts.reduce((sum, a) => sum + (a.score || 0), 0) / attempts.length).toFixed(1)
     : 0
@@ -220,14 +243,51 @@ export default function QuizDetailsPage() {
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
-            <div className="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                <h3 className="font-semibold text-gray-800 dark:text-gray-200">Student Results</h3>
+            <div className="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <h3 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+                    Student Results 
+                    {filteredAttempts.length !== attempts.length && (
+                        <span className="text-xs font-normal text-gray-500">
+                            (Showing {filteredAttempts.length} of {attempts.length})
+                        </span>
+                    )}
+                </h3>
+                
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="relative w-full sm:w-auto">
+                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <input 
+                            type="text" 
+                            placeholder="Search student..." 
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48 transition-all"
+                        />
+                    </div>
+                    <div className="relative w-full sm:w-auto">
+                        <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                        <select
+                            value={genderFilter}
+                            onChange={(e) => setGenderFilter(e.target.value)}
+                            className="pl-9 pr-8 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer w-full sm:w-auto transition-all"
+                            style={{ backgroundImage: 'none' }}
+                        >
+                            <option value="">All Genders</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div className="overflow-x-auto w-full">
                 <table className="min-w-full text-sm text-left">
                     <thead className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium uppercase text-xs tracking-wider">
                         <tr>
                             <th className="px-4 md:px-6 py-3 whitespace-nowrap">Student Name</th>
+                            <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Gender</th>
                             <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Submitted At</th>
                             <th className="px-4 md:px-6 py-3 whitespace-nowrap">Score</th>
                             <th className="hidden sm:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Percentage</th>
@@ -238,15 +298,24 @@ export default function QuizDetailsPage() {
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                         {attempts.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
                                     <div className="flex flex-col items-center justify-center">
                                        <Users className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
                                        <p>No attempts recorded yet.</p>
                                     </div>
                                 </td>
                             </tr>
+                        ) : filteredAttempts.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                                    <div className="flex flex-col items-center justify-center">
+                                       <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
+                                       <p>No students match your filter.</p>
+                                    </div>
+                                </td>
+                            </tr>
                         ) : (
-                            attempts.map((attempt) => {
+                            filteredAttempts.map((attempt) => {
                                 const percentage = quiz.total_points > 0 
                                     ? ((attempt.score / quiz.total_points) * 100).toFixed(1) 
                                     : '0'
@@ -255,6 +324,9 @@ export default function QuizDetailsPage() {
                                     <tr key={attempt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                                         <td className="px-4 md:px-6 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
                                             {attempt.students.last_name} {attempt.students.first_name} {attempt.students.middle_name}
+                                        </td>
+                                        <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                            {attempt.students.gender || '-'}
                                         </td>
                                         <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                             {new Date(attempt.end_time || attempt.created_at).toLocaleString()}

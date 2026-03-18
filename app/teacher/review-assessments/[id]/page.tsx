@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Edit, Save, Trash2, User, X, Check } from 'lucide-react'
+import { ArrowLeft, Edit, Save, Trash2, User, X, Check, Search, Filter } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { Skeleton } from '@/components/ui/skeleton'
 import Link from 'next/link'
@@ -18,6 +18,10 @@ export default function ReviewAssessmentDetail() {
   const [assessment, setAssessment] = useState<any>(null)
   const [scores, setScores] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('')
+  const [genderFilter, setGenderFilter] = useState('') // '' | 'Male' | 'Female'
 
   // Edit State
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null)
@@ -50,7 +54,7 @@ export default function ReviewAssessmentDetail() {
       // 2. Get Class Students (to ensure we list everyone)
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
-        .select('id, first_name, last_name, middle_name, student_id')
+        .select('*') // Get all fields including gender
         .eq('class_id', assessmentData.class_subjects?.class_id)
         .eq('status', 'active')
         .order('last_name', { ascending: true })
@@ -140,6 +144,26 @@ export default function ReviewAssessmentDetail() {
     }
   }
 
+  // Filter Logic
+  const filteredScores = useMemo(() => {
+    return scores.filter((score) => {
+        const s = score.students
+        const fullName = `${s.first_name || ''} ${s.last_name || ''} ${s.middle_name || ''}`.toLowerCase()
+        
+        // Search
+        if (searchQuery && !fullName.includes(searchQuery.toLowerCase()) && !s.student_id?.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return false
+        }
+    
+        // Gender
+        if (genderFilter && s.gender?.toLowerCase() !== genderFilter.toLowerCase()) {
+            return false
+        }
+        
+        return true
+    })
+  }, [scores, searchQuery, genderFilter])
+
   if (loading) {
      return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
@@ -193,9 +217,40 @@ export default function ReviewAssessmentDetail() {
 
       <main className="container mx-auto px-4 md:px-6 py-8">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden max-w-4xl mx-auto">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
-                  <h2 className="font-semibold text-gray-700 dark:text-gray-300">Student Scores</h2>
-                  <span className="text-sm text-gray-500">{scores.length} students graded</span>
+              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-between items-center bg-gray-50 dark:bg-gray-900/50 gap-4">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold text-gray-700 dark:text-gray-300">Student Scores</h2>
+                    <span className="text-sm text-gray-500 hidden sm:inline-block">({filteredScores.length} shown)</span>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                      <div className="relative w-full sm:w-auto">
+                          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                          <input 
+                              type="text" 
+                              placeholder="Search..." 
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48 transition-all"
+                          />
+                      </div>
+                      <div className="relative w-full sm:w-auto">
+                          <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                          <select
+                              value={genderFilter}
+                              onChange={(e) => setGenderFilter(e.target.value)}
+                              className="pl-9 pr-8 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer w-full sm:w-auto transition-all"
+                              style={{ backgroundImage: 'none' }}
+                          >
+                              <option value="">All Genders</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                          </select>
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          </div>
+                      </div>
+                  </div>
               </div>
               
               <div className="overflow-x-auto">
@@ -203,12 +258,13 @@ export default function ReviewAssessmentDetail() {
                       <thead>
                           <tr className="border-b border-gray-200 dark:border-gray-700">
                               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase">Student Name</th>
+                              <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase hidden sm:table-cell">Gender</th>
                               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Raw Score</th>
                               <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase text-right">Percentage</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                          {scores.map((score) => {
+                          {filteredScores.map((score) => {
                               const hasScore = score.score !== undefined && score.score !== null
                               const percentage = hasScore && assessment.max_score > 0 
                                 ? Math.round((score.score / assessment.max_score) * 100) 
@@ -228,6 +284,9 @@ export default function ReviewAssessmentDetail() {
                                                   <p className="text-xs text-gray-500">{score.students?.student_id}</p>
                                               </div>
                                           </div>
+                                      </td>
+                                      <td className="px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
+                                          {score.students?.gender || '-'}
                                       </td>
                                       <td className="px-6 py-4 text-right">
                                           {editingStudentId === score.student_id ? (
@@ -291,8 +350,16 @@ export default function ReviewAssessmentDetail() {
                           
                           {scores.length === 0 && (
                               <tr>
-                                  <td colSpan={3} className="px-6 py-12 text-center text-gray-500">
-                                      No scores recorded for this assessment yet.
+                                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                      No students found for this assessment.
+                                  </td>
+                              </tr>
+                          )}
+                          
+                          {scores.length > 0 && filteredScores.length === 0 && (
+                              <tr>
+                                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                                      No students match your search or filter.
                                   </td>
                               </tr>
                           )}

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
@@ -6,24 +6,13 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, Download, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Download, RefreshCw, Save } from 'lucide-react'
 import signatureImg from '@/app/student/report-card/signature.png'
-import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { getGradeValue, calculateAggregate, getOrdinalSuffix, isPromotionTerm, formatStudentName } from '@/lib/academic-utils'
-import { getAutoRemark, getAllRemarks } from '@/lib/remark-utils'
-
-
-// getOrdinalSuffix moved to @/lib/academic-utils
-// getGradeValue and calculateAggregate moved to @/lib/academic-utils
-
-interface ReportRemarks {
-  attitude: string
-  interest: string
-  conduct: string
-  classTeacher: string
-  headTeacher: string
-}
+import { getAutoRemark } from '@/lib/remark-utils'
+import { useReportCardData } from '@/lib/reports/hooks'
+import { generateReportHTML } from '@/lib/reports/generator'
+import { ReportCardTheme, ReportRemarks } from '@/lib/reports/types'
 
 export default function AdminStudentReportPage() {
   const router = useRouter()
@@ -33,24 +22,7 @@ export default function AdminStudentReportPage() {
   const studentId = params.id as string
   const termId = searchParams.get('term')
   
-  const [loading, setLoading] = useState(true)
-  const [student, setStudent] = useState<any>(null)
-  const [classData, setClassData] = useState<any>(null)
-  const [termData, setTermData] = useState<any>(null)
-  const [reportData, setReportData] = useState<any>({
-    assessments: [],
-    attendance: { present: 0, total: 0 },
-    stats: { 
-      average: 0, 
-      totalScore: 0, 
-      position: null,
-      classSize: 0,
-      aggregate: null
-    }
-  })
-  const [academicSettings, setAcademicSettings] = useState<any>(null)
   const [downloading, setDownloading] = useState(false)
-  
   const [remarks, setRemarks] = useState<ReportRemarks>({
     attitude: '',
     interest: '',
@@ -58,232 +30,66 @@ export default function AdminStudentReportPage() {
     classTeacher: '',
     headTeacher: ''
   })
+  const [theme, setTheme] = useState<ReportCardTheme>({})
+  
+  // Use shared hook
+  const { 
+      loading, 
+      error, 
+      student, 
+      reportData, 
+      academicSettings, 
+      scoreSettings,
+      refresh 
+  } = useReportCardData(studentId, termId || undefined)
 
+  // Sync remarks when report data loads
   useEffect(() => {
-    loadData()
-  }, [studentId, termId])
-
-  const loadData = async () => {
-    try {
-      const user = await getCurrentUser()
-      if (!user) {
-        router.push('/login?portal=admin')
-        return
-      }
-
-      // Verify admin access
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single()
-
-      if (profile?.role !== 'admin' && profile?.role !== 'head_teacher') {
-        router.push('/login?portal=admin')
-        return
-      }
-
-      // Get student info
-      const { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .select(`
-          *,
-          profiles(id, full_name, email),
-          classes(id, name, level, category)
-        `)
-        .eq('id', studentId)
-        .single()
-
-      if (studentError || !studentData) {
-        console.error('Error loading student:', studentError)
-        toast.error('Student not found')
-        router.push('/admin/reports')
-        return
-      }
-      setStudent(studentData)
-
-      // Get total class size (number on roll)
-      const { count: classSize } = await supabase
-        .from('students')
-        .select('id', { count: 'exact', head: true })
-        .eq('class_id', studentData.class_id)
-
-      // Get scores for this student and term
-      const { data: scoresData } = await supabase
-        .from('scores')
-        .select(`
-          *,
-          subjects(id, name),
-          academic_terms(name, academic_year)
-        `)
-        .eq('student_id', studentId)
-        .eq('term_id', termId)
-        .order('created_at') as { data: any[] | null }
-
-      // Get attendance - count days where student was present or late
-      const { data: attendanceRecords, count: daysPresent } = await supabase
-        .from('attendance')
-        .select('id', { count: 'exact' })
-        .eq('student_id', studentId)
-        .in('status', ['present', 'late']) as { data: any[], count: number | null }
-
-      // Fetch term data via API route to bypass RLS
-      const termResponse = await fetch(`/api/term-data?termId=${termId}`)
-      const termData = termResponse.ok ? await termResponse.json() : null
-
-      // Calculate average
-      const validScores = scoresData?.filter(s => s.total !== null) || []
-      const totalScore = Math.round(validScores.reduce((sum, s) => sum + (s.total || 0), 0) * 10) / 10
-      const averageScore = validScores.length > 0 ? Math.round((totalScore / validScores.length) * 10) / 10 : 0
-
-      // Get all scores for the same term to calculate subject ranks
-      const { data: allTermScores } = await supabase
-        .from('scores')
-        .select('student_id, subject_id, total')
-        .eq('term_id', termId)
-        .not('total', 'is', null) as { data: any[] | null }
-
-      // Calculate subject ranks
-      const subjectRanks: { [subjectId: string]: { [studentId: string]: number } } = {}
-      if (allTermScores) {
-        // Group scores by subject
-        const subjectScores: { [subjectId: string]: { studentId: string, total: number }[] } = {}
-        allTermScores.forEach(score => {
-          if (!subjectScores[score.subject_id]) {
-            subjectScores[score.subject_id] = []
-          }
-          subjectScores[score.subject_id].push({ studentId: score.student_id, total: score.total })
-        })
-
-        // Sort and assign ranks for each subject
-        Object.keys(subjectScores).forEach(subjectId => {
-          const sorted = subjectScores[subjectId].sort((a, b) => b.total - a.total)
-          subjectRanks[subjectId] = {}
-          sorted.forEach((item, index) => {
-            subjectRanks[subjectId][item.studentId] = index + 1
-          })
-        })
-      }
-
-      // Get class position (overall)
-      const { data: classScoresData } = await supabase
-        .from('scores')
-        .select('student_id, total')
-        .eq('term_id', termId)
-        .not('total', 'is', null) as { data: any[] | null }
-
-      // Group by student and calculate averages
-      const studentAverages: any = {}
-      classScoresData?.forEach((score: any) => {
-        if (!studentAverages[score.student_id]) {
-          studentAverages[score.student_id] = { total: 0, count: 0 }
-        }
-        studentAverages[score.student_id].total += score.total || 0
-        studentAverages[score.student_id].count += 1
+    if (reportData?.remarks) {
+      setRemarks({
+          attitude: reportData.remarks.attitude || '',
+          interest: reportData.remarks.interest || '',
+          conduct: reportData.remarks.conduct || '',
+          classTeacher: reportData.remarks.classTeacher || '',
+          headTeacher: reportData.remarks.headTeacher || ''
       })
-
-      const averages = Object.entries(studentAverages).map(([sid, data]: any) => ({
-        student_id: sid,
-        average: data.total / data.count
-      }))
-
-      averages.sort((a: any, b: any) => b.average - a.average)
-      const position = averages.findIndex((a: any) => a.student_id === studentId) + 1
-
-      // Get academic settings
-      const { data: settingsData } = await supabase
-        .from('academic_settings')
-        .select('*')
-        .single() as { data: any }
-
-      setAcademicSettings(settingsData)
-
-      const grades = scoresData?.map(s => ({
-        subject_name: s.subjects?.name || 'Unknown',
-        subject_id: s.subjects?.id || s.subject_id,
-        class_score: s.class_score,
-        exam_score: s.exam_score,
-        total: s.total,
-        // Recalculate grade to ensure consistency with aggregate (BECE 1-9 Scale)
-        grade: s.total !== null ? getGradeValue(s.total).toString() : '-',
-        remarks: s.remarks,
-        rank: subjectRanks[s.subject_id]?.[studentId] || null
-      })) || []
-
-      // Calculate aggregate for JHS students
-      const className = (studentData.classes?.name || studentData.classes?.class_name || '').toLowerCase()
-      const isJHS = className.includes('jhs') || 
-                    className.includes('basic 7') || 
-                    className.includes('basic 8') || 
-                    className.includes('basic 9') ||
-                    className.includes('form 1') ||
-                    className.includes('form 2') ||
-                    className.includes('form 3')
-      
-      let aggregate = null
-      if (isJHS) {
-        // Map raw grades to { subjectName, score } for utility
-        const calcInput = grades.map((g: any) => ({
-             subjectName: g.subject_name || '',
-             score: g.total || 0
-        }))
-        const aggResult = calculateAggregate(calcInput)
-        aggregate = aggResult.total
-      }
-
-      // Get promotion status if Third Term
-      let promotionStatus = null;
-      let teacherRemarks = null;
-      const isThirdTerm = isPromotionTerm(termData?.name || '');
-      
-      if (isThirdTerm && termData?.academic_year) {
-         try {
-             const { data: promoData } = await supabase.rpc('get_or_create_promotion_status', {
-                 p_student_id: studentId,
-                 p_academic_year: termData.academic_year
-             });
-             
-             if (promoData && promoData.length > 0) {
-                 promotionStatus = promoData[0].promotion_status;
-                 teacherRemarks = promoData[0].teacher_remarks;
-             }
-         } catch(e) {
-             console.error('Error fetching promotion status', e);
-         }
-      }
-
-      setReportData({
-        grades,
-        termName: termData?.name || '',
-        year: termData?.academic_year || '',
-        daysPresent: daysPresent || 0,
-        totalDays: termData?.total_days || 0,
-        averageScore: Math.round(averageScore * 10) / 10,
-        position: position > 0 ? position : null,
-        totalClassSize: classSize || averages.length,
-        aggregate,
-        promotionStatus,
-        promotionTeacherRemarks: teacherRemarks
-      })
-
-      // Generate auto remarks
-      const autoRemarks = {
-        attitude: getAutoRemark('attitude', averageScore),
-        interest: getAutoRemark('interest', averageScore),
-        conduct: getAutoRemark('conduct', averageScore),
-        classTeacher: getAutoRemark('classTeacher', averageScore),
-        headTeacher: getAutoRemark('headTeacher', averageScore)
-      }
-      setRemarks(autoRemarks)
-
-      setLoading(false)
-    } catch (error) {
-      console.error('Error loading report card:', error)
-      toast.error('Failed to load report card')
-    } finally {
-      setLoading(false)
     }
-  }
+  }, [reportData])
+
+  // Load Theme Images
+  useEffect(() => {
+    const loadTheme = async () => {
+      const loadBase64 = async (url: string) => {
+        try {
+          const response = await fetch(url)
+          const blob = await response.blob()
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(blob)
+          })
+        } catch (e) {
+          console.error('Failed to load image', url, e)
+          return ''
+        }
+      }
+
+      const [watermark, logo, methodist, signature] = await Promise.all([
+        loadBase64('/school_crest-removebg-preview (2).png'),
+        loadBase64('/school_crest.png'),
+        loadBase64('/Methodist_logo.png'),
+        loadBase64(signatureImg.src)
+      ])
+
+      setTheme({
+        watermarkImage: watermark,
+        logoImage: logo,
+        methodistLogoImage: methodist,
+        signatureImage: signature
+      })
+    }
+    loadTheme()
+  }, [])
 
   const handleRemarkChange = (type: keyof ReportRemarks, value: string) => {
     setRemarks(prev => ({ ...prev, [type]: value }))
@@ -291,19 +97,24 @@ export default function AdminStudentReportPage() {
 
   const handleSaveRemarks = async () => {
     try {
-      if (!termData?.id) return
+      if (!reportData?.termId) return
 
       const { error } = await supabase
         .from('student_remarks')
         .upsert({
-          student_id: student.id,
-          term_id: termData.id,
-          academic_year: termData.academic_year,
-          ...remarks
+          student_id: studentId,
+          term_id: reportData.termId,
+          academic_year: reportData.year,
+          attitude: remarks.attitude,
+          interest: remarks.interest,
+          conduct: remarks.conduct,
+          class_teacher_remark: remarks.classTeacher,
+          head_teacher_remark: remarks.headTeacher
         })
 
       if (error) throw error
       toast.success('Remarks saved successfully')
+      refresh() // Reload data to confirm save
     } catch (error) {
       console.error('Error saving remarks:', error)
       toast.error('Failed to save remarks')
@@ -313,9 +124,11 @@ export default function AdminStudentReportPage() {
   const applyAutoRemarks = () => {
     if (!reportData) return
     
-    const attendancePercentage = reportData.totalDays > 0 
-      ? (reportData.daysPresent / reportData.totalDays) * 100 
-      : undefined
+    // Calculate attendance percentage safely
+    let attendancePercentage: number | undefined = undefined;
+    if (reportData.attendance?.total && reportData.attendance.total > 0) {
+      attendancePercentage = (reportData.attendance.present / reportData.attendance.total) * 100;
+    }
 
     const autoRemarks = {
       attitude: getAutoRemark('attitude', reportData.averageScore, attendancePercentage),
@@ -325,75 +138,30 @@ export default function AdminStudentReportPage() {
       headTeacher: getAutoRemark('headTeacher', reportData.averageScore, attendancePercentage)
     }
     setRemarks(autoRemarks)
+    toast.success('Generated auto remarks')
   }
 
-  const downloadPDF = async () => {
-    if (!reportData || !student || !academicSettings) return
+  const handleDownload = async () => {
+    if (!student || !reportData || !academicSettings) return
 
     setDownloading(true)
     try {
-      // Convert images to base64
-      let watermarkBase64 = ''
-      let logoBase64 = ''
-      let methodistLogoBase64 = ''
-
-      try {
-        const watermarkResponse = await fetch('/school_crest-removebg-preview (2).png')
-        const watermarkBlob = await watermarkResponse.blob()
-        watermarkBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(watermarkBlob)
-        })
-      } catch (err) {
-        console.warn('Could not load watermark:', err)
-      }
-
-      try {
-        const logoResponse = await fetch('/school_crest.png')
-        const logoBlob = await logoResponse.blob()
-        logoBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(logoBlob)
-        })
-      } catch (err) {
-        console.warn('Could not load school crest:', err)
-      }
-
-      try {
-        const methodistResponse = await fetch('/Methodist_logo.png')
-        const methodistBlob = await methodistResponse.blob()
-        methodistLogoBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(methodistBlob)
-        })
-      } catch (err) {
-        console.warn('Could not load Methodist logo:', err)
-      }
-
-      // Convert signature image to base64
-      let signatureBase64 = ''
-      try {
-        const response = await fetch(signatureImg.src)
-        const blob = await response.blob()
-        signatureBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(blob)
-        })
-      } catch (imgError) {
-        console.warn('Could not load signature image:', imgError)
-      }
-
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
         toast('Please allow popups to download report card', { icon: 'ℹ️' })
         return
       }
 
-      const html = generateReportHTML(watermarkBase64, logoBase64, methodistLogoBase64, signatureBase64)
+      const html = generateReportHTML(
+        student,
+        reportData,
+        remarks, // Use current edited remarks
+        academicSettings,
+        theme,
+        scoreSettings.classScorePercentage,
+        scoreSettings.examScorePercentage
+      )
+
       printWindow.document.write(html)
       printWindow.document.close()
 
@@ -410,691 +178,104 @@ export default function AdminStudentReportPage() {
     }
   }
 
-  const generateReportHTML = (watermarkBase64: string, logoBase64: string, methodistLogoBase64: string, signatureBase64: string = ''): string => {
-    const currentDate = new Date().toLocaleDateString('en-GB')
-    const vacationDate = academicSettings?.vacation_start_date
-      ? new Date(academicSettings.vacation_start_date + 'T00:00:00').toLocaleDateString('en-GB')
-      : ''
-    const reopeningDate = academicSettings?.school_reopening_date
-      ? new Date(academicSettings.school_reopening_date + 'T00:00:00').toLocaleDateString('en-GB')
-      : ''
-
-    // Use base64 images or fallback to empty
-    const backgroundImage = watermarkBase64 ? `url('${watermarkBase64}')` : 'none'
-    const logoImage = logoBase64 || ''
-    const methodistLogo = methodistLogoBase64 || ''
-
-    // Get student name from profiles or construct from first/last name
-    const studentName = formatStudentName(student)
-    const className = student.classes?.name || student.classes?.class_name || ''
-
-    // Determine promotion status
-    const getPromotionStatusText = (): string => {
-      // Use database status if available
-      if (reportData.promotionStatus) {
-         const status = reportData.promotionStatus.toLowerCase();
-         if (status === 'promoted') return 'PROMOTED TO NEXT CLASS';
-         if (status === 'promoted_probation') return 'PROMOTED ON TRIAL';
-         if (status === 'repeated') return 'TO REPEAT CLASS';
-         if (status === 'graduated') return 'GRADUATED';
-         return status.toUpperCase();
-      }
-
-      const isThirdTerm = reportData.termName?.toLowerCase().includes('third') || 
-                          reportData.termName?.toLowerCase().includes('term 3') ||
-                          reportData.termName?.toLowerCase().includes('3rd') ||
-                          reportData.termName?.toLowerCase().includes('final')
-      
-      if (!isThirdTerm) return ''
-      
-      const avg = reportData.averageScore || 0
-      if (avg >= 50) return 'PROMOTED TO NEXT CLASS'
-      if (avg >= 40) return 'PROMOTED ON TRIAL'
-      return 'TO REPEAT CLASS'
-    }
-
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Report Card - ${studentName}</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
-          
-          @page {
-            size: A4;
-            margin: 5mm;
-          }
-          @media print {
-            html, body {
-              width: 210mm;
-              height: auto !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              color-adjust: exact !important;
-            }
-            .no-print { display: none !important; }
-            .report-card {
-              background: white !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              margin: 0 !important;
-              min-height: 260mm !important;
-              height: auto !important;
-              page-break-inside: avoid !important;
-            }
-            .watermark-overlay {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          }
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 9pt;
-            line-height: 1.25;
-            padding: 0;
-            color: #00008B;
-            background: white;
-          }
-          .report-card {
-            border: 3px solid #00008B;
-            padding: 10px;
-            width: 100%;
-            min-height: 285mm;
-            margin: 0 auto;
-            position: relative;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color-adjust: exact;
-            background: white;
-            isolation: isolate;
-          }
-          .watermark-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: ${backgroundImage};
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: 90%;
-            opacity: 0.08;
-            z-index: -1;
-            pointer-events: none;
-          }
-          .report-card > *:not(.watermark-overlay) {
-            position: relative;
-            z-index: 1;
-          }
-          .header {
-            border: 2px solid #00008B;
-            padding: 8px 15px;
-            margin-bottom: 10px;
-            position: relative;
-            box-shadow: 5px 5px 10px rgba(0,0,0,0.15);
-          }
-          .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 5px 15px;
-          }
-          .header-logo {
-            width: 95px;
-            height: 95px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .header-logo img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-          }
-          .header-top {
-            text-align: center;
-            flex: 1;
-            padding: 0 10px;
-          }
-          .school-name {
-            font-size: 26pt;
-            font-weight: bold;
-            font-family: Impact, 'Arial Black', sans-serif;
-            color: #00008B;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 3px;
-          }
-          .school-address {
-            font-size: 18pt;
-            margin: 1px 0;
-            color: #00008B;
-          }
-          .school-address.box {
-            font-size: 20pt;
-          }
-          .school-motto {
-            font-size: 16pt;
-            font-style: italic;
-            margin-top: 4px;
-            font-weight: bold;
-            color: #00008B;
-          }
-          .report-title {
-            background: #fff;
-            border: 2px solid #00008B;
-            padding: 4px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 19pt;
-            margin: 10px 40px 20px 40px;
-            color: #00008B;
-            box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
-          }
-          .student-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
-            margin-bottom: 6px;
-            border: 1px solid #00008B;
-          }
-          .info-row {
-            display: contents;
-          }
-          .info-cell {
-            padding: 3px 6px;
-            border: 1px solid #00008B;
-            font-size: 11pt;
-            color: #00008B;
-            text-transform: uppercase;
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 8px;
-          }
-          .info-label {
-            font-weight: bold;
-            color: #00008B;
-            position: relative;
-            padding-right: 8px;
-          }
-          .info-label::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: -3px;
-            bottom: -3px;
-            width: 1px;
-            background-color: transparent;
-            border-right: 1px solid #00008B;
-          }
-          .info-value {
-            padding-left: 8px;
-          }
-          .grades-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-            font-size: 11pt;
-            font-family: 'Times New Roman', Times, serif;
-          }
-          .grades-table th,
-          .grades-table td {
-            border: 1px solid #00008B;
-            padding: 2.5px;
-            text-align: center;
-            color: #00008B;
-            font-size: 11pt;
-          }
-          .grades-table th {
-            background: #f0f0f0;
-            font-weight: bold;
-            font-size: 11pt;
-            text-transform: uppercase;
-            color: #00008B;
-          }
-          .grades-table td:first-child,
-          .grades-table th:first-child {
-            text-align: left;
-          }
-          .grades-table td:last-child,
-          .grades-table th:last-child {
-            text-align: left;
-          }
-          .sn-col {
-            width: 30px;
-          }
-          .subject-col {
-            width: 180px;
-          }
-          .score-col {
-            width: 60px;
-          }
-          .total-col {
-            width: 60px;
-          }
-          .rank-col {
-            width: 50px;
-          }
-          .remarks-col {
-            width: 180px;
-            white-space: nowrap;
-          }
-          .total-row {
-            font-weight: bold;
-          }
-          .bottom-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            margin-top: 5px;
-          }
-          .attendance-box,
-          .promotion-box {
-            border: 1px solid #00008B;
-            padding: 3px;
-            font-size: 11pt;
-            color: #00008B;
-          }
-          .section-title {
-            font-weight: bold;
-            margin-bottom: 2px;
-            text-transform: uppercase;
-            font-size: 11pt;
-            color: #00008B;
-          }
-          .remarks-section {
-            border: 1px solid #00008B;
-            margin-top: 5px;
-          }
-          .remarks-row {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            border-bottom: 1px solid #00008B;
-          }
-          .remarks-row:last-child {
-            border-bottom: none;
-          }
-          .remarks-label {
-            padding: 6px 10px 6px 8px;
-            font-weight: bold;
-            border-right: 1px solid #00008B;
-            font-size: 11pt;
-            color: #00008B;
-            white-space: nowrap;
-            position: relative;
-          }
-          .remarks-content {
-            padding: 6px 8px;
-            min-height: 22px;
-            color: #00008B;
-            font-size: 11pt;
-            border-left: 1px solid #00008B;
-          }
-          .signature-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            border: 2px solid #00008B;
-            margin-top: 6px;
-            min-height: 80px;
-          }
-          .signature-box {
-            text-align: center;
-            font-size: 11pt;
-            color: #00008B;
-            padding: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .signature-box:first-child {
-            border-right: 2px solid #00008B;
-          }
-          .signature-line {
-            color: #00008B;
-            font-size: 11pt;
-            font-weight: bold;
-          }
-          .footer-note {
-            margin-top: 4px;
-            font-size: 5pt;
-            text-align: center;
-            font-style: italic;
-            border-top: 1px solid #00008B;
-            padding-top: 2px;
-            color: #00008B;
-          }
-          .copyright-footer {
-            position: absolute;
-            bottom: 2px;
-            right: 5px;
-            font-size: 6pt;
-            color: #666;
-            font-style: italic;
-            text-align: right;
-          }
-          .print-controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            gap: 10px;
-          }
-          .close-btn {
-            background-color: #ef4444;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          }
-          .close-btn:hover {
-            background-color: #dc2626;
-          }
-          .print-btn {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          }
-          .print-btn:hover {
-            background-color: #2563eb;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-controls no-print">
-          <button onclick="window.print()" class="print-btn">Print Report</button>
-          <button onclick="window.close()" class="close-btn">Close</button>
-        </div>
-        <div class="report-card">
-          <div class="watermark-overlay"></div>
-          <!-- Header -->
-          <div class="header">
-            <div class="header-content">
-              <div class="header-logo">
-                ${logoImage ? `<img src="${logoImage}" alt="School Crest" />` : ''}
-              </div>
-              <div class="header-top">
-                <div class="school-name">BIRIWA METHODIST 'C' BASIC SCHOOL</div>
-                <div class="school-address box">POST OFFICE BOX 5</div>
-                <div class="school-address">TEL: +233244930752</div>
-                <div class="school-address">E-mail: biriwamethodistcschool@gmail.com</div>
-                <div class="school-motto">MOTTO: DISCIPLINE WITH HARD WORK</div>
-              </div>
-              <div class="header-logo">
-                ${methodistLogo ? `<img src="${methodistLogo}" alt="Methodist Logo" />` : ''}
-              </div>
-            </div>
-          </div>
-          <div class="report-title">STUDENT'S REPORT SHEET</div>
-
-          <!-- Student Information -->
-          <div class="student-info-grid">
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">NAME:</span><span class="info-value">${studentName}</span></div>
-              <div class="info-cell"><span class="info-label">TERM:</span><span class="info-value">${reportData.termName}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">STD ID:</span><span class="info-value">${student.student_id || 'N/A'}</span></div>
-              <div class="info-cell"><span class="info-label">AVG SCORE:</span><span class="info-value">${reportData.averageScore}%${(reportData.aggregate !== null && reportData.aggregate !== undefined) ? ` | AGG: ${reportData.aggregate}` : ''}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">GENDER:</span><span class="info-value">${student.gender || 'N/A'}</span></div>
-              <div class="info-cell"><span class="info-label">POS. IN CLASS:</span><span class="info-value">${reportData.position ? `${reportData.position}${getOrdinalSuffix(reportData.position)}` : 'N/A'}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">CLASS:</span><span class="info-value">${className}</span></div>
-              <div class="info-cell"><span class="info-label">VACATION DATE:</span><span class="info-value">${vacationDate || 'TBA'}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">NO. ON ROLL:</span><span class="info-value">${reportData.totalClassSize || ''}</span></div>
-              <div class="info-cell"><span class="info-label">REOPENING DATE:</span><span class="info-value">${reopeningDate || 'TBA'}</span></div>
-            </div>
-          </div>
-
-          <!-- Grades Table -->
-          <table class="grades-table">
-            <thead>
-              <tr>
-                <th class="sn-col">S/N</th>
-                <th class="subject-col">SUBJECT</th>
-                <th class="score-col">CLASS SCORE<br/>40MARKS</th>
-                <th class="score-col">EXAM SCORE<br/>60MARKS</th>
-                <th class="total-col">TOTAL SCORE<br/>100MARKS</th>
-                <th class="rank-col">RANK</th>
-                <th class="remarks-col">REMARKS</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${reportData.grades.map((grade: any, index: number) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td style="text-align: left;">${(grade.subject_name || '').replace(/\\s*\\((LP|UP|JHS)\\)\\s*$/i, '').toUpperCase()}</td>
-                  <td>${grade.class_score ?? ''}</td>
-                  <td>${grade.exam_score ?? ''}</td>
-                  <td><strong>${grade.total !== null && grade.total !== undefined ? Number(grade.total).toFixed(1) : ''}</strong></td>
-                  <td>${grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : ''}</td>
-                  <td style="text-align: left;">${grade.remarks || ''}</td>
-                </tr>
-              `).join('')}
-              <tr class="total-row">
-                <td colspan="2" style="text-align: right; padding-right: 10px;">TOTAL</td>
-                <td></td>
-                <td></td>
-                <td><strong>${reportData.grades.reduce((sum: number, g: any) => sum + (g.total || 0), 0).toFixed(1)}</strong></td>
-                <td></td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- Bottom Section -->
-          <div class="bottom-section">
-            <div class="attendance-box">
-              <div class="section-title">ATTENDANCE: ${reportData.daysPresent || 0} OUT OF ${reportData.totalDays || 0}</div>
-            </div>
-            <div class="promotion-box">
-              <div class="section-title">PROMOTION STATUS: ${getPromotionStatusText()}</div>
-            </div>
-          </div>
-
-          <!-- Remarks Section -->
-          <div class="remarks-section">
-            <div class="remarks-row">
-              <div class="remarks-label">ATTITUDE</div>
-              <div class="remarks-content">${remarks.attitude}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">INTEREST</div>
-              <div class="remarks-content">${remarks.interest}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">CONDUCT</div>
-              <div class="remarks-content">${remarks.conduct}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">CLASS TEACHER'S REMARKS</div>
-              <div class="remarks-content">${remarks.classTeacher}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">HEADTEACHER'S REMARKS</div>
-              <div class="remarks-content">${remarks.headTeacher}</div>
-            </div>
-          </div>
-
-          <!-- Signatures -->
-          <div class="signature-section">
-            <div class="signature-box">
-              <div class="signature-line">HEADMASTER'S STAMP<br/>&<br/>SIGNATURE</div>
-            </div>
-            <div class="signature-box" style="padding: 2px; position: relative;">
-              ${signatureBase64 ? `<img src="${signatureBase64}" alt="Signature" style="width: 90%; height: auto; max-height: 120px; object-fit: contain; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" />` : ''}
-            </div>
-          </div>
-
-          <!-- Footer Note -->
-          <div class="footer-note">
-            Any student showing this document beside all right reserved @Biriwa Methodist School © school. In any circumstances, the paper in which in color with blue mixed texture of a tinted hachure.
-            Date generated: ${currentDate}
-          </div>
-          <div class="copyright-footer">@2025 FortSoft. All rights reserved.</div>
-        </div>
-      </body>
-      </html>
-    `
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4 md:p-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          <div className="flex justify-between items-center">
-            <Skeleton className="h-10 w-24 rounded-lg" />
-            <Skeleton className="h-10 w-32 rounded-lg" />
-          </div>
-          <div className="bg-white p-8 rounded-lg shadow space-y-8">
-            <div className="space-y-4 text-center">
-              <Skeleton className="h-16 w-16 rounded-full mx-auto" />
-              <Skeleton className="h-8 w-64 mx-auto" />
-              <Skeleton className="h-4 w-48 mx-auto" />
-            </div>
-            <div className="grid grid-cols-2 gap-8">
-              <Skeleton className="h-32 rounded-lg" />
-              <Skeleton className="h-32 rounded-lg" />
-            </div>
-            <Skeleton className="h-64 rounded-lg" />
-          </div>
+          <Skeleton className="h-10 w-24 rounded-lg" />
+          <Skeleton className="h-64 w-full rounded-lg" />
         </div>
       </div>
     )
   }
 
-  if (!student || !termData) {
+  if (error || !student || !reportData) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-600">Failed to load report data</p>
-          <Link href="/admin/reports/student" className="text-ghana-green hover:underline mt-4 inline-block">
-            Back to Reports
-          </Link>
+          <p className="text-red-500 mb-4">Error loading report card</p>
+          <BackButton href="/admin/reports/student" />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link href="/admin/reports/student" className="text-ghana-green hover:text-green-700">
-                <ArrowLeft className="w-6 h-6" />
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h1>
-                <p className="text-sm text-gray-600">
-                  {reportData.termName} - {reportData.year} | {student.classes?.class_name}
-                </p>
-              </div>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
+          <div className="flex items-center gap-4">
+            <BackButton href="/admin/reports/student" />
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h1>
+              <p className="text-sm text-gray-600">
+                {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}
+              </p>
             </div>
-            <button
-              onClick={downloadPDF}
-              disabled={downloading}
-              className="flex items-center gap-2 px-6 py-3 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {downloading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4" />
-                  Download Report Card
-                </>
-              )}
-            </button>
           </div>
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+          >
+            {downloading ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Download className="w-4 h-4" />
+            )}
+            <span className="hidden sm:inline">Download</span>
+          </button>
         </div>
-      </header>
 
-      <main className="container mx-auto px-6 py-8">
-        {/* Performance Summary */}
-        <div className="grid md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-600 mb-1">Average Score</p>
-            <p className="text-3xl font-bold text-purple-600">{reportData.averageScore}%</p>
-          </div>
-          {(reportData.aggregate !== null && reportData.aggregate !== undefined) && (
-            <div className="bg-white rounded-lg shadow p-6 text-center">
-              <p className="text-sm text-gray-600 mb-1">Aggregate</p>
-              <p className="text-3xl font-bold text-red-600">{reportData.aggregate}</p>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div className="text-sm text-gray-500">Average Score</div>
+                <div className="text-2xl font-bold text-blue-600">{reportData.averageScore?.toFixed(1)}%</div>
             </div>
-          )}
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-600 mb-1">Class Position</p>
-            <p className="text-3xl font-bold text-orange-600">
-              {reportData.position}{getOrdinalSuffix(reportData.position)} / {reportData.totalClassSize}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
-            <p className="text-sm text-gray-600 mb-1">Attendance</p>
-            <p className="text-3xl font-bold text-blue-600">
-              {reportData.daysPresent}/{reportData.totalDays}
-            </p>
-          </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div className="text-sm text-gray-500">Position</div>
+                <div className="text-2xl font-bold text-green-600">
+                    {reportData.position ? `${reportData.position} / ${reportData.totalClassSize}` : '-'}
+                </div>
+            </div>
+            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div className="text-sm text-gray-500">Attendance</div>
+                <div className="text-2xl font-bold text-orange-600">
+                    {reportData.attendance?.present ?? '-'} / {reportData.attendance?.total ?? '-'}
+                </div>
+            </div>
+             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                <div className="text-sm text-gray-500">JHS Aggregate</div>
+                <div className="text-2xl font-bold text-purple-600">
+                    {reportData.aggregate !== undefined && reportData.aggregate !== null ? reportData.aggregate : '-'}
+                </div>
+            </div>
         </div>
 
         {/* Grades Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-semibold text-gray-800">Subject Grades</h2>
-          </div>
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-ghana-green text-white">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Subject</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Class Score</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Exam Score</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Total</th>
-                  <th className="px-6 py-3 text-center text-xs font-semibold uppercase">Grade</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase">Remarks</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Class ({scoreSettings.classScorePercentage}%)</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exam ({scoreSettings.examScorePercentage}%)</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {reportData.grades.map((grade: any, index: number) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{grade.subject_name}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">{grade.class_score ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-700">{grade.exam_score ?? '-'}</td>
+                {reportData.grades.map((grade, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{grade.subject_name}</td>
+                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.class_score ?? '-'}</td>
+                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score ?? '-'}</td>
                     <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.total ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.grade || '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{grade.remarks || '-'}</td>
+                    <td className="px-6 py-4 text-center text-sm font-bold text-blue-600">{grade.grade ?? '-'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{grade.remarks ?? '-'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1103,50 +284,80 @@ export default function AdminStudentReportPage() {
         </div>
 
         {/* Remarks Editor */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">Edit Report Card Remarks</h3>
-            <button
-              onClick={applyAutoRemarks}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Apply Auto Remarks
-            </button>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold text-gray-800">Edit Remarks</h3>
+            <div className="flex gap-2">
+                <button
+                onClick={applyAutoRemarks}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transaction-colors"
+                >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Auto Generate
+                </button>
+                <button
+                onClick={handleSaveRemarks}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transaction-colors"
+                >
+                <Save className="w-3.5 h-3.5" />
+                Save Changes
+                </button>
+            </div>
           </div>
 
-          <div className="space-y-4">
-            {[
-              { key: 'attitude', label: 'Attitude to Work' },
-              { key: 'interest', label: 'Interest' },
-              { key: 'conduct', label: 'Conduct' },
-              { key: 'classTeacher', label: "Class Teacher's Remarks" }
-            ].map(({ key, label }) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-                <select
-                  value={remarks[key as keyof ReportRemarks]}
-                  onChange={(e) => handleRemarkChange(key as keyof ReportRemarks, e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green"
-                >
-                  {getAllRemarks(key).map((remark, index) => (
-                    <option key={index} value={remark}>{remark}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Headteacher's Remarks <span className="text-xs text-gray-500">(Auto-generated)</span>
-              </label>
-              <div className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
-                {remarks.headTeacher}
-              </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Attitude</label>
+                    <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        rows={3}
+                        value={remarks.attitude}
+                        onChange={(e) => handleRemarkChange('attitude', e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Interest</label>
+                    <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        rows={3}
+                        value={remarks.interest}
+                        onChange={(e) => handleRemarkChange('interest', e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Conduct</label>
+                    <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        rows={3}
+                        value={remarks.conduct}
+                        onChange={(e) => handleRemarkChange('conduct', e.target.value)}
+                    />
+                </div>
+            </div>
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Class Teacher's Remark</label>
+                    <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        rows={4}
+                        value={remarks.classTeacher}
+                        onChange={(e) => handleRemarkChange('classTeacher', e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Head Teacher's Remark</label>
+                    <textarea 
+                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                        rows={4}
+                        value={remarks.headTeacher}
+                        onChange={(e) => handleRemarkChange('headTeacher', e.target.value)}
+                    />
+                </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

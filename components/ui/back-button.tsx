@@ -9,6 +9,7 @@ interface BackButtonProps {
   fallbackPath?: string
   icon?: boolean
   href?: string
+  children?: React.ReactNode
 }
 
 export default function BackButton({ 
@@ -16,7 +17,8 @@ export default function BackButton({
   className = "", 
   fallbackPath, 
   icon = true,
-  href
+  href,
+  children
 }: BackButtonProps) {
   const router = useRouter()
   
@@ -38,12 +40,16 @@ export default function BackButton({
   return (
     <button 
       onClick={handleBack} 
-      className={`flex items-center transition-colors cursor-pointer ${className}`}
+      className={`flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer ${className}`}
       type="button"
       aria-label={label || "Go back"}
     >
-      {icon && <ArrowLeft className={`w-5 h-5 ${label ? 'mr-1' : ''}`} />}
-      {label && <span>{label}</span>}
+      {children ? children : (
+        <>
+          {icon && <ArrowLeft className={`w-4 h-4 ${label ? 'mr-1' : ''}`} />}
+          {label && <span>{label}</span>}
+        </>
+      )}
     </button>
   )
 }

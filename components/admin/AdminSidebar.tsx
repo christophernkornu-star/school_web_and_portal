@@ -96,7 +96,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       {/* Mobile Overlay */}
       <div 
         className={cn(
-          "fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity",
+          "fixed inset-0 z-[55] bg-black/50 lg:hidden transition-opacity",
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
         onClick={() => setIsOpen(false)}
@@ -105,7 +105,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
       {/* Sidebar */}
       <aside 
         className={cn(
-          "fixed top-0 left-0 z-40 h-screen w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
+          "fixed top-0 left-0 z-[60] h-screen w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

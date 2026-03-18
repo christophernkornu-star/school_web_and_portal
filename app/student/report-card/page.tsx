@@ -1,1411 +1,396 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { Download, Printer, ArrowLeft, FileText, ChevronDown } from 'lucide-react'
+import { Download, RefreshCw, FileText, ChevronDown } from 'lucide-react'
 import signatureImg from './signature.png'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
-import { getGradeValue, calculateAggregate, getOrdinalSuffix, isPromotionTerm, formatStudentName } from '@/lib/academic-utils'
-import { getAutoRemark } from '@/lib/remark-utils'
-
-// Remarks logic moved to @/lib/remark-utils
-
-// Function to determine performance level based on average score
-// Functions moved to @/lib/remark-utils
-
-interface ReportRemarks {
-  attitude: string
-  interest: string
-  conduct: string
-  classTeacher: string
-  headTeacher: string
-}
-
-interface Grade {
-  id: string
-  subject_name: string
-  class_score: number
-  exam_score: number
-  total: number
-  grade: string
-  remarks: string
-  term_id: string
-  rank?: number | null
-  academic_terms: {
-    name: string
-    academic_year: string
-  }
-}
-
-interface ReportCardData {
-  termId: string
-  termName: string
-  year: string
-  grades: Grade[]
-  totalScore: number
-  averageScore: number
-  position: number | null
-  totalClassSize: number | null
-  daysPresent?: number
-  totalDays?: number
-  promotionStatus?: string // For Term 3 only
-  promotionDecision?: 'promoted' | 'repeated' | 'graduated' | 'pending' | null
-  aggregate?: number | null
-}
-// Grading logic moved to @/lib/academic-utils
-
-// Get promotion status text based on report data
-function getPromotionStatusText(report: ReportCardData): string {
-  // Check if this is Term 3 (Third Term)
-  const isThirdTerm = isPromotionTerm(report.termName)
-  
-  // If there's a promotion decision from the database, use it
-  if (report.promotionDecision) {
-    switch (report.promotionDecision) {
-      case 'promoted':
-        return 'Promoted'
-      case 'repeated':
-        return 'Repeated'
-      case 'graduated':
-        return 'Graduated'
-      case 'pending':
-        return 'Pending Decision'
-      default:
-        return ''
-    }
-  }
-  
-  // If not Third Term, don't show promotion status
-  if (!isThirdTerm) {
-    return ''
-  }
-  
-  // Auto-calculate based on average for Third Term when no decision recorded
-  // Using 30% as the default passing average as requested
-  const avg = report.averageScore || 0
-  if (avg >= 30) return 'Promoted'
-  return 'Repeated'
-}
+import { useReportCardData } from '@/lib/reports/hooks'
+import { generateReportHTML } from '@/lib/reports/generator'
+import { ReportCardTheme, ReportRemarks } from '@/lib/reports/types'
 
 export default function ReportCardPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  const [loading, setLoading] = useState(true)
-  const [reportCards, setReportCards] = useState<ReportCardData[]>([])
-  const [selectedTerm, setSelectedTerm] = useState<string>('')
-  const [downloading, setDownloading] = useState(false)
-  const [studentInfo, setStudentInfo] = useState<any>(null)
-  const [academicSettings, setAcademicSettings] = useState<any>(null)
-  const printRef = useRef<HTMLDivElement>(null)
   
-  // Remarks state - auto or manual selection
-  const [remarks, setRemarks] = useState<ReportRemarks>({
-    attitude: '',
-    interest: '',
-    conduct: '',
-    classTeacher: '',
-    headTeacher: ''
-  })
-  const [remarkMode, setRemarkMode] = useState<{[key: string]: 'auto' | 'manual'}>({
-    attitude: 'auto',
-    interest: 'auto',
-    conduct: 'auto',
-    classTeacher: 'auto',
-    headTeacher: 'auto' // Headteacher is always auto
-  })
-  const [showDropdown, setShowDropdown] = useState<string | null>(null)
+  // State
+  const [studentId, setStudentId] = useState<string | null>(null)
+  const [selectedTermId, setSelectedTermId] = useState<string | undefined>(undefined)
+  const [availableTerms, setAvailableTerms] = useState<{id: string, name: string, year: string}[]>([])
+  const [initLoading, setInitLoading] = useState(true)
+  const [downloading, setDownloading] = useState(false)
+  const [theme, setTheme] = useState<ReportCardTheme>({})
 
-  // Update remarks when report changes
-  const updateRemarksForReport = (averageScore: number, termId: string, studentId: string, attendancePercentage?: number) => {
-    setRemarks({
-      attitude: getAutoRemark('attitude', averageScore, attendancePercentage, `${studentId}-${termId}`),
-      interest: getAutoRemark('interest', averageScore, attendancePercentage, `${studentId}-${termId}`),
-      conduct: getAutoRemark('conduct', averageScore, attendancePercentage, `${studentId}-${termId}`),
-      classTeacher: getAutoRemark('classTeacher', averageScore, attendancePercentage, `${studentId}-${termId}`),
-      headTeacher: getAutoRemark('headTeacher', averageScore, attendancePercentage, `${studentId}-${termId}`)
-    })
-  }
-
+  // Fetch logged in student ID and available terms first
   useEffect(() => {
-    loadReportCards()
+    async function loadStudentAndTerms() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/login?portal=student')
+          return
+        }
+
+        // Get student info
+        const { data: student } = await supabase
+          .from('students')
+          .select('id, class_id')
+          .eq('profile_id', user.id)
+          .single()
+
+        if (!student) {
+           toast.error('Student profile not found')
+           router.push('/')
+           return
+        }
+
+        setStudentId(student.id)
+
+        // Fetch terms that might have grades
+        // We can fetch terms this student has scores for
+        const { data: termsData } = await supabase
+           .from('scores')
+           .select('term_id, academic_terms(id, name, academic_year)')
+           .eq('student_id', student.id)
+           .order('academic_terms(academic_year)', { ascending: false })
+           .order('academic_terms(name)', { ascending: false })
+
+        // Extract unique terms
+        const termsMap = new Map()
+        termsData?.forEach((t: any) => {
+            if (t.academic_terms) {
+                const term = t.academic_terms
+                if (!termsMap.has(term.id)) {
+                    termsMap.set(term.id, { id: term.id, name: term.name, year: term.academic_year })
+                }
+            }
+        })
+        
+        // Also fetch current term if not in the list (so they can see empty report)
+        const { data: currentTerm } = await supabase
+            .from('academic_terms')
+            .select('id, name, academic_year')
+            .eq('is_current', true)
+            .single()
+            
+        if (currentTerm && !termsMap.has(currentTerm.id)) {
+             termsMap.set(currentTerm.id, { id: currentTerm.id, name: currentTerm.name, year: currentTerm.academic_year })
+        }
+        
+        let terms = Array.from(termsMap.values())
+        
+        // Sort terms: Current term first or by year/name
+        // For simplicity, just use what we have or sort manually if needed
+        
+        setAvailableTerms(terms)
+        if (terms.length > 0) {
+            // Default to current term or first available
+            if (currentTerm) setSelectedTermId(currentTerm.id)
+            else setSelectedTermId(terms[0].id)
+        }
+
+      } catch (error) {
+        console.error('Error init:', error)
+      } finally {
+        setInitLoading(false)
+      }
+    }
+    loadStudentAndTerms()
   }, [])
 
-  async function loadReportCards() {
-    try {
-      setLoading(true)
-
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login?portal=student')
-        return
-      }
-
-      // Get student profile with personal info
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single() as { data: any }
-
-      if (!profile) {
-        console.error('No profile found')
-        return
-      }
-
-      // Get student info
-      const { data: student } = await supabase
-        .from('students')
-        .select(`
-          id,
-          student_id,
-          first_name,
-          middle_name,
-          last_name,
-          gender,
-          date_of_birth,
-          class_id,
-          results_withheld,
-          withheld_reason,
-          classes (name)
-        `)
-        .eq('profile_id', profile.id)
-        .maybeSingle() as { data: any }
-
-      if (!student) {
-        console.error('No student record found for this user')
-        // If user is admin/teacher trying to access student page, redirect or show message
-        if (profile.role !== 'student') {
-          toast.error('You are logged in as ' + profile.role + '. This page is for students only.')
-          router.push('/' + profile.role + '/dashboard') 
-        }
-        return
-      }
-
-      setStudentInfo(student)
-
-      // Get academic settings for vacation and reopening dates
-      const { data: settings } = await supabase
-        .from('academic_settings')
-        .select('vacation_start_date, school_reopening_date')
-        .single() as { data: any }
-      
-      setAcademicSettings(settings)
-
-      // Get all scores with term info
-      const { data: grades, error } = await supabase
-        .from('scores')
-        .select(`
-          *,
-          academic_terms (
-            name,
-            academic_year
-          ),
-          subjects (
-            name
-          )
-        `)
-        .eq('student_id', student.id)
-        .order('academic_terms(academic_year)', { ascending: false })
-        .order('academic_terms(name)', { ascending: false }) as { data: any[] | null, error: any }
-
-      if (error) {
-        console.error('Error fetching grades:', error)
-        return
-      }
-
-      // Group grades by term
-      const termGroups: { [key: string]: ReportCardData } = {}
-
-      grades?.forEach((grade: any) => {
-        const termId = grade.term_id
-        const termName = grade.academic_terms?.name || 'Unknown Term'
-        const year = grade.academic_terms?.academic_year || 'N/A'
-
-        if (!termGroups[termId]) {
-          termGroups[termId] = {
-            termId,
-            termName,
-            year,
-            grades: [],
-            totalScore: 0,
-            averageScore: 0,
-            position: null,
-            totalClassSize: null
-          }
-        }
-
-        termGroups[termId].grades.push({
-          id: grade.id,
-          subject_name: grade.subjects?.name || 'Unknown Subject',
-          class_score: grade.class_score,
-          exam_score: grade.exam_score,
-          total: grade.total,
-          // Recalculate grade to ensure consistency with aggregate (BECE 1-9 Scale)
-          grade: grade.total !== null ? getGradeValue(grade.total).toString() : '-',
-          remarks: grade.remarks,
-          term_id: grade.term_id,
-          academic_terms: {
-            name: termName,
-            academic_year: year
-          }
-        })
-      })
-
-      // Calculate totals and averages
-      const reportCardsArray = Object.values(termGroups)
-      reportCardsArray.forEach((report) => {
-        const validScores = report.grades
-          .map(g => g.total)
-          .filter((score): score is number => score !== null)
-        
-        report.totalScore = Math.round(validScores.reduce((sum, score) => sum + score, 0) * 10) / 10
-        report.averageScore = validScores.length > 0 
-          ? Math.round(report.totalScore / validScores.length * 10) / 10
-          : 0
-          
-        // Calculate aggregate for JHS students
-        const className = (student.classes?.name || '').toLowerCase()
-        const isJHS = className.includes('jhs') || 
-                      className.includes('basic 7') || 
-                      className.includes('basic 8') || 
-                      className.includes('basic 9')
-        
-        if (isJHS) {
-          const calcInput = report.grades.map(g => ({
-            subjectName: g.subject_name,
-            score: g.total
-          }))
-          report.aggregate = calculateAggregate(calcInput).total
-        }
-      })
-
-      // Calculate class position and subject ranks for each term in parallel
-      await Promise.all(reportCardsArray.map(async (report) => {
+   // Load Theme Images (Reusable logic)
+   useEffect(() => {
+    const loadTheme = async () => {
+      const loadBase64 = async (url: string) => {
         try {
-          console.log(`Calculating for term: ${report.termName}, student class_id: ${student.class_id}`)
-          
-          // Load promotion status for Third Term reports
-          const isThirdTerm = report.termName?.toLowerCase().includes('third') || 
-                              report.termName?.toLowerCase().includes('term 3') ||
-                              report.termName?.toLowerCase().includes('3rd') ||
-                              report.termName?.toLowerCase().includes('final')
-          
-          const academicYear = report.year || '';
-
-          // Fetch independent data in parallel
-          const [attendanceResult, termDataResult, rankingsResponse, promotionDataResult] = await Promise.all([
-             supabase
-              .from('attendance')
-              .select('id', { count: 'exact', head: true }) // optimized: select only id and head
-              .eq('student_id', student.id)
-              .in('status', ['present', 'late']),
-             
-             supabase
-              .from('academic_terms')
-              .select('total_days')
-              .eq('id', report.termId)
-              .maybeSingle(),
-
-             fetch(`/api/class-rankings?classId=${student.class_id}&termId=${report.termId}`),
-            
-             isThirdTerm ? supabase
-                .rpc('get_or_create_promotion_status', {
-                  p_student_id: student.id,
-                  p_academic_year: academicYear
-                }) : Promise.resolve({ data: [] })
-          ]);
-
-          
-          report.daysPresent = attendanceResult.count || 0
-          report.totalDays = (termDataResult.data as any)?.total_days || 0
-          
-          let rankingsData = { scores: [], totalClassSize: 1 };
-          if (rankingsResponse.ok) {
-             rankingsData = await rankingsResponse.json();
-          }
-          
-          const classScores = rankingsData.scores || []
-          const totalClassSize = rankingsData.totalClassSize || 1
-          
-          // Store total class size for display
-          report.totalClassSize = totalClassSize
-
-          if (classScores && classScores.length > 0) {
-            
-            // Deduce total unique subjects for the class (to approximate "All Subjects" for average calculation)
-            // This aligns with Teacher Portal which divides by Total Subjects for the Level
-            const uniqueSubjects = new Set(classScores.map((s: any) => s.subject_id))
-            const totalSubjectsCount = uniqueSubjects.size || 1
-
-            // Calculate total scores per student
-            const studentTotals: { [studentId: string]: number } = {}
-            classScores.forEach((score: any) => {
-              if (!studentTotals[score.student_id]) {
-                studentTotals[score.student_id] = 0
-              }
-              studentTotals[score.student_id] += score.total || 0
-            })
-
-            // Calculate Averages and Sort
-            // We rank by Average Score to match Teacher Portal
-            const sortedStudents = Object.entries(studentTotals)
-              .map(([sid, total]) => ({
-                  sid, 
-                  average: total / totalSubjectsCount
-              }))
-              .sort((a, b) => b.average - a.average)
-
-            // Find current student's position
-            const position = sortedStudents.findIndex((s) => s.sid === student.id) + 1
-            report.position = position > 0 ? position : null
-            
-
-            // Calculate subject ranks
-            report.grades.forEach(grade => {
-              // Get all scores for this subject (from class scores only)
-              const subjectScores = classScores
-                .filter((s: any) => (s.subjects as any)?.name === grade.subject_name)
-                .map((s: any) => ({ student_id: s.student_id, total: s.total || 0 }))
-                .sort((a: any, b: any) => b.total - a.total)
-
-              // Find rank for this student
-              const rank = subjectScores.findIndex((s: any) => s.student_id === student.id) + 1
-              grade.rank = rank > 0 ? rank : null
-            })
-          } 
-          
-          
-          if (isThirdTerm) {
-             const promotionData = (promotionDataResult as any).data;
-            if (promotionData && promotionData.length > 0) {
-              const promotion = promotionData[0]
-              report.promotionDecision = promotion.promotion_status
-              // Optional: Use teacher_remarks if set
-              if (promotion.teacher_remarks) {
-                report.promotionStatus = promotion.teacher_remarks
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error calculating position:', error)
+          const response = await fetch(url)
+          const blob = await response.blob()
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.readAsDataURL(blob)
+          })
+        } catch (e) {
+          console.error('Failed to load image', url, e)
+          return ''
         }
-      }));
-
-      setReportCards(reportCardsArray)
-
-      // Select most recent term by default and generate remarks
-      if (reportCardsArray.length > 0) {
-        const firstReport = reportCardsArray[0]
-        const totalDays = firstReport.totalDays || 0
-        const daysPresent = firstReport.daysPresent || 0
-        
-        const attendancePercentage = totalDays > 0 
-          ? (daysPresent / totalDays) * 100 
-          : undefined
-        setSelectedTerm(firstReport.termId)
-        updateRemarksForReport(firstReport.averageScore, firstReport.termId, student.id, attendancePercentage)
       }
-    } catch (error) {
-      console.error('Error loading report cards:', error)
-    } finally {
-      setLoading(false)
+
+      const [watermark, logo, methodist, signature] = await Promise.all([
+        loadBase64('/school_crest-removebg-preview (2).png'),
+        loadBase64('/school_crest.png'),
+        loadBase64('/Methodist_logo.png'),
+        loadBase64(signatureImg.src)
+      ])
+
+      setTheme({
+        watermarkImage: watermark,
+        logoImage: logo,
+        methodistLogoImage: methodist,
+        signatureImage: signature
+      })
     }
-  }
+    loadTheme()
+  }, [])
 
-  // Handle term selection change
-  const handleTermChange = (termId: string) => {
-    setSelectedTerm(termId)
-    const report = reportCards.find(r => r.termId === termId)
-    if (report && studentInfo?.id) {
-      const totalDays = report.totalDays || 0
-      const daysPresent = report.daysPresent || 0
-      
-      const attendancePercentage = totalDays > 0 
-        ? (daysPresent / totalDays) * 100 
-        : undefined
-      updateRemarksForReport(report.averageScore, termId, studentInfo.id, attendancePercentage)
-    }
-  }
 
-  // Handle remark change (manual selection)
-  const handleRemarkChange = (type: keyof ReportRemarks, value: string) => {
-    setRemarks(prev => ({ ...prev, [type]: value }))
-    setShowDropdown(null)
-  }
-
-  // Toggle between auto and manual mode
-  const toggleRemarkMode = (type: string) => {
-    if (type === 'headTeacher') return // Headteacher is always auto
-    
-    const newMode = remarkMode[type] === 'auto' ? 'manual' : 'auto'
-    setRemarkMode(prev => ({ ...prev, [type]: newMode }))
-    
-    // If switching to auto, regenerate the remark
-    if (newMode === 'auto') {
-      const report = reportCards.find(r => r.termId === selectedTerm)
-      if (report && studentInfo?.id) {
-        const totalDays = report.totalDays || 0
-        const daysPresent = report.daysPresent || 0
-        const attendancePercentage = totalDays > 0 ? (daysPresent / totalDays) * 100 : undefined
-
-        setRemarks(prev => ({ ...prev, [type]: getAutoRemark(type, report.averageScore, attendancePercentage, `${studentInfo.id}-${selectedTerm}`) }))
-      }
-    }
-  }
-
-  async function downloadPDF(termId: string) {
-    try {
+  // Now use the shared hook!
+  // We pass studentId and selectedTermId.
+  // The hook returns { reportData, ... }
+  const { 
+    loading: reportLoading, 
+    reportData, 
+    student, 
+    academicSettings, 
+    scoreSettings 
+  } = useReportCardData(studentId || '', selectedTermId)
+  
+  const handleDownload = () => {
+      if (!reportData || !student || !academicSettings) return
       setDownloading(true)
-      const report = reportCards.find(r => r.termId === termId)
-      if (!report) return
-
-      // Convert watermark image to base64 for proper loading in print window
-      let watermarkBase64 = ''
-      try {
-        const response = await fetch('/school_crest-removebg-preview (2).png')
-        const blob = await response.blob()
-        watermarkBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(blob)
-        })
-      } catch (imgError) {
-        console.warn('Could not load watermark image:', imgError)
-      }
-
-      // Convert school crest logo image to base64 (left logo)
-      let logoBase64 = ''
-      try {
-        const response = await fetch('/school_crest.png')
-        const blob = await response.blob()
-        logoBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(blob)
-        })
-      } catch (imgError) {
-        console.warn('Could not load school crest logo:', imgError)
-      }
-
-      // Convert Methodist logo image to base64 (right logo)
-      let methodistLogoBase64 = ''
-      try {
-        const response = await fetch('/Methodist_logo.png')
-        const blob = await response.blob()
-        methodistLogoBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(blob)
-        })
-      } catch (imgError) {
-        console.warn('Could not load Methodist logo:', imgError)
-      }
-
-      // Convert signature image to base64
-      let signatureBase64 = ''
-      try {
-        const response = await fetch(signatureImg.src)
-        const blob = await response.blob()
-        signatureBase64 = await new Promise<string>((resolve) => {
-          const reader = new FileReader()
-          reader.onloadend = () => resolve(reader.result as string)
-          reader.readAsDataURL(blob)
-        })
-      } catch (imgError) {
-        console.warn('Could not load signature image:', imgError)
-      }
-
-      // Create print-friendly window
-      const printWindow = window.open('', '_blank')
-      if (!printWindow) {
-        toast('Please allow pop-ups to download the report card', { icon: 'ℹ️' })
-        return
-      }
-
-      const html = generateReportHTML(report, academicSettings, watermarkBase64, logoBase64, methodistLogoBase64, signatureBase64)
-      printWindow.document.write(html)
-      printWindow.document.close()
       
-      // Wait for content and fonts to load then trigger print
-      setTimeout(() => {
-        printWindow.focus()
-        printWindow.print()
-      }, 500)
-    } catch (error) {
-      console.error('Error generating PDF:', error)
-      toast.error('Failed to generate report card. Please try again.')
-    } finally {
-      setDownloading(false)
-    }
+      try {
+        const printWindow = window.open('', '_blank')
+        if (!printWindow) {
+            toast('Please allow popups', { icon: 'ℹ️' })
+            return
+        }
+        
+        // Use remarks from reportData directly since students can't edit them
+        const remarks: ReportRemarks = {
+            attitude: reportData.remarks?.attitude || '',
+            interest: reportData.remarks?.interest || '',
+            conduct: reportData.remarks?.conduct || '',
+            classTeacher: reportData.remarks?.classTeacher || '',
+            headTeacher: reportData.remarks?.headTeacher || ''
+        }
+        
+        // Pass aggregate if available (for JHS)
+        // Ensure student object has everything needed
+        
+        const html = generateReportHTML(
+            student,
+            reportData,
+            remarks,
+            academicSettings,
+            theme,
+            scoreSettings.classScorePercentage,
+            scoreSettings.examScorePercentage
+        )
+        
+        printWindow.document.write(html)
+        printWindow.document.close()
+        
+        setTimeout(() => {
+            printWindow.focus()
+            printWindow.print()
+        }, 500)
+      } catch (e) {
+          console.error(e)
+          toast.error('Failed to generate PDF')
+      } finally {
+          setDownloading(false)
+      }
   }
 
-  function generateReportHTML(report: ReportCardData, academicSettings: any, watermarkBase64: string = '', logoBase64: string = '', methodistLogoBase64: string = '', signatureBase64: string = ''): string {
-    const currentDate = new Date().toLocaleDateString('en-GB')
-    
-    // Format dates for display
-    console.log('Academic Settings in PDF:', academicSettings)
-    const vacationDate = academicSettings?.vacation_start_date 
-      ? new Date(academicSettings.vacation_start_date + 'T00:00:00').toLocaleDateString('en-GB')
-      : ''
-    const reopeningDate = academicSettings?.school_reopening_date
-      ? new Date(academicSettings.school_reopening_date + 'T00:00:00').toLocaleDateString('en-GB')
-      : ''
-    console.log('Formatted dates - Vacation:', vacationDate, 'Reopening:', reopeningDate)
-
-    // Use base64 images or fallback to empty
-    const backgroundImage = watermarkBase64 ? `url('${watermarkBase64}')` : 'none'
-    const logoImage = logoBase64 || ''
-    const methodistLogo = methodistLogoBase64 || ''
-    
-    return `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <title>Report Card - ${studentInfo?.first_name} ${studentInfo?.last_name}</title>
-        <style>
-          @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
-          
-          @page {
-            size: A4;
-            margin: 5mm;
-          }
-          @media print {
-            html, body {
-              width: 210mm;
-              height: auto !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              color-adjust: exact !important;
-            }
-            .no-print { display: none !important; }
-            .report-card {
-              background: white !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-              margin: 0 !important;
-              min-height: 260mm !important;
-              height: auto !important;
-              page-break-inside: avoid !important;
-            }
-            .watermark-overlay {
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-          }
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            font-family: 'Times New Roman', Times, serif;
-            font-size: 9pt;
-            line-height: 1.25;
-            padding: 0;
-            color: #00008B;
-            background: white;
-          }
-          .report-card {
-            border: 3px solid #00008B;
-            padding: 10px;
-            width: 100%;
-            min-height: 285mm;
-            margin: 0 auto;
-            position: relative;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-            color-adjust: exact;
-            background: white;
-            isolation: isolate;
-          }
-          .watermark-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: ${backgroundImage};
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: 90%;
-            opacity: 0.08;
-            z-index: -1;
-            pointer-events: none;
-          }
-          .report-card > *:not(.watermark-overlay) {
-            position: relative;
-            z-index: 1;
-          }
-            position: relative;
-            z-index: 1;
-            background-color: rgba(255, 255, 255, 0.92);
-          }
-          .header {
-            border: 2px solid #00008B;
-            padding: 8px 15px;
-            margin-bottom: 10px;
-            position: relative;
-            box-shadow: 5px 5px 10px rgba(0,0,0,0.15);
-          }
-          .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 5px 15px;
-          }
-          .header-logo {
-            width: 95px;
-            height: 95px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .header-logo img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
-            object-fit: contain;
-          }
-          .header-top {
-            text-align: center;
-            flex: 1;
-            padding: 0 10px;
-          }
-          .school-name {
-            font-size: 26pt;
-            font-weight: bold;
-            font-family: Impact, 'Arial Black', sans-serif;
-            color: #00008B;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 3px;
-          }
-          .school-address {
-            font-size: 12pt;
-            margin: 1px 0;
-            color: #00008B;
-          }
-          .school-address.box {
-            font-size: 14pt;
-          }
-          .school-motto {
-            font-size: 11pt;
-            font-style: italic;
-            margin-top: 4px;
-            font-weight: bold;
-            color: #00008B;
-          }
-          .report-title {
-            background: #fff;
-            border: 2px solid #00008B;
-            padding: 4px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 19pt;
-            margin: 10px 40px 20px 40px;
-            color: #00008B;
-            box-shadow: 3px 3px 5px rgba(0,0,0,0.2);
-          }
-          .student-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
-            margin-bottom: 6px;
-            border: 1px solid #00008B;
-          }
-          .info-row {
-            display: contents;
-          }
-          .info-cell {
-            padding: 3px 6px;
-            border: 1px solid #00008B;
-            font-size: 11pt;
-            color: #00008B;
-            text-transform: uppercase;
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 8px;
-          }
-          .info-label {
-            font-weight: bold;
-            color: #00008B;
-            position: relative;
-            padding-right: 8px;
-          }
-          .info-label::after {
-            content: '';
-            position: absolute;
-            right: 0;
-            top: -3px;
-            bottom: -3px;
-            width: 1px;
-            background-color: transparent;
-            border-right: 1px solid #00008B;
-          }
-          .info-value {
-            padding-left: 8px;
-          }
-          .grades-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 5px;
-            font-size: 11pt;
-            font-family: 'Times New Roman', Times, serif;
-          }
-          .grades-table th,
-          .grades-table td {
-            border: 1px solid #00008B;
-            padding: 2.5px;
-            text-align: center;
-            color: #00008B;
-            font-size: 11pt;
-          }
-          .grades-table th {
-            background: #f0f0f0;
-            font-weight: bold;
-            font-size: 11pt;
-            text-transform: uppercase;
-            color: #00008B;
-          }
-          .grades-table td:first-child,
-          .grades-table th:first-child {
-            text-align: left;
-          }
-          .grades-table td:last-child,
-          .grades-table th:last-child {
-            text-align: left;
-          }
-          .sn-col {
-            width: 30px;
-          }
-          .subject-col {
-            width: 180px;
-          }
-          .score-col {
-            width: 60px;
-          }
-          .total-col {
-            width: 60px;
-          }
-          .rank-col {
-            width: 50px;
-          }
-          .remarks-col {
-            width: 180px;
-            white-space: nowrap;
-          }
-          .total-row {
-            font-weight: bold;
-          }
-          .bottom-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            margin-top: 5px;
-          }
-          .attendance-box,
-          .promotion-box {
-            border: 1px solid #00008B;
-            padding: 3px;
-            font-size: 11pt;
-            color: #00008B;
-          }
-          .section-title {
-            font-weight: bold;
-            margin-bottom: 2px;
-            text-transform: uppercase;
-            font-size: 11pt;
-            color: #00008B;
-          }
-          .remarks-section {
-            border: 1px solid #00008B;
-            margin-top: 5px;
-          }
-          .remarks-row {
-            display: grid;
-            grid-template-columns: 220px 1fr;
-            border-bottom: 1px solid #00008B;
-          }
-          .remarks-row:last-child {
-            border-bottom: none;
-          }
-          .remarks-label {
-            padding: 6px 10px 6px 8px;
-            font-weight: bold;
-            border-right: 1px solid #00008B;
-            font-size: 11pt;
-            color: #00008B;
-            white-space: nowrap;
-            position: relative;
-          }
-          .remarks-content {
-            padding: 6px 8px;
-            min-height: 22px;
-            color: #00008B;
-            font-size: 11pt;
-            border-left: 1px solid #00008B;
-          }
-          .signature-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            border: 2px solid #00008B;
-            margin-top: 6px;
-            min-height: 80px;
-          }
-          .signature-box {
-            text-align: center;
-            font-size: 11pt;
-            color: #00008B;
-            padding: 5px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .signature-box:first-child {
-            border-right: 2px solid #00008B;
-          }
-          .signature-line {
-            color: #00008B;
-            font-size: 11pt;
-            font-weight: bold;
-          }
-          .footer-note {
-            margin-top: 4px;
-            font-size: 5pt;
-            text-align: center;
-            font-style: italic;
-            border-top: 1px solid #00008B;
-            padding-top: 2px;
-            color: #00008B;
-          }
-          .copyright-footer {
-            position: absolute;
-            bottom: 2px;
-            right: 5px;
-            font-size: 6pt;
-            color: #666;
-            font-style: italic;
-            text-align: right;
-          }
-          .print-controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            gap: 10px;
-          }
-          .close-btn {
-            background-color: #ef4444;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          }
-          .close-btn:hover {
-            background-color: #dc2626;
-          }
-          .print-btn {
-            background-color: #3b82f6;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-family: sans-serif;
-            font-size: 14px;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          }
-          .print-btn:hover {
-            background-color: #2563eb;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="print-controls no-print">
-          <button onclick="window.print()" class="print-btn">Print Report</button>
-          <button onclick="window.close()" class="close-btn">Close</button>
-        </div>
-        <div class="report-card">
-          <div class="watermark-overlay"></div>
-          <!-- Header -->
-          <div class="header">
-            <div class="header-content">
-              <div class="header-logo">
-                ${logoImage ? `<img src="${logoImage}" alt="School Crest" />` : ''}
-              </div>
-              <div class="header-top">
-                <div class="school-name">BIRIWA METHODIST 'C' BASIC SCHOOL</div>
-                <div class="school-address box">POST OFFICE BOX 5</div>
-                <div class="school-address">TEL: +233244930752</div>
-                <div class="school-address">E-mail: biriwamethodistcschool@gmail.com</div>
-                <div class="school-motto">MOTTO: DISCIPLINE WITH HARD WORK</div>
-              </div>
-              <div class="header-logo">
-                ${methodistLogo ? `<img src="${methodistLogo}" alt="Methodist Logo" />` : ''}
-              </div>
-            </div>
-          </div>
-          <div class="report-title">STUDENT'S REPORT SHEET</div>
-
-          <!-- Student Information -->
-          <div class="student-info-grid">
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">NAME:</span><span class="info-value">${formatStudentName(studentInfo)}</span></div>
-              <div class="info-cell"><span class="info-label">TERM:</span><span class="info-value">${report.termName}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">STD ID:</span><span class="info-value">${studentInfo?.student_id || 'N/A'}</span></div>
-              <div class="info-cell"><span class="info-label">AVG SCORE:</span><span class="info-value">${report.averageScore}%${(report.aggregate !== null && report.aggregate !== undefined) ? ` | AGG: ${report.aggregate}` : ''}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">GENDER:</span><span class="info-value">${studentInfo?.gender || 'N/A'}</span></div>
-              <div class="info-cell"><span class="info-label">POS. IN CLASS:</span><span class="info-value">${report.position ? `${report.position}${getOrdinalSuffix(report.position)}` : 'N/A'}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">CLASS:</span><span class="info-value">${Array.isArray(studentInfo?.classes) ? studentInfo.classes[0]?.name : studentInfo?.classes?.name}</span></div>
-              <div class="info-cell"><span class="info-label">VACATION DATE:</span><span class="info-value">${vacationDate || 'TBA'}</span></div>
-            </div>
-            <div class="info-row">
-              <div class="info-cell"><span class="info-label">NO. ON ROLL:</span><span class="info-value">${report.totalClassSize || ''}</span></div>
-              <div class="info-cell"><span class="info-label">REOPENING DATE:</span><span class="info-value">${reopeningDate || 'TBA'}</span></div>
-            </div>
-          </div>
-
-          <!-- Grades Table -->
-          <table class="grades-table">
-            <thead>
-              <tr>
-                <th class="sn-col">S/N</th>
-                <th class="subject-col">SUBJECT</th>
-                <th class="score-col">CLASS SCORE<br/>40MARKS</th>
-                <th class="score-col">EXAM SCORE<br/>60MARKS</th>
-                <th class="total-col">TOTAL SCORE<br/>100MARKS</th>
-                <th class="rank-col">RANK</th>
-                <th class="remarks-col">REMARKS</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${report.grades.map((grade, index) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td style="text-align: left;">${grade.subject_name.replace(/\s*\((LP|UP|JHS)\)\s*$/i, '').toUpperCase()}</td>
-                  <td>${grade.class_score ?? ''}</td>
-                  <td>${grade.exam_score ?? ''}</td>
-                  <td><strong>${grade.total !== null && grade.total !== undefined ? Number(grade.total).toFixed(1) : ''}</strong></td>
-                  <td>${grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : ''}</td>
-                  <td style="text-align: left;">${grade.remarks || ''}</td>
-                </tr>
-              `).join('')}
-              <tr class="total-row">
-                <td colspan="2" style="text-align: right; padding-right: 10px;">TOTAL</td>
-                <td></td>
-                <td></td>
-                <td><strong>${report.totalScore !== null && report.totalScore !== undefined ? Number(report.totalScore).toFixed(1) : ''}</strong></td>
-                <td></td>
-                <td></td>
-              </tr>
-            </tbody>
-          </table>
-
-          <!-- Bottom Section -->
-          <div class="bottom-section">
-            <div class="attendance-box">
-              <div class="section-title">ATTENDANCE: ${report.daysPresent || 0} OUT OF ${report.totalDays || 0}</div>
-            </div>
-            <div class="promotion-box">
-              <div class="section-title">PROMOTION STATUS: ${report.promotionStatus || getPromotionStatusText(report)}</div>
-            </div>
-          </div>
-
-          <!-- Remarks Section -->
-          <div class="remarks-section">
-            <div class="remarks-row">
-              <div class="remarks-label">ATTITUDE</div>
-              <div class="remarks-content">${remarks.attitude}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">INTEREST</div>
-              <div class="remarks-content">${remarks.interest}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">CONDUCT</div>
-              <div class="remarks-content">${remarks.conduct}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">CLASS TEACHER'S REMARKS</div>
-              <div class="remarks-content">${remarks.classTeacher}</div>
-            </div>
-            <div class="remarks-row">
-              <div class="remarks-label">HEADTEACHER'S REMARKS</div>
-              <div class="remarks-content">${remarks.headTeacher}</div>
-            </div>
-          </div>
-
-          <!-- Signatures -->
-          <div class="signature-section">
-            <div class="signature-box">
-              <div class="signature-line">HEADMASTER'S STAMP<br/>&<br/>SIGNATURE</div>
-            </div>
-            <div class="signature-box" style="padding: 2px; position: relative;">
-              ${signatureBase64 ? `<img src="${signatureBase64}" alt="Signature" style="width: 90%; height: auto; max-height: 120px; object-fit: contain; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);" />` : ''}
-            </div>
-          </div>
-
-          <!-- Footer Note -->
-          <div class="footer-note">
-            Any student showing this document beside all right reserved @Biriwa Methodist School © school. In any circumstances, the paper in which in color with blue mixed texture of a tinted hachure.
-            Date generated: ${currentDate}
-          </div>
-          <div class="copyright-footer">@2025 FortSoft. All rights reserved.</div>
-        </div>
-      </body>
-      </html>
-    `
-  }
-
-  const selectedReport = reportCards.find(r => r.termId === selectedTerm)
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow">
-            <div className="container mx-auto px-4 py-4">
-               <div className="flex items-center gap-4">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <Skeleton className="h-8 w-40 rounded" />
-               </div>
-            </div>
-          </header>
-          <main className="flex-1 container mx-auto px-4 py-8">
-             <div className="max-w-6xl mx-auto space-y-8">
-                <div className="flex justify-between items-center bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                     <Skeleton className="h-10 w-48 rounded" />
-                     <Skeleton className="h-10 w-32 rounded" />
-                </div>
-                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8">
-                    <div className="text-center mb-8 space-y-4">
-                         <Skeleton className="h-20 w-20 rounded-full mx-auto" />
-                         <Skeleton className="h-8 w-64 mx-auto" />
-                         <Skeleton className="h-6 w-48 mx-auto" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-8 mb-8">
-                         <Skeleton className="h-32 w-full rounded" />
-                         <Skeleton className="h-32 w-full rounded" />
-                    </div>
-                     <div className="space-y-4">
-                        <Skeleton className="h-12 w-full rounded" />
-                        <Skeleton className="h-12 w-full rounded" />
-                        <Skeleton className="h-12 w-full rounded" />
-                    </div>
+  if (initLoading || (reportLoading && studentId)) {
+      return (
+        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+            <div className="max-w-4xl mx-auto space-y-6">
+                 <Skeleton className="h-10 w-48 mb-6" />
+                 <div className="grid md:grid-cols-2 gap-6">
+                    <Skeleton className="h-40 w-full rounded-lg" />
+                    <Skeleton className="h-40 w-full rounded-lg" />
                  </div>
-             </div>
-          </main>
-      </div>
-    )
-  }
-
-  if (studentInfo?.results_withheld) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-methodist-blue hover:text-blue-700 mb-4" />
-            <h1 className="text-3xl font-bold text-methodist-blue">Report Cards</h1>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-12 text-center border-l-4 border-red-500">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-red-600" />
+                 <Skeleton className="h-96 w-full rounded-lg" />
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Results Withheld</h3>
-            <p className="text-gray-600 mb-6 max-w-lg mx-auto">
-              Your report card has been withheld by the administration. Please contact the school office for more information.
-            </p>
-            
-            {studentInfo.withheld_reason && (
-              <div className="bg-red-50 p-4 rounded-lg max-w-md mx-auto text-left">
-                <p className="text-sm font-semibold text-red-800 mb-1">Reason:</p>
-                <p className="text-red-700">{studentInfo.withheld_reason}</p>
-              </div>
-            )}
-          </div>
         </div>
-      </div>
-    )
+      )
+  }
+  
+  if (!student) {
+      return (
+          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+               {initLoading ? <Skeleton className="h-10 w-48" /> : <p>Student data not available.</p>}
+          </div>
+      )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-methodist-blue hover:text-blue-700 mb-4" />
-          <h1 className="text-2xl md:text-3xl font-bold text-methodist-blue">Report Cards</h1>
-          <p className="text-gray-600 mt-2 text-sm md:text-base">View and download your academic reports</p>
-        </div>
-
-        {reportCards.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-12 text-center">
-            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">No Report Cards Available</h3>
-            <p className="text-gray-600">Your report cards will appear here once grades are published.</p>
-          </div>
-        ) : (
-          <>
-            {/* Term Selector */}
-            <div className="bg-white rounded-lg shadow p-6 mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Select Academic Term
-              </label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {reportCards.map((report) => (
-                  <button
-                    key={report.termId}
-                    onClick={() => handleTermChange(report.termId)}
-                    className={`p-4 rounded-lg border-2 text-left transition-all ${
-                      selectedTerm === report.termId
-                        ? 'border-methodist-blue bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="font-semibold text-gray-800">{report.termName}</div>
-                    <div className="text-sm text-gray-600">{report.year}</div>
-                    <div className="text-xs text-gray-500 mt-2">
-                      {report.grades.length} subjects
-                    </div>
-                  </button>
-                ))}
+    <div className="min-h-screen bg-gray-50 pb-12">
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <BackButton href="/student/dashboard" />
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800">My Report Card</h1>
+                <p className="text-sm text-gray-500">View and download your academic reports</p>
               </div>
             </div>
+            
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+               {/* Term Selector */}
+               <div className="relative">
+                   <select 
+                     value={selectedTermId || ''}
+                     onChange={(e) => setSelectedTermId(e.target.value)}
+                     className="appearance-none bg-gray-100 border border-gray-200 text-gray-700 py-2 pl-4 pr-10 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent cursor-pointer"
+                   >
+                       {availableTerms.map(term => (
+                           <option key={term.id} value={term.id}>
+                               {term.name} - {term.year}
+                           </option>
+                       ))}
+                       {availableTerms.length === 0 && <option>No terms available</option>}
+                   </select>
+                   <ChevronDown className="absolute right-3 top-2.5 w-4 h-4 text-gray-500 pointer-events-none" />
+               </div>
 
-            {/* Selected Report Card */}
-            {selectedReport && (
-              <div className="bg-white rounded-lg shadow">
-                {/* Report Header */}
-                <div className="border-b border-gray-200 p-4 md:p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <h2 className="text-xl md:text-2xl font-bold text-gray-800">
-                        {selectedReport.termName} Report
-                      </h2>
-                      <p className="text-gray-600 mt-1 text-sm md:text-base">
-                        Academic Year: {selectedReport.year}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => downloadPDF(selectedReport.termId)}
-                      disabled={downloading}
-                      className="w-full md:w-auto flex items-center justify-center gap-2 bg-methodist-blue text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                    >
-                      {downloading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="w-4 h-4" />
-                          Download PDF
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Grades Table */}
-                <div className="p-4 md:p-6">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[600px]">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            Subject
-                          </th>
-                          <th className="px-2 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            Class Score
-                          </th>
-                          <th className="px-2 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            Exam Score
-                          </th>
-                          <th className="px-2 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            Total
-                          </th>
-                          <th className="px-2 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            Grade
-                          </th>
-                          <th className="px-2 md:px-6 py-3 text-center text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            Rank
-                          </th>
-                          <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wider">
-                            Remarks
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {selectedReport.grades.map((grade) => (
-                          <tr key={grade.id} className="hover:bg-gray-50">
-                            <td className="px-3 md:px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
-                              {grade.subject_name.replace(/\s*\((LP|UP|JHS)\)\s*$/i, '')}
-                            </td>
-                            <td className="px-2 md:px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-600 text-center">
-                              {grade.class_score ?? '-'}
-                            </td>
-                            <td className="px-2 md:px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-600 text-center">
-                              {grade.exam_score ?? '-'}
-                            </td>
-                            <td className="px-2 md:px-6 py-4 whitespace-nowrap text-xs md:text-sm font-semibold text-gray-900 text-center">
-                              {grade.total ?? '-'}
-                            </td>
-                            <td className="px-2 md:px-6 py-4 whitespace-nowrap text-center">
-                              <span className={`inline-flex px-2 md:px-3 py-1 text-[10px] md:text-xs font-semibold rounded-full ${
-                                grade.grade === 'A' ? 'bg-green-100 text-green-800' :
-                                grade.grade === 'B' ? 'bg-blue-100 text-blue-800' :
-                                grade.grade === 'C' ? 'bg-yellow-100 text-yellow-800' :
-                                grade.grade === 'D' ? 'bg-orange-100 text-orange-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {grade.grade || '-'}
-                              </span>
-                            </td>
-                            <td className="px-2 md:px-6 py-4 whitespace-nowrap text-center">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-medium bg-blue-100 text-blue-800">
-                                {grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : '-'}
-                              </span>
-                            </td>
-                            <td className="px-3 md:px-6 py-4 text-xs md:text-sm text-gray-600">
-                              {grade.remarks || '-'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* Summary */}
-                <div className="border-t border-gray-200 p-4 md:p-6 bg-gray-50">
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
-                    <div className="text-center p-2 bg-white rounded shadow-sm md:shadow-none md:bg-transparent">
-                      <p className="text-xs md:text-sm text-gray-600 mb-1">Total Subjects</p>
-                      <p className="text-lg md:text-3xl font-bold text-methodist-blue">
-                        {selectedReport.grades.length}
-                      </p>
-                    </div>
-                    <div className="text-center p-2 bg-white rounded shadow-sm md:shadow-none md:bg-transparent">
-                      <p className="text-xs md:text-sm text-gray-600 mb-1">Total Score</p>
-                      <p className="text-lg md:text-3xl font-bold text-green-600">
-                        {selectedReport.totalScore}
-                      </p>
-                    </div>
-                    <div className="text-center p-2 bg-white rounded shadow-sm md:shadow-none md:bg-transparent">
-                      <p className="text-xs md:text-sm text-gray-600 mb-1">Average Score</p>
-                      <p className="text-lg md:text-3xl font-bold text-purple-600">
-                        {selectedReport.averageScore}%
-                      </p>
-                    </div>
-                    {(selectedReport.aggregate !== null && selectedReport.aggregate !== undefined) && (
-                      <div className="text-center p-2 bg-white rounded shadow-sm md:shadow-none md:bg-transparent">
-                        <p className="text-xs md:text-sm text-gray-600 mb-1">Aggregate</p>
-                        <p className="text-lg md:text-3xl font-bold text-red-600">
-                          {selectedReport.aggregate}
-                        </p>
-                      </div>
-                    )}
-                    <div className="text-center p-2 bg-white rounded shadow-sm md:shadow-none md:bg-transparent">
-                      <p className="text-xs md:text-sm text-gray-600 mb-1">Attendance</p>
-                      <p className="text-lg md:text-3xl font-bold text-blue-600">
-                        {selectedReport.daysPresent || 0}/{selectedReport.totalDays || 0}
-                      </p>
-                    </div>
-                    <div className="text-center p-2 bg-white rounded shadow-sm md:shadow-none md:bg-transparent col-span-2 md:col-span-1">
-                      <p className="text-xs md:text-sm text-gray-600 mb-1">Class Position</p>
-                      <p className="text-lg md:text-3xl font-bold text-orange-600">
-                        {selectedReport.position ? `${selectedReport.position}${getOrdinalSuffix(selectedReport.position)} / ${selectedReport.totalClassSize || '-'}` : '-'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Remarks Editor */}
-                <div className="border-t border-gray-200 p-4 md:p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Report Card Remarks</h3>
-                  <p className="text-sm text-gray-500 mb-4">
-                    Remarks are auto-generated based on student performance.
-                  </p>
-                  
-                  <div className="space-y-4 md:space-y-6">
-                    {/* Attitude */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
-                      <div className="w-full md:w-48 flex-shrink-0">
-                        <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide">Attitude</label>
-                      </div>
-                      <div className="flex-1 relative">
-                        <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-100">{remarks.attitude}</p>
-                      </div>
-                    </div>
-
-                    {/* Interest */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
-                      <div className="w-full md:w-48 flex-shrink-0">
-                        <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide">Interest</label>
-                      </div>
-                      <div className="flex-1 relative">
-                        <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-100">{remarks.interest}</p>
-                      </div>
-                    </div>
-
-                    {/* Conduct */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
-                      <div className="w-full md:w-48 flex-shrink-0">
-                        <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide">Conduct</label>
-                      </div>
-                      <div className="flex-1 relative">
-                        <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-100">{remarks.conduct}</p>
-                      </div>
-                    </div>
-
-                    {/* Class Teacher's Remarks */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
-                      <div className="w-full md:w-48 flex-shrink-0">
-                        <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide">Class Teacher's Remarks</label>
-                      </div>
-                      <div className="flex-1 relative">
-                        <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-100">{remarks.classTeacher}</p>
-                      </div>
-                    </div>
-
-                    {/* Headteacher's Remarks */}
-                    <div className="flex flex-col md:flex-row md:items-start gap-2 md:gap-4">
-                      <div className="w-full md:w-48 flex-shrink-0">
-                        <label className="block text-sm font-bold text-gray-700 uppercase tracking-wide">Headteacher's Remarks</label>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-gray-800 bg-gray-50 p-3 rounded border border-gray-100">{remarks.headTeacher}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
-        )}
+               <button
+                  onClick={handleDownload}
+                  disabled={downloading || !reportData}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+               >
+                  {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  <span>Download PDF</span>
+               </button>
+            </div>
+          </div>
+        </div>
       </div>
+
+      <main className="container mx-auto px-4 md:px-6 py-8">
+         {reportData ? (
+             <div className="max-w-4xl mx-auto">
+                 {/* Student Bio Card */}
+                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                         <div>
+                             <h2 className="text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h2>
+                             <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
+                                 <span className="flex items-center gap-1">
+                                     <span className="font-semibold">ID:</span> {student.student_id}
+                                 </span>
+                                 <span className="flex items-center gap-1">
+                                     <span className="font-semibold">Class:</span> {student.classes?.name}
+                                 </span>
+                                 <span className="flex items-center gap-1">
+                                     <span className="font-semibold">Term:</span> {reportData.termName}
+                                 </span>
+                             </div>
+                         </div>
+                         <div className="flex gap-3">
+                             {/* Position Badge if available */}
+                            {reportData.position && (
+                                <div className="text-center px-4 py-2 bg-purple-50 rounded-lg border border-purple-100">
+                                    <div className="text-xs text-purple-600 font-semibold uppercase tracking-wider">Position</div>
+                                    <div className="text-xl font-bold text-purple-700">
+                                        {reportData.position} <span className="text-sm text-purple-400 font-normal">/ {reportData.totalClassSize}</span>
+                                    </div>
+                                </div>
+                            )}
+                             <div className="text-center px-4 py-2 bg-blue-50 rounded-lg border border-blue-100">
+                                 <div className="text-xs text-blue-600 font-semibold uppercase tracking-wider">Average</div>
+                                 <div className="text-xl font-bold text-blue-700">{reportData.averageScore}%</div>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+
+                 {/* Grades Table */}
+                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                     <div className="border-b border-gray-100 bg-gray-50 px-6 py-4">
+                         <h3 className="font-semibold text-gray-800">Academic Performance</h3>
+                     </div>
+                     <div className="overflow-x-auto">
+                         <table className="w-full">
+                             <thead>
+                                 <tr className="bg-gray-50/50 border-b border-gray-100 text-left">
+                                     <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Subject</th>
+                                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Class ({scoreSettings.classScorePercentage}%)</th>
+                                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Exam ({scoreSettings.examScorePercentage}%)</th>
+                                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Total</th>
+                                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Grade</th>
+                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Remarks</th>
+                                 </tr>
+                             </thead>
+                             <tbody className="divide-y divide-gray-100">
+                                 {reportData.grades.map((grade, idx) => (
+                                     <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{grade.subject_name}</td>
+                                         <td className="px-6 py-4 text-center text-sm text-gray-600">{grade.class_score ?? '-'}</td>
+                                         <td className="px-6 py-4 text-center text-sm text-gray-600">{grade.exam_score ?? '-'}</td>
+                                         <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.total ?? '-'}</td>
+                                         <td className="px-6 py-4 text-center text-sm font-bold text-purple-600">{grade.grade ?? '-'}</td>
+                                         <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title={grade.remarks || ''}>
+                                             {grade.remarks || '-'}
+                                         </td>
+                                     </tr>
+                                 ))}
+                             </tbody>
+                             <tfoot className="bg-gray-50 border-t border-gray-200">
+                                 <tr>
+                                     <td className="px-6 py-3 text-sm font-bold text-gray-900">Overalls</td>
+                                     <td colSpan={2}></td>
+                                     <td className="px-6 py-3 text-center text-sm font-bold text-gray-900">{reportData.totalScore}</td>
+                                     <td colSpan={2}></td>
+                                 </tr>
+                             </tfoot>
+                         </table>
+                     </div>
+                 </div>
+                 
+                 {/* Attendance & Remarks */}
+                 <div className="grid md:grid-cols-2 gap-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <span className="w-1 h-4 bg-orange-400 rounded-full"></span>
+                            Attendance
+                        </h3>
+                        <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-100">
+                             <div>
+                                 <div className="text-sm text-orange-600 mb-1">Days Present</div>
+                                 <div className="text-2xl font-bold text-orange-700">{reportData.attendance?.present ?? 0}</div>
+                             </div>
+                             <div className="text-right">
+                                 <div className="text-sm text-orange-600 mb-1">Total Days</div>
+                                 <div className="text-2xl font-bold text-orange-700">{reportData.attendance?.total ?? 0}</div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                         <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                            <span className="w-1 h-4 bg-green-400 rounded-full"></span>
+                            Reflections
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Class Teacher</span>
+                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.classTeacher || 'No remark yet'}"</p>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Head Teacher</span>
+                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.headTeacher || 'No remark yet'}"</p>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+
+             </div>
+         ) : (
+             <div className="text-center py-12">
+                 <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                 <h3 className="text-lg font-medium text-gray-900">No report card available</h3>
+                 <p className="text-gray-500 mt-2">Select a different term or contact your administrator.</p>
+             </div>
+         )}
+      </main>
     </div>
   )
 }
