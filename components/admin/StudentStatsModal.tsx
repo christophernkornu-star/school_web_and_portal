@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button'
 interface StudentStatsModalProps {
   isOpen: boolean
   onClose: () => void
+  classIds?: string[]
 }
 
-export function StudentStatsModal({ isOpen, onClose }: StudentStatsModalProps) {
+export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsModalProps) {
   const [loading, setLoading] = useState(true)
   const [students, setStudents] = useState<any[]>([])
   const [classes, setClasses] = useState<any[]>([])
@@ -39,7 +40,7 @@ export function StudentStatsModal({ isOpen, onClose }: StudentStatsModalProps) {
     setLoading(true)
     try {
       // Fetch active students with gender, dob, class info
-      const { data: studentsData, error: studentError } = await supabase
+      let query = supabase
         .from('students')
         .select(`
           id, gender, date_of_birth, status,
@@ -47,14 +48,26 @@ export function StudentStatsModal({ isOpen, onClose }: StudentStatsModalProps) {
         `)
         .eq('status', 'active')
 
+      if (classIds && classIds.length > 0) {
+        query = query.in('class_id', classIds)
+      }
+
+      const { data: studentsData, error: studentError } = await query
+
       if (studentError) throw studentError
       setStudents(studentsData || [])
 
-      // Fetch all classes for reference
-      const { data: classesData, error: classError } = await supabase
+      // Fetch classes for reference
+      let classQuery = supabase
         .from('classes')
         .select('*')
         .order('level', { ascending: true })
+
+      if (classIds && classIds.length > 0) {
+        classQuery = classQuery.in('id', classIds)
+      }
+
+      const { data: classesData, error: classError } = await classQuery
 
       if (classError) throw classError
       setClasses(classesData || [])

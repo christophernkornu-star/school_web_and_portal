@@ -25,6 +25,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip } from '@/components/ui/tooltip-custom'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { StudentStatsModal } from '@/components/admin/StudentStatsModal'
+import { TeacherClassesModal } from '@/components/teacher/TeacherClassesModal'
 
 export default function TeacherDashboard() {
   const router = useRouter() // Re-added router
@@ -36,6 +38,8 @@ export default function TeacherDashboard() {
   const [greeting, setGreeting] = useState('')
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [announcementsLoading, setAnnouncementsLoading] = useState(true)
+  const [isStatsOpen, setIsStatsOpen] = useState(false)
+  const [isClassesModalOpen, setIsClassesModalOpen] = useState(false)
   
   // Performance Chart Data State
   const [performanceData, setPerformanceData] = useState<any[]>([])
@@ -414,7 +418,10 @@ export default function TeacherDashboard() {
             
             {/* Overview Stats */}
             <div className="grid sm:grid-cols-2 gap-4">
-               <Card>
+               <Card 
+                 onClick={() => setIsClassesModalOpen(true)}
+                 className="cursor-pointer hover:shadow-md transition-shadow"
+               >
                  <CardContent className="p-6 flex items-center space-x-4">
                     <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full dark:bg-indigo-900/30 dark:text-indigo-400">
                        <BookOpen className="w-6 h-6" />
@@ -422,14 +429,22 @@ export default function TeacherDashboard() {
                     <div>
                        <p className="text-sm font-medium text-muted-foreground">My Classes</p>
                        <Tooltip content={assignedClasses.length > 0 ? assignedClasses.join(', ') : 'No classes assigned'}>
-                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white cursor-help decoration-dotted underline hover:text-indigo-600 transition-colors inline-block">
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white decoration-dotted underline hover:text-indigo-600 transition-colors inline-block">
                             {assignedClasses.length}
                           </h3>
                        </Tooltip>
                     </div>
                  </CardContent>
                </Card>
-               <Card>
+               <TeacherClassesModal 
+                  isOpen={isClassesModalOpen}
+                  onClose={() => setIsClassesModalOpen(false)}
+                  assignments={dashboardData?.assignments || []} 
+               />
+               <Card 
+                 onClick={() => setIsStatsOpen(true)} 
+                 className="cursor-pointer hover:shadow-md transition-shadow"
+               >
                  <CardContent className="p-6 flex items-center space-x-4">
                     <div className="p-3 bg-pink-100 text-pink-600 rounded-full dark:bg-pink-900/30 dark:text-pink-400">
                        <Users className="w-6 h-6" />
@@ -440,6 +455,12 @@ export default function TeacherDashboard() {
                     </div>
                  </CardContent>
                </Card>
+
+               <StudentStatsModal 
+                  isOpen={isStatsOpen} 
+                  onClose={() => setIsStatsOpen(false)} 
+                  classIds={dashboardData?.assignments?.map((a: any) => a.class_id).filter(Boolean) || []} 
+               />
             </div>
 
             {/* Performance Analysis Chart */}

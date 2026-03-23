@@ -124,9 +124,12 @@ export function TeacherProvider({ children }: { children: React.ReactNode }) {
         id: cls.class_id,
         class_id: cls.class_id,
         classes: {
-          class_name: cls.class_name
+          class_name: cls.class_name,
+          level: cls.level, // Pass level
         },
-        subjects: cls.subjects_taught || []
+        subjects: cls.subjects_taught || [],
+        is_class_teacher: cls.is_class_teacher, // Pass role
+        teaching_model: cls.teaching_model // Pass model
       }))
 
       // Calculate Stats

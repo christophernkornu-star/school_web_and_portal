@@ -197,7 +197,7 @@ export default function ClassReportPage() {
           }
         })
 
-        const average = subjectCount > 0 ? totalScoreSum / subjectCount : 0
+        const average = subjectsData.length > 0 ? totalScoreSum / subjectsData.length : 0
 
         return {
           student,
