@@ -300,7 +300,11 @@ export default function TeacherDashboard() {
   // Calculate unique subjects taught
   const subjectsTaughtList = Array.from(new Set(
     (dashboardData?.assignments || []).reduce((acc: string[], curr: any) => {
-        return [...acc, ...(curr.subjects || [])];
+        // Handle subjects as objects (new RPC format) or strings (legacy)
+        const subjects = (curr.subjects || []).map((s: any) => 
+            typeof s === 'string' ? s : (s.subject_name || s.name || '')
+        ).filter(Boolean);
+        return [...acc, ...subjects];
     }, []) as string[]
   ));
 
