@@ -20,7 +20,13 @@ export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsMod
   
   // Age Calculation State
   const [ageRange, setAgeRange] = useState({ min: 5, max: 15 })
-  const [ageStats, setAgeStats] = useState({ male: 0, female: 0, total: 0 })
+  const [selectedAgeClassId, setSelectedAgeClassId] = useState<string>('all')
+  const [ageStats, setAgeStats] = useState({ 
+    male: 0, 
+    female: 0, 
+    total: 0, 
+    studentsList: [] as any[] 
+  })
 
   const supabase = getSupabaseBrowserClient()
 
@@ -34,7 +40,7 @@ export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsMod
     if (activeTab === 'age' && students.length > 0) {
       calculateAgeStats()
     }
-  }, [ageRange, students, activeTab])
+  }, [ageRange, selectedAgeClassId, students, activeTab])
 
   const fetchData = async () => {
     setLoading(true)
@@ -43,7 +49,7 @@ export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsMod
       let query = supabase
         .from('students')
         .select(`
-          id, gender, date_of_birth, status,
+          id, first_name, last_name, gender, date_of_birth, status,
           classes (id, name, level, category)
         `)
         .eq('status', 'active')
@@ -150,24 +156,45 @@ export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsMod
     const today = new Date()
     let male = 0
     let female = 0
+    const studentsInRange: any[] = []
 
     students.forEach(s => {
       if (!s.date_of_birth) return
+
+      // Filter by class if specific class is selected
+      if (selectedAgeClassId !== 'all' && s.classes?.id !== selectedAgeClassId) {
+          return
+      }
+
       const age = differenceInYears(today, new Date(s.date_of_birth))
       
       if (age >= ageRange.min && age <= ageRange.max) {
         if (s.gender === 'Male') male++
         else if (s.gender === 'Female') female++
+        
+        // Add student to the list with their calculated age
+        studentsInRange.push({
+            ...s,            first_name: s.first_name,
+            last_name: s.last_name,            calculated_age: age
+        })
       }
     })
 
-    setAgeStats({ male, female, total: male + female })
+    // Sort students by age then name
+    studentsInRange.sort((a, b) => {
+        if (a.calculated_age !== b.calculated_age) {
+            return a.calculated_age - b.calculated_age
+        }
+        return `${a.first_name} ${a.last_name}`.localeCompare(`${b.first_name} ${b.last_name}`)
+    })
+
+    setAgeStats({ male, female, total: male + female, studentsList: studentsInRange })
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-800 rounded-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in duration-200">
         
         {/* Header */}
@@ -327,6 +354,19 @@ export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsMod
                                  className="w-full p-2 rounded-lg border dark:bg-gray-700 dark:border-gray-600"
                                />
                             </div>
+                            <div className="flex-1 space-y-2">
+                               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter By Class</label>
+                               <select 
+                                 value={selectedAgeClassId} 
+                                 onChange={(e) => setSelectedAgeClassId(e.target.value)}
+                                 className="w-full p-2 rounded-lg border dark:bg-gray-700 dark:border-gray-600 outline-none"
+                               >
+                                 <option value="all">All Classes</option>
+                                 {classes.map(c => (
+                                   <option key={c.id} value={c.id}>{c.name}</option>
+                                 ))}
+                               </select>
+                            </div>
                             <Button 
                               onClick={calculateAgeStats}
                               className="bg-blue-600 text-white"
@@ -347,6 +387,50 @@ export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsMod
                          <StatCard title="Boys in range" value={ageStats.male} color="bg-cyan-50 text-cyan-700 border-cyan-200" icon={Users} />
                          <StatCard title="Girls in range" value={ageStats.female} color="bg-pink-50 text-pink-700 border-pink-200" icon={Users} />
                       </div>
+
+                      {/* Detailed Student List */}
+                      {ageStats.studentsList.length > 0 && (
+                        <div className="mt-8 border dark:border-gray-700 rounded-xl overflow-hidden bg-white dark:bg-gray-800">
+                          <div className="px-4 py-3 bg-gray-50 dark:bg-gray-800/80 border-b dark:border-gray-700 flex justify-between items-center">
+                            <h4 className="font-semibold text-gray-800 dark:text-gray-200">
+                              Students in this Age Range
+                            </h4>
+                            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full font-medium">
+                               {ageStats.studentsList.length} Students
+                            </span>
+                          </div>
+                          <div className="max-h-[300px] overflow-y-auto">
+                            <table className="w-full text-sm text-left">
+                               <thead className="bg-gray-50 dark:bg-gray-900/50 sticky top-0">
+                                 <tr>
+                                   <th className="px-4 py-2 font-medium text-gray-500 dark:text-gray-400">Name</th>
+                                   <th className="px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-24 text-center">Age</th>
+                                   <th className="px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-24 text-center">Gender</th>
+                                   <th className="px-4 py-2 font-medium text-gray-500 dark:text-gray-400 w-32">Class</th>
+                                 </tr>
+                               </thead>
+                               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                                 {ageStats.studentsList.map((student, idx) => (
+                                   <tr key={student.id || idx} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">
+                                       {student.first_name} {student.last_name}
+                                     </td>
+                                     <td className="px-4 py-3 text-center text-purple-600 dark:text-purple-400 font-medium">
+                                       {student.calculated_age}
+                                     </td>
+                                     <td className="px-4 py-3 text-center text-gray-500 dark:text-gray-400">
+                                       {student.gender}
+                                     </td>
+                                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                                       {student.classes?.name || 'Unassigned'}
+                                     </td>
+                                   </tr>
+                                 ))}
+                               </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 

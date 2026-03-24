@@ -514,15 +514,14 @@ export default function ExamScoresPage() {
       }
 
       // SIMPLIFIED PERMISSION CHECK:
-      // Class teachers (is_class_teacher = true) can ALWAYS edit scores for their class
-      // This is the expected behavior for lower-primary teachers
-      const isClassTeacher = Boolean(access.is_class_teacher)
+      // We rely EXCLUSIVELY on can_edit_all_subjects from the RPC since it handles 
+      // the teaching model correctly (Lower Primary = true, JHS = false)
+      const canEditAll = Boolean(access.can_edit_all_subjects)
       
-      console.log('isClassTeacher:', isClassTeacher)
-      console.log('can_edit_all_subjects:', access.can_edit_all_subjects)
+      console.log('can_edit_all_subjects:', canEditAll)
       
-      // If class teacher OR has edit all permission, allow editing - no further checks needed
-      if (!isClassTeacher && !access.can_edit_all_subjects) {
+      // If they don't have edit all permission, check specific subject assignment
+      if (!canEditAll) {
         // Not a class teacher and doesn't have edit all permission
         // Check if they're assigned to this specific subject
         const subjectsTaught = access.subjects_taught || []

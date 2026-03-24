@@ -40,8 +40,8 @@ export function TeacherClassesModal({ isOpen, onClose, assignments }: TeacherCla
         }
     }
 
-    // Fallback if no subjects found but is class teacher
-    if (isClassTeacher) {
+    // Fallback if no subjects found but is class teacher (ONLY for 'class_teacher' model, not JHS)
+    if (isClassTeacher && assignment.teaching_model === 'class_teacher') {
         return { type: 'all', text: 'All Subjects' };
     }
 
