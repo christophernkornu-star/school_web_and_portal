@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import Image from 'next/image'
 
 export default function HeroCarousel({ photos }: { photos: any[] }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
@@ -68,12 +69,12 @@ export default function HeroCarousel({ photos }: { photos: any[] }) {
           <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
             {/* Image with Transitions */}
             <div className="relative w-full h-full">
-              <img
+              <Image
                 src={photos[currentPhotoIndex].photo_url}
                 alt={photos[currentPhotoIndex].title}
-                className={`w-full h-full object-cover transition-all duration-700 ease-in-out ${
-                  isTransitioning ? 'opacity-0 scale-105' : 'opacity-100 scale-100'
-                }`}
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
               />
               
               {/* Gradient Overlay */}

@@ -1,4 +1,4 @@
--- Indexes to speed up reports and score management
+﻿-- Indexes to speed up reports and score management
 
 -- SCORES TABLE
 -- Frequently queried by student and term for reports
@@ -28,3 +28,7 @@ CREATE INDEX IF NOT EXISTS idx_student_attendance_summary ON student_attendance(
 -- ACADEMIC TERMS
 -- Sorting terms
 CREATE INDEX IF NOT EXISTS idx_academic_terms_created_at ON academic_terms(created_at DESC);
+
+-- Missing indexes added from performance audit
+CREATE INDEX IF NOT EXISTS idx_academic_terms_year ON academic_terms(academic_year);
+CREATE INDEX IF NOT EXISTS idx_student_promotions_year ON student_promotions(academic_year);

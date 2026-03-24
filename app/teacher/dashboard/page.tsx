@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import PerformanceChart from '@/components/PerformanceChart'
+import dynamic from 'next/dynamic'
+const PerformanceChart = dynamic(() => import('@/components/PerformanceChart'), {
+  ssr: false,
+  loading: () => <div className="h-[300px] w-full flex items-center justify-center bg-gray-50 animate-pulse rounded-xl" />
+})
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 

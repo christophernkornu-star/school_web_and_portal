@@ -450,8 +450,8 @@ const generateReportCardContent = (
                 <tr>
                   <td>${index + 1}</td>
                   <td style="text-align: left;">${(grade.subject_name || '').replace(/\s*\(\s*(LP|UP|JHS)\s*\)\s*$/i, '').toUpperCase()}</td>
-                  <td>${grade.class_score ?? ''}</td>
-                  <td>${grade.exam_score ?? ''}</td>
+                    <td>${grade.class_score != null ? Number(grade.class_score).toFixed(1) : ''}</td>
+                    <td>${grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : ''}</td>
                   <td><strong>${grade.total !== null && grade.total !== undefined ? Number(grade.total).toFixed(1) : ''}</strong></td>
                   <td>${grade.rank ? `${grade.rank}${getOrdinalSuffix(grade.rank)}` : ''}</td>
                   <td style="text-align: left;">${grade.remarks || ''}</td>     

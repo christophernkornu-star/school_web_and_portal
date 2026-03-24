@@ -10,7 +10,9 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY! // Uses service role key to bypass RLS
 )
-
+// In-memory cache to prevent DB spikes during heavy parallel fetching
+const cache = new Map<string, { data: any, timestamp: number }>()
+const CACHE_TTL = 1000 * 60 * 5 // 5 minutes
 export async function GET(request: Request) {
   // 1. Verify Authentication & Authorization
   const cookieStore = cookies()
@@ -36,11 +38,18 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const classId = searchParams.get('classId')
   const termId = searchParams.get('termId')
-  
+
   if (!classId || !termId) {
     return NextResponse.json({ error: 'Missing classId or termId' }, { status: 400 })
   }
-  
+
+  // Check Cache first
+  const cacheKey = `${classId}-${termId}`
+  const cached = cache.get(cacheKey)
+  if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+    return NextResponse.json(cached.data)
+  }
+
   // First get all students in this class
   const { data: students, error: studentsError } = await supabase
     .from('students')
@@ -71,10 +80,15 @@ export async function GET(request: Request) {
   const totalClassSize = students.length
   const uniqueStudents = [...new Set(scores.map(s => s.student_id))]
   
-  // Return the scores data
-  return NextResponse.json({
+  const responseData = {
     scores,
     totalClassSize,
     uniqueStudents
-  })
+  }
+
+  // Save to cache
+  cache.set(cacheKey, { data: responseData, timestamp: Date.now() })
+
+  // Return the scores data
+  return NextResponse.json(responseData)
 }

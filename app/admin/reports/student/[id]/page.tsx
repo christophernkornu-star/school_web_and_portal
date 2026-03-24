@@ -284,15 +284,15 @@ export default function AdminStudentReportPage() {
                         <span>{grade.subject_name}</span>
                         {/* Mobile Only Details */}
                         <div className="md:hidden text-xs text-gray-500 mt-1 space-y-1">
-                          <div>Class: {grade.class_score ?? '-'} | Exam: {grade.exam_score ?? '-'}</div>
+                          <div>Class: {grade.class_score != null ? Number(grade.class_score).toFixed(1) : '-'} | Exam: {grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : '-'}</div>
                           <div>Grade: <span className="text-blue-600 font-bold">{grade.grade ?? '-'}</span></div>
                           <div className="italic text-gray-400">{grade.remarks ?? '-'}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="hidden md:table-cell px-6 py-4 text-center text-sm text-gray-500">{grade.class_score ?? '-'}</td>
-                    <td className="hidden md:table-cell px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score ?? '-'}</td>
-                    <td className="px-3 py-4 text-center text-sm font-bold text-gray-900 md:px-6">{grade.total ?? '-'}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-center text-sm text-gray-500">{grade.class_score != null ? Number(grade.class_score).toFixed(1) : '-'}</td>
+                    <td className="hidden md:table-cell px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : '-'}</td>
+                    <td className="px-3 py-4 text-center text-sm font-bold text-gray-900 md:px-6">{grade.total != null ? Number(grade.total).toFixed(1) : '-'}</td>
                     <td className="hidden md:table-cell px-6 py-4 text-center text-sm font-bold text-blue-600">{grade.grade ?? '-'}</td>
                     <td className="hidden md:table-cell px-6 py-4 text-sm text-gray-500">{grade.remarks ?? '-'}</td>
                   </tr>

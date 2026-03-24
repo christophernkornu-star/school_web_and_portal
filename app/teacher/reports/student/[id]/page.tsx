@@ -304,9 +304,9 @@ export default function TeacherStudentReportPage() {
                   <tr key={idx} className="hover:bg-gray-50">
                     {/* ... rest of the row ... */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{grade.subject_name}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.class_score ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score ?? '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.total ?? '-'}</td>
+                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.class_score != null ? Number(grade.class_score).toFixed(1) : '-'}</td>
+                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : '-'}</td>
+                    <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.total != null ? Number(grade.total).toFixed(1) : '-'}</td>
                     <td className="px-6 py-4 text-center text-sm font-bold text-blue-600">{grade.grade ?? '-'}</td>
                     <td className="px-6 py-4 text-sm text-gray-500">{grade.remarks ?? '-'}</td>
                   </tr>
