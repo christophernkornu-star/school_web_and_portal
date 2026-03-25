@@ -16,7 +16,7 @@ import { HeroSkeleton, NewsSkeleton, EventsSkeleton, StatsSkeleton } from '@/app
 
 import { PortalFooter } from '@/components/PortalFooter'
 
-export const dynamic = 'force-dynamic'
+export const revalidate = 300 // Revalidate every 5 minutes instead of forcing dynamic at every request
 
 export default function HomePage() {
   return (

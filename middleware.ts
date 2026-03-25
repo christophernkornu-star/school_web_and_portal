@@ -24,6 +24,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/login?portal=student', req.url))
   }
 
+  // API Route Protection
+  if (path.startsWith('/api/admin') || path.startsWith('/api/teacher') || path.startsWith('/api/student')) {
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const role = session.user?.user_metadata?.role
+    if (path.startsWith('/api/admin') && role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (path.startsWith('/api/teacher') && role !== 'admin' && role !== 'teacher') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
+
   if (path.startsWith('/login') && session) {
     const role = session.user.user_metadata.role
     if (role === 'admin') return NextResponse.redirect(new URL('/admin/dashboard', req.url))

@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
@@ -17,6 +19,14 @@ const supabaseAdmin = createClient(
 
 export async function GET() {
   try {
+    const cookieStore = cookies()
+    const supabaseSession = createRouteHandlerClient({ cookies: () => cookieStore })
+    const { data: { session } } = await supabaseSession.auth.getSession()
+
+    if (!session || session.user?.user_metadata?.role !== 'admin') {
+      return NextResponse.json({ error: 'Unauthorized: Admin access required' }, { status: 403 })
+    }
+
     // 1. Fetch all students with their profile data
     const { data: students, error: studentsError } = await supabaseAdmin
       .from('students')

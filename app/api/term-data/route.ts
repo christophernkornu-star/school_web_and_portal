@@ -6,6 +6,10 @@ export const dynamic = 'force-dynamic'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+// In-memory cache to prevent redundant term fetches
+const cache = new Map<string, { data: any, timestamp: number }>()
+const CACHE_TTL = 1000 * 60 * 5 // 5 minutes
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -16,6 +20,12 @@ export async function GET(request: NextRequest) {
         { error: 'Term ID is required' },
         { status: 400 }
       )
+    }
+
+    // Check Cache first
+    const cached = cache.get(termId)
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      return NextResponse.json(cached.data)
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
@@ -55,6 +65,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    cache.set(termId, { data: termData, timestamp: Date.now() })
     return NextResponse.json(termData)
   } catch (error: any) {
     console.error('Error in term-data API:', error)

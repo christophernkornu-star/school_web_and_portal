@@ -81,11 +81,11 @@ export default function LoginPage() {
         
         {/* Main Header */}
         <div className="bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-yellow-700">
-          <nav className="container mx-auto px-6 py-4">
+          <nav className="w-full max-w-[95%] lg:max-w-7xl mx-auto px-4 lg:px-6 py-4">
             <div className="flex items-center justify-between gap-8">
               {/* Logo and School Name */}
               <Link href="/" className="flex items-center space-x-5 group">
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 <div className="absolute inset-0 bg-methodist-gold rounded-full blur-md opacity-30"></div>
                 <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-full p-2.5 shadow-xl ring-4 ring-methodist-gold ring-opacity-20 group-hover:ring-opacity-40 transition-all">
                   <Image

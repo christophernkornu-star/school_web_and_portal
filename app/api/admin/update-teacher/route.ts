@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,17 +37,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 
-    // Verify requester is admin
-    if (requesterId) {
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('role')
-        .eq('id', requesterId)
-        .single()
+    // Verify requester is an authenticated admin via session
+    const cookieStore = cookies()
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const { data: { session } } = await supabase.auth.getSession()
 
-      if (!profile || profile.role !== 'admin') {
-        return NextResponse.json({ error: 'Forbidden: Only admins can update teachers' }, { status: 403 })
-      }
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', session.user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden: Only admins can update teachers' }, { status: 403 })
     }
 
     // Update teacher record

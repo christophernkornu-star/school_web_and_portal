@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { Download, X, Share } from 'lucide-react'
@@ -12,14 +12,14 @@ export default function PWAInstallPrompt() {
   useEffect(() => {
     // Check if already in standalone mode
     if (typeof window !== 'undefined' && (
-        window.matchMedia('(display-mode: standalone)').matches || 
+        window.matchMedia('(display-mode: standalone)').matches ||
         (window.navigator as any).standalone
       )) {
       setIsStandalone(true)
     }
 
-    // Check session storage
-    const hasSeenPrompt = typeof window !== 'undefined' ? sessionStorage.getItem('pwaPromptShown') : null
+    // Check storage - using localStorage so it persists effectively across reloads
+    const hasSeenPrompt = typeof window !== 'undefined' ? localStorage.getItem('pwaPromptShown') : null
     
     // Detect iOS
     const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent.toLowerCase() : ''
@@ -31,10 +31,10 @@ export default function PWAInstallPrompt() {
       console.log('PWA: beforeinstallprompt fired')
       e.preventDefault()
       setDeferredPrompt(e)
-      
-      // Only show if not already installed
-      // Removed sessionStorage check for debugging
-      if (!window.matchMedia('(display-mode: standalone)').matches) {
+
+      // Only show if not already installed and not dismissed previously
+      const currentlySeen = localStorage.getItem('pwaPromptShown')
+      if (!window.matchMedia('(display-mode: standalone)').matches && !currentlySeen) {
         setShowPrompt(true)
       }
     }
@@ -42,7 +42,7 @@ export default function PWAInstallPrompt() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
     // Show iOS prompt if not standalone and not seen
-    if (isIosDevice && !window.matchMedia('(display-mode: standalone)').matches) {
+    if (isIosDevice && !window.matchMedia('(display-mode: standalone)').matches && !hasSeenPrompt) {
       setShowPrompt(true)
     }
 
@@ -53,7 +53,7 @@ export default function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false)
-    // sessionStorage.setItem('pwaPromptShown', 'true') // Disabled for debugging
+    localStorage.setItem('pwaPromptShown', 'true')
   }
 
   const handleInstallClick = async () => {
@@ -61,23 +61,23 @@ export default function PWAInstallPrompt() {
 
     deferredPrompt.prompt()
     const { outcome } = await deferredPrompt.userChoice
-    
+
     if (outcome === 'accepted') {
       setDeferredPrompt(null)
       setShowPrompt(false)
-      // sessionStorage.setItem('pwaPromptShown', 'true') // Disabled for debugging
+      localStorage.setItem('pwaPromptShown', 'true')
     }
   }
 
   if (isStandalone || !showPrompt) return null
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-50 animate-in slide-in-from-bottom-10 fade-in duration-500">
+    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 z-[9999] animate-in slide-in-from-bottom-10 fade-in duration-500">
       <div className="bg-white rounded-xl shadow-2xl border border-gray-200 p-4 relative overflow-hidden">
         {/* Background decoration */}
         <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-full -mr-10 -mt-10 z-0"></div>
         <div className="absolute bottom-0 left-0 w-16 h-16 bg-yellow-50 rounded-full -ml-8 -mb-8 z-0"></div>
-
+        
         <div className="relative z-10">
           <div className="flex justify-between items-start mb-3">
             <div className="flex items-center space-x-3">
@@ -89,7 +89,7 @@ export default function PWAInstallPrompt() {
                 <p className="text-xs text-gray-500">Get the best experience</p>
               </div>
             </div>
-            <button 
+            <button
               onClick={handleDismiss}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
@@ -112,7 +112,7 @@ export default function PWAInstallPrompt() {
                 </li>
                 <li>Scroll down and tap "Add to Home Screen"</li>
               </ol>
-              <button 
+              <button
                 onClick={handleDismiss}
                 className="mt-3 w-full py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors text-sm"
               >

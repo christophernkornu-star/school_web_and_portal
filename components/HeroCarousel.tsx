@@ -74,7 +74,8 @@ export default function HeroCarousel({ photos }: { photos: any[] }) {
                 alt={photos[currentPhotoIndex].title}
                 fill
                 priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+                className="object-cover object-center"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
               />
               
               {/* Gradient Overlay */}

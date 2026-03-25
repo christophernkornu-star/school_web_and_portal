@@ -2,6 +2,12 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { ReportCardData } from './types'
 import { getGradeValue, calculateAggregate, isPromotionTerm } from '@/lib/academic-utils'
 
+// In-memory cache for system and academic settings to prevent redundant queries during bulk report generation
+let cachedSettings: any = null
+let cachedScoreSettings: any = null
+let settingsCacheTime = 0
+const SETTINGS_TTL = 1000 * 60 * 5 // 5 minutes
+
 // Helper function to fetch data for a single student properly
 // Exported so bulk reports can use it
 export async function fetchReportCardData(studentId: string, termId?: string) {
@@ -29,32 +35,39 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
 
     if (studentError) throw studentError
 
-    // 2. Fetch Academic Settings
-    const { data: settings } = await supabase
-    .from('academic_settings')
-    .select('*')
-    .single()
+    // 2. Fetch Academic Settings (With in-memory caching for bulk generation)
+    if (!cachedSettings || (Date.now() - settingsCacheTime > SETTINGS_TTL)) {
+        const { data: fetchedSettings } = await supabase
+        .from('academic_settings')
+        .select('*')
+        .single()
 
-    // 2b. Fetch Grading Configuration
-    const { data: gradingConfig } = await supabase
-        .from('system_settings')
-        .select('setting_key, setting_value')
-        .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
+        const { data: gradingConfig } = await supabase
+            .from('system_settings')
+            .select('setting_key, setting_value')
+            .in('setting_key', ['class_score_percentage', 'exam_score_percentage'])
 
-    let scoreSettings = { classScorePercentage: 30, examScorePercentage: 70 } // Defaults
-
-    if (gradingConfig) {
-        const classScoreSetting = gradingConfig.find((s: any) => s.setting_key === 'class_score_percentage')
-        const examScoreSetting = gradingConfig.find((s: any) => s.setting_key === 'exam_score_percentage')
+        cachedSettings = fetchedSettings
         
-        if (classScoreSetting && classScoreSetting.setting_value) {
-            scoreSettings.classScorePercentage = Number(classScoreSetting.setting_value)
+        let newScoreSettings = { classScorePercentage: 30, examScorePercentage: 70 } // Defaults
+        if (gradingConfig) {
+            const classScoreSetting = gradingConfig.find((s: any) => s.setting_key === 'class_score_percentage')
+            const examScoreSetting = gradingConfig.find((s: any) => s.setting_key === 'exam_score_percentage')
+
+            if (classScoreSetting && classScoreSetting.setting_value) {
+                newScoreSettings.classScorePercentage = Number(classScoreSetting.setting_value)
+            }
+            if (examScoreSetting && examScoreSetting.setting_value) {
+                newScoreSettings.examScorePercentage = Number(examScoreSetting.setting_value)
+            }
         }
-        if (examScoreSetting && examScoreSetting.setting_value) {
-            scoreSettings.examScorePercentage = Number(examScoreSetting.setting_value)
-        }
+        cachedScoreSettings = newScoreSettings
+        settingsCacheTime = Date.now()
     }
-    
+
+    const settings = cachedSettings
+    const scoreSettings = cachedScoreSettings
+
     // 3. Fetch Grades
     const { data: grades, error: gradesError } = await supabase
     .from('scores')

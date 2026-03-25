@@ -6,8 +6,20 @@ export const dynamic = 'force-dynamic'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
+// In-memory cache for generic non-sensitive term lists
+const cache = {
+  data: null as any,
+  timestamp: 0
+}
+const CACHE_TTL = 1000 * 60 * 5 // 5 minutes
+
 export async function GET() {
   try {
+    // Check Cache first
+    if (cache.data && (Date.now() - cache.timestamp < CACHE_TTL)) {
+      return NextResponse.json(cache.data)
+    }
+
     // Use service role to bypass RLS
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -30,7 +42,11 @@ export async function GET() {
       )
     }
 
-    return NextResponse.json(termsData || [])
+    const responseData = termsData || []
+    cache.data = responseData
+    cache.timestamp = Date.now()
+
+    return NextResponse.json(responseData)
   } catch (error: any) {
     console.error('Error in terms-list API:', error)
     return NextResponse.json(

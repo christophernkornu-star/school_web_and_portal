@@ -16,8 +16,20 @@ const supabaseAdmin = createClient(
   }
 )
 
+// In-memory cache for public stats
+const cache = {
+  data: null as any,
+  timestamp: 0
+}
+const CACHE_TTL = 1000 * 60 * 10 // 10 minutes
+
 export async function GET() {
   try {
+    // Check Cache first
+    if (cache.data && (Date.now() - cache.timestamp < CACHE_TTL)) {
+      return NextResponse.json(cache.data)
+    }
+
     // Get active student count only
     const { count: studentCount, error: studentError } = await supabaseAdmin
       .from('students')
@@ -38,10 +50,15 @@ export async function GET() {
       console.error('Error fetching teacher count:', teacherError)
     }
 
-    return NextResponse.json({
+    const responseData = {
       studentCount: studentCount || 0,
       teacherCount: teacherCount || 0
-    })
+    }
+
+    cache.data = responseData
+    cache.timestamp = Date.now()
+
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('Error in stats API:', error)
     return NextResponse.json(

@@ -33,6 +33,36 @@ interface Student {
   gender: string
 }
 
+// Small optimization component to prevent the massive grid from re-rendering on every keystroke
+function ScoreInput({ 
+  initialValue, 
+  max, 
+  onChange 
+}: { 
+  initialValue: string | number; 
+  max: number; 
+  onChange: (val: string) => void;
+}) {
+  const [val, setVal] = useState(initialValue);
+  
+  useEffect(() => {
+    setVal(initialValue);
+  }, [initialValue]);
+
+  return (
+    <input
+      type="number"
+      min="0"
+      max={max}
+      step="0.1"
+      value={val}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={() => onChange(val.toString())}
+      className="w-14 md:w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-xs md:text-sm dark:bg-gray-700 dark:text-white"
+    />
+  );
+}
+
 export default function ExamScoresPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
@@ -1953,25 +1983,17 @@ export default function ExamScoresPage() {
                                     return (
                                         <Fragment key={subjectId}>
                                             <td key={`${subjectId}-class`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="40"
-                                                    step="0.1"
-                                                    value={scores.class_score}
-                                                    onChange={(e) => handleGridScoreChange(student.id, subjectId, 'class_score', e.target.value)}
-                                                    className="w-14 md:w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-xs md:text-sm dark:bg-gray-700 dark:text-white"
+                                                <ScoreInput
+                                                    initialValue={scores.class_score}
+                                                    max={40}
+                                                    onChange={(val) => handleGridScoreChange(student.id, subjectId, 'class_score', val)}
                                                 />
                                             </td>
                                             <td key={`${subjectId}-exam`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    step="0.1"
-                                                    value={scores.exam_score}
-                                                    onChange={(e) => handleGridScoreChange(student.id, subjectId, 'exam_score', e.target.value)}
-                                                    className="w-14 md:w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-xs md:text-sm dark:bg-gray-700 dark:text-white"
+                                                <ScoreInput
+                                                    initialValue={scores.exam_score}
+                                                    max={100}
+                                                    onChange={(val) => handleGridScoreChange(student.id, subjectId, 'exam_score', val)}
                                                 />
                                             </td>
                                             <td key={`${subjectId}-total`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[60px]">
