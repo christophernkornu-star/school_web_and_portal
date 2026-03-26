@@ -99,6 +99,12 @@ export async function signInWithUsername(username: string, password: string) {
     })
   }
 
+  // Reset PWA install prompt so it shows again for the new session
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.removeItem('pwaPromptShown')
+    window.localStorage.removeItem('pwaPromptShown') // cleanup legacy
+  }
+
   return { data, error: null, role }
 }
 
@@ -108,12 +114,26 @@ export async function signIn(email: string, password: string) {
     email,
     password,
   })
+
+  // Reset PWA install prompt on successful login
+  if (!error && typeof window !== 'undefined') {
+    window.sessionStorage.removeItem('pwaPromptShown')
+    window.localStorage.removeItem('pwaPromptShown') // cleanup legacy
+  }
+
   return { data, error }
 }
 
 export async function signOut() {
   const browserSupabase = getBrowserSupabase()
   const { error } = await browserSupabase.auth.signOut()
+
+  // Reset PWA install prompt on logout so it prompts the next user or next session
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.removeItem('pwaPromptShown')
+    window.localStorage.removeItem('pwaPromptShown') // cleanup legacy
+  }
+
   return { error }
 }
 

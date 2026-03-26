@@ -18,8 +18,8 @@ export default function PWAInstallPrompt() {
       setIsStandalone(true)
     }
 
-    // Check storage - using localStorage so it persists effectively across reloads
-    const hasSeenPrompt = typeof window !== 'undefined' ? localStorage.getItem('pwaPromptShown') : null
+    // Check storage - using sessionStorage so it resets per session or explicit logout/login
+    const hasSeenPrompt = typeof window !== 'undefined' ? sessionStorage.getItem('pwaPromptShown') : null
     
     // Detect iOS
     const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent.toLowerCase() : ''
@@ -33,7 +33,7 @@ export default function PWAInstallPrompt() {
       setDeferredPrompt(e)
 
       // Only show if not already installed and not dismissed previously
-      const currentlySeen = localStorage.getItem('pwaPromptShown')
+      const currentlySeen = sessionStorage.getItem('pwaPromptShown')
       if (!window.matchMedia('(display-mode: standalone)').matches && !currentlySeen) {
         setShowPrompt(true)
       }
@@ -53,7 +53,7 @@ export default function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false)
-    localStorage.setItem('pwaPromptShown', 'true')
+    sessionStorage.setItem('pwaPromptShown', 'true')
   }
 
   const handleInstallClick = async () => {
@@ -65,7 +65,7 @@ export default function PWAInstallPrompt() {
     if (outcome === 'accepted') {
       setDeferredPrompt(null)
       setShowPrompt(false)
-      localStorage.setItem('pwaPromptShown', 'true')
+      sessionStorage.setItem('pwaPromptShown', 'true')
     }
   }
 
