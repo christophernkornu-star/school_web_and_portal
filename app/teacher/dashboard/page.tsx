@@ -20,7 +20,8 @@ import {
   Clock,
   Bell,
   TrendingUp,
-  LayoutDashboard
+  LayoutDashboard,
+  Activity
 } from 'lucide-react'
 import { useTeacher } from '@/components/providers/TeacherContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -31,6 +32,7 @@ import { Tooltip } from '@/components/ui/tooltip-custom'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { StudentStatsModal } from '@/components/admin/StudentStatsModal'
 import { TeacherClassesModal } from '@/components/teacher/TeacherClassesModal'
+import { differenceInDays } from 'date-fns'
 
 export default function TeacherDashboard() {
   const router = useRouter() // Re-added router
@@ -44,7 +46,12 @@ export default function TeacherDashboard() {
   const [announcementsLoading, setAnnouncementsLoading] = useState(true)
   const [isStatsOpen, setIsStatsOpen] = useState(false)
   const [isClassesModalOpen, setIsClassesModalOpen] = useState(false)
-  
+
+  // System alert states
+  const [termProgress, setTermProgress] = useState(0)
+  const [alertThreshold, setAlertThreshold] = useState(90)
+  const [isClassTeacher, setIsClassTeacher] = useState(false)
+
   // Performance Chart Data State
   const [performanceData, setPerformanceData] = useState<any[]>([])
   const [performanceLoading, setPerformanceLoading] = useState(true)
@@ -239,6 +246,37 @@ export default function TeacherDashboard() {
   }, [])
 
   useEffect(() => {
+    async function fetchTermProgress() {
+      const supabase = getSupabaseBrowserClient()
+      const [termRes, thresholdRes] = await Promise.all([
+        supabase.from('academic_terms').select('*').eq('is_current', true).single(),
+        supabase.from('system_settings').select('setting_value').eq('setting_key', 'progress_alert_threshold').maybeSingle()
+      ])
+
+      if (termRes.data) {
+        const start = new Date(termRes.data.start_date)
+        const end = new Date(termRes.data.end_date)
+        const now = new Date()
+        const totalDays = differenceInDays(end, start)
+        const daysPassed = differenceInDays(now, start)
+        const progress = Math.min(Math.max(Math.round((daysPassed / totalDays) * 100), 0), 100)
+        setTermProgress(progress)
+      }
+      
+      if (thresholdRes.data?.setting_value) {
+        setAlertThreshold(Number(thresholdRes.data.setting_value))
+      }
+    }
+    fetchTermProgress()
+  }, [])
+
+  useEffect(() => {
+    if (dashboardData?.assignments) {
+      setIsClassTeacher(dashboardData.assignments.some(a => a.is_class_teacher))
+    }
+  }, [dashboardData])
+
+  useEffect(() => {
     if (contextLoading) return
 
     if (!user) {
@@ -323,7 +361,7 @@ export default function TeacherDashboard() {
   return (
     <div className="bg-gray-50/50 dark:bg-gray-900 min-h-screen pb-10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      
+
         {/* Hero Section */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-xl mt-6">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>

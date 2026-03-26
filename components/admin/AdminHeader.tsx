@@ -15,8 +15,8 @@ import {
   FileText,
   AlertCircle
 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { differenceInDays } from 'date-fns'
 
 interface AdminHeaderProps {
   setIsOpen: (open: boolean) => void
@@ -26,41 +26,73 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
   const { profile, user } = useAdmin()
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  
+
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [pendingAdmissions, setPendingAdmissions] = useState(0)
   const [unreadComplaints, setUnreadComplaints] = useState(0)
+  const [termAlert, setTermAlert] = useState<{ progress: number, active: boolean, threshold: number, id?: string }>({ progress: 0, active: false, threshold: 90 })
+  const [dismissedAtt, setDismissedAtt] = useState(false)
+  const [dismissedRem, setDismissedRem] = useState(false)
   const notificationRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function fetchNotifications() {
       // Fetch Pending Admissions
       const { count: admissionCount } = await supabase
-        .from('students') // Assuming keeping track of "pending" via status or separate table. Since schema earlier showed students table, and user mentioned "admission applications" in dashboard...
-        // Actually earlier dashboard said "admission_applications table not implemented yet", but let's assume we look for students with status 'pending' or similar if that exists, OR just mock it if the table doesn't exist yet properly.
-        // Wait, dashboard page checks students with stats.pendingAdmissions = 0.
-        // I'll check for students with status 'pending' just in case, or just set to 0 if we can't determine.
-        // However, user specifically asked: "if new admission... summary should be displayed".
-        // Use a placeholder query for now or check if a table exists.
-        // I will check `students` table where status = 'pending'.
+        .from('students')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending')
 
       if (admissionCount !== null) setPendingAdmissions(admissionCount)
 
-      // Fetch Unread Complaints (if exists)
-      // I saw "complaints" in sidebar.
+      // Fetch Unread Complaints
       const { count: complaintCount } = await supabase
-        .from('complaints') // Assuming table exists based on sidebar link
+        .from('complaints')
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending')
-      
+
       if (complaintCount !== null) setUnreadComplaints(complaintCount)
+
+      // Check Term Progress Alert
+      const [termRes, thresholdRes] = await Promise.all([
+        supabase.from('academic_terms').select('*').eq('is_current', true).maybeSingle(),
+        supabase.from('system_settings').select('setting_value').eq('setting_key', 'progress_alert_threshold').maybeSingle()
+      ])
+
+      if (termRes.data) {
+        const start = new Date(termRes.data.start_date)
+        const end = new Date(termRes.data.end_date)
+        const now = new Date()
+        const totalDays = differenceInDays(end, start)
+        const daysPassed = differenceInDays(now, start)
+        const progress = Math.min(Math.max(Math.round((daysPassed / totalDays) * 100), 0), 100)
+        const threshold = thresholdRes.data?.setting_value ? Number(thresholdRes.data.setting_value) : 90
+        
+        setTermAlert({ progress, active: progress >= threshold, threshold, id: termRes.data.id })
+        
+        if (typeof window !== 'undefined') {
+          setDismissedAtt(sessionStorage.getItem(`dismiss_admin_att_${termRes.data.id}`) === 'true')
+          setDismissedRem(sessionStorage.getItem(`dismiss_admin_rem_${termRes.data.id}`) === 'true')
+        }
+
+        if (progress >= threshold && 'Notification' in window && Notification.permission === 'granted') {
+           // Basic duplicate prevention string
+           const storedKey = `admin_term_alert_${termRes.data.id}`
+           if (!sessionStorage.getItem(storedKey)) {
+             new Notification('Action Required: Term Wrapping Up', {
+               body: `The term is ${progress}% complete. Please enter total attendances and student remarks for the term.`,
+               icon: '/school_crest.png'
+             })
+             sessionStorage.setItem(storedKey, 'notified')
+           }
+        } else if (progress >= threshold && 'Notification' in window && Notification.permission !== 'denied') {
+          Notification.requestPermission()
+        }
+      }
     }
 
     if (user) fetchNotifications()
 
-    // Value polling or realtime could start here
     const interval = setInterval(fetchNotifications, 60000)
     return () => clearInterval(interval)
   }, [user, supabase])
@@ -83,10 +115,26 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
     router.push('/login?portal=admin')
   }
 
-  const totalNotifications = pendingAdmissions + unreadComplaints
+  const handleAttClick = () => {
+    if (termAlert.id) {
+      sessionStorage.setItem(`dismiss_admin_att_${termAlert.id}`, 'true')
+      setDismissedAtt(true)
+    }
+    setNotificationsOpen(false)
+  }
+
+  const handleRemClick = () => {
+    if (termAlert.id) {
+      sessionStorage.setItem(`dismiss_admin_rem_${termAlert.id}`, 'true')
+      setDismissedRem(true)
+    }
+    setNotificationsOpen(false)
+  }
+
+  const totalNotifications = pendingAdmissions + unreadComplaints + (termAlert.active && !dismissedAtt ? 1 : 0) + (termAlert.active && !dismissedRem ? 1 : 0)
 
   return (
-    <header className="sticky top-0 z-30 h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md">
+    <header className="sticky top-0 z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         {/* Left: Mobile Toggle & Brand/Breadcrumb */}
         <div className="flex items-center gap-4">
@@ -172,8 +220,8 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
                         )}
 
                         {unreadComplaints > 0 && (
-                          <Link 
-                            href="/admin/complaints" 
+                          <Link
+                            href="/admin/complaints"
                             onClick={() => setNotificationsOpen(false)}
                             className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                           >
@@ -184,6 +232,42 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
                                 <p className="text-sm font-bold text-gray-900 dark:text-gray-100">New Complaints</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-400">
                                    <span className="font-semibold text-red-700">{unreadComplaints}</span> issues reported.
+                                </p>
+                             </div>
+                          </Link>
+                        )}
+                        
+                        {termAlert.active && !dismissedAtt && (
+                          <Link
+                            href="/admin/settings/attendance"
+                            onClick={handleAttClick}
+                            className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          >
+                             <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full text-amber-700 dark:text-amber-300">
+                                <AlertCircle className="h-4 w-4" />
+                             </div>
+                             <div>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">End of Term Action Required</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  Term is <span className="font-semibold text-amber-700">{termAlert.progress}%</span> complete. Please enter total attendances.
+                                </p>
+                             </div>
+                          </Link>
+                        )}
+
+                        {termAlert.active && !dismissedRem && (
+                          <Link
+                            href="/admin/reports"
+                            onClick={handleRemClick}
+                            className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                          >
+                             <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full text-amber-700 dark:text-amber-300">
+                                <AlertCircle className="h-4 w-4" />
+                             </div>
+                             <div>
+                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">End of Term Action Required</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                  Term is <span className="font-semibold text-amber-700">{termAlert.progress}%</span> complete. Please enter student remarks.
                                 </p>
                              </div>
                           </Link>
@@ -226,3 +310,4 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
     </header>
   )
 }
+

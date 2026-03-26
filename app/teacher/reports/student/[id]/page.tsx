@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams, useSearchParams } from 'next/navigation'
@@ -15,6 +15,7 @@ import { useReportCardData } from '@/lib/reports/hooks'
 // The issue might be a caching one. I'll force a refresh by re-saving.
 import { generateReportHTML } from '@/lib/reports/generator'
 import { ReportCardTheme, ReportRemarks, Grade } from '@/lib/reports/types'
+import { isClassTeacher } from '@/lib/teacher-permissions'
 
 
 export default function TeacherStudentReportPage() {
@@ -35,6 +36,7 @@ export default function TeacherStudentReportPage() {
   })
   const [theme, setTheme] = useState<ReportCardTheme>({})
   const [teacher, setTeacher] = useState<any>(null)
+  const [isTeacherClassTeacher, setIsTeacherClassTeacher] = useState(false)
   
   // Auth Check
   useEffect(() => {
@@ -64,6 +66,17 @@ export default function TeacherStudentReportPage() {
       scoreSettings,
       refresh 
   } = useReportCardData(studentId, termId || undefined)
+
+  // Check if current teacher is the class teacher
+  useEffect(() => {
+    const checkClassTeacher = async () => {
+      if (teacher?.profile_id && student?.class_id) {
+        const isClass = await isClassTeacher(teacher.profile_id, student.class_id)
+        setIsTeacherClassTeacher(isClass)
+      }
+    }
+    checkClassTeacher()
+  }, [teacher, student])
 
   // Sync remarks when report data loads
   useEffect(() => {
@@ -178,7 +191,7 @@ export default function TeacherStudentReportPage() {
     try {
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
-        toast('Please allow popups to download report card', { icon: 'ℹ️' })
+        toast('Please allow popups to download report card', { icon: '??' })
         return
       }
 
@@ -302,7 +315,6 @@ export default function TeacherStudentReportPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {reportData.grades.map((grade: Grade, idx: number) => (
                   <tr key={idx} className="hover:bg-gray-50">
-                    {/* ... rest of the row ... */}
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{grade.subject_name}</td>
                     <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.class_score != null ? Number(grade.class_score).toFixed(1) : '-'}</td>
                     <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : '-'}</td>
@@ -316,80 +328,95 @@ export default function TeacherStudentReportPage() {
           </div>
         </div>
 
-        {/* Remarks Editor */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
+      {/* Remarks Editor */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+          <div className="flex items-center gap-4">
             <h3 className="text-lg font-bold text-gray-800">Edit Remarks</h3>
+            {!isTeacherClassTeacher && (
+              <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-md font-medium">
+                Read Only (Class Teacher Only)
+              </span>
+            )}
+          </div>
+          {isTeacherClassTeacher && (
             <div className="flex gap-2">
-                <button
+              <button
                 onClick={applyAutoRemarks}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transaction-colors"
-                >
+              >
                 <Wand2 className="w-3.5 h-3.5" />
                 Auto Generate
-                </button>
-                <button
+              </button>
+              <button
                 onClick={handleSaveRemarks}
                 className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transaction-colors"
-                >
+              >
                 <Save className="w-3.5 h-3.5" />
                 Save Changes
-                </button>
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-6">
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Attitude</label>
+              <textarea 
+                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                disabled={!isTeacherClassTeacher}
+                rows={3}
+                value={remarks.attitude}
+                onChange={(e) => handleRemarkChange('attitude', e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Interest</label>
+              <textarea 
+                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                disabled={!isTeacherClassTeacher}
+                rows={3}
+                value={remarks.interest}
+                onChange={(e) => handleRemarkChange('interest', e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Conduct</label>
+              <textarea 
+                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                disabled={!isTeacherClassTeacher}
+                rows={3}
+                value={remarks.conduct}
+                onChange={(e) => handleRemarkChange('conduct', e.target.value)}
+              />
             </div>
           </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Attitude</label>
-                    <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        rows={3}
-                        value={remarks.attitude}
-                        onChange={(e) => handleRemarkChange('attitude', e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Interest</label>
-                    <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        rows={3}
-                        value={remarks.interest}
-                        onChange={(e) => handleRemarkChange('interest', e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Conduct</label>
-                    <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        rows={3}
-                        value={remarks.conduct}
-                        onChange={(e) => handleRemarkChange('conduct', e.target.value)}
-                    />
-                </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Class Teacher's Remark</label>
+              <textarea 
+                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                disabled={!isTeacherClassTeacher}
+                rows={4}
+                value={remarks.classTeacher}
+                onChange={(e) => handleRemarkChange('classTeacher', e.target.value)}
+              />
             </div>
-            <div className="space-y-4">
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Class Teacher's Remark</label>
-                    <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        rows={4}
-                        value={remarks.classTeacher}
-                        onChange={(e) => handleRemarkChange('classTeacher', e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Head Teacher's Remark</label>
-                    <textarea 
-                        className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
-                        rows={4}
-                        value={remarks.headTeacher}
-                        onChange={(e) => handleRemarkChange('headTeacher', e.target.value)}
-                    />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Head Teacher's Remark</label>
+              <textarea 
+                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
+                disabled={!isTeacherClassTeacher}
+                rows={4}
+                value={remarks.headTeacher}
+                onChange={(e) => handleRemarkChange('headTeacher', e.target.value)}
+              />
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

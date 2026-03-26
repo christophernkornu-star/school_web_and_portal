@@ -31,6 +31,7 @@ export default function GeneralSettings() {
     allow_cumulative_download: false,
     class_score_percentage: 40,
     exam_score_percentage: 60,
+    progress_alert_threshold: 90,
   })
 
   useEffect(() => {
@@ -86,6 +87,7 @@ export default function GeneralSettings() {
           allow_cumulative_download: systemSettingsMap.get('allow_cumulative_download') === 'true',
           class_score_percentage: Number(systemSettingsMap.get('class_score_percentage')) || 40,
           exam_score_percentage: Number(systemSettingsMap.get('exam_score_percentage')) || 60,
+          progress_alert_threshold: Number(systemSettingsMap.get('progress_alert_threshold')) || 90,
         })
       }
       
@@ -249,14 +251,22 @@ export default function GeneralSettings() {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'setting_key' })
 
-      if (examScoreError) throw new Error('Failed to update exam score percentage: ' + examScoreError.message)
+        if (examScoreError) throw new Error('Failed to update exam score percentage: ' + examScoreError.message)
 
-      // 4. Removed erroneous bulk update of academic years
-      // Previous code force-updated all older terms to the current academic year, causing unique constraint violations.
-      // History should be preserved.
+        // 6. Update progress_alert_threshold
+        const { error: thresholdError } = await supabase
+          .from('system_settings')
+          .upsert({
+            setting_key: 'progress_alert_threshold',
+            setting_value: String(formData.progress_alert_threshold),
+            setting_type: 'number',
+            description: 'Term progress percentage to trigger alerts',
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'setting_key' })
+
+        if (thresholdError) throw new Error('Failed to update progress alert threshold: ' + thresholdError.message)
 
       toast.success('General settings updated successfully!')
-      router.push('/admin/settings')
     } catch (error: any) {
       console.error('Error updating settings:', error)
       toast.error(error.message || 'Failed to update settings. Please try again.')
@@ -571,6 +581,26 @@ export default function GeneralSettings() {
                   className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
                 />
               </label>
+
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <p className="font-medium text-gray-800">Term Progress Alert Threshold (%)</p>
+                    <p className="text-sm text-gray-600">Notify admins and teachers when term progress reaches this percentage</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={formData.progress_alert_threshold}
+                      onChange={(e) => setFormData({...formData, progress_alert_threshold: parseInt(e.target.value) || 90})}
+                      className="w-20 px-3 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-methodist-blue"
+                    />
+                    <span className="text-gray-500 font-medium">%</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

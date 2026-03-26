@@ -10,6 +10,8 @@ const withPWA = require("@ducanh2912/next-pwa").default({
     skipWaiting: true, // Force new SW to activate immediately
     clientsClaim: true, // Take control of clients immediately
     exclude: [
+      /\.html$/,
+      /_next\/static\/chunks\/pages\/.*\.js$/,
       /middleware-manifest\.json$/,
       /_next\/static\/.*(?<!\.js)$/,
       /build-manifest\.json$/,
@@ -22,7 +24,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         options: {
           cacheName: "next-static-js-assets-v3", // Bump version
           expiration: {
-            maxEntries: 200,
+            maxEntries: 40,
             maxAgeSeconds: 24 * 60 * 60,
           },
           networkTimeoutSeconds: 10,
@@ -35,8 +37,8 @@ const withPWA = require("@ducanh2912/next-pwa").default({
         options: {
           cacheName: "supabase-api-cache-v3", // Bump version
           expiration: {
-            maxEntries: 200,
-            maxAgeSeconds: 60 * 5, 
+            maxEntries: 15,
+            maxAgeSeconds: 60 * 5,
           },
           networkTimeoutSeconds: 5, 
         },
@@ -155,18 +157,6 @@ const withPWA = require("@ducanh2912/next-pwa").default({
           cacheName: "apis-v3",
           expiration: {
             maxEntries: 16,
-            maxAgeSeconds: 24 * 60 * 60, 
-          },
-          networkTimeoutSeconds: 10,
-        },
-      },
-      {
-        urlPattern: /.*/i,
-        handler: "NetworkFirst",
-        options: {
-          cacheName: "others-v3",
-          expiration: {
-            maxEntries: 32,
             maxAgeSeconds: 24 * 60 * 60, 
           },
           networkTimeoutSeconds: 10,

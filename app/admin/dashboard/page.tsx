@@ -35,7 +35,8 @@ export default function AdminDashboard() {
   const [recentActivities, setRecentActivities] = useState<any[]>([])
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
   const [currentTerm, setCurrentTerm] = useState<any>(null)
-  
+  const [alertThreshold, setAlertThreshold] = useState<number>(90)
+
   const [loading, setLoading] = useState(true)
   const [showStatsModal, setShowStatsModal] = useState(false)
   const [showTeacherModal, setShowTeacherModal] = useState(false)
@@ -49,7 +50,7 @@ export default function AdminDashboard() {
     }
 
     async function loadStats() {
-      const [studentsRes, teachersRes, classesRes, eventsRes, termsRes, recentStudentsRes] = await Promise.all([
+      const [studentsRes, teachersRes, classesRes, eventsRes, termsRes, recentStudentsRes, thresholdRes] = await Promise.all([
         supabase.from('students').select('id', { count: 'exact', head: true }),
         supabase.from('teachers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
         supabase.from('classes').select('id', { count: 'exact', head: true }),
@@ -65,7 +66,11 @@ export default function AdminDashboard() {
         supabase.from('students')
           .select('id, first_name, last_name, created_at, classes:class_id(name)')
           .order('created_at', { ascending: false })
-          .limit(5)
+          .limit(5),
+        supabase.from('system_settings')
+          .select('setting_value')
+          .eq('setting_key', 'progress_alert_threshold')
+          .maybeSingle()
       ])
 
       setStats({
@@ -73,13 +78,13 @@ export default function AdminDashboard() {
         totalTeachers: teachersRes.count || 0,
         totalClasses: classesRes.count || 0,
         activeEnrollments: (studentsRes.count || 0),
-        pendingAdmissions: 0, 
+        pendingAdmissions: 0,
       })
-      
+
       if (eventsRes.data) setUpcomingEvents(eventsRes.data)
       if (termsRes.data) setCurrentTerm(termsRes.data)
       if (recentStudentsRes.data) setRecentActivities(recentStudentsRes.data)
-      
+      if (thresholdRes.data?.setting_value) setAlertThreshold(Number(thresholdRes.data.setting_value))
       setLoading(false)
     }
 
@@ -104,8 +109,8 @@ export default function AdminDashboard() {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        
-        <PageHeader 
+
+        <PageHeader
           title="Dashboard Overview" 
           description="Welcome back, here's what's happening at your school today."
         >
