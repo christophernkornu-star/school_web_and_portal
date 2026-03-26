@@ -273,13 +273,28 @@ export default function EnterScores() {
 
         if (error) throw error
 
+        let loadedScores: Record<string, number> = {}
         if (data) {
-          const loadedScores: Record<string, number> = {}
           data.forEach((item: any) => {
             loadedScores[item.student_id] = item.score
           })
-          setScores(loadedScores)
         }
+
+        // Check for unsaved draft
+        try {
+          const draftKey = `draft_scores_${selectedAssessment}`
+          const draft = sessionStorage.getItem(draftKey)
+          if (draft) {
+            const parsedDraft = JSON.parse(draft)
+            if (Object.keys(parsedDraft).length > 0) {
+              loadedScores = { ...loadedScores, ...parsedDraft }
+              toast('Recovered unsaved draft. Please save when done.', { icon: '📝' })
+              setTimeout(() => setIsDirty(true), 500)
+            }
+          }
+        } catch(e) {}
+
+        setScores(loadedScores)
       } catch (error) {
         console.error('Error loading scores:', error)
         toast.error('Failed to load existing scores')
@@ -290,6 +305,28 @@ export default function EnterScores() {
 
     loadExistingScores()
   }, [selectedAssessment])
+
+  // Draft Recovery & Auto-save effect
+  useEffect(() => {
+    if (!selectedAssessment || !isDirty) return
+    const timer = setTimeout(() => {
+      const draftKey = `draft_scores_${selectedAssessment}`
+      sessionStorage.setItem(draftKey, JSON.stringify(scores))
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [scores, selectedAssessment, isDirty])
+
+  // Handle beforeunload warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [isDirty])
 
   const loadStudents = async () => {
     const { data, error } = await supabase

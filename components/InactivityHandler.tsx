@@ -11,7 +11,14 @@ export default function InactivityHandler() {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    let lastActivity = Date.now()
+
     const resetTimer = () => {
+      const now = Date.now()
+      // Throttle: Only reset the timer if it's been more than 2 seconds since the last reset, to prevent thrashing
+      if (now - lastActivity < 2000 && timerRef.current) return
+      
+      lastActivity = now
       if (timerRef.current) {
         clearTimeout(timerRef.current)
       }

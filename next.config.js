@@ -2,7 +2,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   dest: "public",
   cacheOnFrontEndNav: false,
   aggressiveFrontEndNavCaching: false, // Changed to false to prevent blue screen/stale shell
-  reloadOnOnline: true,
+  reloadOnOnline: false, // Changed to false to prevent wiping forms on network stutter
   swcMinify: true,
   disable: process.env.NODE_ENV === "development",
   workboxOptions: {
