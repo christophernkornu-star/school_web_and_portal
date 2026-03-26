@@ -26,9 +26,18 @@ interface Subject {
   code: string
 }
 
+const scoreSubHeaders = ['CS', 'ES', 'TOT', 'POS']
+
+interface SubjectScore {
+  classScore: number | string
+  examScore: number | string
+  total: number | string
+  position: number | string
+}
+
 interface ProcessedStudent {
   student: Student
-  scores: Record<string, { total: number | string }>
+  scores: Record<string, SubjectScore>
   grandTotal: number
   average: number
   position: number
@@ -148,67 +157,126 @@ export default function ClassReportPage() {
         return
       }
 
-      // 3. Get Scores first to determine relevant subjects
+      // 3. Get All Scores for this class and term (Moved up to help discover active subjects)
       const { data: scoresData } = await supabase
         .from('scores')
-        .select('student_id, subject_id, total')
+        .select('student_id, subject_id, class_score, exam_score, total')
         .in('student_id', studentsData.map((s: any) => s.id))
         .eq('term_id', selectedTerm)
 
-      if (!scoresData || scoresData.length === 0) {
-        toast.error('No scores found for this class and term.')
-        setGenerating(false)
-        return
-      }
-
-      // 4. Get Subjects that have scores
-      const subjectIds = Array.from(new Set(scoresData.map((s: any) => s.subject_id)))
+      // 4. Assemble ALL Subjects assigned to this class
+      const subjectsMap = new Map<string, Subject>()
       
-      const { data: subjectsData } = await supabase
-        .from('subjects')
-        .select('id, name, code')
-        .in('id', subjectIds)
-        .order('name')
+      // 4a. Get explicitly assigned subjects from class_subjects
+      const { data: classSubjectsData } = await supabase
+        .from('class_subjects')
+        .select('subject_id, subjects(id, name, code)')
+        .eq('class_id', selectedClass)
 
-      if (!subjectsData || subjectsData.length === 0) {
-        toast.error('No subjects found.')
+      if (classSubjectsData) {
+        classSubjectsData.forEach((cs: any) => {
+          const subject = cs.subjects as Subject | null
+          if (subject?.id) subjectsMap.set(subject.id, subject)
+        })
+      }
+
+      // 4b. Get subjects matching the class level (as fallback for primary/KG classes)
+      const classNameLower = className.toLowerCase()
+      let category = ''
+
+      if (classNameLower.includes('kg')) {
+        category = 'kindergarten'
+      } else if (classNameLower.includes('basic 1') || classNameLower.includes('basic 2') || classNameLower.includes('basic 3') ||
+                 classNameLower.includes('primary 1') || classNameLower.includes('primary 2') || classNameLower.includes('primary 3')) {
+        category = 'lower_primary'
+      } else if (classNameLower.includes('basic 4') || classNameLower.includes('basic 5') || classNameLower.includes('basic 6') ||
+                 classNameLower.includes('primary 4') || classNameLower.includes('primary 5') || classNameLower.includes('primary 6')) {
+        category = 'upper_primary'
+      } else if (classNameLower.includes('basic 7') || classNameLower.includes('basic 8') || classNameLower.includes('basic 9') ||
+                 classNameLower.includes('jhs 1') || classNameLower.includes('jhs 2') || classNameLower.includes('jhs 3')) {
+        category = 'jhs'
+      }
+
+      const { data: allSubjectsData } = await supabase
+        .from('subjects')
+        .select('id, name, code, level')
+        
+      if (allSubjectsData) {
+        // Find existing score subject IDs to always include them
+        const subjectsWithScores = new Set(scoresData?.map((s: any) => s.subject_id) || [])
+        
+        allSubjectsData.forEach((s: any) => {
+          // Include if the subject is part of this class's level, OR if it has a score
+          if (s.level === category || subjectsWithScores.has(s.id)) {
+            if (!subjectsMap.has(s.id)) {
+              subjectsMap.set(s.id, { id: s.id, name: s.name, code: s.code })
+            }
+          }
+        })
+      }
+
+      const subjects = Array.from(subjectsMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+
+      if (subjects.length === 0) {
+        toast.error('No subjects found for this class.')
         setGenerating(false)
         return
       }
 
-      // 5. Process Data
+      // 5. Process Data with subject-specific scores and positions
       const processedStudents: ProcessedStudent[] = studentsData.map((student: any) => {
-        const studentScores: Record<string, any> = {}
+        const studentScores: Record<string, SubjectScore> = {}
         let totalScoreSum = 0
-        let subjectCount = 0
+        let gradedSubjectCount = 0
 
-        subjectsData.forEach((subject: any) => {
+        subjects.forEach((subject: any) => {
           const score = scoresData?.find((s: any) => s.student_id === student.id && s.subject_id === subject.id)
-          if (score) {
+          if (score && score.total !== null) {
             studentScores[subject.id] = {
-              total: score.total
+              classScore: score.class_score || '-',
+              examScore: score.exam_score || '-',
+              total: score.total,
+              position: 0 // Will be calculated later
             }
-            if (score.total !== null && !isNaN(score.total)) {
+            if (!isNaN(score.total)) {
               totalScoreSum += score.total
-              subjectCount++
+              gradedSubjectCount++
             }
           } else {
-            studentScores[subject.id] = { total: '-' }
+            studentScores[subject.id] = {
+              classScore: '-',
+              examScore: '-',
+              total: '-',
+              position: '-'
+            }
           }
         })
 
-        const average = subjectsData.length > 0 ? totalScoreSum / subjectsData.length : 0
+        const average = gradedSubjectCount > 0 ? totalScoreSum / gradedSubjectCount : 0
 
         return {
           student,
           scores: studentScores,
           grandTotal: parseFloat(totalScoreSum.toFixed(1)),
           average: parseFloat(average.toFixed(2)),
-          position: 0
+          position: 0 // Overall position
         }
       })
 
-      // 6. Calculate Positions
+      // 6. Calculate subject-specific positions and overall positions
+      subjects.forEach((subject: any) => {
+        // Get all students with grades for this subject, sorted by total
+        const studentsWithGrades = processedStudents
+          .filter(s => typeof s.scores[subject.id].total === 'number')
+          .sort((a, b) => (b.scores[subject.id].total as number) - (a.scores[subject.id].total as number))
+
+        // Assign positions
+        studentsWithGrades.forEach((student, index) => {
+          student.scores[subject.id].position = index + 1
+        })
+      })
+
+      // 7. Calculate Overall Positions
       processedStudents.sort((a, b) => b.average - a.average)
       processedStudents.forEach((student, index) => {
         student.position = index + 1
@@ -216,7 +284,7 @@ export default function ClassReportPage() {
       
       setSheetData({
         students: processedStudents,
-        subjects: subjectsData,
+        subjects,
         className,
         termName
       })
@@ -327,7 +395,7 @@ export default function ClassReportPage() {
       {/* Print Section: The Sheet */}
       {sheetData && (
         <div className="bg-white dark:bg-gray-800 shadow-lg print:shadow-none mx-auto overflow-x-auto print:overflow-visible transition-colors duration-200">
-          <div className="assessment-sheet p-4 w-full max-w-[210mm] mx-auto relative text-blue-900 dark:text-blue-100">
+          <div className="assessment-sheet p-4 w-full print:max-w-none print:w-full mx-auto relative text-blue-900 dark:text-blue-100">
             
             {/* Watermark */}
             <div className="watermark fixed inset-0 flex items-center justify-center pointer-events-none z-0 opacity-[0.05] dark:opacity-[0.1]">
@@ -342,54 +410,87 @@ export default function ClassReportPage() {
 
             <div className="relative z-10">
               {/* Header */}
-              <div className="text-center mb-4 border-b-2 border-blue-900 dark:border-blue-400 pb-2">
-                <h1 className="text-xl font-bold uppercase font-serif mb-1">BIRIWA METHODIST 'C' BASIC SCHOOL</h1>
-                <h2 className="text-lg font-bold uppercase mb-1">END OF {sheetData.termName} RESULTS</h2>
-                <h3 className="text-base font-bold uppercase">{sheetData.className}</h3>
+              <div className="text-center mb-3 border-b-2 border-blue-900 dark:border-blue-400 pb-2">
+                <h1 className="text-lg font-bold uppercase font-serif mb-1">BIRIWA METHODIST 'C' BASIC SCHOOL</h1>
+                <h2 className="text-sm font-bold uppercase mb-1">END OF {sheetData.termName} RESULTS</h2>
+                <h3 className="text-xs font-bold uppercase">{sheetData.className}</h3>
               </div>
 
               {/* Table */}
-              <table className="w-full border-collapse border border-blue-900 dark:border-blue-400 text-xs">
-                <thead>
-                  <tr className="bg-blue-50 dark:bg-blue-900/30">
-                    <th className="border border-blue-900 dark:border-blue-400 p-1 w-8 text-center">SN</th>
-                    <th className="border border-blue-900 dark:border-blue-400 p-1 text-left w-auto whitespace-nowrap">STUDENT NAME</th>
-                    {sheetData.subjects.map(subject => (
-                      <th key={subject.id} className="border border-blue-900 dark:border-blue-400 p-1 text-center w-10">
-                        {getShortSubjectName(subject.name)}
-                      </th>
-                    ))}
-                    <th className="border border-blue-900 dark:border-blue-400 p-1 w-12 text-center bg-blue-100 dark:bg-blue-900/50">TOT</th>
-                    <th className="border border-blue-900 dark:border-blue-400 p-1 w-10 text-center">POS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sheetData.students.map((student, index) => (
-                    <tr key={student.student.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
-                      <td className="border border-blue-900 dark:border-blue-400 p-1 text-center">{index + 1}</td>
-                      <td className="border border-blue-900 dark:border-blue-400 p-1 font-medium whitespace-nowrap">
-                        {student.student.last_name} {student.student.middle_name ? student.student.middle_name + ' ' : ''}{student.student.first_name}
-                      </td>
-                      {sheetData.subjects.map(subject => {
-                        const score = student.scores[subject.id]
-                        return (
-                          <td key={`${student.student.id}-${subject.id}`} className="border border-blue-900 dark:border-blue-400 p-1 text-center">
-                            {score.total}
-                          </td>
-                        )
-                      })}
-                      <td className="border border-blue-900 dark:border-blue-400 p-1 text-center font-bold bg-blue-50 dark:bg-blue-900/30">{student.grandTotal}</td>
-                      <td className="border border-blue-900 dark:border-blue-400 p-1 text-center font-bold">{student.position}</td>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-blue-900 dark:border-blue-400 text-[10px]">
+                  <thead>
+                    {/* Subject Names Header */}
+                    <tr className="bg-blue-50 dark:bg-blue-900/30">
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-6 text-center align-middle">SN</th>
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 text-left align-middle min-w-[120px] whitespace-nowrap">STUDENT NAME</th>
+                      {sheetData.subjects.map(subject => (
+                        <th key={subject.id} colSpan={4} className="border border-blue-900 dark:border-blue-400 p-0.5 text-center align-middle bg-blue-100 dark:bg-blue-800">
+                          {getShortSubjectName(subject.name)}
+                        </th>
+                      ))}
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-10 text-center align-middle bg-green-100 dark:bg-green-900/30 font-bold">G.TOT</th>
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-8 text-center align-middle bg-green-100 dark:bg-green-900/30 font-bold">AVG</th>
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-8 text-center align-middle bg-green-100 dark:bg-green-900/30 font-bold">RANK</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                    {/* Sub-headers: CS, ES, TOT, POS */}
+                    <tr className="bg-blue-100 dark:bg-blue-900/50">
+                      {sheetData.subjects.map(subject => (
+                        <Fragment key={subject.id}>
+                          {scoreSubHeaders.map((header, headerIndex) => {
+                            const isSubjectBoundary = headerIndex === scoreSubHeaders.length - 1
+                            return (
+                              <th
+                                key={`${subject.id}-${header}`}
+                                className={`border border-blue-900 dark:border-blue-400 p-0.5 text-center ${
+                                  header === 'TOT' ? 'w-7' : 'w-6'
+                                } ${isSubjectBoundary ? 'subject-divider-right' : ''}`}
+                              >
+                                {header}
+                              </th>
+                            )
+                          })}
+                        </Fragment>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sheetData.students.map((student, index) => (
+                      <tr key={student.student.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{index + 1}</td>
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 font-medium text-left whitespace-nowrap">
+                          {student.student.last_name} {student.student.middle_name ? student.student.middle_name + ' ' : ''}{student.student.first_name}
+                        </td>
+                        {sheetData.subjects.map(subject => {
+                          const score = student.scores[subject.id]
+                          return (
+                            <Fragment key={`${student.student.id}-${subject.id}`}>
+                              <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.classScore}</td>
+                              <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.examScore}</td>
+                              <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-semibold">{score.total}</td>
+                              <td className="subject-divider-right border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.position}</td>
+                            </Fragment>
+                          )
+                        })}
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.grandTotal}</td>
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.average.toFixed(1)}</td>
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.position}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
               {/* Footer */}
-              <div className="mt-4 flex justify-end">
-                <div className="text-[10px] text-gray-500 dark:text-gray-400">
+              <div className="mt-3 flex justify-end">
+                <div className="text-[8px] text-gray-500 dark:text-gray-400">
                   Generated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).replace(/ /g, '-').toUpperCase()}
                 </div>
+              </div>
+
+              <div className="mt-2 border-t border-blue-900 dark:border-blue-400 pt-1 text-[8px] text-blue-900 dark:text-blue-200">
+                <span className="font-semibold">KEY:</span>{' '}
+                CS = Class Score, ES = Exam Score, TOT = Total, POS = Subject Position, G.TOT = Grand Total, AVG = Average, RANK = Overall Position
               </div>
             </div>
           </div>
@@ -399,7 +500,7 @@ export default function ClassReportPage() {
       <style jsx global>{`
         @media print {
           @page {
-            size: portrait;
+            size: landscape;
             margin: 5mm;
           }
           body {
@@ -415,15 +516,18 @@ export default function ClassReportPage() {
             width: 100% !important;
           }
           table {
-            font-size: 10px !important;
+            font-size: 9px !important;
             width: 100%;
           }
           th, td {
             padding: 2px !important;
           }
-          h1 { font-size: 16px !important; }
-          h2 { font-size: 14px !important; }
-          h3 { font-size: 12px !important; }
+          h1 { font-size: 14px !important; }
+          h2 { font-size: 12px !important; }
+          h3 { font-size: 10px !important; }
+        }
+        .subject-divider-right {
+          border-right-width: 2px !important;
         }
       `}</style>
     </div>
