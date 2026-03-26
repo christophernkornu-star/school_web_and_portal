@@ -298,10 +298,10 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
              
              <button 
                 onClick={handleLogout}
-                className="flex items-center gap-2 text-sm text-red-700 bg-white/30 hover:bg-white/50 px-3 py-2 rounded-lg transition-colors font-semibold shadow-sm"
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-red-700 bg-white/30 hover:bg-white/50 px-2.5 py-1.5 rounded-lg transition-colors font-semibold shadow-sm"
                 title="Logout"
              >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 <span className="hidden sm:inline">Logout</span>
              </button>
           </div>

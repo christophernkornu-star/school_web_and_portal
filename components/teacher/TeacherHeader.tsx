@@ -248,11 +248,11 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
 
              <button
                 onClick={handleLogout}
-                className="flex items-center justify-center p-2 sm:px-3 sm:py-2 text-red-700 bg-white/30 hover:bg-white/50 rounded-lg transition-colors font-semibold shadow-sm"
+                className="flex items-center justify-center p-1.5 sm:px-2 sm:py-1.5 text-red-700 bg-white/30 hover:bg-white/50 rounded-lg transition-colors font-semibold shadow-sm text-sm"
                 title="Logout"
              >
-                <LogOut className="h-5 w-5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline ml-2">Logout</span>
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1.5">Logout</span>
              </button>
           </div>
         </div>
