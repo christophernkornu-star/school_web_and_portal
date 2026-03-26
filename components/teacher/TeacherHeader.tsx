@@ -215,7 +215,7 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
                         
                         {termAlert.active && !dismissedRem && (
                           <Link
-                            href="/teacher/reports/bulk"
+                            href="/teacher/reports"
                             onClick={handleRemClick}
                             className="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                           >
