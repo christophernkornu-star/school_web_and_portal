@@ -201,21 +201,45 @@ export default function ClassReportPage() {
         .from('subjects')
         .select('id, name, code, level')
         
+      // Find existing score subject IDs to always include them
+      const subjectsWithScores = new Set(scoresData?.map((s: any) => s.subject_id) || [])
+
       if (allSubjectsData) {
-        // Find existing score subject IDs to always include them
-        const subjectsWithScores = new Set(scoresData?.map((s: any) => s.subject_id) || [])
-        
         allSubjectsData.forEach((s: any) => {
           // Include if the subject is part of this class's level, OR if it has a score
           if (s.level === category || subjectsWithScores.has(s.id)) {
             if (!subjectsMap.has(s.id)) {
-              subjectsMap.set(s.id, { id: s.id, name: s.name, code: s.code })
+              subjectsMap.set(s.id, { id: s.id, name: s.name, code: s.code })   
             }
           }
         })
       }
 
-      const subjects = Array.from(subjectsMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+      // Deduplicate subjects sharing the same base name (e.g., "Mathematics" and "Mathematics (UP)")
+      const cleanNameMap = new Map<string, any>()
+      Array.from(subjectsMap.values()).forEach((subject: any) => {
+        // Strip out trailing (LP), (UP), (JHS), etc., so we just compare root names
+        const cleanName = subject.name.replace(/\s*\(\s*(LP|UP|JHS|KG|Nursery|Creche)\s*\)\s*$/i, '').trim().toUpperCase()
+        
+        if (cleanNameMap.has(cleanName)) {
+          const existing = cleanNameMap.get(cleanName)
+          const newHasScores = subjectsWithScores.has(subject.id)
+          const existingHasScores = subjectsWithScores.has(existing.id)
+
+          if (newHasScores && !existingHasScores) {
+            // Replace dummy subject with one that actually has reported scores
+            cleanNameMap.set(cleanName, subject)
+          } else if (newHasScores && existingHasScores) {
+            // Edge case: if, due to an error, scores exist for BOTH subjects, we must map both to not hide data
+            cleanNameMap.set(`${cleanName}_${subject.id}`, subject)
+          } 
+          // Default: if neither has scores, keep the first one we saw (the "existing" entry)
+        } else {
+          cleanNameMap.set(cleanName, subject)
+        }
+      })
+
+      const subjects = Array.from(cleanNameMap.values()).sort((a, b) => a.name.localeCompare(b.name))
 
       if (subjects.length === 0) {
         toast.error('No subjects found for this class.')
@@ -227,7 +251,6 @@ export default function ClassReportPage() {
       const processedStudents: ProcessedStudent[] = studentsData.map((student: any) => {
         const studentScores: Record<string, SubjectScore> = {}
         let totalScoreSum = 0
-        let gradedSubjectCount = 0
 
         subjects.forEach((subject: any) => {
           const score = scoresData?.find((s: any) => s.student_id === student.id && s.subject_id === subject.id)
@@ -240,7 +263,6 @@ export default function ClassReportPage() {
             }
             if (!isNaN(score.total)) {
               totalScoreSum += score.total
-              gradedSubjectCount++
             }
           } else {
             studentScores[subject.id] = {
@@ -252,7 +274,7 @@ export default function ClassReportPage() {
           }
         })
 
-        const average = gradedSubjectCount > 0 ? totalScoreSum / gradedSubjectCount : 0
+        const average = subjects.length > 0 ? totalScoreSum / subjects.length : 0
 
         return {
           student,
@@ -456,7 +478,7 @@ export default function ClassReportPage() {
                   </thead>
                   <tbody>
                     {sheetData.students.map((student, index) => (
-                      <tr key={student.student.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors">
+                        <tr key={student.student.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors [content-visibility:auto] print:[content-visibility:visible] [contain-intrinsic-size:32px]">
                         <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{index + 1}</td>
                         <td className="border border-blue-900 dark:border-blue-400 p-0.5 font-medium text-left whitespace-nowrap">
                           {student.student.last_name} {student.student.middle_name ? student.student.middle_name + ' ' : ''}{student.student.first_name}

@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { 
-  Users, 
+import useSWR from 'swr'
+import {
+  Users,
   GraduationCap, 
-  Building2, 
-  FileText, 
+  Building2,
+  FileText,
   Plus,
   CalendarDays,
   Activity
@@ -18,84 +19,73 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow, differenceInDays } from 'date-fns'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { StudentStatsModal } from '@/components/admin/StudentStatsModal'
-import { TeacherStatsModal } from '@/components/admin/TeacherStatsModal'
+import { StudentStatsModal } from '@/components/admin/StudentStatsModal'        
+import { TeacherStatsModal } from '@/components/admin/TeacherStatsModal'        
+
+const fetchDashboardStats = async () => {
+  const supabase = getSupabaseBrowserClient()
+  const [studentsRes, teachersRes, classesRes, eventsRes, termsRes, recentStudentsRes, thresholdRes] = await Promise.all([
+    supabase.from('students').select('id', { count: 'exact', head: true }), 
+    supabase.from('teachers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
+    supabase.from('classes').select('id', { count: 'exact', head: true }),  
+    supabase.from('events')
+      .select('*')
+      .gte('event_date', new Date().toISOString())
+      .order('event_date', { ascending: true })
+      .limit(3),
+    supabase.from('academic_terms')
+      .select('*')
+      .eq('is_current', true)
+      .single(),
+    supabase.from('students')
+      .select('id, first_name, last_name, created_at, classes:class_id(name)')
+      .order('created_at', { ascending: false })
+      .limit(5),
+    supabase.from('system_settings')
+      .select('setting_value')
+      .eq('setting_key', 'progress_alert_threshold')
+      .maybeSingle()
+  ])
+
+  return {
+    stats: {
+      totalStudents: studentsRes.count || 0,
+      totalTeachers: teachersRes.count || 0,
+      totalClasses: classesRes.count || 0,
+      activeEnrollments: (studentsRes.count || 0),
+      pendingAdmissions: 0,
+    },
+    upcomingEvents: eventsRes.data || [],
+    currentTerm: termsRes.data || null,
+    recentActivities: recentStudentsRes.data || [],
+    alertThreshold: thresholdRes.data?.setting_value ? Number(thresholdRes.data.setting_value) : 90
+  }
+}
 
 export default function AdminDashboard() {
   const router = useRouter()
-  const supabase = getSupabaseBrowserClient()
   const { user, loading: contextLoading } = useAdmin()
-  const [stats, setStats] = useState({
-    totalStudents: 0,
-    totalTeachers: 0,
-    totalClasses: 0,
-    activeEnrollments: 0,
-    pendingAdmissions: 0,
-  })
-  const [recentActivities, setRecentActivities] = useState<any[]>([])
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([])
-  const [currentTerm, setCurrentTerm] = useState<any>(null)
-  const [alertThreshold, setAlertThreshold] = useState<number>(90)
-
-  const [loading, setLoading] = useState(true)
   const [showStatsModal, setShowStatsModal] = useState(false)
   const [showTeacherModal, setShowTeacherModal] = useState(false)
 
   useEffect(() => {
-    if (contextLoading) return
-
-    if (!user) {
+    if (!contextLoading && !user) {
       router.push('/login?portal=admin')
-      return
     }
+  }, [user, contextLoading, router])
 
-    async function loadStats() {
-      const [studentsRes, teachersRes, classesRes, eventsRes, termsRes, recentStudentsRes, thresholdRes] = await Promise.all([
-        supabase.from('students').select('id', { count: 'exact', head: true }),
-        supabase.from('teachers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('classes').select('id', { count: 'exact', head: true }),
-        supabase.from('events')
-          .select('*')
-          .gte('event_date', new Date().toISOString())
-          .order('event_date', { ascending: true })
-          .limit(3),
-        supabase.from('academic_terms')
-          .select('*')
-          .eq('is_current', true)
-          .single(),
-        supabase.from('students')
-          .select('id, first_name, last_name, created_at, classes:class_id(name)')
-          .order('created_at', { ascending: false })
-          .limit(5),
-        supabase.from('system_settings')
-          .select('setting_value')
-          .eq('setting_key', 'progress_alert_threshold')
-          .maybeSingle()
-      ])
+  // SWR handles caching, deduplication, and automatic refetching on focus without stalling UI
+  const { data, error, isLoading } = useSWR(
+    user && !contextLoading ? 'adminDashboardStats' : null, 
+    fetchDashboardStats,
+    { revalidateOnFocus: false, dedupingInterval: 60000 } // only refetch in bg max once per minute
+  )
 
-      setStats({
-        totalStudents: studentsRes.count || 0,
-        totalTeachers: teachersRes.count || 0,
-        totalClasses: classesRes.count || 0,
-        activeEnrollments: (studentsRes.count || 0),
-        pendingAdmissions: 0,
-      })
-
-      if (eventsRes.data) setUpcomingEvents(eventsRes.data)
-      if (termsRes.data) setCurrentTerm(termsRes.data)
-      if (recentStudentsRes.data) setRecentActivities(recentStudentsRes.data)
-      if (thresholdRes.data?.setting_value) setAlertThreshold(Number(thresholdRes.data.setting_value))
-      setLoading(false)
-    }
-
-    loadStats()
-  }, [user, contextLoading, router, supabase])
-
-  if (contextLoading || loading) {
+  if (contextLoading || isLoading || !data) {
     return <DashboardSkeleton />
   }
 
-  // Calculate term progress
+  const { stats, upcomingEvents, currentTerm, recentActivities, alertThreshold } = data
   let termProgress = 0
   if (currentTerm) {
     const start = new Date(currentTerm.start_date)
@@ -198,7 +188,7 @@ export default function AdminDashboard() {
               <CardContent>
                 <div className="space-y-4">
                    {recentActivities.length > 0 ? (
-                     recentActivities.map((student) => (
+                     recentActivities.map((student: any) => (
                        <div key={student.id} className="flex items-start gap-4 pb-4 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
                           <div className="h-9 w-9 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
                              <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -267,7 +257,7 @@ export default function AdminDashboard() {
                </CardHeader>
                <CardContent className="space-y-4">
                   {upcomingEvents.length > 0 ? (
-                    upcomingEvents.map((event) => {
+                    upcomingEvents.map((event: any) => {
                       const eventDate = new Date(event.event_date)
                       const month = eventDate.toLocaleString('default', { month: 'short' }).toUpperCase()
                       const day = eventDate.getDate()

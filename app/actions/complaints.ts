@@ -2,36 +2,79 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { headers } from 'next/headers'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-export async function submitComplaint(formData: FormData) {
-  const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// 1. Zod Schema Validation
+const complaintSchema = z.object({
+  type: z.string().min(2, "Type is required").max(50),
+  subject: z.string().min(5, "Subject must be at least 5 characters").max(150),
+  message: z.string().min(10, "Message must be at least 10 characters").max(1000),
+  contact_name: z.string().min(2, "Name is required").max(100),
+  contact_email: z.string().email("Invalid email format").optional().or(z.literal('')),
+  contact_phone: z.string().max(20).optional().or(z.literal('')),
+})
 
-  const type = formData.get('type') as string
-  const subject = formData.get('subject') as string
-  const message = formData.get('message') as string
-  const contact_name = formData.get('contact_name') as string
-  const contact_email = formData.get('contact_email') as string
-  const contact_phone = formData.get('contact_phone') as string
+// 2. Simple In-Memory Rate Limiter (Note: Scoped per Node instance)
+const rateLimitMap = new Map<string, { count: number, timestamp: number }>()
+
+export async function submitComplaint(formData: FormData) {
+  // Rate Limiting Check
+  const ip = headers().get('x-forwarded-for') || headers().get('x-real-ip') || 'unknown'
+  const now = Date.now()
+  const windowMs = 60 * 1000 // 1 minute window
+  const maxRequests = 5 // max 5 complaints per minute per IP
+
+  const rateData = rateLimitMap.get(ip) || { count: 0, timestamp: now }
+  if (now - rateData.timestamp > windowMs) {
+    rateData.count = 1
+    rateData.timestamp = now
+  } else {
+    rateData.count++
+  }
+  rateLimitMap.set(ip, rateData)
+
+  if (rateData.count > maxRequests) {
+    return { success: false, error: "Rate limit exceeded. Please wait a minute before submitting again." }
+  }
+
+  // Parse and Validate Input
+  const result = complaintSchema.safeParse({
+    type: formData.get('type') as string,
+    subject: formData.get('subject') as string,
+    message: formData.get('message') as string,
+    contact_name: formData.get('contact_name') as string,
+    contact_email: formData.get('contact_email') as string,
+    contact_phone: formData.get('contact_phone') as string,
+  })
+
+  if (!result.success) {
+    return { success: false, error: result.error.errors[0].message }
+  }
+
+  const validatedData = result.data
+
+  const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
   const { error } = await supabase
     .from('complaints')
     .insert({
-      type,
-      subject,
-      message,
-      contact_name,
-      contact_email,
-      contact_phone,
+      type: validatedData.type,
+      subject: validatedData.subject,
+      message: validatedData.message,
+      contact_name: validatedData.contact_name,
+      contact_email: validatedData.contact_email,
+      contact_phone: validatedData.contact_phone,
       status: 'pending'
     })
 
   if (error) {
     console.error('Error submitting complaint:', error)
-    return { success: false, error: error.message }
+    return { success: false, error: "A database error occurred while submitting." }
   }
 
   return { success: true }
