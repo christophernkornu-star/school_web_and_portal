@@ -35,6 +35,28 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
   const [dismissedRem, setDismissedRem] = useState(false)
   const notificationRef = useRef<HTMLDivElement>(null)
 
+  // Initialize from sessionStorage to prevent badge flickering on navigation
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cachedAdms = sessionStorage.getItem('admin_notif_admissions')
+      const cachedComps = sessionStorage.getItem('admin_notif_complaints')
+      const cachedTerm = sessionStorage.getItem('admin_notif_term_alert')
+      
+      if (cachedAdms) setPendingAdmissions(Number(cachedAdms))
+      if (cachedComps) setUnreadComplaints(Number(cachedComps))
+      if (cachedTerm) {
+        try { 
+          const parsed = JSON.parse(cachedTerm)
+          setTermAlert(parsed) 
+          if (parsed.id) {
+            setDismissedAtt(sessionStorage.getItem(`dismiss_admin_att_${parsed.id}`) === 'true')
+            setDismissedRem(sessionStorage.getItem(`dismiss_admin_rem_${parsed.id}`) === 'true')
+          }
+        } catch (e) {}
+      }
+    }
+  }, [])
+
   useEffect(() => {
     async function fetchNotifications() {
       // Fetch Pending Admissions
@@ -43,7 +65,10 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending')
 
-      if (admissionCount !== null) setPendingAdmissions(admissionCount)
+      if (admissionCount !== null) {
+        setPendingAdmissions(admissionCount)
+        sessionStorage.setItem('admin_notif_admissions', admissionCount.toString())
+      }
 
       // Fetch Unread Complaints
       const { count: complaintCount } = await supabase
@@ -51,7 +76,10 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
         .select('id', { count: 'exact', head: true })
         .eq('status', 'pending')
 
-      if (complaintCount !== null) setUnreadComplaints(complaintCount)
+      if (complaintCount !== null) {
+        setUnreadComplaints(complaintCount)
+        sessionStorage.setItem('admin_notif_complaints', complaintCount.toString())
+      }
 
       // Check Term Progress Alert
       const [termRes, thresholdRes] = await Promise.all([
@@ -67,8 +95,10 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
         const daysPassed = differenceInDays(now, start)
         const progress = Math.min(Math.max(Math.round((daysPassed / totalDays) * 100), 0), 100)
         const threshold = thresholdRes.data?.setting_value ? Number(thresholdRes.data.setting_value) : 90
-        
-        setTermAlert({ progress, active: progress >= threshold, threshold, id: termRes.data.id })
+
+        const newTermAlert = { progress, active: progress >= threshold, threshold, id: termRes.data.id }
+        setTermAlert(newTermAlert)
+        sessionStorage.setItem('admin_notif_term_alert', JSON.stringify(newTermAlert))
         
         if (typeof window !== 'undefined') {
           setDismissedAtt(sessionStorage.getItem(`dismiss_admin_att_${termRes.data.id}`) === 'true')

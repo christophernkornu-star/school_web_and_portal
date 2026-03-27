@@ -412,7 +412,7 @@ export default function ClassReportPage() {
               {/* Header */}
               <div className="text-center mb-3 border-b-2 border-blue-900 dark:border-blue-400 pb-2">
                 <h1 className="text-lg font-bold uppercase font-serif mb-1">BIRIWA METHODIST 'C' BASIC SCHOOL</h1>
-                <h2 className="text-sm font-bold uppercase mb-1">END OF {sheetData.termName} RESULTS</h2>
+                <h2 className="text-sm font-bold uppercase mb-1">END OF {sheetData.termName} CLASS REPORT SHEET</h2>
                 <h3 className="text-xs font-bold uppercase">{sheetData.className}</h3>
               </div>
 
@@ -465,14 +465,14 @@ export default function ClassReportPage() {
                           const score = student.scores[subject.id]
                           return (
                             <Fragment key={`${student.student.id}-${subject.id}`}>
-                              <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.classScore}</td>
-                              <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.examScore}</td>
-                              <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-semibold">{score.total}</td>
-                              <td className="subject-divider-right border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.position}</td>
-                            </Fragment>
-                          )
-                        })}
-                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.grandTotal}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.classScore === 'number' ? score.classScore.toFixed(1) : score.classScore}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.examScore === 'number' ? score.examScore.toFixed(1) : score.examScore}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-semibold">{typeof score.total === 'number' ? score.total.toFixed(1) : score.total}</td>
+                                <td className="subject-divider-right border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.position}</td>
+                              </Fragment>
+                            )
+                          })}
+                          <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{typeof student.grandTotal === 'number' ? student.grandTotal.toFixed(1) : student.grandTotal}</td>
                         <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.average.toFixed(1)}</td>
                         <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.position}</td>
                       </tr>

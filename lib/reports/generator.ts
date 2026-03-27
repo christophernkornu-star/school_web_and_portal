@@ -416,7 +416,7 @@ const generateReportCardContent = (
             </div>
             <div class="info-row">
               <div class="info-cell"><span class="info-label">STD ID:</span><span class="info-value">${student.student_id || 'N/A'} | ACAD. YR.: ${reportData.year || ''}</span></div>
-              <div class="info-cell"><span class="info-label">AVG SCORE:</span><span class="info-value">${reportData.averageScore}%${(reportData.aggregate !== null && reportData.aggregate !== undefined) ? ` | AGG: ${reportData.aggregate}` : ''}</span></div>
+                <div class="info-cell"><span class="info-label">AVG SCORE:</span><span class="info-value">${reportData.averageScore != null ? Number(reportData.averageScore).toFixed(1) : ''}%${(reportData.aggregate !== null && reportData.aggregate !== undefined) ? ` | AGG: ${reportData.aggregate}` : ''}</span></div>
             </div>
             <div class="info-row">
               <div class="info-cell"><span class="info-label">GENDER:</span><span class="info-value">${student.gender || 'N/A'}</span></div>

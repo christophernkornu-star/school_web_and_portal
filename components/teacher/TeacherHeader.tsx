@@ -30,6 +30,23 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
   const [dismissedAtt, setDismissedAtt] = useState(false)
   const [dismissedRem, setDismissedRem] = useState(false)
 
+  // Initialize from sessionStorage to prevent badge flickering on navigation
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const cachedTerm = sessionStorage.getItem('teacher_notif_term_alert')
+      if (cachedTerm) {
+        try { 
+          const parsed = JSON.parse(cachedTerm)
+          setTermAlert(parsed) 
+          if (parsed.id) {
+            setDismissedAtt(sessionStorage.getItem(`dismiss_att_${parsed.id}`) === 'true')
+            setDismissedRem(sessionStorage.getItem(`dismiss_rem_${parsed.id}`) === 'true')
+          }
+        } catch (e) {}
+      }
+    }
+  }, [])
+
   const isClassTeacher = dashboardData?.assignments?.some(a => a.is_class_teacher) || false
 
   const fetchNotifications = useCallback(async () => {
@@ -42,14 +59,14 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
         .select('id, start_date, end_date')
         .eq('is_current', true)
         .maybeSingle()
-        
+
       if (termRes?.start_date && termRes?.end_date) {
         const { data: thresholdRes } = await supabase
           .from('system_settings')
           .select('setting_value')
           .eq('setting_key', 'progress_alert_threshold')
           .maybeSingle()
-          
+
         const start = new Date(termRes.start_date)
         const end = new Date(termRes.end_date)
         const now = new Date()
@@ -57,8 +74,10 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
         const daysPassed = differenceInDays(now, start)
         const progress = totalDays > 0 ? Math.min(Math.max(Math.round((daysPassed / totalDays) * 100), 0), 100) : 0
         const threshold = thresholdRes?.setting_value ? Number(thresholdRes.setting_value) : 90
-        
-        setTermAlert({ progress, active: progress >= threshold, threshold, id: termRes.id })
+
+        const newTermAlert = { progress, active: progress >= threshold, threshold, id: termRes.id }
+        setTermAlert(newTermAlert)
+        sessionStorage.setItem('teacher_notif_term_alert', JSON.stringify(newTermAlert))
 
         if (typeof window !== 'undefined') {
           setDismissedAtt(sessionStorage.getItem(`dismiss_att_${termRes.id}`) === 'true')
