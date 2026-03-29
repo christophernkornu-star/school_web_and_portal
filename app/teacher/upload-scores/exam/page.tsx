@@ -64,6 +64,19 @@ function ExamScoresContent() {
   const [error, setError] = useState('')
   const [isReadOnly, setIsReadOnly] = useState(false)
 
+  // Handle beforeunload warning
+  useEffect(() => {
+    const isDirty = examScore.trim() !== ''
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [examScore])
+
   useEffect(() => {
     async function loadData() {
       try {

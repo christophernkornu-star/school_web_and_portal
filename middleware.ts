@@ -46,6 +46,9 @@ export async function middleware(req: NextRequest) {
     if (path.startsWith('/api/teacher') && role !== 'admin' && role !== 'teacher') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
+    if (path.startsWith('/api/student') && role !== 'admin' && role !== 'teacher' && role !== 'student') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   if (path.startsWith('/login') && session) {

@@ -82,6 +82,19 @@ function ClassScoresContent() {
     else setActiveTab('grid')
   }, [method])
 
+  // Handle beforeunload warning
+  useEffect(() => {
+    const isDirty = gridChanges.size > 0
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [gridChanges])
+
   useEffect(() => {
     async function loadData() {
       try {

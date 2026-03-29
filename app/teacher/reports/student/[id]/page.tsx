@@ -5,11 +5,11 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
-import { List, Download, RefreshCw, Save, Wand2 } from 'lucide-react'
+import { List, Download, RefreshCw, Save, Wand2, ChevronDown } from 'lucide-react'
 import signatureImg from '@/app/student/report-card/signature.png'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
-import { getAutoRemark } from '@/lib/remark-utils'
+import { getAutoRemark, ATTITUDE_REMARKS, INTEREST_REMARKS, CONDUCT_REMARKS, CLASS_TEACHER_REMARKS } from '@/lib/remark-utils'
 import { useReportCardData } from '@/lib/reports/hooks'
 // If TS keeps complaining about the alias, we can use relative path, but let's stick to alias for consistency first.
 // The issue might be a caching one. I'll force a refresh by re-saving.
@@ -17,6 +17,47 @@ import { generateReportHTML } from '@/lib/reports/generator'
 import { ReportCardTheme, ReportRemarks, Grade } from '@/lib/reports/types'
 import { isClassTeacher } from '@/lib/teacher-permissions'
 
+const attitudeOptions = Object.values(ATTITUDE_REMARKS).flat();
+const interestOptions = Object.values(INTEREST_REMARKS).flat();
+const conductOptions = Object.values(CONDUCT_REMARKS).flat();
+const classTeacherOptions = Object.values(CLASS_TEACHER_REMARKS).flat();
+
+function RemarkDropdown({ options, onSelect }: { options: string[], onSelect: (val: string) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative inline-flex items-center" onBlur={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) {
+            setOpen(false)
+        }
+    }}>
+      <button 
+        type="button" 
+        onClick={() => setOpen(!open)}
+        className="ml-2 p-0.5 hover:bg-gray-200 rounded-md transition-colors flex items-center justify-center cursor-pointer text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-label="Quick Select Remark"
+      >
+        <ChevronDown className="w-4 h-4" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 shadow-xl rounded-md z-50 max-h-60 overflow-y-auto">
+          {options.map((opt, idx) => (
+            <button
+              key={idx}
+              type="button"
+              className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 focus:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+              onClick={() => {
+                onSelect(opt);
+                setOpen(false);
+              }}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function TeacherStudentReportPage() {
   const router = useRouter()
@@ -147,13 +188,12 @@ export default function TeacherStudentReportPage() {
         .upsert({
           student_id: studentId,
           term_id: reportData.termId,
-          academic_year: reportData.year,
           attitude: remarks.attitude,
           interest: remarks.interest,
           conduct: remarks.conduct,
           class_teacher_remark: remarks.classTeacher,
           head_teacher_remark: remarks.headTeacher
-        })
+        }, { onConflict: 'student_id,term_id' })
 
       if (error) throw error
       toast.success('Remarks saved successfully')
@@ -164,7 +204,7 @@ export default function TeacherStudentReportPage() {
     }
   }
 
-  const applyAutoRemarks = () => {
+  const applyAutoRemarks = async () => {
     if (!reportData) return
     
     // Calculate attendance percentage safely
@@ -182,6 +222,27 @@ export default function TeacherStudentReportPage() {
     }
     setRemarks(autoRemarks)
     toast.success('Generated auto remarks')
+
+    // Automatically save right away
+    if (!reportData?.termId) return
+    try {
+      const { error } = await supabase
+        .from('student_remarks')
+        .upsert({
+          student_id: studentId,
+          term_id: reportData.termId,
+          attitude: autoRemarks.attitude,
+          interest: autoRemarks.interest,
+          conduct: autoRemarks.conduct,
+          class_teacher_remark: autoRemarks.classTeacher,
+          head_teacher_remark: autoRemarks.headTeacher
+        }, { onConflict: 'student_id,term_id' })
+      if (error) throw error
+      toast.success('Remarks auto-saved successfully')
+    } catch (e) {
+      console.error('Auto save error:', e)
+      toast.error('Could not auto-save remarks. Please click Save Changes.')
+    }
   }
 
   const handleDownload = async () => {
@@ -362,7 +423,15 @@ export default function TeacherStudentReportPage() {
         <div className="space-y-6">
           <div className="grid md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Attitude</label>
+              <div className="flex items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 mr-2">Attitude</label>
+                {isTeacherClassTeacher && (
+                  <RemarkDropdown 
+                    options={attitudeOptions} 
+                    onSelect={(val) => handleRemarkChange('attitude', val)} 
+                  />
+                )}
+              </div>
               <textarea 
                 className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={!isTeacherClassTeacher}
@@ -372,7 +441,15 @@ export default function TeacherStudentReportPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Interest</label>
+              <div className="flex items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 mr-2">Interest</label>
+                {isTeacherClassTeacher && (
+                  <RemarkDropdown 
+                    options={interestOptions} 
+                    onSelect={(val) => handleRemarkChange('interest', val)} 
+                  />
+                )}
+              </div>
               <textarea 
                 className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={!isTeacherClassTeacher}
@@ -382,7 +459,15 @@ export default function TeacherStudentReportPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Conduct</label>
+              <div className="flex items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 mr-2">Conduct</label>
+                {isTeacherClassTeacher && (
+                  <RemarkDropdown 
+                    options={conductOptions} 
+                    onSelect={(val) => handleRemarkChange('conduct', val)} 
+                  />
+                )}
+              </div>
               <textarea 
                 className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={!isTeacherClassTeacher}
@@ -395,7 +480,15 @@ export default function TeacherStudentReportPage() {
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Class Teacher's Remark</label>
+              <div className="flex items-center mb-1">
+                <label className="block text-sm font-medium text-gray-700 mr-2">Class Teacher's Remark</label>
+                {isTeacherClassTeacher && (
+                  <RemarkDropdown 
+                    options={classTeacherOptions} 
+                    onSelect={(val) => handleRemarkChange('classTeacher', val)} 
+                  />
+                )}
+              </div>
               <textarea 
                 className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={!isTeacherClassTeacher}

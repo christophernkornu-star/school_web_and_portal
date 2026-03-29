@@ -112,13 +112,12 @@ export default function AdminStudentReportPage() {
         .upsert({
           student_id: studentId,
           term_id: reportData.termId,
-          academic_year: reportData.year,
           attitude: remarks.attitude,
           interest: remarks.interest,
           conduct: remarks.conduct,
           class_teacher_remark: remarks.classTeacher,
           head_teacher_remark: remarks.headTeacher
-        })
+        }, { onConflict: 'student_id,term_id' })
 
       if (error) throw error
       toast.success('Remarks saved successfully')

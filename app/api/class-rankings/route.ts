@@ -38,6 +38,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const classId = searchParams.get('classId')
   const termId = searchParams.get('termId')
+  const requestingStudentId = profile?.role === 'student' ? session.user.id : null
 
   if (!classId || !termId) {
     return NextResponse.json({ error: 'Missing classId or termId' }, { status: 400 })
@@ -47,7 +48,18 @@ export async function GET(request: Request) {
   const cacheKey = `${classId}-${termId}`
   const cached = cache.get(cacheKey)
   if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
-    return NextResponse.json(cached.data)
+    let cachedData = cached.data
+    if (requestingStudentId) {
+      cachedData = {
+        scores: cachedData.scores.map((s: any) => ({
+          ...s,
+          student_id: s.student_id === requestingStudentId ? s.student_id : `anon_${s.student_id.substring(0, 8)}`
+        })),
+        totalClassSize: cachedData.totalClassSize,
+        uniqueStudents: cachedData.uniqueStudents.map((id: any) => id === requestingStudentId ? id : `anon_${id.substring(0, 8)}`)
+      }
+    }
+    return NextResponse.json(cachedData)
   }
 
   // First get all students in this class
@@ -80,7 +92,7 @@ export async function GET(request: Request) {
   const totalClassSize = students.length
   const uniqueStudents = [...new Set(scores.map(s => s.student_id))]
   
-  const responseData = {
+  let responseData = {
     scores,
     totalClassSize,
     uniqueStudents
@@ -88,6 +100,18 @@ export async function GET(request: Request) {
 
   // Save to cache
   cache.set(cacheKey, { data: responseData, timestamp: Date.now() })
+
+  // Apply pseudonymization if requested by a student
+  if (requestingStudentId) {
+    responseData = {
+      scores: responseData.scores.map((s: any) => ({
+        ...s,
+        student_id: s.student_id === requestingStudentId ? s.student_id : `anon_${s.student_id.substring(0, 8)}`
+      })),
+      totalClassSize: responseData.totalClassSize,
+      uniqueStudents: responseData.uniqueStudents.map(id => id === requestingStudentId ? id : `anon_${id.substring(0, 8)}`)
+    }
+  }
 
   // Return the scores data
   return NextResponse.json(responseData)

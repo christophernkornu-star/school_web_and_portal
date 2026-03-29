@@ -127,6 +127,19 @@ export function StudentForm({
            Personal Information
         </h3>
         <div className="grid md:grid-cols-3 gap-6">
+          {initialData?.profiles?.username && (
+            <div className="space-y-2">
+              <Label htmlFor="username">Student Username</Label>
+              <Input
+                id="username"
+                value={initialData.profiles.username}
+                readOnly
+                disabled
+                className="bg-gray-100 dark:bg-gray-800 text-gray-500 cursor-not-allowed font-mono"
+              />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="first_name">First Name <span className="text-red-500">*</span></Label>
             <Input

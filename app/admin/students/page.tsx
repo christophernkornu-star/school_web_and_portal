@@ -44,7 +44,7 @@ export default function StudentsPage() {
   async function loadClasses() {
     const { data: classesData } = await supabase
       .from('classes')
-      .select('*')
+      .select('id, name, level')
       .order('level')
     
     if (classesData) setClasses(classesData)

@@ -5,8 +5,8 @@
  */
 
 export const ATTITUDE_REMARKS = {
-  excellent: ['Excellent attitude towards learning', 'Shows great enthusiasm', 'Very positive and motivated', 'Exceptionally dedicated'],
-  good: ['Good attitude towards learning', 'Shows interest in studies', 'Positive and cooperative', 'Generally motivated'],
+  excellent: ['Excellent attitude towards learning', 'Shows great enthusiasm', 'Very positive and motivated', 'Exceptionally dedicated', 'Highly focused and eager to learn', 'Consistently displays a proactive learning attitude', 'Demonstrates an exemplary approach to daily tasks', 'Self-driven and takes initiative naturally'],
+  good: ['Good attitude towards learning', 'Shows interest in studies', 'Positive and cooperative', 'Generally motivated', 'Reliable and maintains a good learning pace', 'Shows willingness to tackle new challenges', 'Consistently attentive and participates often'],
   average: ['Satisfactory attitude', 'Needs to show more interest', 'Could be more enthusiastic', 'Average motivation'],
   poor: ['Needs improvement in attitude', 'Shows little interest', 'Must develop better attitude', 'Requires motivation']
 }
@@ -43,8 +43,8 @@ export const INTEREST_REMARKS = {
 }
 
 export const CONDUCT_REMARKS = {
-  excellent: ['Excellent conduct', 'Well-behaved and respectful', 'A role model to others', 'Outstanding behaviour'],
-  good: ['Good conduct', 'Generally well-behaved', 'Respectful to teachers and peers', 'Behaves appropriately'],
+  excellent: ['Excellent conduct', 'Well-behaved and respectful', 'A role model to others', 'Outstanding behaviour', 'Exemplary manners towards staff and peers', 'Polite, courteous, and highly dependable', 'Sets a positive behavioral standard for the class'],
+  good: ['Good conduct', 'Generally well-behaved', 'Respectful to teachers and peers', 'Behaves appropriately', 'Friendly and maintains good relationships', 'Follows instructions without hesitation', 'Displays good manners in most situations'],
   average: ['Satisfactory conduct', 'Behaviour needs improvement', 'Occasionally disruptive', 'Must be more disciplined'],
   poor: ['Poor conduct', 'Frequently misbehaves', 'Needs serious improvement', 'Must change behaviour']
 }

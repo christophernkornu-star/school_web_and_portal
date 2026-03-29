@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, Trash2, Phone, Mail, KeyRound, CheckSquare, Square, ArrowUpDown } from 'lucide-react'
+import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, Trash2, Phone, Mail, KeyRound, CheckSquare, Square, ArrowUpDown, Download } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -372,6 +372,9 @@ export default function MyStudentsPage() {
             classes(
               id,
               name
+            ),
+            profiles(
+              username
             )
           `)
           .in('class_id', classIds)
@@ -475,6 +478,44 @@ export default function MyStudentsPage() {
     }
 
     return { username: newUsername, password: newPassword }
+  }
+
+  const handleExportLogins = () => {
+    const studentsToExport = selectedStudents.length > 0 
+      ? filteredStudents.filter(s => selectedStudents.includes(s.id))
+      : filteredStudents
+
+    if (studentsToExport.length === 0) {
+      toast.error('No students to export')
+      return
+    }
+
+    const headers = ['Name', 'Student ID', 'Class', 'Username', 'Default Password']
+    const csvContent = [
+      headers.join(','),
+      ...studentsToExport.map(student => {
+        const { username: fallbackUsername, password } = getResetCredentials(student)
+        const username = student.profiles?.username || fallbackUsername
+        return [
+          `"${student.last_name || ''} ${student.first_name || ''}"`,
+          `"${student.student_id || ''}"`,
+          `"${student.classes?.name || '-'}"`,
+          `"${username}"`,
+          `"${password}"`
+        ].join(',')
+      })
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `student_logins_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+    toast.success('Logins exported successfully!')
   }
 
   async function handleResetPassword() {
@@ -694,6 +735,20 @@ export default function MyStudentsPage() {
                     {selectedStudents.length > 0 && (
                         <>
                             <button 
+                                onClick={handleExportLogins}
+                                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"
+                                title="Download Logins"
+                            >
+                                <Download className="w-5 h-5" />
+                            </button>
+                            <button 
+                                onClick={handleExportLogins}
+                                className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg"
+                                title="Download Logins"
+                            >
+                                <Download className="w-5 h-5" />
+                            </button>
+                            <button 
                                 onClick={() => setBulkResetPasswordModal(true)}
                                 className="p-2 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-lg"
                                 title="Reset Passwords"
@@ -725,6 +780,14 @@ export default function MyStudentsPage() {
               </div>
             </div>
             {isClassTeacher && (
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleExportLogins}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 text-xs md:text-sm whitespace-nowrap"
+                >
+                  <Download className="w-4 h-4 md:w-5 md:h-5" />
+                  <span className="hidden md:inline">Download Logins</span>
+                </button>
               <Link
                 href="/teacher/students/add"
                 className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2 text-xs md:text-sm whitespace-nowrap"
@@ -732,6 +795,7 @@ export default function MyStudentsPage() {
                 <Users className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Add Student</span>
               </Link>
+              </div>
             )}
           </div>
           )}
@@ -1244,3 +1308,8 @@ export default function MyStudentsPage() {
     </div>
   )
 }
+
+
+
+
+

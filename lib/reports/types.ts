@@ -49,4 +49,6 @@ export interface ReportCardData {
   totalDays?: number   // For backward compatibility if needed
   promotionStatus?: string // Teacher remarks on promotion
   promotionDecision?: string // Actual decision (promoted, repeated, etc)
+  promotionData?: any // Full promotion record if applicable
+
 }
