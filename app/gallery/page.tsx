@@ -9,32 +9,45 @@ import SiteHeader from '@/components/SiteHeader'
 export default function GalleryPage() {
   const supabase = getSupabaseBrowserClient()
   const [albums, setAlbums] = useState<any[]>([])
+  const [allPhotos, setAllPhotos] = useState<any[]>([])
+  const [selectedAlbumName, setSelectedAlbumName] = useState<string | null>(null)
   const [spotlightPhotos, setSpotlightPhotos] = useState<any[]>([])
   const [selectedPhoto, setSelectedPhoto] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadData() {
-      // Load albums
-      const { data: albumsData } = await supabase
-        .from('photo_albums')
-        .select('*')
-        .eq('is_public', true)
-        .order('created_at', { ascending: false })
-
-      // Load spotlight photos
-      const { data: spotlightData } = await supabase
+      // Load all gallery photos directly
+      const { data: photosData, error } = await supabase
         .from('gallery_photos')
         .select('*')
-        .eq('is_spotlight', true)
         .order('created_at', { ascending: false })
 
-      if (albumsData) {
-        setAlbums(albumsData)
+      if (photosData) {
+        setAllPhotos(photosData)
+        
+        // Group photos by album_name to form 'virtual' albums
+        const albumMap: Record<string, any> = {}
+        photosData.forEach((photo: any) => {
+          const albumName = photo.album_name || 'General'
+          if (!albumMap[albumName]) {
+            albumMap[albumName] = {
+              id: albumName,
+              album_name: albumName,
+              cover_image_url: photo.photo_url,
+              photoCount: 0
+            }
+          }
+          albumMap[albumName].photoCount++
+        })
+        
+        // Convert map to array
+        setAlbums(Object.values(albumMap))
+        
+        // Extract spotlight photos
+        setSpotlightPhotos(photosData.filter((p: any) => p.is_spotlight))
       }
-      if (spotlightData) {
-        setSpotlightPhotos(spotlightData)
-      }
+      
       setLoading(false)
     }
 
@@ -79,7 +92,7 @@ export default function GalleryPage() {
       </section>
 
       {/* Featured/Spotlight Photos */}
-      {spotlightPhotos.length > 0 && (
+      {!selectedAlbumName && spotlightPhotos.length > 0 && (
         <section className="py-12 bg-gradient-to-b from-white to-gray-50">
           <div className="container mx-auto px-6">
             <div className="flex items-center justify-center mb-8">
@@ -123,45 +136,82 @@ export default function GalleryPage() {
       {/* Albums Grid */}
       <section className="py-12">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Photo Albums</h2>
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto"></div>
-            </div>
-          ) : albums.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-lg p-12 text-center">
-              <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">No photo albums available yet.</p>
+          {selectedAlbumName ? (
+            <div>
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-bold text-gray-800">{selectedAlbumName} Album</h2>
+                <button
+                  onClick={() => setSelectedAlbumName(null)}
+                  className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  Back to Albums
+                </button>
+              </div>
+              <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {allPhotos.filter(p => (p.album_name || 'General') === selectedAlbumName).map(photo => (
+                  <div
+                    key={photo.id}
+                    className="relative group cursor-pointer"
+                    onClick={() => setSelectedPhoto(photo)}
+                  >
+                    <div className="relative overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300">
+                      <img
+                        src={photo.photo_url}
+                        alt={photo.title || 'Photo'}
+                        className="w-full h-64 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <span className="text-white font-medium">View Full Size</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-6">
-              {albums.map((album) => (
-                <Link
-                  key={album.id}
-                  href={`/gallery/${album.id}`}
-                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow group"
-                >
-                  <div className="h-48 bg-gradient-to-r from-ghana-green to-green-700 flex items-center justify-center">
-                    {album.cover_image_url ? (
-                      <img
-                        src={album.cover_image_url}
-                        alt={album.album_name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <ImageIcon className="w-16 h-16 text-white opacity-50" />
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-ghana-green">
-                      {album.album_name}
-                    </h3>
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {album.description || 'View photos from this collection'}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+            <div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Photo Albums</h2>
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-methodist-blue mx-auto"></div>
+                </div>
+              ) : albums.length === 0 ? (
+                <div className="bg-white rounded-lg shadow-lg p-12 text-center">
+                  <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No photo albums available yet.</p>
+                </div>
+              ) : (
+                <div className="grid md:grid-cols-3 gap-6">
+                  {albums.map((album) => (
+                    <div
+                      key={album.id}
+                      onClick={() => setSelectedAlbumName(album.id)}
+                      className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow group cursor-pointer"
+                    >
+                      <div className="h-48 bg-gradient-to-r from-ghana-green to-green-700 flex items-center justify-center relative">
+                        {album.cover_image_url ? (
+                          <img
+                            src={album.cover_image_url}
+                            alt={album.album_name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="w-16 h-16 text-white opacity-50" />
+                        )}
+                        <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
+                      </div>
+                      <div className="p-6">
+                        <h3 className="text-xl font-bold text-gray-800 mb-2 group-hover:text-ghana-green transition-colors">
+                          {album.album_name}
+                        </h3>
+                        <p className="text-gray-600 text-sm">
+                          {album.photoCount} {album.photoCount === 1 ? 'photo' : 'photos'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
