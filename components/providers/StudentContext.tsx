@@ -129,31 +129,75 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
         .maybeSingle()
 
       const loadStatsPromise = (async () => {
-          // Simplification for performance
-          const { data: termSetting } = await supabase
-             .from('system_settings')
-             .select('setting_value')
-             .eq('setting_key', 'current_term')
-             .single()
-             
-          const currentTermId = termSetting?.setting_value
-          let currentTerm = 'N/A'
-          
-          if (currentTermId) {
-             const { data: term } = await supabase
-               .from('academic_terms')
-               .select('name, academic_year')
-               .eq('id', currentTermId)
-               .single()
-             if (term) currentTerm = `${term.name} ${term.academic_year}`
-          }
+            let classPosition = 'N/A'
+            let averageScore = 0
+            let attendance = 'No Data'
+            let currentTerm = 'N/A'
 
-          return { 
-             currentTerm,
-             attendance: 'No Data', 
-             averageScore: 0, 
-             classPosition: 'N/A' 
-          }
+            const { data: termSetting } = await supabase
+               .from('system_settings')
+               .select('setting_value')
+               .eq('setting_key', 'current_term')
+               .single()
+               
+            const currentTermId = termSetting?.setting_value
+            
+            if (currentTermId) {
+               const { data: term } = await supabase
+                 .from('academic_terms')
+                 .select('name, academic_year')
+                 .eq('id', currentTermId)
+                 .single()
+               if (term) currentTerm = `${term.name} ${term.academic_year}`
+               
+               if (student?.class_id && student?.id) {
+                   try {
+                       const rankRes = await fetch(`/api/class-rankings?classId=${student.class_id}&termId=${currentTermId}`)
+                       if (rankRes.ok) {
+                           const rankData = await rankRes.json()
+                           const classScores = rankData.scores || []
+                           const uniqueSubjects = new Set(classScores.map((s: any) => s.subject_id))
+                           const totalSubjs = uniqueSubjects.size || 1
+                           const totals: Record<string, number> = {}
+                           
+                           classScores.forEach((s: any) => { 
+                               if (!totals[s.student_id]) totals[s.student_id] = 0
+                               totals[s.student_id] += (s.total || 0) 
+                           })
+                           
+                           const sorted = Object.entries(totals)
+                               .map(([sid, t]) => ({sid, avg: t/totalSubjs}))
+                               .sort((a,b) => b.avg - a.avg)
+                           
+                           const pIdx = sorted.findIndex(s => s.sid === student.id)
+                           if (pIdx >= 0) {
+                               const pos = pIdx + 1
+                               
+                               const pr = new Intl.PluralRules("en-US", { type: "ordinal" })
+                               const suffixes = new Map([
+                                   ["one", "st"],
+                                   ["two", "nd"],
+                                   ["few", "rd"],
+                                   ["other", "th"]
+                               ])
+                               const suffix = suffixes.get(pr.select(pos)) || "th"
+                               
+                               classPosition = `${pos}${suffix} / ${rankData.totalClassSize || 1}`
+                               averageScore = Math.round(sorted[pIdx].avg * 10) / 10
+                           }
+                       }
+                   } catch (e) {
+                       console.error('Failed to get student ranking stats', e)
+                   }
+               }
+            }
+  
+            return { 
+               currentTerm,
+               attendance, 
+               averageScore, 
+               classPosition 
+            }
       })();
 
       const [announcements, settings, stats] = await Promise.all([

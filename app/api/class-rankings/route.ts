@@ -38,7 +38,16 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const classId = searchParams.get('classId')
   const termId = searchParams.get('termId')
-  const requestingStudentId = profile?.role === 'student' ? session.user.id : null
+  let requestingStudentId = null
+  if (profile?.role === 'student') {
+    // We need the student's actual ID from the students table, not their auth profile ID
+    const { data: studentRecord } = await supabase
+      .from('students')
+      .select('id')
+      .eq('profile_id', session.user.id)
+      .single()
+    if (studentRecord) requestingStudentId = studentRecord.id
+  }
 
   if (!classId || !termId) {
     return NextResponse.json({ error: 'Missing classId or termId' }, { status: 400 })
