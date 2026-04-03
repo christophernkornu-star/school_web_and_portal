@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileText, BarChart3, Download, Users, TrendingUp, Eye, Filter, CheckSquare, Square, Printer } from 'lucide-react'
+import { ArrowLeft, FileText, BarChart3, Download, Users, TrendingUp, Eye, Filter, CheckSquare, Square, Printer, Wand2 } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
+import { getAutoRemark } from '@/lib/remark-utils'
+import { isClassTeacher } from '@/lib/teacher-permissions'
 
 interface Student {
   id: string
@@ -41,6 +43,8 @@ export default function ReportsPage() {
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkGenerating, setBulkGenerating] = useState(false)
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false)
+  const [isTeacherClassTeacher, setIsTeacherClassTeacher] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -110,6 +114,18 @@ export default function ReportsPage() {
       loadClassData()
     }
   }, [selectedClass, selectedTerm])
+
+  useEffect(() => {
+    const checkClassTeacher = async () => {
+      if (teacher?.profile_id && selectedClass) {
+        const isClass = await isClassTeacher(teacher.profile_id, selectedClass)
+        setIsTeacherClassTeacher(isClass)
+      } else {
+        setIsTeacherClassTeacher(false)
+      }
+    }
+    checkClassTeacher()
+  }, [teacher, selectedClass])
 
   const loadClassData = async () => {
     try {
@@ -287,6 +303,85 @@ export default function ReportsPage() {
       toast.error('Failed to generate report cards: ' + error.message)
     } finally {
       setBulkGenerating(false)
+    }
+  }
+
+  // Auto-generate remarks for all students based on their performance and attendance
+  const generateAutoRemarksForAll = async () => {
+    if (students.length === 0) {
+      toast.error('No students found in this class.')
+      return
+    }
+
+    if (!confirm('Are you sure you want to regenerate remarks for ALL students in this class for the selected term? This will overwrite existing auto-remarks.')) {
+      return
+    }
+
+    setIsAutoGenerating(true)
+    const toastId = toast.loading('Fetching attendance and calculating remarks...')
+
+    try {
+      // 1. Fetch attendance records for this term for all these students
+      const { data: attendanceData, error: attendanceError } = await supabase
+        .from('attendance')
+        .select('student_id, status')
+        .eq('academic_term_id', selectedTerm)
+        .in('student_id', students.map(s => s.id))
+      
+      if (attendanceError) throw attendanceError
+
+      // 2. Determine total days of the term
+      const { data: termData, error: termError } = await supabase
+        .from('academic_terms')
+        .select('total_days')
+        .eq('id', selectedTerm)
+        .single()
+        
+      if (termError && termError.code !== 'PGRST116') {
+        throw termError
+      }
+
+      const totalDays = termData?.total_days || 0
+
+      // 3. Compile the payload array
+      const maxBatchSize = 100
+      const remarksPayload = students.map(student => {
+        const studentAttendance = attendanceData?.filter((a: any) => a.student_id === student.id) || []
+        const presentDays = studentAttendance.filter((a: any) => a.status === 'present' || a.status === 'late').length
+        const attendancePercentage = totalDays > 0 ? (presentDays / totalDays) * 100 : undefined
+        
+        const avgScore = student.averageScore || 0
+        const seed = student.id
+
+        return {
+          student_id: student.id,
+          term_id: selectedTerm,
+          attitude: getAutoRemark('attitude', avgScore, attendancePercentage, seed),
+          interest: getAutoRemark('interest', avgScore, attendancePercentage, seed),
+          conduct: getAutoRemark('conduct', avgScore, attendancePercentage, seed),
+          class_teacher_remark: getAutoRemark('classTeacher', avgScore, attendancePercentage, seed),
+          head_teacher_remark: getAutoRemark('headTeacher', avgScore, attendancePercentage, seed)
+        }
+      })
+
+      toast.loading(`Saving remarks for ${students.length} students...`, { id: toastId })
+
+      // 4. Batch upsert
+      for (let i = 0; i < remarksPayload.length; i += maxBatchSize) {
+        const batch = remarksPayload.slice(i, i + maxBatchSize)
+        const { error: saveError } = await supabase
+          .from('student_remarks')
+          .upsert(batch, { onConflict: 'student_id,term_id' })
+          
+        if (saveError) throw saveError
+      }
+
+      toast.success(`Successfully regenerated and auto-saved remarks for all ${students.length} students!`, { id: toastId })
+    } catch (error: any) {
+      console.error('Error generating auto-remarks bulk:', error)
+      toast.error('Failed to generate remarks: ' + error.message, { id: toastId })
+    } finally {
+      setIsAutoGenerating(false)
     }
   }
 
@@ -580,34 +675,55 @@ export default function ReportsPage() {
                   </span>
                 )}
               </div>
-              {selectedStudents.length > 0 && (
-                <button
-                  onClick={generateBulkReportCards}
-                  disabled={bulkGenerating}
-                  className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-xs md:text-sm font-medium"
-                >
-                  {bulkGenerating ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Printer className="w-4 h-4" />
-                      Generate {selectedStudents.length} Report Card{selectedStudents.length > 1 ? 's' : ''}
-                    </>
+                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
+                    {isTeacherClassTeacher && students.length > 0 && (
+                    <button
+                      onClick={generateAutoRemarksForAll}
+                      disabled={isAutoGenerating || students.length === 0}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-xs md:text-sm font-medium"
+                    >
+                      {isAutoGenerating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-4 h-4" />
+                          Auto-Generate Remarks for All
+                        </>
+                      )}
+                    </button>
                   )}
-                </button>
-              )}
-            </div>
+                  {selectedStudents.length > 0 && (
+                    <button
+                      onClick={generateBulkReportCards}
+                      disabled={bulkGenerating}
+                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-xs md:text-sm font-medium"
+                    >
+                      {bulkGenerating ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                          Generating...
+                        </>
+                      ) : (
+                        <>
+                          <Printer className="w-4 h-4" />
+                          Generate {selectedStudents.length} Report Card{selectedStudents.length > 1 ? 's' : ''}
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
-              {students.map((student) => (
-                <div key={student.id} className={`p-4 ${selectedStudents.includes(student.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-800'}`}>
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <button onClick={() => toggleStudentSelection(student.id)}>
+              {/* Mobile Card View */}
+              <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+                {students.map((student) => (
+                  <div key={student.id} className={`p-4 ${selectedStudents.includes(student.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-800'}`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <button onClick={() => toggleStudentSelection(student.id)}>
                         {selectedStudents.includes(student.id) ? (
                           <CheckSquare className="w-5 h-5 text-ghana-green" />
                         ) : (
