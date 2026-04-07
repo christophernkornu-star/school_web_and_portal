@@ -284,11 +284,11 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
 
     const [attendanceResult, termMetadata, rankingsResponse, promotionDataResult] = await Promise.all([
         supabase
-        .from('attendance')
-        .select('id', { count: 'exact', head: true })
+        .from('student_attendance')
+        .select('days_present')
         .eq('student_id', studentId)
-        .eq('academic_term_id', targetTermId)
-        .in('status', ['present', 'late']),
+        .eq('term_id', targetTermId)
+        .maybeSingle(),
         
         supabase
         .from('academic_terms')
@@ -312,7 +312,7 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
     ])
 
     report.attendance = {
-        present: attendanceResult.count || 0,
+        present: (attendanceResult.data as any)?.days_present || 0,
         total: (termMetadata.data as any)?.total_days || 0
     }
     report.daysPresent = report.attendance.present // compat

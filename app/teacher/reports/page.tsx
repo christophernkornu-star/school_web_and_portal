@@ -323,12 +323,9 @@ export default function ReportsPage() {
     try {
       // 1. Fetch attendance records for this term for all these students
       const { data: attendanceData, error: attendanceError } = await supabase
-        .from('attendance')
-        .select('student_id, status')
-        .eq('academic_term_id', selectedTerm)
-        .in('student_id', students.map(s => s.id))
-      
-      if (attendanceError) throw attendanceError
+          .from('student_attendance')
+          .select('student_id, days_present')
+          .eq('term_id', selectedTerm)
 
       // 2. Determine total days of the term
       const { data: termData, error: termError } = await supabase
@@ -346,8 +343,8 @@ export default function ReportsPage() {
       // 3. Compile the payload array
       const maxBatchSize = 100
       const remarksPayload = students.map(student => {
-        const studentAttendance = attendanceData?.filter((a: any) => a.student_id === student.id) || []
-        const presentDays = studentAttendance.filter((a: any) => a.status === 'present' || a.status === 'late').length
+        const studentAttendance = attendanceData?.find((a: any) => a.student_id === student.id)
+        const presentDays = studentAttendance?.days_present || 0
         const attendancePercentage = totalDays > 0 ? (presentDays / totalDays) * 100 : undefined
         
         const avgScore = student.averageScore || 0
