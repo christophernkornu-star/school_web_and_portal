@@ -79,6 +79,7 @@ const sidebarItems = [
     items: [
       { href: '/admin/finance', label: 'Finance', icon: DollarSign },
       { href: '/admin/settings', label: 'Settings', icon: Settings },
+      { href: '/admin/audit-logs', label: 'Audit Logs', icon: ScrollText },
     ]
   },
 ]

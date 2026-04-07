@@ -323,7 +323,7 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
                 <p className="text-sm font-bold text-blue-900 leading-none">
                   {profile?.full_name || 'Administrator'}
                 </p>
-                <p className="text-xs text-blue-900/70 mt-1 font-medium">Admin Portal</p>
+                <p className="text-xs text-blue-900/70 mt-1 font-medium">Admin</p>
              </div>
              
              <button 
