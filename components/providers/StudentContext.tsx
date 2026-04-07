@@ -145,11 +145,28 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
             if (currentTermId) {
                const { data: term } = await supabase
                  .from('academic_terms')
-                 .select('name, academic_year')
+                 .select('name, academic_year, total_days')
                  .eq('id', currentTermId)
                  .single()
                if (term) currentTerm = `${term.name} ${term.academic_year}`
                
+               if (student?.id) {
+                   try {
+                       const { data: attendanceData } = await supabase
+                           .from('student_attendance')
+                           .select('days_present')
+                           .eq('student_id', student.id)
+                           .eq('term_id', currentTermId)
+                           .maybeSingle()
+                       
+                       const daysPresent = attendanceData?.days_present || 0;
+                       const totalTermDays = term?.total_days || 0;
+                       attendance = `${daysPresent} / ${totalTermDays}`;
+                   } catch (e) {
+                       console.error('Failed to get attendance', e)
+                   }
+               }
+
                if (student?.class_id && student?.id) {
                    try {
                        const rankRes = await fetch(`/api/class-rankings?classId=${student.class_id}&termId=${currentTermId}`)
