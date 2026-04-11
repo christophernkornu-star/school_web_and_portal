@@ -167,61 +167,41 @@ export function StudentProvider({ children }: { children: React.ReactNode }) {
                    }
                }
 
-               if (student?.class_id && student?.id) {
-                   try {
-                       const rankRes = await fetch(`/api/class-rankings?classId=${student.class_id}&termId=${currentTermId}`)
-                       if (rankRes.ok) {
-                           const rankData = await rankRes.json()
-                           const classScores = rankData.scores || []
-                           const uniqueSubjects = new Set(classScores.map((s: any) => s.subject_id))
-                           const totalSubjs = uniqueSubjects.size || 1
-                           const totals: Record<string, number> = {}
-                           
-                           classScores.forEach((s: any) => { 
-                               if (!totals[s.student_id]) totals[s.student_id] = 0
-                               totals[s.student_id] += (s.total || 0) 
-                           })
-                           
-                           const sorted = Object.entries(totals)
-                               .map(([sid, t]) => ({sid, avg: t/totalSubjs}))
-                               .sort((a,b) => b.avg - a.avg)
-                           
-                           const pIdx = sorted.findIndex(s => s.sid === student.id)
-                           if (pIdx >= 0) {
-                               const pos = pIdx + 1
-                               
-                               const pr = new Intl.PluralRules("en-US", { type: "ordinal" })
-                               const suffixes = new Map([
-                                   ["one", "st"],
-                                   ["two", "nd"],
-                                   ["few", "rd"],
-                                   ["other", "th"]
-                               ])
-                               const suffix = suffixes.get(pr.select(pos)) || "th"
-                               
-                               classPosition = `${pos}${suffix} / ${rankData.totalClassSize || 1}`
-                               averageScore = Math.round(sorted[pIdx].avg * 10) / 10
-                           }
-                       }
-                   } catch (e) {
-                       console.error('Failed to get student ranking stats', e)
-                   }
-               }
-            }
-  
-            return { 
-               currentTerm,
-               attendance, 
-               averageScore, 
-               classPosition 
-            }
-      })();
+                 if (student?.id) {
+                     try {
+                         const { fetchReportCardData } = await import('@/lib/reports/fetcher')
+                         const { reportData } = await fetchReportCardData(student.id, currentTermId)
+                         
+                         if (reportData) {
+                             averageScore = reportData.averageScore || 0
+                             
+                             if (reportData.position && reportData.totalClassSize) {
+                                 const pos = reportData.position
+                                 const pr = new Intl.PluralRules("en-US", { type: "ordinal" })
+                                 const suffixes = new Map([
+                                     ["one", "st"],
+                                     ["two", "nd"],
+                                     ["few", "rd"],
+                                     ["other", "th"]
+                                 ])
+                                 const suffix = suffixes.get(pr.select(pos)) || "th"
+                                 classPosition = `${pos}${suffix} / ${reportData.totalClassSize}`
+                             }
+                         }
+                     } catch (e) {
+                         console.error('Failed to get student report stats', e)
+                     }
+                 }
+              }
 
-      const [announcements, settings, stats] = await Promise.all([
-         loadAnnouncementsPromise,
-         loadSettingsPromise,
-         loadStatsPromise
-      ])
+              return { currentTerm, attendance, averageScore, classPosition }
+        })();
+
+        const [announcements, settings, stats] = await Promise.all([
+           loadAnnouncementsPromise,
+           loadSettingsPromise,
+           loadStatsPromise
+        ])
 
       setDashboardData({
         announcements,

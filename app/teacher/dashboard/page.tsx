@@ -107,7 +107,7 @@ export default function TeacherDashboard() {
             // 2. Fetch Last 4 Terms
             const { data: terms, error: termsError } = await supabase
                 .from('academic_terms')
-                .select('id, name, start_date')
+                .select('id, name, academic_year, start_date')
                 .order('start_date', { ascending: false }) // Most recent first
                 .limit(4);
                 
@@ -173,21 +173,22 @@ export default function TeacherDashboard() {
                 const termScores = scores
                     .filter((s: any) => s.term_id === term.id)
                     .map((s: any) => s.total || 0);
+                    
+                    const fullName = `${term.name} (${term.academic_year})`;
 
-                if (termScores.length === 0) {
-                    // Use previous term's average or 0 if none
-                    return { termName: term.name, score: 0, maxScore: 0 };
-                }
+                    if (termScores.length === 0) {
+                        return { termName: fullName, score: 0, maxScore: 0 };
+                    }
 
-                const avg = termScores.reduce((a: number, b: number) => a + b, 0) / termScores.length;
-                const max = Math.max(...termScores);
+                    const avg = termScores.reduce((a: number, b: number) => a + b, 0) / termScores.length;
+                    const max = Math.max(...termScores);
 
-                return {
-                    termName: term.name,
-                    score: Math.round(avg),
-                    maxScore: Math.round(max)
-                };
-            });
+                    return {
+                        termName: fullName,
+                        score: Math.round(avg),
+                        maxScore: Math.round(max)
+                    };
+                });
 
             setPerformanceData(chartData);
 

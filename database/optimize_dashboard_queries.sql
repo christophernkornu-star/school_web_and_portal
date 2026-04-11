@@ -28,7 +28,7 @@ BEGIN
     
     -- 2. Get 4 Most Recent Academic Terms
     recent_terms AS (
-        SELECT id, name, start_date 
+        SELECT id, name, academic_year, start_date 
         FROM academic_terms 
         ORDER BY start_date DESC 
         LIMIT 4
@@ -45,14 +45,14 @@ BEGIN
     -- 4. Aggregate Scores per Term
     term_stats AS (
         SELECT 
-            t.name AS term_name,
+            t.name || ' (' || t.academic_year || ')' AS term_name,
             t.start_date,
             AVG(s.total) as avg_score,
             MAX(s.total) as mx_score
         FROM recent_terms t
         JOIN scores s ON s.term_id = t.id
         JOIN class_students cs ON s.student_id = cs.student_id
-        GROUP BY t.id, t.name, t.start_date
+        GROUP BY t.id, t.name, t.academic_year, t.start_date
     )
 
     -- 5. Return Results Chronologically
