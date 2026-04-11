@@ -21,6 +21,8 @@ export default function TeacherFeesPage() {
   const [loading, setLoading] = useState(true)
   const [classes, setClasses] = useState<any[]>([])
   const [selectedClass, setSelectedClass] = useState<string>('')
+  const [academicYears, setAcademicYears] = useState<string[]>([])
+  const [selectedYear, setSelectedYear] = useState<string>('')
   const [students, setStudents] = useState<any[]>([])
   const [feeStructures, setFeeStructures] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
@@ -43,10 +45,10 @@ export default function TeacherFeesPage() {
   }, [])
 
   useEffect(() => {
-    if (selectedClass) {
-      loadClassData(selectedClass)
+    if (selectedClass && selectedYear) {
+      loadClassData(selectedClass, selectedYear)
     }
-  }, [selectedClass])
+  }, [selectedClass, selectedYear])
 
   const loadInitialData = async () => {
     try {
@@ -92,6 +94,27 @@ export default function TeacherFeesPage() {
         classesData = data || []
       }
 
+      // Get unique academic years from terms
+      const { data: terms } = await supabase
+        .from('academic_terms')
+        .select('academic_year')
+        .order('start_date', { ascending: false })
+      
+      const uniqueYears = Array.from(new Set(terms?.map((t: any) => t.academic_year) || [])) as string[]
+      setAcademicYears(uniqueYears)
+
+      const { data: currentTerm } = await supabase
+        .from('academic_terms')
+        .select('academic_year')
+        .eq('is_current', true)
+        .single()
+
+      if (currentTerm?.academic_year) {
+        setSelectedYear(currentTerm.academic_year)
+      } else if (uniqueYears.length > 0) {
+        setSelectedYear(uniqueYears[0])
+      }
+
       setClasses(classesData)
       if (classesData.length > 0) {
         setSelectedClass(classesData[0].id)
@@ -103,7 +126,7 @@ export default function TeacherFeesPage() {
     }
   }
 
-  const loadClassData = async (classId: string) => {
+  const loadClassData = async (classId: string, year: string) => {
     setLoading(true)
     try {
       // Fetch students
@@ -115,50 +138,36 @@ export default function TeacherFeesPage() {
 
       setStudents(studentsData || [])
 
-      // Fetch fee structures for this class (and global ones)
-      // Note: This assumes we have a way to link fees to classes. 
-      // For now, we'll fetch all fee structures and filter client-side or assume they apply.
-      // Ideally, we should filter by current academic term/year.
-      
-      // Get current term
-      const { data: currentTerm } = await supabase
-        .from('academic_terms')
-        .select('id, academic_year')
-        .eq('is_current', true)
-        .single()
+      // Fetch fee structures for this academic year
+      const { data: feesData } = await supabase
+        .from('fee_structures')
+        .select(`
+          id, amount, academic_year,
+          fee_types (id, name, description)
+        `)
+        .eq('academic_year', year)
+        .or(`class_id.eq.${classId},class_id.is.null`)
 
-      if (currentTerm) {
-        const { data: feesData } = await supabase
-          .from('fee_structures')
+      setFeeStructures(feesData || [])
+
+      // Fetch payments for these students and fees
+      if (studentsData && studentsData.length > 0 && feesData && feesData.length > 0) {
+        const studentIds = studentsData.map((s: any) => s.id)
+        const feeIds = feesData.map((f: any) => f.id)
+
+        const { data: paymentsData } = await supabase
+          .from('fee_payments')
           .select(`
-            id, amount, academic_year,
-            fee_types (id, name, description)
+            *,
+            profiles:recorded_by (full_name)
           `)
-          .eq('academic_year', currentTerm.academic_year)
-          // .eq('term_id', currentTerm.id) // Optional: filter by term
-          .or(`class_id.eq.${classId},class_id.is.null`)
+          .in('student_id', studentIds)
+          .in('fee_structure_id', feeIds)
+          .order('created_at', { ascending: false })
 
-        setFeeStructures(feesData || [])
-
-        // Fetch payments for these students and fees
-        if (studentsData && studentsData.length > 0 && feesData && feesData.length > 0) {
-          const studentIds = studentsData.map((s: any) => s.id)
-          const feeIds = feesData.map((f: any) => f.id)
-
-          const { data: paymentsData } = await supabase
-            .from('fee_payments')
-            .select(`
-              *,
-              profiles:recorded_by (full_name)
-            `)
-            .in('student_id', studentIds)
-            .in('fee_structure_id', feeIds)
-            .order('created_at', { ascending: false })
-
-          setPayments(paymentsData || [])
-        } else {
-          setPayments([])
-        }
+        setPayments(paymentsData || [])
+      } else {
+        setPayments([])
       }
     } catch (error) {
       console.error('Error loading class data:', error)
@@ -213,7 +222,7 @@ export default function TeacherFeesPage() {
       }
 
       // Refresh data
-      loadClassData(selectedClass)
+      loadClassData(selectedClass, selectedYear)
       // Only close if it was a new payment, or reset form if editing
       if (editingPaymentId) {
         setEditingPaymentId(null)
@@ -249,7 +258,7 @@ export default function TeacherFeesPage() {
       if (error) throw error
 
       toast.success('Payment deleted successfully')
-      loadClassData(selectedClass)
+      loadClassData(selectedClass, selectedYear)
       
       // If we were editing this payment, cancel edit
       if (editingPaymentId === paymentId) {
@@ -368,6 +377,16 @@ export default function TeacherFeesPage() {
           </div>
           
           <div className="flex items-center gap-4">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              className="p-2 border rounded-lg bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-green-500 outline-none text-sm dark:border-gray-700 dark:text-white"
+            >
+              {academicYears.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
