@@ -141,7 +141,8 @@ export default function ClassReportPage() {
       // 1. Get Class Details
       const selectedClassData = classes.find(c => c.class_id === selectedClass)
       const className = selectedClassData?.class_name || ''
-      const termName = terms.find(t => t.id === selectedTerm)?.name || ''
+      const selectedTermData = terms.find(t => t.id === selectedTerm)
+      const termName = selectedTermData ? `${selectedTermData.name} (${selectedTermData.academic_year})` : ''
 
       // 2. Get Students
       const { data: studentsData, error: studentsError } = await supabase
@@ -445,15 +446,21 @@ export default function ClassReportPage() {
                     {/* Subject Names Header */}
                     <tr className="bg-blue-50 dark:bg-blue-900/30">
                       <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-6 text-center align-middle">SN</th>
-                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 text-left align-middle min-w-[120px] whitespace-nowrap">STUDENT NAME</th>
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 text-left align-middle max-w-[100px] break-words w-24 print:w-[80px]">STUDENT NAME</th>
                       {sheetData.subjects.map(subject => (
                         <th key={subject.id} colSpan={4} className="border border-blue-900 dark:border-blue-400 p-0.5 text-center align-middle bg-blue-100 dark:bg-blue-800">
                           {getShortSubjectName(subject.name)}
                         </th>
                       ))}
-                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-10 text-center align-middle bg-green-100 dark:bg-green-900/30 font-bold">G.TOT</th>
-                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-8 text-center align-middle bg-green-100 dark:bg-green-900/30 font-bold">AVG</th>
-                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 w-8 text-center align-middle bg-green-100 dark:bg-green-900/30 font-bold">RANK</th>
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 align-middle bg-green-100 dark:bg-green-900/30 font-bold">
+                         <div className="[writing-mode:vertical-rl] [transform:rotate(180deg)] mx-auto h-12 flex items-center justify-center">G.TOT</div>
+                      </th>
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 align-middle bg-green-100 dark:bg-green-900/30 font-bold">
+                         <div className="[writing-mode:vertical-rl] [transform:rotate(180deg)] mx-auto h-12 flex items-center justify-center">AVG</div>
+                      </th>
+                      <th rowSpan={2} className="border border-blue-900 dark:border-blue-400 p-0.5 align-middle bg-green-100 dark:bg-green-900/30 font-bold">
+                         <div className="[writing-mode:vertical-rl] [transform:rotate(180deg)] mx-auto h-12 flex items-center justify-center">RANK</div>
+                      </th>
                     </tr>
                     {/* Sub-headers: CS, ES, TOT, POS */}
                     <tr className="bg-blue-100 dark:bg-blue-900/50">
@@ -464,11 +471,13 @@ export default function ClassReportPage() {
                             return (
                               <th
                                 key={`${subject.id}-${header}`}
-                                className={`border border-blue-900 dark:border-blue-400 p-0.5 text-center ${
-                                  header === 'TOT' ? 'w-7' : 'w-6'
-                                } ${isSubjectBoundary ? 'subject-divider-right' : ''}`}
+                                className={`border border-blue-900 dark:border-blue-400 p-0 text-center align-middle ${
+                                  isSubjectBoundary ? 'subject-divider-right' : ''
+                                }`}
                               >
-                                {header}
+                                <div className="[writing-mode:vertical-rl] [transform:rotate(180deg)] mx-auto h-8 lg:h-10 flex items-center justify-center text-[min(9px,0.75vw)] print:text-[8px] font-semibold py-1">
+                                  {header}
+                                </div>
                               </th>
                             )
                           })}
@@ -480,22 +489,22 @@ export default function ClassReportPage() {
                     {sheetData.students.map((student, index) => (
                         <tr key={student.student.id} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors [content-visibility:auto] print:[content-visibility:visible] [contain-intrinsic-size:32px]">
                         <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{index + 1}</td>
-                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 font-medium text-left whitespace-nowrap">
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 font-medium text-left break-words w-24 max-w-[100px] leading-tight print:w-[80px]">
                           {student.student.last_name} {student.student.middle_name ? student.student.middle_name + ' ' : ''}{student.student.first_name}
                         </td>
                         {sheetData.subjects.map(subject => {
                           const score = student.scores[subject.id]
                           return (
                             <Fragment key={`${student.student.id}-${subject.id}`}>
-                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.classScore === 'number' ? score.classScore.toFixed(1) : score.classScore}</td>
-                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.examScore === 'number' ? score.examScore.toFixed(1) : score.examScore}</td>
-                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-semibold">{typeof score.total === 'number' ? score.total.toFixed(1) : score.total}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.classScore === 'number' ? Math.round(score.classScore) : score.classScore}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.examScore === 'number' ? Math.round(score.examScore) : score.examScore}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-semibold">{typeof score.total === 'number' ? Math.round(score.total) : score.total}</td>
                                 <td className="subject-divider-right border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.position}</td>
                               </Fragment>
                             )
                           })}
-                          <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{typeof student.grandTotal === 'number' ? student.grandTotal.toFixed(1) : student.grandTotal}</td>
-                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.average.toFixed(1)}</td>
+                          <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{typeof student.grandTotal === 'number' ? Math.round(student.grandTotal) : student.grandTotal}</td>
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{Math.round(student.average)}</td>
                         <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.position}</td>
                       </tr>
                     ))}
