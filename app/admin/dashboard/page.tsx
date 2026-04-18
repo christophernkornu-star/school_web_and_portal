@@ -1,6 +1,7 @@
+'use client'
+
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock } from 'lucide-react'
-'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -194,9 +195,9 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Quick Actions Panel */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
+            <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl">
+                <CardHeader>
+                  <CardTitle>Quick Actions</CardTitle>
                 <CardDescription>Common tasks used daily</CardDescription>
               </CardHeader>
               <CardContent>
@@ -325,18 +326,27 @@ export default function AdminDashboard() {
   )
 }
 
-function StatsCard({ title, value, icon: Icon, trend, description }: any) {
+function StatsCard({ title, value, icon: Icon, trend, description, color = "default" }: any) {
+  const iconColors: any = {
+    blue: "bg-blue-50 text-blue-600 border-blue-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    purple: "bg-purple-50 text-purple-600 border-purple-100",
+    amber: "bg-amber-50 text-amber-600 border-amber-100",
+    default: "bg-gray-50 text-gray-600 border-gray-100"
+  }
+  const colorClass = iconColors[color] || iconColors.default;
+
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between space-y-0 pb-2">
-          <p className="text-sm font-medium text-muted-foreground text-gray-500 dark:text-gray-400">{title}</p>
-          <Icon className="h-4 w-4 text-muted-foreground text-gray-400" />
+    <Card className={`h-full transition-all duration-300 hover:shadow-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl border-t border-l border-r border-b-[3px] rounded-3xl hover:-translate-y-1 ${colorClass.split(' ')[2]}`}>
+      <CardContent className="p-6 flex items-start space-x-4 h-full">
+        <div className={`p-3 rounded-full ${colorClass.split(' ').slice(0,2).join(' ')}`}>
+          <Icon className="w-6 h-6" />
         </div>
-        <div className="flex flex-col gap-1">
-          <div className="text-2xl font-bold">{value}</div>
-          <p className="text-xs text-muted-foreground text-gray-500 dark:text-gray-400">
-            {description} <span className="text-green-600 dark:text-green-400 ml-1 font-medium">({trend})</span>
+        <div className="flex flex-col flex-1">
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{value}</div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {description} {trend && <span className="text-green-600 dark:text-green-400 font-medium ml-1">{trend}</span>}
           </p>
         </div>
       </CardContent>
@@ -346,15 +356,15 @@ function StatsCard({ title, value, icon: Icon, trend, description }: any) {
 
 function QuickActionLink({ title, href, icon: Icon }: any) {
   return (
-    <Link href={href}>
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer h-full border-dashed hover:border-solid">
-        <div className="p-4 flex flex-col items-center justify-center text-center space-y-2">
-          <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-full">
-            <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+    <Link href={href} className="block group h-full">
+      <Card className="h-full transition-all duration-300 hover:shadow-lg border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl hover:-translate-y-1">
+        <CardContent className="p-6 flex flex-col items-center text-center h-full justify-center">
+          <div className="p-4 rounded-xl bg-blue-50 text-blue-600 mb-4 group-hover:scale-110 transition-transform duration-300">
+            <Icon className="w-8 h-8" />
           </div>
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{title}</span>
-        </div>
-      </div>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-1">{title}</h3>
+        </CardContent>
+      </Card>
     </Link>
   )
 }
