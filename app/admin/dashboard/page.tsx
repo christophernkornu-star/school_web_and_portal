@@ -1,3 +1,5 @@
+import { Badge } from '@/components/ui/badge'
+import { Calendar, Clock } from 'lucide-react'
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -86,6 +88,11 @@ export default function AdminDashboard() {
   }
 
   const { stats, upcomingEvents, currentTerm, recentActivities, alertThreshold } = data
+  const currentTime = new Date();
+  const hour = currentTime.getHours();
+  let greeting = 'Good evening';
+  if (hour < 12) greeting = 'Good morning';
+  else if (hour < 18) greeting = 'Good afternoon';
   let termProgress = 0
   if (currentTerm) {
     const start = new Date(currentTerm.start_date)
@@ -100,29 +107,61 @@ export default function AdminDashboard() {
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
-        <PageHeader
-          title="Dashboard Overview" 
-          description="Welcome back, here's what's happening at your school today."
-        >
-           <Link 
-             href="/admin/students/add" 
-             className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm"
-           >
-             <Plus className="h-4 w-4" />
-             <span>New Student</span>
-           </Link>
-        </PageHeader>
+        {/* Hero Section */}
+        <div className="relative overflow-hidden rounded-3xl shadow-xl overflow-hidden bg-gradient-to-r from-methodist-blue to-blue-900 text-white shadow-xl mt-6">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-64 w-64 rounded-full bg-methodist-gold/20 blur-3xl"></div>
+          
+          <div className="relative z-10 p-8 md:p-10">
+            <div className="flex flex-col md:flex-row justify-between gap-6">
+              <div className="space-y-4">
+                <div>
+                  <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-2 break-words">
+                    {greeting}, Admin
+                  </h1>
+                  <p className="text-blue-200 text-lg flex items-center gap-2 flex-wrap">
+                    <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"></span>
+                    Manage school operations, staff, and student progress.
+                  </p>
+                </div>
+                
+                <div className="flex flex-wrap gap-3">
+                  <Badge variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-0 px-3 py-1">
+                    <Calendar className="w-3 h-3 mr-2" />
+                    {currentTime.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-0 px-3 py-1">
+                    <Clock className="w-3 h-3 mr-2" />
+                    {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </Badge>
+                  <Badge variant="secondary" className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-100 border-0 px-3 py-1">
+                    {currentTerm ? currentTerm.term_name || 'Current Term' : 'Term Running'}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="hidden md:block">
+                 <Link 
+                   href="/admin/students/add" 
+                   className="backdrop-blur-md bg-white/10 p-4 rounded-xl border border-white/10 shadow-inner flex items-center gap-3 hover:bg-white/20 transition-all group"
+                 >
+                    <div className="bg-white text-blue-900 rounded-full p-2 group-hover:scale-110 transition-transform">
+                      <Plus className="h-5 w-5" />
+                    </div>
+                    <div className="text-left">
+                       <p className="text-sm text-blue-200 font-medium">Quick Action</p>
+                       <p className="text-lg font-bold text-white leading-tight">Enroll Student</p>
+                    </div>
+                 </Link>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div onClick={() => setShowStatsModal(true)} className="cursor-pointer transition-transform hover:scale-105">
-            <StatsCard 
-              title="Total Students" 
-              value={stats.totalStudents} 
-              icon={Users} 
-              trend="+2.5% from last term"
-              description="Active Records"
-            />
+            <StatsCard title="Total Enrolled" value={stats.totalStudents} icon={Users} trend="+2.5% vs last term" description="Active Students" color="blue" />
           </div>
           <div onClick={() => setShowTeacherModal(true)} className="cursor-pointer transition-transform hover:scale-105">
             <StatsCard 
@@ -131,22 +170,16 @@ export default function AdminDashboard() {
               icon={GraduationCap} 
               trend="All staff present"
               description="Teaching Staff"
-            />
+             color="emerald" />
           </div>
-          <StatsCard 
-            title="Active Classes" 
-            value={stats.totalClasses} 
-            icon={Building2} 
-            trend="KG to JHS 3"
-            description="Classrooms"
-          />
+          <StatsCard title="Active Classes" value={stats.totalClasses} icon={Building2} trend="From KG to JHS 3" description="Classrooms" color="purple" />
           <StatsCard 
             title="Admissions" 
             value={stats.pendingAdmissions} 
             icon={FileText} 
             trend="Requires action"
             description="Pending Review"
-          />
+           color="amber" />
         </div>
         
         {/* Student Stats Modal */}
@@ -346,3 +379,4 @@ function DashboardSkeleton() {
     </div>
   )
 }
+

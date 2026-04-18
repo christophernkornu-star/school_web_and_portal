@@ -354,19 +354,19 @@ export default function TeacherDashboard() {
   const getPriorityColor = (priority: string) => {
       switch(priority?.toLowerCase()) {
           case 'urgent': return 'text-red-500 bg-red-50 dark:bg-red-900/20'
-          case 'high': return 'text-orange-500 bg-orange-50 dark:bg-orange-900/20'
+          case 'high': return 'text-methodist-gold bg-orange-50 dark:bg-orange-900/20'
           default: return 'text-blue-500 bg-blue-50 dark:bg-blue-900/20'
       }
   }
 
   return (
-    <div className="bg-gray-50/50 dark:bg-gray-900 min-h-screen pb-10">
+    <div className="min-h-screen bg-[#f8f9fa] pb-20">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         {/* Hero Section */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white shadow-xl mt-6">
+        <div className="relative overflow-hidden rounded-3xl shadow-xl overflow-hidden bg-gradient-to-r from-methodist-blue to-blue-900 text-white shadow-xl mt-6">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-64 w-64 rounded-full bg-methodist-gold/20 blur-3xl"></div>
           
           <div className="relative z-10 p-8 md:p-10">
             <div className="flex flex-col md:flex-row justify-between gap-6">
@@ -414,7 +414,7 @@ export default function TeacherDashboard() {
         {/* Quick Actions Grid */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-5 flex items-center gap-2">
-            <LayoutDashboard className="w-5 h-5 text-blue-600" />
+            <LayoutDashboard className="w-5 h-5 text-methodist-blue" />
             Quick Actions
           </h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -423,16 +423,16 @@ export default function TeacherDashboard() {
               title="Mark Attendance" 
               description="Daily Roll Call"
               icon={CheckCircle} 
-              color="text-emerald-600 dark:text-emerald-400"
-              bg="bg-emerald-50 dark:bg-emerald-900/20"
-              borderColor="hover:border-emerald-200 dark:hover:border-emerald-800"
+              color="text-methodist-blue"
+              bg="bg-white/60 backdrop-blur-xl border border-white/20 rounded-2xl"
+              borderColor="hover:border-methodist-blue/20 dark:hover:border-emerald-800"
             />
             <QuickActionCard 
               href="/teacher/manage-scores"
               title="Manage Scores" 
               description="Record Results"
               icon={ClipboardList} 
-              color="text-blue-600 dark:text-blue-400"
+              color="text-methodist-blue dark:text-blue-400"
               bg="bg-blue-50 dark:bg-blue-900/20"
               borderColor="hover:border-blue-200 dark:hover:border-blue-800"
             />
@@ -467,16 +467,16 @@ export default function TeacherDashboard() {
             <div className="grid sm:grid-cols-2 gap-4">
                <Card 
                  onClick={() => setIsClassesModalOpen(true)}
-                 className="cursor-pointer hover:shadow-md transition-shadow"
+                 className="cursor-pointer transition-all duration-300 hover:shadow-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl border border-white/20 rounded-3xl hover:-translate-y-1"
                >
                  <CardContent className="p-6 flex items-center space-x-4">
-                    <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full dark:bg-indigo-900/30 dark:text-indigo-400">
+                    <div className="p-3 bg-blue-50 text-methodist-blue rounded-full ">
                        <BookOpen className="w-6 h-6" />
                     </div>
                     <div>
                        <p className="text-sm font-medium text-muted-foreground">My Classes</p>
                        <Tooltip content={assignedClasses.length > 0 ? assignedClasses.join(', ') : 'No classes assigned'}>
-                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white decoration-dotted underline hover:text-indigo-600 transition-colors inline-block">
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white decoration-dotted underline hover:text-methodist-blue hover:decoration-methodist-blue transition-colors inline-block">
                             {assignedClasses.length}
                           </h3>
                        </Tooltip>
@@ -490,10 +490,10 @@ export default function TeacherDashboard() {
                />
                <Card 
                  onClick={() => setIsStatsOpen(true)} 
-                 className="cursor-pointer hover:shadow-md transition-shadow"
+                 className="cursor-pointer transition-all duration-300 hover:shadow-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl border border-white/20 rounded-3xl hover:-translate-y-1"
                >
                  <CardContent className="p-6 flex items-center space-x-4">
-                    <div className="p-3 bg-pink-100 text-pink-600 rounded-full dark:bg-pink-900/30 dark:text-pink-400">
+                    <div className="p-3 bg-yellow-50 text-methodist-gold rounded-full ">
                        <Users className="w-6 h-6" />
                     </div>
                     <div>
@@ -518,7 +518,7 @@ export default function TeacherDashboard() {
               showMaxScore={true}
               primaryLineName="Class Average"
               secondaryLineName="Target"
-              className="border-l-4 border-l-purple-500 shadow-sm"
+              className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden"
             />
 
           </div>
@@ -527,14 +527,14 @@ export default function TeacherDashboard() {
           <div className="space-y-6 min-w-0">
             
             {/* Notices / Announcements */}
-            <Card className="h-full border-none shadow-md bg-white dark:bg-gray-800 max-h-[500px] flex flex-col">
+            <Card className="h-full border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl max-h-[500px] flex flex-col">
                <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
                  <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
                       <Bell className="w-4 h-4 text-orange-500" />
                       Notice Board
                     </CardTitle>
-                    <Link href="/teacher/announcements" className="text-xs text-blue-600 hover:underline">
+                    <Link href="/teacher/announcements" className="text-xs text-methodist-blue hover:underline">
                       View All
                     </Link>
                  </div>
@@ -573,10 +573,10 @@ export default function TeacherDashboard() {
             </Card>
 
             {/* Profile Summary */}
-             <Card className="bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-800">
+             <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl">
                <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
-                     <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center text-blue-600 dark:text-blue-300 font-bold text-lg">
+                     <div className="h-12 w-12 rounded-full bg-gradient-to-br from-methodist-blue to-blue-900 text-yellow-400 flex items-center justify-center text-methodist-blue dark:text-blue-300 font-bold text-lg">
                         {teacher.first_name[0]}{teacher.last_name[0]}
                      </div>
                      <div className="overflow-hidden flex flex-col gap-1">
@@ -590,7 +590,7 @@ export default function TeacherDashboard() {
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-center h-20 mb-2">
                      <Tooltip content={classTooltipStr} className="h-full">
-                        <div className="bg-white dark:bg-gray-800 p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors h-full flex flex-col justify-center">
+                        <div className="bg-white/80 backdrop-blur-sm p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors h-full flex flex-col justify-center">
                            <div className="text-xs text-gray-500 uppercase mb-1">Class</div>
                            <div className="font-bold text-gray-800 dark:text-gray-200 text-sm break-words line-clamp-2">
                               {classDisplayStr}
@@ -599,7 +599,7 @@ export default function TeacherDashboard() {
                      </Tooltip>
                      
                      <Tooltip content={teacher.specialization || 'General Education'} className="h-full">
-                        <div className="bg-white dark:bg-gray-800 p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors h-full flex flex-col justify-center">
+                        <div className="bg-white/80 backdrop-blur-sm p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors h-full flex flex-col justify-center">
                            <div className="text-xs text-gray-500 uppercase mb-1">Area of Specialization</div>
                            <div className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate px-1">
                               {teacher.specialization || 'General'}
@@ -609,7 +609,7 @@ export default function TeacherDashboard() {
                   </div>
                   
                   <Tooltip content={subjectsTaughtList.join(', ')} className="block w-full">
-                      <div className="bg-white dark:bg-gray-800 p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors w-full text-center">
+                      <div className="bg-white/80 backdrop-blur-sm p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors w-full text-center">
                          <div className="text-xs text-gray-500 uppercase mb-1">Assigned Subjects</div>
                          <div className="font-bold text-gray-800 dark:text-gray-200 text-sm truncate px-1">
                             {subjectsTaughtList.length > 0 ? (
@@ -644,7 +644,7 @@ function QuickActionCard({
 }: any) {
   return (
     <Link href={href} className="block group h-full">
-      <Card className={`h-full transition-all duration-300 hover:shadow-lg border-2 border-transparent ${borderColor} hover:-translate-y-1`}>
+      <Card className={`h-full transition-all duration-300 hover:shadow-lg border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl ${borderColor} hover:-translate-y-1`}>
         <CardContent className="p-6 flex flex-col items-center text-center h-full justify-center">
           <div className={`p-4 rounded-xl ${bg} ${color} mb-4 group-hover:scale-110 transition-transform duration-300`}>
             <Icon className="w-8 h-8" />

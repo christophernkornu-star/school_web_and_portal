@@ -166,7 +166,7 @@ export default function FeeCollectionPage() {
 
   if (loading && classes.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="bg-gray-50/50 min-h-screen pb-20 font-sans">
         {/* Header Skeleton */}
         <div className="bg-white shadow sticky top-0 z-10">
             <div className="container mx-auto px-4 md:px-6 py-4">
@@ -188,7 +188,7 @@ export default function FeeCollectionPage() {
                          <Skeleton className="w-full h-10 rounded" />
                          <Skeleton className="w-full h-10 rounded" />
                      </div>
-                     <div className="bg-white rounded-lg shadow flex-1 p-2 space-y-2">
+                     <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 flex-1 p-2 space-y-2">
                          {[1, 2, 3, 4, 5, 6].map((i) => (
                              <div key={i} className="flex items-center space-x-3 p-2">
                                  <Skeleton className="w-8 h-8 rounded-full" />
@@ -226,20 +226,28 @@ export default function FeeCollectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <BackButton href="/admin/finance" />
+    <div className="bg-gray-50/50 min-h-screen pb-20 font-sans w-full max-w-[100vw] overflow-x-hidden box-border">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* Modern Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 md:p-8 rounded-3xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-emerald-50/60 to-transparent pointer-events-none"></div>
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <BackButton href="/admin/finance" className="shadow-sm" />
             <div>
-              <h1 className="text-lg md:text-2xl font-bold text-gray-800">Fee Collection</h1>
-              <p className="text-xs md:text-sm text-gray-600">Record payments and view history</p>
+              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                <DollarSign className="w-7 h-7 text-methodist-blue" />
+                Payment Collection
+              </h1>
+              <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">
+                Record incoming transactions, view balances, and manage payment history
+              </p>
             </div>
           </div>
         </div>
-      </header>
 
-      <main className={`container mx-auto px-4 md:px-6 py-6 md:py-8 transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`transition-opacity duration-200 ${loading ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[calc(100vh-100px)]">
           {/* Sidebar */}
           <div className={`lg:col-span-4 xl:col-span-3 flex flex-col gap-4 h-full overflow-hidden ${selectedStudent ? 'hidden lg:flex' : 'flex'}`}>
@@ -263,7 +271,7 @@ export default function FeeCollectionPage() {
 
               {/* Student List */}
               {selectedClassId && (
-                <div className="bg-white rounded-lg shadow flex flex-col h-[400px] lg:h-[600px]">
+                <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 flex flex-col h-[400px] lg:h-[600px]">
                   <div className="p-4 border-b">
                     <div className="relative">
                       <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -342,7 +350,7 @@ export default function FeeCollectionPage() {
                   </div>
 
                   {/* Outstanding Fees */}
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
                     <div className="px-4 md:px-6 py-3 md:py-4 border-b bg-gray-50">
                       <h3 className="font-bold text-gray-800 text-xs md:text-base">Fee Status</h3>
                     </div>
@@ -375,7 +383,7 @@ export default function FeeCollectionPage() {
                   </div>
 
                   {/* Payment History */}
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                  <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 overflow-hidden">
                     <div className="px-4 md:px-6 py-3 md:py-4 border-b bg-gray-50">
                       <h3 className="font-bold text-gray-800 text-sm md:text-base">Payment History</h3>
                     </div>
@@ -426,7 +434,7 @@ export default function FeeCollectionPage() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow p-12 text-center h-full flex flex-col items-center justify-center text-gray-500">
+                <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-12 text-center h-full flex flex-col items-center justify-center text-gray-500">
                   <User className="w-16 h-16 mb-4 text-gray-300" />
                   <h3 className="text-base md:text-lg font-medium text-gray-900">Select a Student</h3>
                   <p className="text-sm md:text-base">Choose a class and student from the sidebar to manage fees.</p>
@@ -435,7 +443,8 @@ export default function FeeCollectionPage() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
+      </div>
 
       {/* Payment Modal */}
       {showPaymentModal && (

@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Plus, Trash2, Save, AlertCircle, Check, DollarSign, X } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, Save, AlertCircle, Check, DollarSign, X, Settings, PieChart, Wallet, Download } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
 export default function FeeSetupPage() {
@@ -172,7 +172,7 @@ export default function FeeSetupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="bg-gray-50/50 min-h-screen pb-20 font-sans">
         {/* Header Skeleton */}
         <div className="bg-white shadow sticky top-0 z-10">
             <div className="container mx-auto px-4 md:px-6 py-4">
@@ -190,7 +190,7 @@ export default function FeeSetupPage() {
              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                  {/* Left Column Skeleton */}
                  <div className="lg:col-span-1">
-                     <div className="bg-white rounded-lg shadow p-6">
+                     <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-6 md:p-8">
                          <div className="flex justify-between items-center mb-4">
                              <Skeleton className="w-24 h-6" />
                              <Skeleton className="w-8 h-8 rounded-full" />
@@ -205,7 +205,7 @@ export default function FeeSetupPage() {
 
                  {/* Right Column Skeleton */}
                  <div className="lg:col-span-2">
-                     <div className="bg-white rounded-lg shadow p-6">
+                     <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-6 md:p-8">
                          <div className="flex justify-between items-center mb-6">
                              <Skeleton className="w-48 h-6" />
                              <Skeleton className="w-32 h-10 rounded-lg" />
@@ -232,29 +232,37 @@ export default function FeeSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <BackButton href="/admin/finance" />
+    <div className="bg-gray-50/50 min-h-screen pb-20 font-sans w-full max-w-[100vw] overflow-x-hidden box-border">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        {/* Modern Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 md:p-8 rounded-3xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 relative overflow-hidden">
+          <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-indigo-50/60 to-transparent pointer-events-none"></div>
+          
+          <div className="flex items-center gap-4 relative z-10">
+            <BackButton href="/admin/finance" className="shadow-sm" />
             <div>
-              <h1 className="text-lg md:text-2xl font-bold text-gray-800">Fee Setup</h1>
-              <p className="text-xs md:text-sm text-gray-600">Manage fee types and amounts per class</p>
+              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                <Settings className="w-7 h-7 text-methodist-blue" />
+                Fee Configuration
+              </h1>
+              <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">
+                Manage fee types, structures, and amounts per class
+              </p>
             </div>
           </div>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
           {/* Left Column: Fee Types */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-6 md:p-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base md:text-lg font-bold text-gray-800">Fee Types</h2>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><Settings className="w-5 h-5 text-indigo-500"/> Fee Types</h2>
                 <button 
                   onClick={() => setShowTypeModal(true)}
-                  className="p-2 bg-purple-100 text-purple-600 rounded-full hover:bg-purple-200"
+                  className="p-2 bg-blue-100 text-methodist-blue rounded-full hover:bg-indigo-200"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -285,12 +293,12 @@ export default function FeeSetupPage() {
 
           {/* Right Column: Fee Structures */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-6 md:p-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-base md:text-lg font-bold text-gray-800">Fee Structures (Amounts)</h2>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2"><DollarSign className="w-5 h-5 text-indigo-500"/> Fee Structures</h2>
                 <button 
                   onClick={() => setShowStructureModal(true)}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center gap-2 text-xs md:text-base"
+                  className="px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-900 flex items-center gap-2 text-xs md:text-base"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Set New Fee</span>
@@ -347,7 +355,8 @@ export default function FeeSetupPage() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
+      </div>
 
       {/* Add Fee Type Modal */}
       {showTypeModal && (
@@ -362,7 +371,7 @@ export default function FeeSetupPage() {
                   placeholder="e.g. Tuition, PTA, Feeding"
                   value={newType.name}
                   onChange={e => setNewType({...newType, name: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900"
                 />
               </div>
               <div>
@@ -371,14 +380,14 @@ export default function FeeSetupPage() {
                   placeholder="Optional description"
                   value={newType.description}
                   onChange={e => setNewType({...newType, description: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900"
                   rows={3}
                 />
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowTypeModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg text-xs md:text-sm">Cancel</button>
-              <button onClick={handleAddType} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-xs md:text-sm">Save</button>
+              <button onClick={handleAddType} className="px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-900 text-xs md:text-sm">Save</button>
             </div>
           </div>
         </div>
@@ -395,7 +404,7 @@ export default function FeeSetupPage() {
                 <select
                   value={newStructure.fee_type_id}
                   onChange={e => setNewStructure({...newStructure, fee_type_id: e.target.value})}
-                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
+                  className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900"
                 >
                   <option value="">Select Fee Type</option>
                   {feeTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -416,7 +425,7 @@ export default function FeeSetupPage() {
                                 setNewStructure({...newStructure, class_ids: []})
                             }
                         }}
-                        className="mr-2 rounded text-purple-600 focus:ring-purple-500"
+                        className="mr-2 rounded text-methodist-blue focus:ring-indigo-500"
                     />
                     <span className="text-sm font-bold text-gray-700">Select All Classes</span>
                   </div>
@@ -434,7 +443,7 @@ export default function FeeSetupPage() {
                             setNewStructure({...newStructure, class_ids: ids.filter(id => id !== c.id)})
                           }
                         }}
-                        className="mr-2 rounded text-purple-600 focus:ring-purple-500"
+                        className="mr-2 rounded text-methodist-blue focus:ring-indigo-500"
                       />
                       <span className="text-sm text-gray-700">{c.name}</span>
                     </div>
@@ -458,7 +467,7 @@ export default function FeeSetupPage() {
                         academic_year: term?.academic_year || ''
                       })
                     }}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900"
                   >
                     <option value="">Select Term</option>
                     {terms.map(t => (
@@ -474,14 +483,14 @@ export default function FeeSetupPage() {
                     placeholder="0.00"
                     value={newStructure.amount}
                     onChange={e => setNewStructure({...newStructure, amount: e.target.value})}
-                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-purple-500 text-gray-900"
+                    className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-gray-900"
                   />
                 </div>
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6">
               <button onClick={() => setShowStructureModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
-              <button onClick={handleAddStructure} className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">Save Structure</button>
+              <button onClick={handleAddStructure} className="px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-900">Save Structure</button>
             </div>
           </div>
         </div>
