@@ -195,20 +195,11 @@ export default function LoginPage() {
       {/* Login Form */}
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto">
         <div className="max-w-md w-full space-y-8">
-          {/* School Crest */}
+                    {/* Title Area */}
           <div className="text-center">
-            <div className="inline-flex items-center justify-center mb-6 bg-white rounded-full p-3 shadow-xl border-4 border-methodist-gold">
-              <Image
-                src="/school_crest.png"
-                alt="Biriwa Methodist School Crest"
-                width={140}
-                height={140}
-                className="object-contain"
-              />
-            </div>
             <h2 className="text-3xl font-bold text-methodist-blue">Portal Login</h2>
             <p className="mt-2 text-sm text-gray-600">Enter your credentials to access the system</p>
-            <p className="mt-2 text-sm text-methodist-blue font-bold italic">"Discipline with Hardwork"</p>
+            <p className="mt-3 text-sm text-methodist-yellow font-bold tracking-wider uppercase bg-methodist-blue/5 dark:bg-methodist-blue/20 py-1.5 px-4 rounded-full inline-block">"Discipline with Hardwork"</p>
           </div>
 
           {/* Error Message */}
@@ -220,7 +211,7 @@ export default function LoginPage() {
           )}
 
           {/* Login Form */}
-          <form className="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-lg" onSubmit={handleLogin}>
+          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
             <div className="space-y-4">
               <div>
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
@@ -230,11 +221,7 @@ export default function LoginPage() {
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                     <User className="h-5 w-5 text-gray-400" />
                   </div>
-                  {!username && (
-                    <div className="absolute inset-y-0 left-12 flex items-center pointer-events-none z-10">
-                      <span className="text-gray-400 text-sm">Username</span>
-                    </div>
-                  )}
+                  
                   <input
                     id="username"
                     name="username"
@@ -243,7 +230,7 @@ export default function LoginPage() {
                     required
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent transition-all"
+                    placeholder="Your username" className="w-full pl-12 pr-4 py-3.5 bg-white/60 dark:bg-gray-950/60 border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-4 focus:ring-methodist-blue/20 focus:border-methodist-blue transition-all text-gray-900 dark:text-white font-medium placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -256,11 +243,7 @@ export default function LoginPage() {
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                     <Lock className="h-5 w-5 text-gray-400" />
                   </div>
-                  {!password && (
-                    <div className="absolute inset-y-0 left-12 flex items-center pointer-events-none z-10">
-                      <span className="text-gray-400 text-sm">Password</span>
-                    </div>
-                  )}
+                  
                   <input
                     id="password"
                     name="password"
@@ -269,7 +252,7 @@ export default function LoginPage() {
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-methodist-blue focus:border-transparent transition-all"
+                    placeholder="••••••••" className="w-full pl-12 pr-12 py-3.5 bg-white/60 dark:bg-gray-950/60 border border-gray-200 dark:border-gray-800 rounded-2xl focus:ring-4 focus:ring-methodist-blue/20 focus:border-methodist-blue transition-all text-gray-900 dark:text-white font-medium placeholder:text-gray-400"
                   />
                   <button
                     type="button"
@@ -299,7 +282,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed mt-6"
+              className="w-full bg-gradient-to-r from-methodist-blue to-blue-800 text-white font-bold text-[15px] py-4 rounded-2xl shadow-lg shadow-methodist-blue/30 hover:shadow-xl hover:-translate-y-0.5 hover:from-blue-800 hover:to-methodist-blue disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mt-8 transition-all duration-300"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

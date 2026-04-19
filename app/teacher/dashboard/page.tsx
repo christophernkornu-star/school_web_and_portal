@@ -559,12 +559,12 @@ export default function TeacherDashboard() {
                               <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${getPriorityColor(announcement.priority)}`}>
                                  {announcement.priority || 'Notice'}
                               </span>
-                              <span className="text-[10px] text-gray-400">
+                              <span className="text-[11px] font-semibold text-methodist-yellow bg-methodist-blue/5 px-2 py-0.5 rounded-md">
                                  {new Date(announcement.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                               </span>
                            </div>
-                           <h4 className="text-sm font-medium mb-1 leading-snug break-words">{announcement.title}</h4>
-                           <p className="text-xs text-gray-500 line-clamp-2">{announcement.content}</p>
+                           <h4 className="text-[15px] font-semibold text-methodist-blue mb-1 break-words tracking-normal">{announcement.title}</h4>
+                           <p className="text-xs text-slate-600 dark:text-slate-300 leading-normal line-clamp-2 whitespace-pre-line">{announcement.content}</p>
                         </div>
                         ))}
                     </div>

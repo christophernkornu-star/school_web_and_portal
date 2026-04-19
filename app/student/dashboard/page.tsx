@@ -428,11 +428,11 @@ export default function StudentDashboard() {
                 <p className="text-sm text-gray-400 mt-1">Check back later for updates from your school</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="space-y-3 p-3">
                 {announcements.map((announcement) => (
                   <div 
                     key={announcement.id} 
-                    className="p-5 hover:bg-gray-50 transition-colors duration-200"
+                    className="p-4 md:p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-100 dark:hover:border-blue-900 transition-all duration-300 group"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -451,13 +451,13 @@ export default function StudentDashboard() {
                             Academic
                           </span>
                         )}
-                        <h4 className="font-bold text-gray-800 text-base">{announcement.title}</h4>
+                        <h4 className="font-bold text-methodist-blue text-[15px] group-hover:text-blue-700 transition-colors">{announcement.title}</h4>
                       </div>
-                      <span className="text-xs text-gray-400 whitespace-nowrap ml-4">
+                      <span className="text-xs font-semibold text-methodist-yellow bg-methodist-blue/5 px-3 py-1 rounded-full whitespace-nowrap ml-4">
                         {formatTimeAgo(announcement.created_at)}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 leading-relaxed">{announcement.content}</p>
+                    <p className="text-[14px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap mt-2">{announcement.content}</p>
                   </div>
                 ))}
               </div>

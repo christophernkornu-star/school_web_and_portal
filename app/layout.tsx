@@ -6,6 +6,7 @@ import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ThemeInitializer from '@/components/ThemeInitializer'
 import { ScrollRestorationProvider } from '@/components/ScrollRestorationProvider'
 import { Toaster } from 'react-hot-toast'
+import SystemNotifications from '@/components/SystemNotifications'
 import { CommandPalette } from '@/components/CommandPalette'
 import ServiceWorkerDevFix from '@/components/ServiceWorkerDevFix'
 
@@ -50,6 +51,7 @@ export default function RootLayout({
           <InactivityHandler />
           <CommandPalette />
           <Toaster position="top-right" />
+          <SystemNotifications />
           {children}
         </ScrollRestorationProvider>
       </body>

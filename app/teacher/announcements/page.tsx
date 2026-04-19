@@ -135,10 +135,10 @@ export default function AnnouncementsPage() {
                             })}
                          </div>
                       </div>
-                      <CardTitle className="text-xl mt-2 leading-tight">{announcement.title}</CardTitle>
+                      <CardTitle className="text-xl md:text-2xl font-bold text-methodist-blue mt-2">{announcement.title}</CardTitle>
                    </CardHeader>
                    <CardContent>
-                      <div className="prose dark:prose-invert max-w-none text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+                      <div className="prose dark:prose-invert max-w-none text-[15px] md:text-[16px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
                          {announcement.content}
                       </div>
                    </CardContent>
