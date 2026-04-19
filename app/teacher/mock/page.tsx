@@ -669,9 +669,9 @@ export default function MockExamsPage() {
 
         {/* Sheet View for Printing */}
         {showSheet && selectedMock && currentMockData && (
-             <div className="bg-white text-black min-h-screen fixed inset-0 z-40 pt-20 overflow-auto pl-0 lg:pl-64">
+             <div className="bg-transparent print:bg-white text-black w-full min-h-screen relative print:absolute print:inset-0 z-10 pt-8 pb-12 print:pt-0 print:pb-0 overflow-visible print:pl-0">
                  {/* Print Controls */}
-                 <div className="fixed top-20 right-8 print:hidden flex gap-3 z-50">
+                 <div className="flex justify-end gap-3 mb-8 print:hidden z-50">
                      <button onClick={() => window.print()} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all hover:-translate-y-0.5 flex items-center gap-2">
                         <Printer className="w-5 h-5" /> Print Sheet
                      </button>
@@ -682,28 +682,30 @@ export default function MockExamsPage() {
 
                  {/* Pagination Logic */}
                  {(() => {
-                    // Optimized for A4 Landscape with ~25 rows per page to prevent overflow with larger font
-                    const STUDENTS_PER_PAGE = 25;
-                    const pages = [];
-                    for (let i = 0; i < processedData.length; i += STUDENTS_PER_PAGE) {
+                      // Adjusted for A4 Landscape. Fitting 24 rows to ensure the table and footer gracefully fit on a single printed page
+                      const STUDENTS_PER_PAGE = 24;
+                      const pages: typeof processedData[] = [];
+                      for (let i = 0; i < processedData.length; i += STUDENTS_PER_PAGE) {
                         pages.push(processedData.slice(i, i + STUDENTS_PER_PAGE));
                     }
                     if (pages.length === 0) pages.push([]); // Handle empty case if needed
 
                     return pages.map((pageStudents, pageIndex) => (
-                        <div key={pageIndex} className={`max-w-[297mm] mx-auto p-2 md:p-8 print:p-0 page-container`}>
-                            {pageIndex === 0 && (
-                                <div className="text-center mb-2 border-b-2 border-black pb-1">
-                                    <h1 className="text-xl md:text-2xl font-bold font-serif uppercase tracking-wide">Biriwa Methodist "C" Basic School</h1>
-                                    <h2 className="text-lg md:text-xl font-bold uppercase mt-0">
-                                        {currentMockData.academic_year} {currentMockData.name.replace(/mock/i, '').trim()} Mock Results
-                                    </h2>
-                                </div>
-                            )}
+                        <div key={pageIndex} className={`max-w-[297mm] mx-auto mb-8 bg-white shadow-xl ring-1 ring-gray-900/5 print:shadow-none print:ring-0 rounded-2xl print:rounded-none p-6 md:p-10 print:p-0 print:mb-0 page-container flex flex-col`}>
+                            
+                            <div className="flex-1">
+                                {pageIndex === 0 && (
+                                    <div className="text-center mb-2 border-b-2 border-black pb-1">
+                                        <h1 className="text-xl md:text-2xl font-bold font-serif uppercase tracking-wide">Biriwa Methodist "C" Basic School</h1>
+                                        <h2 className="text-lg md:text-xl font-bold uppercase mt-0">
+                                            {currentMockData.academic_year} {currentMockData.name.replace(/mock/i, '').trim()} Mock Results
+                                        </h2>
+                                    </div>
+                                )}
 
-                            {/* Responsive Table Wrapper for Screen */}
-                            <div className="overflow-x-auto">
-                                <table className="w-full border-collapse border border-black text-xs md:text-sm min-w-[800px] md:min-w-0">
+                                {/* Responsive Table Wrapper for Screen */}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse border border-black text-xs md:text-sm print:text-[11px] min-w-[800px] md:min-w-0">
                                     <thead>
                                         <tr className="bg-gray-100">
                                             <th className="border border-black px-1 py-0.5 w-8 text-center">SN</th>
@@ -745,10 +747,19 @@ export default function MockExamsPage() {
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
                             
-                            <div className="mt-2 text-[10px] flex justify-between items-center text-gray-500">
-                                <span>Page {pageIndex + 1} of {pages.length}</span>
-                                <span>Generated on: {new Date().toLocaleDateString('en-GB')}</span>
+                            <div className="mt-4 pt-3 border-t-2 border-gray-100 print:border-gray-300 flex justify-between items-center text-[10px] md:text-xs text-gray-500 font-medium shrink-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="font-bold text-gray-800 tracking-wider">BIRIWA SMS</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-200 print:bg-gray-300"></span>
+                                    <span>Generated on {new Date().toLocaleDateString('en-GB')}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-gray-400">
+                                    <span className="hidden sm:inline italic">Official Academic Record</span>
+                                    <span className="hidden sm:inline w-1 h-1 rounded-full bg-gray-300"></span>
+                                    <span className="text-gray-600">Page {pageIndex + 1} of {pages.length}</span>
+                                </div>
                             </div>
                         </div>
                     ));
