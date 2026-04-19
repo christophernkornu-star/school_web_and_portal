@@ -111,16 +111,6 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo Area removed as per request, just keeping close button for mobile if needed, or maybe just remove content */}
-          <div className="h-16 flex items-center justify-end px-6 border-b border-gray-100 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50 text-gray-500 lg:hidden">
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
           {/* Navigation Items */}
           <div className="flex-1 py-6 px-3 space-y-6">
             {sidebarItems.map((group) => (

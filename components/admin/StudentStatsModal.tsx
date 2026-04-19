@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { X, Search, Filter, Loader2, Users, Baby, ChevronDown, ChevronRight } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts'
 import { differenceInYears } from 'date-fns'
 import { Button } from '@/components/ui/button'
 
@@ -244,54 +245,128 @@ export function StudentStatsModal({ isOpen, onClose, classIds }: StudentStatsMod
                   
                   {/* Overview Tab */}
                   {activeTab === 'overview' && (
-                    <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b pb-2">Total Population</h3>
+                    <div className="space-y-8 animate-in slide-in-from-right-4 duration-300">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b pb-2 flex items-center justify-between">
+                        Total Population Overview
+                      </h3>
+                      
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                          <StatCard title="Total Students" value={totalStats.total} color="bg-blue-50 text-blue-700 border-blue-200" icon={Users} />
                          <StatCard title="Total Boys" value={totalStats.male} color="bg-cyan-50 text-cyan-700 border-cyan-200" icon={Users} />
                          <StatCard title="Total Girls" value={totalStats.female} color="bg-pink-50 text-pink-700 border-pink-200" icon={Users} />
                       </div>
 
-                      <div className="pt-8">
-                         <h4 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Gender Distribution</h4>
-                         <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex">
-                            <div className="bg-cyan-500 h-full transition-all duration-1000" style={{ width: `${(totalStats.male / totalStats.total) * 100}%` }} />
-                            <div className="bg-pink-500 h-full transition-all duration-1000" style={{ width: `${(totalStats.female / totalStats.total) * 100}%` }} />
-                         </div>
-                         <div className="flex justify-between mt-2 text-sm font-medium">
-                            <span className="text-cyan-600">{((totalStats.male / totalStats.total) * 100).toFixed(1)}% Boys</span>
-                            <span className="text-pink-600">{((totalStats.female / totalStats.total) * 100).toFixed(1)}% Girls</span>
-                         </div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 rounded-2xl shadow-sm">
+                          <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-4 text-center">Gender Demographics</h4>
+                          <div className="h-64 w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={[
+                                    { name: 'Boys', value: totalStats.male },
+                                    { name: 'Girls', value: totalStats.female }
+                                  ]}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={60}
+                                  outerRadius={90}
+                                  paddingAngle={5}
+                                  dataKey="value"
+                                >
+                                  <Cell fill="#06b6d4" />
+                                  <Cell fill="#ec4899" />
+                                </Pie>
+                                <RechartsTooltip 
+                                  formatter={(value, name) => [`${value} Students`, name]}
+                                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                />
+                                <Legend verticalAlign="bottom" height={36} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 rounded-2xl shadow-sm flex flex-col justify-center">
+                          <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-8">Distribution Summary</h4>
+                          <div className="space-y-8">
+                            <div>
+                               <div className="flex justify-between text-sm mb-3">
+                                  <span className="font-semibold px-3 py-1 rounded-full bg-cyan-50 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300">Boys</span>
+                                  <span className="font-black text-cyan-600 text-lg">{totalStats.total > 0 ? ((totalStats.male / totalStats.total) * 100).toFixed(1) : 0}%</span>
+                               </div>
+                               <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                  <div className="bg-cyan-500 h-full transition-all duration-1000 rounded-full" style={{ width: `${totalStats.total > 0 ? (totalStats.male / totalStats.total) * 100 : 0}%` }} />
+                               </div>
+                            </div>
+                            <div>
+                               <div className="flex justify-between text-sm mb-3">
+                                  <span className="font-semibold px-3 py-1 rounded-full bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300">Girls</span>
+                                  <span className="font-black text-pink-600 text-lg">{totalStats.total > 0 ? ((totalStats.female / totalStats.total) * 100).toFixed(1) : 0}%</span>
+                               </div>
+                               <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                                  <div className="bg-pink-500 h-full transition-all duration-1000 rounded-full" style={{ width: `${totalStats.total > 0 ? (totalStats.female / totalStats.total) * 100 : 0}%` }} />
+                               </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
 
-                   {/* Levels Tab */}
-                   {activeTab === 'levels' && (
+                  {/* Levels Tab */}
+                  {activeTab === 'levels' && (
                     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                       <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 border-b pb-2">Level Breakdown</h3>
+                      
+                      <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 p-6 rounded-2xl shadow-sm mb-6">
+                        <h4 className="text-sm font-bold text-gray-600 uppercase tracking-wider mb-6 text-center">Students per Educational Level</h4>
+                        <div className="h-72 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={Object.entries(levelStats).map(([name, stats]) => ({
+                                name,
+                                boys: stats.male,
+                                girls: stats.female,
+                                total: stats.total
+                              })).filter(d => d.total > 0)}
+                              margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
+                              <RechartsTooltip 
+                                cursor={{fill: 'rgba(0,0,0,0.05)'}}
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                              />
+                              <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                              <Bar dataKey="boys" name="Boys" stackId="a" fill="#06b6d4" radius={[0, 0, 4, 4]} maxBarSize={60} />
+                              <Bar dataKey="girls" name="Girls" stackId="a" fill="#ec4899" radius={[4, 4, 0, 0]} maxBarSize={60} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {Object.entries(levelStats).map(([level, stats]) => (
                            stats.total > 0 && (
-                            <div key={level} className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+                            <div key={level} className="p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:shadow-md transition-shadow">
                               <div className="flex justify-between items-start mb-4">
                                 <div>
                                   <h4 className="font-bold text-gray-800 dark:text-gray-200 text-lg">{level}</h4>
-                                  <span className="text-sm text-gray-500">{stats.total} Students</span>
+                                  <span className="text-sm font-medium text-gray-500">{stats.total} Students Total</span>
                                 </div>
-                                <span className={`px-2 py-1 rounded bg-white dark:bg-gray-700 text-xs font-mono shadow-sm border dark:border-gray-600`}>
-                                   {((stats.total / totalStats.total) * 100).toFixed(0)}%
+                                <span className={`px-3 py-1 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 text-xs font-bold shadow-sm border border-blue-200 dark:border-blue-800`}>
+                                   {((stats.total / totalStats.total) * 100).toFixed(0)}% of school
                                 </span>
                               </div>
-                              <div className="grid grid-cols-2 gap-2 text-sm">
-                                <div className="bg-cyan-100/50 dark:bg-cyan-900/20 p-2 rounded flex flex-col">
-                                   <span className="text-cyan-700 dark:text-cyan-400 font-semibold">{stats.male}</span>
-                                   <span className="text-xs text-cyan-600/80 dark:text-cyan-500/80">Boys</span>
-                                </div>
-                                <div className="bg-pink-100/50 dark:bg-pink-900/20 p-2 rounded flex flex-col">
-                                   <span className="text-pink-700 dark:text-pink-400 font-semibold">{stats.female}</span>
-                                   <span className="text-xs text-pink-600/80 dark:text-pink-500/80">Girls</span>
-                                </div>
+                              <div className="flex w-full h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
+                                <div className="bg-cyan-500" style={{ width: `${(stats.male / stats.total) * 100}%` }} />
+                                <div className="bg-pink-500" style={{ width: `${(stats.female / stats.total) * 100}%` }} />
+                              </div>
+                              <div className="flex justify-between text-sm font-medium text-gray-500">
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-cyan-500 block"></span> {stats.male} Boys</span>
+                                <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-pink-500 block"></span> {stats.female} Girls</span>
                               </div>
                             </div>
                            )

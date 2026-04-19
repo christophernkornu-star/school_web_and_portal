@@ -127,10 +127,10 @@ function ClassStatementContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 p-2 md:p-8 print:bg-white print:p-0">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-2 md:p-8 print:bg-white print:p-0 transition-colors">
       <div className="max-w-5xl mx-auto">
         {/* Toolbar - Hidden when printing */}
-        <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden">
+        <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 md:p-6 rounded-2xl sticky top-4 z-30 transition-colors">
           <Link 
             href="/teacher/fees"
             className="flex items-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white text-sm md:text-base"
@@ -140,7 +140,7 @@ function ClassStatementContent() {
           </Link>
           <button
             onClick={() => window.print()}
-            className="flex items-center justify-center w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm md:text-base"
+            className="flex items-center justify-center w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all font-semibold text-sm md:text-base"
           >
             <Printer className="w-4 h-4 mr-2" />
             Print Statement
@@ -148,7 +148,7 @@ function ClassStatementContent() {
         </div>
 
         {/* Report Component */}
-        <div className="bg-white dark:bg-gray-800 shadow-lg rounded-xl overflow-hidden print:shadow-none print:rounded-none">
+        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm shadow-sm border border-gray-100 dark:border-gray-700/50 rounded-2xl overflow-hidden print:border-none print:shadow-none print:rounded-none">
           <ClassFeeReport 
             className={className}
             students={students}

@@ -432,18 +432,18 @@ export default function ReportsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <header className="bg-white dark:bg-gray-800 shadow transition-colors">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-30 shadow-sm transition-colors">
         <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center gap-2">
           <div className="flex items-center space-x-2 md:space-x-4">
             <BackButton href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 shrink-0" />
             <div>
-              <h1 className="text-base md:text-2xl font-bold text-gray-800 dark:text-white leading-tight">Class Performance Reports</h1>
+              <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white leading-tight">Class Performance Reports</h1>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">Generate report cards and analyze class performance</p>
             </div>
           </div>
           <Link 
             href="/teacher/assessment-sheet" 
-            className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors shrink-0 text-xs md:text-base hidden"
+            className="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-sm px-4 py-2.5 rounded-xl transition-all font-semibold shrink-0 text-xs md:text-sm hidden"
           >
             <FileText className="w-4 h-4" />
             <span className="hidden sm:inline">Assessment Sheet</span>
@@ -454,10 +454,10 @@ export default function ReportsPage() {
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 transition-colors">
+        <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6 backdrop-blur-sm transition-colors">
           <div className="flex items-center gap-2 mb-4">
             <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            <h2 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white">Filter Options</h2>
+            <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Filter Options</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -467,7 +467,7 @@ export default function ReportsPage() {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl focus:ring-2 focus:ring-emerald-500 shadow-sm text-sm font-medium dark:text-white transition-all cursor-pointer"
               >
                 {Array.from(new Set(assignments.map(a => a.class_id))).map(classId => {
                   const assignment = assignments.find(a => a.class_id === classId)
@@ -487,7 +487,7 @@ export default function ReportsPage() {
               <select
                 value={selectedTerm}
                 onChange={(e) => setSelectedTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl focus:ring-2 focus:ring-emerald-500 shadow-sm text-sm font-medium dark:text-white transition-all cursor-pointer"
               >
                 {terms.map((term) => (
                   <option key={term.id} value={term.id}>
@@ -503,7 +503,7 @@ export default function ReportsPage() {
         <div className="flex flex-wrap gap-2 mb-6">
           <button
             onClick={() => setView('overview')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
+            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm whitespace-nowrap outline-none ${
               view === 'overview'
                 ? 'bg-ghana-green text-white'
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -514,7 +514,7 @@ export default function ReportsPage() {
           </button>
           <button
             onClick={() => setView('students')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
+            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm whitespace-nowrap outline-none ${
               view === 'students'
                 ? 'bg-ghana-green text-white'
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -525,7 +525,7 @@ export default function ReportsPage() {
           </button>
           <button
             onClick={() => setView('subjects')}
-            className={`flex-1 md:flex-none px-4 py-2 rounded-lg font-medium transition-colors text-sm md:text-base whitespace-nowrap ${
+            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm whitespace-nowrap outline-none ${
               view === 'subjects'
                 ? 'bg-ghana-green text-white'
                 : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -536,7 +536,7 @@ export default function ReportsPage() {
           </button>
           <Link
             href="/teacher/class-report"
-            className="px-4 py-2 text-sm font-medium rounded-lg transition-colors bg-orange-600 text-white hover:bg-orange-700 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:-translate-y-0.5 flex items-center justify-center gap-2"
           >
             <Printer className="w-4 h-4" />
             Class Broadsheet
@@ -547,23 +547,23 @@ export default function ReportsPage() {
         {view === 'overview' && classPerformance && (
           <div className="space-y-6">
             <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Class Average</p>
-                    <p className="text-xl md:text-2xl font-bold text-methodist-blue dark:text-blue-400 mt-2">
+                    <p className="text-2xl md:text-3xl font-black tracking-tight text-blue-700 dark:text-blue-400 mt-2">
                       {classPerformance.classAverage}%
                     </p>
                   </div>
-                  <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-methodist-blue dark:text-blue-400 opacity-50" />
+                  <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-400 opacity-50" />
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Students</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mt-2">
+                    <p className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white mt-2">
                       {classPerformance.totalStudents}
                     </p>
                   </div>
@@ -571,23 +571,23 @@ export default function ReportsPage() {
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Highest Score</p>
-                    <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400 mt-2">
+                    <p className="text-2xl md:text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400 mt-2">
                       {classPerformance.highestScore}%
                     </p>
                   </div>
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-green-400 dark:text-green-500 opacity-50" />
+                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-emerald-400 dark:text-emerald-500 opacity-50" />
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Lowest Score</p>
-                    <p className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400 mt-2">
+                    <p className="text-2xl md:text-3xl font-black tracking-tight text-rose-600 dark:text-rose-400 mt-2">
                       {classPerformance.lowestScore}%
                     </p>
                   </div>
@@ -597,7 +597,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Performance Distribution */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors">
+            <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
               <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-4">Performance Distribution</h3>
               <div className="grid md:grid-cols-4 gap-4">
                 <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
@@ -651,7 +651,7 @@ export default function ReportsPage() {
 
         {/* Students List */}
         {view === 'students' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors">
+          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors backdrop-blur-sm">
             {/* Bulk Actions Bar */}
             <div className="bg-gray-50 dark:bg-gray-700 px-4 md:px-6 py-3 border-b dark:border-gray-600 flex flex-col md:flex-row md:items-center justify-between gap-3">
               <div className="flex items-center gap-4">
@@ -863,7 +863,7 @@ export default function ReportsPage() {
 
         {/* Subject Analysis */}
         {view === 'subjects' && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden transition-colors">
+          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors backdrop-blur-sm">
             <div className="p-6 border-b dark:border-gray-700">
               <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white">Subject Performance Analysis</h3>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Identify which subjects need more attention</p>
@@ -910,7 +910,7 @@ export default function ReportsPage() {
             {/* Desktop Table View */}
             <div className="hidden md:block overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-800/80">
                   <tr>
                     <th className="px-6 py-3 text-left text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Subject</th>
                     <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Class Average</th>

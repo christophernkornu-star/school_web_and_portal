@@ -177,7 +177,7 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-lg shadow mb-4 md:mb-0 h-full select-none transition-all duration-200 ${selected ? 'ring-2 ring-ghana-green bg-green-50 dark:bg-green-900/20' : ''}`}>
+    <div className={`relative overflow-hidden rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 mb-4 md:mb-0 h-full select-none transition-all duration-300 group hover:shadow-xl hover:-translate-y-1 hover:border-gray-200 dark:hover:border-gray-700 ${selected ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : ''}`}>
       {/* Background Actions */}
       <div className="absolute inset-0 flex items-center justify-between">
         {/* Left Action (Reset Password) - Revealed on Right Swipe */}
@@ -224,8 +224,8 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
         )}
 
         <div className="flex items-start justify-between mb-3">
-            <div className="bg-ghana-green bg-opacity-10 p-3 md:p-4 rounded-full flex-shrink-0">
-                <GraduationCap className="w-6 h-6 md:w-8 md:h-8 text-ghana-green" />
+            <div className="bg-emerald-50 dark:bg-emerald-500/10 p-3 md:p-4 rounded-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 flex-shrink-0">
+                <GraduationCap className="w-6 h-6 md:w-8 md:h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
             {/* Desktop Actions (Visible only on md+) */}
             {canManage && !selectionMode && (
@@ -248,12 +248,12 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
             )}
         </div>
         <div>
-            <h3 className="font-bold text-base md:text-lg text-gray-800 dark:text-gray-100 truncate pr-8">
+            <h3 className="font-black text-lg md:text-xl text-gray-900 dark:text-white truncate pr-8 mt-1">
                 {student.last_name} {student.first_name} {student.middle_name || ''}
             </h3>
             <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{student.student_id}</p>
-            <div className="mt-2 md:mt-3 space-y-1">
-                <p className="text-xs md:text-sm text-ghana-green font-medium">{student.classes?.name || 'No Class'}</p>
+            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2 mt-auto bg-gray-50/50 dark:bg-gray-900/30 p-3 rounded-xl">
+                <p className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-lg text-xs md:text-sm font-semibold mb-2">{student.classes?.name || 'No Class'}</p>
                 {student.guardian_name && (
                 <p className="text-xs text-gray-600 dark:text-gray-300 truncate">Guardian: {student.guardian_name}</p>
                 )}
@@ -261,7 +261,7 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
                 <a 
                     href={`tel:${student.guardian_phone}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400 hover:text-ghana-green transition-colors"
+                    className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
                 >
                     <Phone className="w-3 h-3" />
                     <span>{student.guardian_phone}</span>
@@ -720,7 +720,7 @@ export default function MyStudentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-30 transition-colors">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-30 shadow-sm transition-colors">
         <div className="container mx-auto px-4 md:px-6 py-4">
           {selectionMode ? (
             <div className="flex items-center justify-between w-full">
@@ -773,7 +773,7 @@ export default function MyStudentsPage() {
                 <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
               </Link>
               <div>
-                <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 dark:text-gray-100">My Students</h1>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">My Students</h1>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                   {isClassTeacher ? 'View and manage students in your classes' : 'View students in your assigned classes'}
                 </p>
@@ -783,14 +783,14 @@ export default function MyStudentsPage() {
               <div className="flex items-center space-x-2">
                 <button
                   onClick={handleExportLogins}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2 text-xs md:text-sm whitespace-nowrap"
+                  className="bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 px-4 py-2 md:px-5 md:py-2.5 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 text-sm shadow-sm whitespace-nowrap"
                 >
                   <Download className="w-4 h-4 md:w-5 md:h-5" />
                   <span className="hidden md:inline">Download Logins</span>
                 </button>
               <Link
                 href="/teacher/students/add"
-                className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center space-x-2 text-xs md:text-sm whitespace-nowrap"
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg px-4 py-2 md:px-5 md:py-2.5 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 text-sm whitespace-nowrap"
               >
                 <Users className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Add Student</span>
@@ -823,7 +823,7 @@ export default function MyStudentsPage() {
         {/* Search and Filter */}
         {teacherClasses.length > 0 && (
           <>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6 mb-4 md:mb-6 transition-colors">
+            <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 md:p-6 mb-4 md:mb-6 backdrop-blur-sm transition-colors">
               <div className="grid md:grid-cols-3 gap-3 md:gap-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
@@ -832,7 +832,7 @@ export default function MyStudentsPage() {
                     placeholder="Search by name or student ID..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
+                    className="w-full pl-11 pr-4 py-3 border-0 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-900 transition-all font-medium text-xs md:text-sm shadow-sm"
                   />
                 </div>
                 <div className="relative">
@@ -840,7 +840,7 @@ export default function MyStudentsPage() {
                   <select
                     value={selectedClass}
                     onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
+                    className="w-full pl-11 pr-4 py-3 border-0 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-900 transition-all font-medium text-xs md:text-sm shadow-sm"
                   >
                     <option value="all">All Classes</option>
                     {teacherClasses.map(cls => (
@@ -855,7 +855,7 @@ export default function MyStudentsPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm"
+                    className="w-full pl-11 pr-4 py-3 border-0 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-900 transition-all font-medium text-xs md:text-sm shadow-sm"
                   >
                     <option value="name_asc">Name (A-Z)</option>
                     <option value="name_desc">Name (Z-A)</option>
@@ -871,7 +871,7 @@ export default function MyStudentsPage() {
             {/* Bulk Actions Bar - Removed as it's now in the header */}
 
             {/* Summary and View Toggle */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 md:p-4 mb-4 md:mb-6 transition-colors">
+            <div className="bg-white dark:bg-gray-800/80 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-3 md:p-4 mb-4 md:mb-8 backdrop-blur-sm transition-colors">
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
                 <div>
                   <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
@@ -883,13 +883,13 @@ export default function MyStudentsPage() {
                   <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                     Total: <span className="font-semibold">{students.length}</span> student{students.length !== 1 ? 's' : ''}
                   </div>
-                  <div className="hidden md:flex border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+                  <div className="flex bg-gray-50 dark:bg-gray-900/50 p-1 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 shadow-inner gap-1">
                     <button
                       onClick={() => setViewMode('grid')}
                       className={`px-2 md:px-3 py-1.5 flex items-center space-x-1 ${
                         viewMode === 'grid' 
-                          ? 'bg-ghana-green text-white' 
-                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
+                          ? 'bg-emerald-600 text-white shadow-sm rounded-lg' 
+                          : 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg'
                       }`}
                     >
                       <Grid className="w-3 h-3 md:w-4 md:h-4" />
@@ -899,8 +899,8 @@ export default function MyStudentsPage() {
                       onClick={() => setViewMode('list')}
                       className={`px-2 md:px-3 py-1.5 flex items-center space-x-1 ${
                         viewMode === 'list' 
-                          ? 'bg-ghana-green text-white' 
-                          : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
+                          ? 'bg-emerald-600 text-white shadow-sm rounded-lg' 
+                          : 'bg-transparent text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg'
                       }`}
                     >
                       <List className="w-3 h-3 md:w-4 md:h-4" />
@@ -947,7 +947,7 @@ export default function MyStudentsPage() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto transition-colors">
+                <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-x-auto transition-colors backdrop-blur-sm">
                   <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                     <thead className="bg-gray-50 dark:bg-gray-700">
                       <tr>

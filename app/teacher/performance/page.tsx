@@ -664,7 +664,7 @@ export default function PerformancePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12 transition-colors">
-        <header className="bg-white dark:bg-gray-800 shadow mb-8">
+        <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-30 shadow-sm transition-colors mb-8">
             <div className="container mx-auto px-6 py-4">
                 <div className="flex justify-between items-center mb-4">
                    <div className="flex items-center gap-3">
@@ -734,19 +734,19 @@ export default function PerformancePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <header className="bg-white dark:bg-gray-800 shadow transition-colors">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-30 shadow-sm transition-colors">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <BackButton className="text-ghana-green hover:text-green-700" />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Performance Analytics</h1>
+                <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">Performance Analytics</h1>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">Track and analyze student performance</p>
               </div>
             </div>
             <button
               onClick={exportToCSV}
-              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 text-sm md:text-base"
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 text-sm md:text-base"
             >
               <Download className="w-4 h-4" />
               <span>Export Report</span>
@@ -757,10 +757,10 @@ export default function PerformancePage() {
 
       <main className="container mx-auto px-4 py-8">
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+        <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md mb-8">
           <div className="flex items-center space-x-4 mb-4">
-            <Filter className="w-5 h-5 text-ghana-green" />
-            <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Filters</h3>
+            <Filter className="w-5 h-5 text-emerald-500" />
+            <h3 className="font-bold text-gray-900 dark:text-white text-base md:text-lg tracking-tight">Filters</h3>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
@@ -768,7 +768,7 @@ export default function PerformancePage() {
               <select
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-0 rounded-xl focus:ring-2 focus:ring-emerald-500 shadow-sm font-medium dark:text-white transition-all"
               >
                 <option value="all">All Classes</option>
                 {classes.map((cls) => (
@@ -783,7 +783,7 @@ export default function PerformancePage() {
               <select
                 value={selectedTerm}
                 onChange={(e) => setSelectedTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-0 rounded-xl focus:ring-2 focus:ring-emerald-500 shadow-sm font-medium dark:text-white transition-all"
               >
                 {terms.map((term) => (
                   <option key={term.id} value={term.id}>
@@ -799,61 +799,61 @@ export default function PerformancePage() {
         {stats && (
           <>
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Class Average</h3>
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
+                  <h3 className="font-bold text-gray-900 dark:text-white text-base md:text-lg tracking-tight">Class Average</h3>
+                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-emerald-500" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-ghana-green">{stats.classAverage}%</p>
+                <p className="text-2xl md:text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">{stats.classAverage}%</p>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-2">Based on {stats.totalStudents} students</p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Pass Rate</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-white text-base md:text-lg tracking-tight">Pass Rate</h3>
                   <Award className="w-6 h-6 md:w-8 md:h-8 text-blue-600" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-blue-600">{stats.passRate}%</p>
+                <p className="text-2xl md:text-3xl font-black tracking-tight text-blue-600 dark:text-blue-400">{stats.passRate}%</p>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-2">{stats.passedStudents}/{stats.totalStudents} students</p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-gray-800 dark:text-white text-sm md:text-base">Top Performers</h3>
-                  <Award className="w-6 h-6 md:w-8 md:h-8 text-ghana-gold" />
+                  <h3 className="font-bold text-gray-900 dark:text-white text-base md:text-lg tracking-tight">Top Performers</h3>
+                  <Award className="w-6 h-6 md:w-8 md:h-8 text-amber-500" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-ghana-gold">{stats.topPerformers}</p>
+                <p className="text-2xl md:text-3xl font-black tracking-tight text-amber-500">{stats.topPerformers}</p>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-2">Scoring above 80%</p>
               </div>
             </div>
 
             {/* Performance Distribution */}
             <div className="grid md:grid-cols-3 gap-6 mb-8">
-              <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg shadow p-6 border-2 border-green-200 dark:border-green-800">
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/10 rounded-2xl shadow-sm border border-emerald-200 dark:border-emerald-800/30 p-6 transition-all hover:shadow-md hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-green-800 dark:text-green-300 text-sm md:text-base">Excellent</h3>
-                  <Target className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400" />
+                  <h3 className="font-bold text-emerald-800 dark:text-emerald-300 text-base md:text-lg">Excellent</h3>
+                  <Target className="w-6 h-6 md:w-8 md:h-8 text-emerald-500 dark:text-emerald-400" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-green-700 dark:text-green-400">{stats.topPerformers}</p>
-                <p className="text-xs md:text-sm text-green-600 dark:text-green-300 mt-2">80% and above</p>
+                <p className="text-2xl md:text-3xl font-black text-emerald-700 dark:text-emerald-400 mt-2">{stats.topPerformers}</p>
+                <p className="text-xs md:text-sm font-medium text-emerald-600 dark:text-emerald-400/80 mt-1">80% and above</p>
               </div>
 
-              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 rounded-lg shadow p-6 border-2 border-yellow-200 dark:border-yellow-800">
+              <div className="bg-gradient-to-br from-yellow-50 to-yellow-100/50 dark:from-yellow-900/20 dark:to-yellow-800/10 rounded-2xl shadow-sm border border-yellow-200 dark:border-yellow-800/30 p-6 transition-all hover:shadow-md hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-yellow-800 dark:text-yellow-300 text-sm md:text-base">Average</h3>
+                  <h3 className="font-bold text-yellow-800 dark:text-yellow-400 text-base md:text-lg">Average</h3>
                   <Minus className="w-6 h-6 md:w-8 md:h-8 text-yellow-600 dark:text-yellow-400" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.averagePerformers}</p>
-                <p className="text-xs md:text-sm text-yellow-600 dark:text-yellow-300 mt-2">50% - 79%</p>
+                <p className="text-2xl md:text-3xl font-black text-yellow-700 dark:text-yellow-400 mt-2">{stats.averagePerformers}</p>
+                <p className="text-xs md:text-sm font-medium text-yellow-600 dark:text-yellow-400/80 mt-1">50% - 79%</p>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 rounded-lg shadow p-6 border-2 border-red-200 dark:border-red-800">
+              <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 dark:from-rose-900/20 dark:to-rose-800/10 rounded-2xl shadow-sm border border-rose-200 dark:border-rose-800/30 p-6 transition-all hover:shadow-md hover:-translate-y-1">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-red-800 dark:text-red-300 text-sm md:text-base">Needs Support</h3>
-                  <TrendingDown className="w-6 h-6 md:w-8 md:h-8 text-red-600 dark:text-red-400" />
+                  <h3 className="font-bold text-rose-800 dark:text-rose-400 text-base md:text-lg">Needs Support</h3>
+                  <TrendingDown className="w-6 h-6 md:w-8 md:h-8 text-rose-500 dark:text-rose-400" />
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-red-700 dark:text-red-400">{stats.strugglingStudents}</p>
-                <p className="text-xs md:text-sm text-red-600 dark:text-red-300 mt-2">Below 50%</p>
+                <p className="text-2xl md:text-3xl font-black text-rose-700 dark:text-rose-400 mt-2">{stats.strugglingStudents}</p>
+                <p className="text-xs md:text-sm font-medium text-rose-600 dark:text-rose-400/80 mt-1">Below 50%</p>
               </div>
             </div>
           </>
@@ -861,10 +861,10 @@ export default function PerformancePage() {
 
         {/* Performance Trends Over Time */}
         {overallTrends.length >= 2 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md mb-8">
             <div className="flex items-center space-x-4 mb-6">
-              <TrendingUp className="w-6 h-6 text-ghana-green" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Overall Performance Trends</h3>
+              <TrendingUp className="w-6 h-6 text-emerald-500" />
+              <h3 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white">Overall Performance Trends</h3>
             </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={overallTrends} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
@@ -913,16 +913,16 @@ export default function PerformancePage() {
 
         {/* Subject Performance Trends */}
         {subjectTrends.length >= 2 && subjectPerformance.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md mb-8">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-4">
-                <BookOpen className="w-6 h-6 text-ghana-green" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Subject Performance Trends</h3>
+                <BookOpen className="w-6 h-6 text-emerald-500" />
+                <h3 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white">Subject Performance Trends</h3>
               </div>
               <select
                 value={selectedSubjectForTrend}
                 onChange={(e) => setSelectedSubjectForTrend(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900/50 border-0 rounded-xl focus:ring-2 focus:ring-emerald-500 shadow-sm font-medium dark:text-white transition-all text-sm cursor-pointer"
               >
                 {subjectPerformance.map((subject) => (
                   <option key={subject.subject_id} value={subject.subject_id}>
@@ -972,17 +972,17 @@ export default function PerformancePage() {
 
         {/* Grade Distribution */}
         {gradeDistribution.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md mb-8">
             <div className="flex items-center space-x-4 mb-6">
-              <BarChart3 className="w-6 h-6 text-ghana-green" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Grade Distribution</h3>
+              <BarChart3 className="w-6 h-6 text-emerald-500" />
+              <h3 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white">Grade Distribution</h3>
             </div>
             <div className="space-y-4">
               {gradeDistribution.map((grade) => (
                 <div key={grade.grade}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-700 dark:text-gray-300 text-sm md:text-base">Grade {grade.grade}</span>
-                    <span className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{grade.count} students ({grade.percentage}%)</span>
+                    <span className="font-bold text-gray-900 dark:text-gray-100 text-sm md:text-base">Grade {grade.grade}</span>
+                    <span className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400">{grade.count} students ({grade.percentage}%)</span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
                     <div
@@ -1005,20 +1005,20 @@ export default function PerformancePage() {
 
         {/* Subject Performance */}
         {subjectPerformance.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md mb-8">
             <div className="flex items-center space-x-4 mb-6">
-              <BookOpen className="w-6 h-6 text-ghana-green" />
-              <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Subject Performance</h3>
+              <BookOpen className="w-6 h-6 text-emerald-500" />
+              <h3 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white">Subject Performance</h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Subject</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Average</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Highest</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Lowest</th>
-                    <th className="text-center py-3 px-4 font-semibold text-gray-700 dark:text-gray-300 text-xs md:text-sm">Students</th>
+                    <th className="text-left py-4 px-4 font-bold text-gray-900 dark:text-gray-300 text-xs md:text-sm bg-gray-50/50 dark:bg-gray-800/50">Subject</th>
+                    <th className="text-center py-4 px-4 font-bold text-gray-900 dark:text-gray-300 text-xs md:text-sm bg-gray-50/50 dark:bg-gray-800/50">Average</th>
+                    <th className="text-center py-4 px-4 font-bold text-gray-900 dark:text-gray-300 text-xs md:text-sm bg-gray-50/50 dark:bg-gray-800/50">Highest</th>
+                    <th className="text-center py-4 px-4 font-bold text-gray-900 dark:text-gray-300 text-xs md:text-sm bg-gray-50/50 dark:bg-gray-800/50">Lowest</th>
+                    <th className="text-center py-4 px-4 font-bold text-gray-900 dark:text-gray-300 text-xs md:text-sm bg-gray-50/50 dark:bg-gray-800/50">Students</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1048,10 +1048,10 @@ export default function PerformancePage() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Top Performers */}
           {topStudents.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md">
               <div className="flex items-center space-x-4 mb-6">
-                <Award className="w-6 h-6 text-ghana-gold" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Top Performers</h3>
+                <Award className="w-6 h-6 text-amber-500" />
+                <h3 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white">Top Performers</h3>
               </div>
               <div className="space-y-3">
                 {topStudents.map((student, index) => (
@@ -1062,12 +1062,12 @@ export default function PerformancePage() {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-800 dark:text-white text-sm md:text-base">{student.student_name}</p>
-                        <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.student_number}</p>
+                        <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400">{student.student_number}</p>
                       </div>
                     </div>
                     <div className="text-right">
                       <p className="text-base md:text-lg font-bold text-green-600 dark:text-green-400">{student.average}%</p>
-                      <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.subjects_count} subjects</p>
+                      <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400">{student.subjects_count} subjects</p>
                     </div>
                   </div>
                 ))}
@@ -1077,21 +1077,21 @@ export default function PerformancePage() {
 
           {/* Struggling Students */}
           {strugglingStudents.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm p-6 transition-all hover:shadow-md">
               <div className="flex items-center space-x-4 mb-6">
                 <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
-                <h3 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white">Students Needing Support</h3>
+                <h3 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white">Students Needing Support</h3>
               </div>
               <div className="space-y-3">
                 {strugglingStudents.map((student) => (
                   <div key={student.student_id} className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
                     <div>
                       <p className="font-semibold text-gray-800 dark:text-white text-sm md:text-base">{student.student_name}</p>
-                      <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.student_number}</p>
+                      <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400">{student.student_number}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-base md:text-lg font-bold text-red-600 dark:text-red-400">{student.average}%</p>
-                      <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{student.subjects_count} subjects</p>
+                      <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400">{student.subjects_count} subjects</p>
                     </div>
                   </div>
                 ))}

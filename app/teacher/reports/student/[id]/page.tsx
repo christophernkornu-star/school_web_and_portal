@@ -284,7 +284,7 @@ export default function TeacherStudentReportPage() {
 
   if (loading || !teacher) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
         <div className="max-w-4xl mx-auto space-y-6">
           <Skeleton className="h-10 w-24 rounded-lg" />
           <Skeleton className="h-64 w-full rounded-lg" />
@@ -305,16 +305,16 @@ export default function TeacherStudentReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
       <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
+        <div className="flex justify-between items-center bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-100 dark:border-gray-700/50 p-5 rounded-2xl shadow-sm">
           <div className="flex items-center gap-4">
             <BackButton href="/teacher/reports">
               <span className="flex items-center gap-2"><List className="w-4 h-4" /> Back to List</span>
             </BackButton>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h1>
-              <p className="text-sm text-gray-600">
+              <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">{student.profiles?.full_name}</h1>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
                 {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}
               </p>
             </div>
@@ -322,7 +322,7 @@ export default function TeacherStudentReportPage() {
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
           >
             {downloading ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
@@ -335,24 +335,24 @@ export default function TeacherStudentReportPage() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                <div className="text-sm text-gray-500">Average Score</div>
-                <div className="text-2xl font-bold text-blue-600">{reportData.averageScore?.toFixed(1)}%</div>
+            <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Score</div>
+                <div className="text-2xl md:text-3xl font-black text-blue-600 dark:text-blue-400 mt-1">{reportData.averageScore?.toFixed(1)}%</div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                <div className="text-sm text-gray-500">Position</div>
-                <div className="text-2xl font-bold text-green-600">
+            <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Position</div>
+                <div className="text-2xl md:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
                     {reportData.position ? `${reportData.position} / ${reportData.totalClassSize}` : '-'}
                 </div>
             </div>
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                <div className="text-sm text-gray-500">Attendance</div>
+            <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Attendance</div>
                 <div className="text-2xl font-bold text-orange-600">
                     {reportData.attendance?.present ?? '-'} / {reportData.attendance?.total ?? '-'}
                 </div>
             </div>
-             <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                <div className="text-sm text-gray-500">JHS Aggregate</div>
+             <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">JHS Aggregate</div>
                 <div className="text-2xl font-bold text-purple-600">
                     {reportData.aggregate !== undefined && reportData.aggregate !== null ? reportData.aggregate : '-'}
                 </div>
@@ -498,7 +498,7 @@ export default function TeacherStudentReportPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Head Teacher's Remark</label>
+              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Head Teacher's Remark</label>
               <textarea 
                 className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
                 disabled={!isTeacherClassTeacher}

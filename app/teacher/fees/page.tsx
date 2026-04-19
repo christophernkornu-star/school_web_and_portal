@@ -318,7 +318,7 @@ export default function TeacherFeesPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           {/* Header Skeleton */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 md:p-5 rounded-2xl sticky top-4 z-30 transition-colors">
             <div className="flex items-center gap-4">
               <Skeleton className="h-10 w-10 rounded-lg" />
               <div>
@@ -368,8 +368,8 @@ export default function TeacherFeesPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
-                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400" />
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
+                <DollarSign className="w-6 h-6 md:w-8 md:h-8 text-emerald-600 dark:text-green-400" />
                 Fee Collection
               </h1>
               <p className="text-xs md:text-sm lg:text-base text-gray-600 dark:text-gray-400">Manage and record student fee payments</p>
@@ -380,7 +380,7 @@ export default function TeacherFeesPage() {
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="p-2 border rounded-lg bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-green-500 outline-none text-sm dark:border-gray-700 dark:text-white"
+              className="pl-4 pr-8 py-2.5 border-0 rounded-xl bg-gray-50/80 dark:bg-gray-800/80 shadow-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-semibold dark:border-gray-700 dark:text-white transition-all duration-200 cursor-pointer"
             >
               {academicYears.map(year => (
                 <option key={year} value={year}>{year}</option>
@@ -390,7 +390,7 @@ export default function TeacherFeesPage() {
             <select
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
-              className="p-2 border rounded-lg bg-white dark:bg-gray-800 shadow-sm focus:ring-2 focus:ring-green-500 outline-none text-sm dark:border-gray-700 dark:text-white"
+              className="pl-4 pr-8 py-2.5 border-0 rounded-xl bg-gray-50/80 dark:bg-gray-800/80 shadow-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-semibold dark:border-gray-700 dark:text-white transition-all duration-200 cursor-pointer"
             >
               {classes.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -399,7 +399,7 @@ export default function TeacherFeesPage() {
 
             {selectedClass && (
               <Link href={`/teacher/fees/statement?classId=${selectedClass}`}>
-                <Button variant="outline" className="gap-2 h-10 dark:bg-gray-800 dark:text-white dark:border-gray-700 dark:hover:bg-gray-700">
+                <Button variant="outline" className="gap-2 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-400 dark:border-emerald-800/50 dark:hover:bg-emerald-900/30 rounded-xl font-semibold transition-all duration-200 shadow-sm">
                   <FileBarChart className="h-4 w-4" />
                   <span className="hidden sm:inline">Statement</span>
                 </Button>
@@ -422,47 +422,47 @@ export default function TeacherFeesPage() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+          <div className="bg-white/80 dark:bg-gray-800/80 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Total Expected</h3>
-              <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-bold tracking-tight">Total Expected</h3>
+              <div className="p-2 bg-blue-50 dark:bg-blue-900/40 rounded-xl shadow-sm">
                 <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+            <p className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white mt-1">
               GH₵ {students.length * feeStructures.reduce((sum, f) => sum + (f.amount || 0), 0)}
             </p>
           </div>
           
-          <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+          <div className="bg-white/80 dark:bg-gray-800/80 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Total Collected</h3>
-              <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-600 dark:text-green-400" />
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-bold tracking-tight">Total Collected</h3>
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-900/40 rounded-xl shadow-sm">
+                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 dark:text-green-400" />
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+            <p className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white mt-1">
               GH₵ {payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0)}
             </p>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+          <div className="bg-white/80 dark:bg-gray-800/80 p-5 md:p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 backdrop-blur-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-gray-500 dark:text-gray-400 text-xs md:text-sm font-medium">Outstanding</h3>
-              <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-600 dark:text-red-400" />
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-bold tracking-tight">Outstanding</h3>
+              <div className="p-2 bg-rose-50 dark:bg-rose-900/40 rounded-xl shadow-sm">
+                <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-rose-600 dark:text-red-400" />
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+            <p className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white mt-1">
               GH₵ {(students.length * feeStructures.reduce((sum, f) => sum + (f.amount || 0), 0)) - payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0)}
             </p>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
+        <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors backdrop-blur-sm">
           
-          <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between gap-4">
+          <div className="p-4 md:p-5 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row justify-between gap-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 md:w-5 md:h-5 text-gray-400 dark:text-gray-500" />
               <input
@@ -470,25 +470,25 @@ export default function TeacherFeesPage() {
                 placeholder="Search students..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-xs md:text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                className="w-full pl-11 pr-4 py-2.5 border-0 bg-white dark:bg-gray-900 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-medium shadow-sm transition-all dark:text-white dark:placeholder-gray-400"
               />
             </div>
           </div>
 
           <div className="overflow-x-auto relative">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-gray-50 dark:bg-gray-700">
+              <thead className="bg-gray-50/80 dark:bg-gray-800/80">
                 <tr>
-                  <th className="px-2 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px] max-w-[120px] md:min-w-[250px] md:max-w-none">
+                  <th className="px-4 md:px-6 py-4 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-800 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] min-w-[120px] max-w-[120px] md:min-w-[250px] md:max-w-none">
                     Student
                   </th>
                   {feeStructures.map(fee => (
-                    <th key={fee.id} className="px-2 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[140px]">
+                    <th key={fee.id} className="px-4 md:px-6 py-4 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider min-w-[140px]">
                       {fee.fee_types?.name} <br/>
                       <span className="text-gray-400 dark:text-gray-500">GH₵ {fee.amount}</span>
                     </th>
                   ))}
-                  <th className="px-2 md:px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Actions</th>
+                  <th className="px-4 md:px-6 py-4 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider min-w-[100px]">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -496,7 +496,7 @@ export default function TeacherFeesPage() {
                   <tr>
                     <td colSpan={feeStructures.length + 2} className="px-4 md:px-6 py-12 text-center text-xs text-gray-500 dark:text-gray-400">
                       <div className="flex flex-col items-center justify-center">
-                        <Loader2 className="w-6 h-6 md:w-8 md:h-8 text-green-600 dark:text-green-400 animate-spin mb-2" />
+                        <Loader2 className="w-6 h-6 md:w-8 md:h-8 text-emerald-600 dark:text-green-400 animate-spin mb-2" />
                         <p>Loading fee data...</p>
                       </div>
                     </td>
@@ -509,7 +509,7 @@ export default function TeacherFeesPage() {
                   </tr>
                 ) : (
                   filteredStudents.map(student => (
-                    <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <tr key={student.id} className="hover:bg-white dark:hover:bg-gray-700 transition-colors transition-colors">
                       <td className="px-2 md:px-6 py-4 sticky left-0 bg-white dark:bg-gray-800 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] min-w-[120px] max-w-[120px] md:min-w-[250px] md:max-w-none align-top md:align-middle">
                         <div className="flex items-center">
                           <div className="hidden md:flex h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 items-center justify-center text-gray-600 dark:text-gray-300 font-bold text-sm shrink-0">
@@ -551,7 +551,7 @@ export default function TeacherFeesPage() {
                             }
                           }}
                           disabled={isReadOnly}
-                          className={`text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs md:text-sm flex items-center justify-center gap-1 mx-auto ${
+                          className={`text-emerald-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs md:text-sm flex items-center justify-center gap-1 mx-auto ${
                             isReadOnly ? 'opacity-50 cursor-not-allowed grayscale' : ''
                           }`}
                         >
@@ -609,7 +609,7 @@ export default function TeacherFeesPage() {
                         required
                         value={paymentForm.fee_structure_id}
                         onChange={(e) => setPaymentForm({...paymentForm, fee_structure_id: e.target.value})}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       >
                         <option value="">Select Fee</option>
                         {feeStructures.map(fee => (
@@ -628,7 +628,7 @@ export default function TeacherFeesPage() {
                         required
                         value={paymentForm.amount_paid}
                         onChange={(e) => setPaymentForm({...paymentForm, amount_paid: e.target.value})}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       />
                     </div>
 
@@ -637,7 +637,7 @@ export default function TeacherFeesPage() {
                       <select
                         value={paymentForm.payment_method}
                         onChange={(e) => setPaymentForm({...paymentForm, payment_method: e.target.value})}
-                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                        className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       >
                         <option value="Cash">Cash</option>
                         <option value="Mobile Money">Mobile Money</option>
@@ -652,7 +652,7 @@ export default function TeacherFeesPage() {
                     <textarea
                       value={paymentForm.remarks}
                       onChange={(e) => setPaymentForm({...paymentForm, remarks: e.target.value})}
-                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
+                      className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       rows={2}
                     />
                   </div>
@@ -723,14 +723,14 @@ export default function TeacherFeesPage() {
                           .map(payment => {
                             const feeType = feeStructures.find(f => f.id === payment.fee_structure_id)?.fee_types?.name || 'Unknown Fee'
                             return (
-                              <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                              <tr key={payment.id} className="hover:bg-white dark:hover:bg-gray-700 transition-colors transition-colors">
                                 <td className="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
                                   {payment.payment_date ? format(new Date(payment.payment_date), 'MMM dd, yyyy') : '-'}
                                 </td>
                                 <td className="px-4 py-2 whitespace-nowrap font-medium text-gray-900 dark:text-white">
                                   {feeType}
                                 </td>
-                                <td className="px-4 py-2 whitespace-nowrap text-green-600 dark:text-green-400 font-medium">
+                                <td className="px-4 py-2 whitespace-nowrap text-emerald-600 dark:text-green-400 font-medium">
                                   GH₵ {payment.amount_paid}
                                 </td>
                                 <td className="px-4 py-2 whitespace-nowrap text-gray-600 dark:text-gray-300">
@@ -755,7 +755,7 @@ export default function TeacherFeesPage() {
                                     <button
                                       onClick={() => handleDeletePayment(payment.id)}
                                       disabled={deletingPaymentId === payment.id || isReadOnly}
-                                      className="p-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-md transition-colors disabled:opacity-50"
+                                      className="p-1.5 text-rose-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-md transition-colors disabled:opacity-50"
                                       title="Delete Payment"
                                     >
                                       {deletingPaymentId === payment.id ? (

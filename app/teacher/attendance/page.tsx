@@ -328,7 +328,7 @@ export default function AttendancePage() {
   if (teacherClasses.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors">
+        <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-30 shadow-sm transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center h-16">
               <BackButton 
@@ -369,7 +369,7 @@ export default function AttendancePage() {
               <button
                 onClick={handleSaveAttendance}
                 disabled={saving || !selectedClass || students.length === 0 || isReadOnly}
-                className="flex items-center space-x-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition text-xs md:text-sm"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg text-white rounded-xl disabled:opacity-50 transition-all font-semibold text-xs md:text-sm"
               >
                 <Save className="w-5 h-5" />
                 <span>{saving ? 'Saving...' : 'Save Attendance'}</span>
@@ -393,7 +393,7 @@ export default function AttendancePage() {
         )}
 
         <div className="mb-8">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-gray-100">Record Attendance</h1>
+          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">Record Attendance</h1>
           <p className="mt-2 text-xs md:text-sm text-gray-600 dark:text-gray-400">
             Enter the number of days each student was present during {currentTerm?.name}
           </p>
@@ -401,7 +401,7 @@ export default function AttendancePage() {
 
         {/* Instructions & Quick Fill */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+          <div className="bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-2xl p-6 shadow-sm">
             <div className="flex items-start space-x-3">
               <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
@@ -416,8 +416,8 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
-            <h3 className="font-semibold text-green-900 dark:text-green-300 mb-4 text-sm md:text-base">⚡ Quick Fill All Students</h3>
+          <div className="bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-2xl p-6 shadow-sm">
+            <h3 className="font-bold text-emerald-900 dark:text-emerald-300 mb-4 text-sm md:text-base flex items-center gap-2"><span className="text-lg">⚡</span> Quick Fill All Students</h3>
             <div className="flex items-end space-x-3">
               <div className="flex-1">
                 <label className="block text-xs md:text-sm font-medium text-green-800 dark:text-green-300 mb-2">
@@ -430,34 +430,34 @@ export default function AttendancePage() {
                   value={bulkDays}
                   onChange={(e) => setBulkDays(e.target.value)}
                   placeholder={`e.g., ${totalDays}`}
-                  className="w-full px-4 py-2 border border-green-300 dark:border-green-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2.5 border-0 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm shadow-sm dark:text-white font-medium"
                 />
               </div>
               <button
                 onClick={applyToAll}
                 disabled={!selectedClass || students.length === 0 || !bulkDays || isReadOnly}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition font-medium whitespace-nowrap text-xs md:text-sm"
+                className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-all font-semibold whitespace-nowrap text-xs md:text-sm shadow-sm"
               >
                 Apply to All
               </button>
             </div>
-            <p className="text-xs text-green-700 dark:text-green-400 mt-2">
+            <p className="text-xs text-emerald-700 dark:text-green-400 mt-2">
               Set the same attendance for all students, then adjust individual cases
             </p>
           </div>
         </div>
 
         {/* Class Selection & Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 md:p-6 mb-6 backdrop-blur-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4 overflow-x-auto pb-2 md:pb-0">
               {teacherClasses.map((cls) => (
                 <button
                   key={cls.class_id}
                   onClick={() => setSelectedClass(cls.class_id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                  className={`px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all duration-200 ${
                     selectedClass === cls.class_id
-                      ? 'bg-ghana-green text-white'
+                      ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
@@ -474,13 +474,13 @@ export default function AttendancePage() {
                   placeholder="Search students..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-64 pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full sm:w-64 pl-10 pr-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-800 dark:text-white font-medium transition-all"
                 />
               </div>
               <select
                 value={genderFilter}
                 onChange={(e) => setGenderFilter(e.target.value as 'all' | 'male' | 'female')}
-                className="w-full sm:w-auto px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className="w-full sm:w-auto px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-800 dark:text-white font-medium transition-all"
               >
                 <option value="all">All Genders</option>
                 <option value="male">Boys</option>
@@ -491,7 +491,7 @@ export default function AttendancePage() {
               <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Term
               </label>
-              <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-sm">
+              <div className="w-full px-4 py-2.5 border-0 rounded-xl bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 font-semibold text-sm">
                 {currentTerm ? `${currentTerm.name} (${currentTerm.academic_year})` : 'No term selected'}
               </div>
             </div>
@@ -500,8 +500,8 @@ export default function AttendancePage() {
 
         {/* Filter and Sort Options */}
         {selectedClass && students.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
-            <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-4">Filter & Sort Options</h3>
+          <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-5 md:p-6 mb-6 backdrop-blur-sm">
+            <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white mb-4">Filter & Sort Options</h3>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -510,9 +510,9 @@ export default function AttendancePage() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setGenderFilter('all')}
-                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition text-xs md:text-sm ${
+                    className={`flex-1 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 text-xs md:text-sm ${
                       genderFilter === 'all'
-                        ? 'bg-ghana-green text-white'
+                        ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
@@ -520,7 +520,7 @@ export default function AttendancePage() {
                   </button>
                   <button
                     onClick={() => setGenderFilter('male')}
-                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition text-xs md:text-sm ${
+                    className={`flex-1 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 text-xs md:text-sm ${
                       genderFilter === 'male'
                         ? 'bg-blue-600 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -530,7 +530,7 @@ export default function AttendancePage() {
                   </button>
                   <button
                     onClick={() => setGenderFilter('female')}
-                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition text-xs md:text-sm ${
+                    className={`flex-1 px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 text-xs md:text-sm ${
                       genderFilter === 'female'
                         ? 'bg-pink-600 text-white'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -548,7 +548,7 @@ export default function AttendancePage() {
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-xs md:text-sm dark:bg-gray-700 dark:text-white"
+                  className="w-full px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-800 text-xs md:text-sm font-medium transition-all"
                 >
                   <option value="name">Name (A-Z)</option>
                   <option value="boys-first">Boys First</option>
@@ -562,45 +562,45 @@ export default function AttendancePage() {
         {/* Statistics */}
         {selectedClass && students.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
+            <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 md:p-6 backdrop-blur-sm">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-gray-600 dark:text-gray-400 text-xs md:text-sm">Total Students</p>
                 <Users className="w-4 h-4 md:w-5 md:h-5 text-gray-400 dark:text-gray-500" />
               </div>
-              <p className="text-xl md:text-3xl font-bold text-gray-800 dark:text-white">{stats.totalStudents}</p>
+              <p className="text-2xl md:text-4xl font-black text-gray-900 dark:text-white my-1">{stats.totalStudents}</p>
               <p className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Boys: {stats.boys} | Girls: {stats.girls}
               </p>
             </div>
 
-            <div className="bg-green-50 dark:bg-green-900/20 rounded-lg shadow p-4 md:p-6 border border-green-200 dark:border-green-800">
+            <div className="bg-emerald-50/50 dark:bg-emerald-900/20 rounded-2xl shadow-sm p-4 md:p-6 border border-emerald-100 dark:border-emerald-800/50">
               <div className="flex items-center justify-between mb-2">
-                <p className="text-green-700 dark:text-green-300 text-xs md:text-sm font-medium">Overall Rate</p>
-                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-green-600 dark:text-green-400" />
+                <p className="text-emerald-700 dark:text-green-300 text-xs md:text-sm font-medium">Overall Rate</p>
+                <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 dark:text-green-400" />
               </div>
-              <p className="text-xl md:text-3xl font-bold text-green-800 dark:text-green-200">{stats.overallRate}%</p>
-              <p className="text-[10px] md:text-sm text-green-600 dark:text-green-400 mt-1">
+              <p className="text-2xl md:text-4xl font-black text-emerald-700 dark:text-emerald-400 my-1">{stats.overallRate}%</p>
+              <p className="text-[10px] md:text-sm text-emerald-600 dark:text-green-400 mt-1">
                 Class average attendance
               </p>
             </div>
 
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg shadow p-4 md:p-6 border border-blue-200 dark:border-blue-800">
+            <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl shadow-sm p-4 md:p-6 border border-blue-100 dark:border-blue-800/50">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-blue-700 dark:text-blue-300 text-xs md:text-sm font-medium">Boys Rate</p>
                 <Users className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <p className="text-xl md:text-3xl font-bold text-blue-800 dark:text-blue-200">{stats.boysRate}%</p>
+              <p className="text-2xl md:text-4xl font-black text-blue-700 dark:text-blue-400 my-1">{stats.boysRate}%</p>
               <p className="text-[10px] md:text-sm text-blue-600 dark:text-blue-400 mt-1">
                 {stats.boys} male students
               </p>
             </div>
 
-            <div className="bg-pink-50 dark:bg-pink-900/20 rounded-lg shadow p-4 md:p-6 border border-pink-200 dark:border-pink-800">
+            <div className="bg-pink-50/50 dark:bg-pink-900/20 rounded-2xl shadow-sm p-4 md:p-6 border border-pink-100 dark:border-pink-800/50">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-pink-700 dark:text-pink-300 text-xs md:text-sm font-medium">Girls Rate</p>
                 <Users className="w-4 h-4 md:w-5 md:h-5 text-pink-600 dark:text-pink-400" />
               </div>
-              <p className="text-xl md:text-3xl font-bold text-pink-800 dark:text-pink-200">{stats.girlsRate}%</p>
+              <p className="text-2xl md:text-4xl font-black text-pink-700 dark:text-pink-400 my-1">{stats.girlsRate}%</p>
               <p className="text-[10px] md:text-sm text-pink-600 dark:text-pink-400 mt-1">
                 {stats.girls} female students
               </p>
@@ -612,10 +612,10 @@ export default function AttendancePage() {
         {selectedClass && students.length > 0 && (
           <>
             {/* Desktop Table View */}
-            <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700 flex justify-between items-center">
+            <div className="hidden md:block bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden backdrop-blur-sm">
+              <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700/50 bg-gray-50/50 dark:bg-gray-800 flex justify-between items-center">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                     Student Attendance ({getFilteredAndSortedStudents().length} of {students.length} students)
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -631,13 +631,13 @@ export default function AttendancePage() {
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600">
+                  <thead className="bg-gray-50/80 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-800">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">#</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Gender</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Days Present</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Attendance %</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gender</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Days Present</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Attendance %</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y dark:divide-gray-700">
@@ -645,7 +645,7 @@ export default function AttendancePage() {
                       const daysPresent = attendance[student.id] || 0
                       const percentage = totalDays > 0 ? ((daysPresent / totalDays) * 100).toFixed(1) : '0'
                       return (
-                        <tr key={student.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                        <tr key={student.id} className={`hover:bg-white dark:hover:bg-gray-700 transition-colors ${
                           student.gender?.toLowerCase() === 'male' ? 'bg-blue-50/30 dark:bg-blue-900/10' : 'bg-pink-50/30 dark:bg-pink-900/10'
                         }`}>
                           <td className="px-6 py-4 text-sm font-bold text-gray-500 dark:text-gray-400">
@@ -679,7 +679,7 @@ export default function AttendancePage() {
                                   }
                                 }}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
-                                className="w-20 px-2 py-1 text-center border rounded focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-20 px-2 py-1.5 text-center font-bold text-sm bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               />
                               <span className="text-sm text-gray-500 dark:text-gray-400">/ {totalDays}</span>
                             </div>
@@ -718,7 +718,7 @@ export default function AttendancePage() {
                   const daysPresent = attendance[student.id] || 0
                   const percentage = totalDays > 0 ? ((daysPresent / totalDays) * 100).toFixed(1) : '0'
                   return (
-                    <div key={student.id} className={`p-4 rounded-lg shadow border ${
+                    <div key={student.id} className={`p-4 rounded-2xl shadow-sm border ${
                       student.gender?.toLowerCase() === 'male' 
                         ? 'bg-blue-50/20 border-blue-100 dark:bg-blue-900/10 dark:border-blue-800' 
                         : 'bg-pink-50/20 border-pink-100 dark:bg-pink-900/10 dark:border-pink-800'

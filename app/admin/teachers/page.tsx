@@ -326,27 +326,27 @@ export default function TeachersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-20 shadow-sm">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
               <BackButton href="/admin/dashboard" />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Teacher Management</h1>
-                <p className="text-xs md:text-sm text-gray-600">View and manage all teachers</p>
+                <h1 className="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Teacher Management</h1>
+                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 font-medium">View and manage all teachers</p>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => setShowUploadModal(true)}
-                className="bg-methodist-blue text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 text-sm md:text-base flex-1 md:flex-none justify-center"
+                className="bg-blue-50 text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800 px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 text-sm shadow-sm flex-1 md:flex-none justify-center"
               >
                 <Upload className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Upload CSV</span>
               </button>
               <Link 
                 href="/admin/teachers/add"
-                className="bg-ghana-green text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2 text-sm md:text-base flex-1 md:flex-none justify-center"
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-md hover:shadow-lg px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2 text-sm flex-1 md:flex-none justify-center"
               >
                 <Plus className="w-4 h-4 md:w-5 md:h-5" />
                 <span>Add Teacher</span>
@@ -358,19 +358,19 @@ export default function TeachersPage() {
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Search */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-4 md:p-6 mb-8 backdrop-blur-sm">
           <div className="flex flex-col md:flex-row gap-4 items-center">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+              <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by name or teacher ID..."
                 value={searchTerm}
                 onChange={handleSearch}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent"
+                className="w-full pl-11 pr-4 py-3 border-0 bg-gray-50 dark:bg-gray-900/50 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-900 transition-all font-medium"
               />
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-sm font-medium px-4 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg whitespace-nowrap text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
               <strong>{totalCount}</strong> teachers found
             </div>
           </div>
@@ -379,23 +379,23 @@ export default function TeachersPage() {
         {/* Teachers Grid */}
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 transition-opacity duration-200 ${loading && teachers.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
           {teachers.map((teacher) => (
-            <div key={teacher.id} className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
+            <div key={teacher.id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-6 border border-gray-100 dark:border-gray-700 group flex flex-col">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center space-x-3">
-                  <div className="bg-ghana-green bg-opacity-10 p-3 rounded-full">
-                    <GraduationCap className="w-6 h-6 text-ghana-green" />
+                  <div className="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-2xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+                    <GraduationCap className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-base md:text-lg text-gray-800">
+                    <h3 className="font-black text-lg md:text-xl text-gray-900 dark:text-white">
                       {teacher.first_name} {teacher.middle_name ? teacher.middle_name + ' ' : ''}{teacher.last_name}
                     </h3>
                     <p className="text-xs md:text-sm text-gray-500">{teacher.teacher_id}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-1 text-[10px] md:text-xs font-semibold rounded-full ${
-                  teacher.status === 'active' ? 'bg-green-100 text-green-800' : 
-                  teacher.status === 'on_leave' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-gray-100 text-gray-800'
+                  teacher.status === 'active' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30' : 
+                  teacher.status === 'on_leave' ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30' :
+                  'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
                 }`}>
                   {teacher.status === 'on_leave' ? 'On Leave' : 
                    teacher.status === 'transferred' ? 'Transferred' :
@@ -403,32 +403,32 @@ export default function TeachersPage() {
                 </span>
               </div>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-xs md:text-sm text-gray-600">
+              <div className="space-y-3 mb-6 bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl flex-1 border border-gray-100 dark:border-gray-800">
+                <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 dark:text-gray-400">
                   <span className="font-medium mr-2">Teacher ID:</span>
                   <span>{teacher.teacher_id || 'N/A'}</span>
                 </div>
-                <div className="flex items-center text-xs md:text-sm text-gray-600">
+                <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 dark:text-gray-400">
                   <span className="font-medium mr-2">Specialization:</span>
                   <span>{teacher.specialization || 'N/A'}</span>
                 </div>
-                <div className="flex items-center text-xs md:text-sm text-gray-600">
+                <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 dark:text-gray-400">
                   <span className="font-medium mr-2">Phone:</span>
                   <span>{teacher.phone || 'N/A'}</span>
                 </div>
                 {teacher.email && (
-                  <div className="flex items-center text-xs md:text-sm text-gray-600">
+                  <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-medium mr-2">Email:</span>
                     <span className="truncate">{teacher.email}</span>
                   </div>
                 )}
                 {teacher.qualification && (
-                  <div className="flex items-center text-xs md:text-sm text-gray-600">
+                  <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 dark:text-gray-400">
                     <span className="font-medium mr-2">Qualification:</span>
                     <span>{teacher.qualification}</span>
                   </div>
                 )}
-                <div className="flex items-center text-xs md:text-sm text-gray-600">
+                <div className="flex items-center justify-between text-xs md:text-sm text-gray-600 dark:text-gray-400">
                   <span className="font-medium mr-2">Gender:</span>
                   <span>{teacher.gender || 'Unknown'}</span>
                 </div>
@@ -475,7 +475,7 @@ export default function TeachersPage() {
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
-                className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative inline-flex items-center rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-colors"
               >
                 Previous
               </button>

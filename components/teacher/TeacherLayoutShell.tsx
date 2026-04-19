@@ -10,7 +10,7 @@ export function TeacherLayoutShell({ children }: { children: React.ReactNode }) 
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex overflow-hidden print:h-auto print:overflow-visible print:block">
+    <div className="fixed inset-0 overscroll-none h-[100dvh] bg-gray-50 dark:bg-gray-900 flex overflow-hidden print:h-auto print:overflow-visible print:block print:relative">
       <div className="print:hidden">
         <CommandPalette />
       </div>

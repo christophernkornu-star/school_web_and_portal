@@ -457,23 +457,23 @@ export default function MockExamsPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 font-sans text-gray-900 dark:text-gray-100 transition-colors">
         {/* Header Controls (Hidden on Print) */}
         {!showSheet && (
-           <div className="max-w-6xl mx-auto space-y-6">
+           <div className="max-w-6xl mx-auto space-y-6 transition-all duration-300">
                <div className="flex items-center gap-4">
                    <BackButton />
-                   <h1 className="text-2xl font-bold">Mock Exams Management (Basic 9)</h1>
+                   <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">Mock Exams Management (Basic 9)</h1>
                </div>
 
                {classes.length === 0 ? (
-                   <div className="bg-yellow-50 p-4 rounded text-yellow-800">
+                   <div className="bg-amber-50 dark:bg-amber-900/30 p-5 rounded-2xl border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 shadow-sm font-medium">
                        You are not assigned to any Basic 9 classes as either a Class Teacher or Subject Teacher.
                    </div>
                ) : (
-                   <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-4">
+                   <div className="bg-white dark:bg-gray-800/90 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 space-y-4 backdrop-blur-sm">
                        <div className="grid md:grid-cols-2 gap-4">
                            <div>
-                               <label className="block text-sm font-medium mb-1">Select Class</label>
+                               <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Select Class</label>
                                <select 
-                                 className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                                 className="w-full p-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm dark:text-white transition-all"
                                  value={selectedClass}
                                  onChange={e => setSelectedClass(e.target.value)}
                                >
@@ -484,10 +484,10 @@ export default function MockExamsPage() {
                            
                            {selectedClass && (
                                <div>
-                                   <label className="block text-sm font-medium mb-1">Select Mock</label>
+                                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Select Mock</label>
                                    <div className="flex gap-2">
                                        <select 
-                                         className="flex-1 p-2 border rounded dark:bg-gray-700 dark:border-gray-600"
+                                         className="flex-1 p-2.5 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm dark:text-white transition-all"
                                          value={selectedMock}
                                          onChange={e => setSelectedMock(e.target.value)}
                                        >
@@ -497,7 +497,7 @@ export default function MockExamsPage() {
                                        {isClassTeacher && (
                                            <button 
                                              onClick={() => setIsCreating(!isCreating)}
-                                             className="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 h-10 w-10 flex items-center justify-center shrink-0"
+                                             className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-3 py-2 rounded-xl hover:from-blue-700 hover:to-blue-800 h-[42px] w-[42px] flex items-center justify-center shrink-0 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                                              title="Create New Mock"
                                            >
                                                <Plus className="w-5 h-5" />
@@ -506,7 +506,7 @@ export default function MockExamsPage() {
                                        {selectedMock && isClassTeacher && (
                                             <button 
                                               onClick={() => deleteMock(selectedMock)}
-                                              className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700 h-10 w-10 flex items-center justify-center shrink-0"
+                                              className="bg-gradient-to-r from-red-600 to-red-700 text-white px-3 py-2 rounded-xl hover:from-red-700 hover:to-red-800 h-[42px] w-[42px] flex items-center justify-center shrink-0 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                                               title="Delete Selected Mock"
                                             >
                                                 <Trash2 className="w-5 h-5" />
@@ -518,21 +518,21 @@ export default function MockExamsPage() {
                        </div>
                        
                        {isCreating && isClassTeacher && selectedClass && (
-                           <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded border dark:border-gray-600 flex flex-col md:flex-row items-end gap-2">
+                           <div className="bg-gray-50/80 dark:bg-gray-800/80 p-5 rounded-2xl border border-gray-100 dark:border-gray-700/50 flex flex-col md:flex-row items-end gap-3 shadow-inner">
                                <div className="flex-1 w-full">
-                                   <label className="block text-sm font-medium mb-1">Mock Name (e.g. First, Second)</label>
+                                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Mock Name (e.g. First, Second)</label>
                                    <input 
                                      type="text" 
                                      value={newMockName}
                                      onChange={e => setNewMockName(e.target.value)}
                                      placeholder="Enter mock name..."
-                                     className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-600"
+                                     className="w-full p-2.5 bg-white dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm dark:text-white transition-all"
                                    />
                                </div>
                                <button 
                                  onClick={createMock}
                                  disabled={!newMockName}
-                                 className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 w-full md:w-auto mt-2 md:mt-0"
+                                 className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg disabled:opacity-50 w-full md:w-auto mt-2 md:mt-0 transition-all"
                                >
                                    Create
                                </button>
@@ -542,9 +542,9 @@ export default function MockExamsPage() {
                )}
 
                {selectedClass && selectedMock && (
-                   <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                       <div className="p-4 border-b dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50 dark:bg-gray-700">
-                           <h2 className="font-bold flex items-center gap-2">
+                   <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 overflow-hidden backdrop-blur-sm">
+                       <div className="p-5 border-b border-gray-100 dark:border-gray-700/50 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/50 dark:bg-gray-800/50">
+                           <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                                Enter Scores
                                {!isClassTeacher && (
                                    <span className="text-xs font-normal px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full">
@@ -560,10 +560,10 @@ export default function MockExamsPage() {
                                         placeholder="Search students..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-9 pr-4 py-2 w-full border rounded-lg bg-white dark:bg-gray-800 dark:border-gray-600 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white"
+                                        className="pl-9 pr-4 py-2.5 w-full border-0 bg-white dark:bg-gray-900/50 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-500 dark:text-white text-sm transition-all"
                                     />
                                 </div>
-                                <div className="flex items-center bg-white dark:bg-gray-800 border dark:border-gray-600 rounded-lg p-1 mr-2">
+                                <div className="flex items-center bg-white dark:bg-gray-900/50 border-0 shadow-sm rounded-xl p-1.5 mr-2">
                                      <button
                                        onClick={() => {
                                            if (sortBy === 'name') setSortBy('gender_m_f')
@@ -589,14 +589,14 @@ export default function MockExamsPage() {
 
                                 <button 
                                  onClick={() => setShowSheet(true)}
-                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
+                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                                >
                                    <FileSpreadsheet className="w-4 h-4" /> <span className="hidden sm:inline">Sheet</span>
                                </button>
                                <button 
                                  onClick={saveScores}
                                  disabled={saving}
-                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-ghana-green text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50"
+                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold px-5 py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:opacity-50"
                                >
                                    <Save className="w-4 h-4" /> {saving ? 'Saving...' : <span className="hidden sm:inline">Save</span>}
                                </button>
@@ -605,11 +605,11 @@ export default function MockExamsPage() {
                        
                        <div className="overflow-x-auto">
                            <table className="w-full text-sm">
-                               <thead className="bg-gray-100 dark:bg-gray-900 border-b">
+                               <thead className="bg-gray-50/80 dark:bg-gray-800/80 border-b border-gray-200 dark:border-gray-700/50">
                                    <tr>
-                                       <th className="p-3 text-left w-40 md:w-64 sticky left-0 bg-gray-100 dark:bg-gray-900 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Student</th>
+                                       <th className="p-4 text-left w-40 md:w-64 sticky left-0 bg-gray-50/80 dark:bg-gray-800/80 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider backdrop-blur-sm">Student</th>
                                        {subjects.filter(s => allowedSubjects.includes(s.id)).map(s => (
-                                           <th key={s.id} className="p-3 text-center min-w-[80px]">
+                                           <th key={s.id} className="p-4 text-center min-w-[80px] text-xs font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                                {getShortSubjectName(s.name)}
                                                {(!isClassTeacher && allowedSubjects.includes(s.id)) && (
                                                    <div className="h-1 w-full bg-green-500 rounded-full mt-1"></div>
@@ -618,10 +618,10 @@ export default function MockExamsPage() {
                                        ))}
                                    </tr>
                                </thead>
-                               <tbody className="divide-y dark:divide-gray-700">
+                               <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
                                    {visibleStudents.map(s => (
                                        <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                                           <td className="p-3 font-medium sticky left-0 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-xs md:text-sm">
+                                           <td className="p-4 font-bold text-gray-900 dark:text-gray-200 sticky left-0 bg-white dark:bg-gray-800/90 border-r border-gray-100 dark:border-gray-700/50 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] text-xs md:text-sm">
                                                <div className="truncate w-32 md:w-60" title={`${s.last_name}, ${s.first_name}`}>
                                                    {s.last_name}, {s.first_name}
                                                </div>
@@ -638,7 +638,7 @@ export default function MockExamsPage() {
                                                              type="number" 
                                                              min="0" 
                                                              max="100" 
-                                                             className={`w-14 md:w-16 p-2 border rounded text-center dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all ${!canEdit ? 'opacity-50 bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                                             className={`w-14 md:w-16 p-2 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700/50 rounded-lg text-center font-semibold focus:ring-2 focus:ring-emerald-500 outline-none transition-all ${!canEdit ? 'opacity-50 bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : 'shadow-sm'}`}
                                                              value={currentScore || ''}
                                                              onChange={e => handleScoreChange(s.id, sub.id, e.target.value)}
                                                              disabled={!canEdit}
@@ -669,11 +669,15 @@ export default function MockExamsPage() {
 
         {/* Sheet View for Printing */}
         {showSheet && selectedMock && currentMockData && (
-             <div className="bg-white text-black min-h-screen fixed inset-0 z-50 overflow-auto">
+             <div className="bg-white text-black min-h-screen fixed inset-0 z-40 pt-20 overflow-auto pl-0 lg:pl-64">
                  {/* Print Controls */}
-                 <div className="fixed top-4 right-4 print:hidden flex gap-2 z-[60]">
-                     <button onClick={() => window.print()} className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700">PRINT</button>
-                     <button onClick={() => setShowSheet(false)} className="bg-gray-600 text-white px-4 py-2 rounded shadow hover:bg-gray-700">CLOSE</button>
+                 <div className="fixed top-20 right-8 print:hidden flex gap-3 z-50">
+                     <button onClick={() => window.print()} className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                        <Printer className="w-5 h-5" /> Print Sheet
+                     </button>
+                     <button onClick={() => setShowSheet(false)} className="bg-rose-600 text-white px-5 py-2.5 rounded-xl font-bold shadow-lg hover:bg-rose-700 transition-all hover:-translate-y-0.5 flex items-center gap-2">
+                        Close
+                     </button>
                  </div>
 
                  {/* Pagination Logic */}
