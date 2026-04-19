@@ -156,7 +156,7 @@ export default function AttendancePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow">
+          <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  dark:bg-gray-800  ">
             <div className="container mx-auto px-4 py-4">
                <div className="flex items-center gap-4">
                   <Skeleton className="h-8 w-8 rounded-full" />
@@ -170,7 +170,7 @@ export default function AttendancePage() {
                     <Skeleton className="h-32 w-full rounded-lg" />
                     <Skeleton className="h-32 w-full rounded-lg" />
                  </div>
-                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                 <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50  dark:bg-gray-800     p-6">
                     <Skeleton className="h-8 w-48 mb-6" />
                     <div className="space-y-4">
                         <Skeleton className="h-16 w-full rounded-lg" />
@@ -190,7 +190,7 @@ export default function AttendancePage() {
         {/* Header */}
         <div className="mb-8">
           <BackButton className="mb-4" />
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-methodist-blue">Attendance Records</h1>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-700 dark:text-blue-400">Attendance Records</h1>
           <p className="text-xs md:text-sm text-gray-600 mt-2">View your term-based attendance summary</p>
         </div>
 
@@ -204,17 +204,17 @@ export default function AttendancePage() {
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-8">
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-xs md:text-sm">Terms Recorded</p>
-                <p className="text-2xl md:text-3xl font-bold text-methodist-blue">{stats.totalTerms}</p>
+                <p className="text-2xl md:text-3xl font-bold text-blue-700 dark:text-blue-400">{stats.totalTerms}</p>
               </div>
               <Calendar className="w-8 h-8 md:w-10 md:h-10 text-blue-200" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-gray-600 text-xs md:text-sm">Average Attendance</p>
@@ -228,7 +228,7 @@ export default function AttendancePage() {
         </div>
 
         {/* Attendance Records Table */}
-        <div className="bg-white rounded-lg shadow">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50     ">
           <div className="p-4 md:p-6 border-b border-gray-200">
             <h2 className="text-lg md:text-xl font-semibold text-gray-800">
               Term-Based Attendance Summary

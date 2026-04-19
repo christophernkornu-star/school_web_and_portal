@@ -292,7 +292,7 @@ export default function TakeQuizPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow p-4 sticky top-0 z-10">
+          <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  dark:bg-gray-800   p-4 sticky top-0 z-10">
                <div className="container mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-4">
                         <Skeleton className="h-8 w-8 rounded-full" />
@@ -303,7 +303,7 @@ export default function TakeQuizPage() {
           </header>
           <div className="container mx-auto max-w-3xl p-4 md:p-8 space-y-6">
               {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 space-y-4">
+                  <div key={i} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50  dark:bg-gray-800    -sm p-6 space-y-4">
                       <Skeleton className="h-6 w-3/4" />
                       <div className="space-y-3">
                           <Skeleton className="h-12 w-full rounded" />
@@ -323,7 +323,7 @@ export default function TakeQuizPage() {
       {/* Strict Timeout Overlay */}
       {isTimeUp && (
           <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center text-white backdrop-blur-sm">
-             <div className="bg-white text-gray-900 p-8 rounded-2xl shadow-2xl max-w-md text-center">
+             <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  text-gray-900 p-8 rounded-2xl  -2xl max-w-md text-center">
                  <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
                      <Clock className="w-8 h-8" />
                  </div>
@@ -337,7 +337,7 @@ export default function TakeQuizPage() {
       )}
 
       {/* Sticky Header with Timer */}
-      <div className="bg-white border-b sticky top-0 z-20 shadow-sm">
+      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  border-b sticky top-0 z-20  -sm">
         <div className="container mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-3">
             <h1 className="text-base md:text-lg font-bold truncate w-full md:w-auto text-center md:text-left">{quiz.title}</h1>
             <div className={`flex items-center gap-2 font-mono font-bold text-base md:text-lg px-3 py-1 rounded w-full md:w-auto justify-center md:justify-start ${
@@ -352,7 +352,7 @@ export default function TakeQuizPage() {
       <main className="container mx-auto px-4 py-6 md:py-8 max-w-3xl">
         <div className="space-y-6 md:space-y-8">
             {questions.map((q, index) => (
-                <div key={q.id} className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-100">
+                <div key={q.id} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  p-4 md:p-6 rounded-xl  -sm border border-gray-100">
                     <div className="flex gap-3 md:gap-4 mb-4">
                         <span className="flex-shrink-0 w-7 h-7 md:w-8 md:h-8 bg-blue-50 text-blue-600 font-bold rounded-lg flex items-center justify-center text-sm md:text-base">
                             {index + 1}

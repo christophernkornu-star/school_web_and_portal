@@ -170,14 +170,14 @@ export default function StudentResults() {
       case 'D': return 'grade-D'
       case 'E':
       case 'F': return 'grade-E'
-      default: return 'bg-gray-100 text-gray-800'
+      default: return 'bg-gray-100 text-slate-800 dark:text-slate-100'
     }
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow">
+          <header className="bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl shadow-sm border-b border-gray-200 dark:border-gray-800">
             <div className="container mx-auto px-4 py-4">
                <div className="flex items-center gap-4">
                   <Skeleton className="h-8 w-8 rounded-full" />
@@ -187,7 +187,7 @@ export default function StudentResults() {
           </header>
           <main className="flex-1 container mx-auto px-4 py-8">
              <div className="max-w-6xl mx-auto space-y-8">
-                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                 <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2.5rem] shadow-2xl shadow-gray-200/40 p-8 border border-gray-100/50 dark:border-gray-800/50">
                     <div className="flex justify-between items-center mb-6">
                         <div>
                            <Skeleton className="h-8 w-48 mb-2" />
@@ -209,21 +209,21 @@ export default function StudentResults() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans">
       {/* Header */}
-      <header className="ghana-flag-border bg-white shadow-md">
+      <header className="bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl shadow-sm border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 ghana-flag-border">
         <nav className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <GraduationCap className="w-10 h-10 text-methodist-blue" />
               <div>
-                <h1 className="text-xl font-bold text-methodist-blue">
+                <h1 className="text-xl md:text-2xl font-black text-methodist-blue tracking-tight">
                   Biriwa Methodist 'C' Basic School
                 </h1>
-                <p className="text-xs text-gray-600">Student Portal - Results</p>
+                <p className="text-[10px] md:text-xs text-methodist-yellow font-bold uppercase tracking-wider mt-0.5">Student Portal - Results</p>
               </div>
             </div>
-            <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-gray-700 hover:text-methodist-blue" />
+            <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-gray-700 hover:text-methodist-blue font-semibold" />
           </div>
         </nav>
       </header>
@@ -231,10 +231,10 @@ export default function StudentResults() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 md:px-6 md:py-8">
         {/* Header Section */}
-        <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 mb-6">
+        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2rem] shadow-xl shadow-gray-200/40 p-6 md:p-8 mb-8 border border-gray-100 dark:border-gray-800/50">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
             <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800">Academic Results</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 dark:text-slate-100">Academic Results</h2>
               {student && (
                 <p className="text-gray-600 text-sm md:text-base">
                   {student.last_name} {student.first_name} - {student.class_name}
@@ -243,7 +243,7 @@ export default function StudentResults() {
             </div>
             <Link
               href="/student/report-card"
-              className="flex items-center gap-2 px-4 md:px-6 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 transition-colors text-sm md:text-base"
+              className="flex items-center gap-2 px-4 md:px-6 py-2 bg-methodist-blue text-white rounded-xl shadow-lg hover:shadow-blue-900/40 hover:-translate-y-0.5 transition-all font-bold transition-colors text-sm md:text-base"
             >
               <Download className="w-4 h-4" />
               <span>Download Report</span>
@@ -256,8 +256,8 @@ export default function StudentResults() {
               onClick={() => setSelectedTerm('all')}
               className={`px-3 md:px-4 py-2 rounded-md text-sm md:text-base ${
                 selectedTerm === 'all'
-                  ? 'bg-methodist-blue text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? "bg-methodist-blue text-methodist-yellow font-bold shadow-md hover:-translate-y-0.5 transition-all"
+                  : "bg-white/50 text-slate-600 hover:bg-white hover:text-methodist-blue border border-gray-200 transition-all font-medium"
               }`}
             >
               All Terms
@@ -268,8 +268,8 @@ export default function StudentResults() {
                 onClick={() => setSelectedTerm(term.id)}
                 className={`px-3 md:px-4 py-2 rounded-md text-sm md:text-base ${
                   selectedTerm === term.id
-                    ? 'bg-methodist-blue text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? "bg-methodist-blue text-methodist-yellow font-bold shadow-md hover:-translate-y-0.5 transition-all"
+                    : "bg-white/50 text-slate-600 hover:bg-white hover:text-methodist-blue border border-gray-200 transition-all font-medium"
                 }`}
               >
                 {term.name}
@@ -279,40 +279,40 @@ export default function StudentResults() {
         </div>
 
         {/* Results Table */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2.5rem] shadow-xl shadow-gray-200/40 overflow-hidden border border-gray-100 dark:border-gray-800">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] divide-y divide-gray-200">
-              <thead className="bg-methodist-blue text-white">
+              <thead className="bg-methodist-blue text-methodist-yellow shadow-md border-b-2 border-methodist-yellow/30">
                 <tr>
-                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-bold uppercase tracking-wider py-4">
                     Subject
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-bold uppercase tracking-wider py-4">
                     Term
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider py-4">
                     Class Score (40%)
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider py-4">
                     Exam Score (60%)
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider py-4">
                     Total (100%)
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-bold uppercase tracking-wider py-4">
                     Grade
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-bold uppercase tracking-wider py-4">
                     Remarks
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white/50 dark:bg-gray-900/50 divide-y divide-gray-100 dark:divide-gray-800 backdrop-blur-sm">
                 {results.filter(r => selectedTerm === 'all' || r.term_id === selectedTerm).length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-8 text-center">
                       <BookOpen className="w-10 h-10 md:w-12 md:h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-sm md:text-base text-gray-500">
+                      <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">
                         {selectedTerm === 'all'
                           ? 'No results available yet.'
                           : 'No results available for the selected term.'}
@@ -323,29 +323,29 @@ export default function StudentResults() {
                   results
                     .filter(r => selectedTerm === 'all' || r.term_id === selectedTerm)
                     .map((result) => (
-                      <tr key={result.id} className="hover:bg-gray-50 transition-colors">
+                      <tr key={result.id} className="hover:bg-white dark:hover:bg-gray-800 transition-all hover:shadow-sm">
                         <td className="px-3 md:px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs md:text-sm font-medium text-gray-900">{result.subject_name}</div>
+                          <div className="text-xs md:text-sm font-medium text-slate-800 dark:text-slate-100">{result.subject_name}</div>
                         </td>
                         <td className="px-3 md:px-6 py-4 whitespace-nowrap">
-                          <div className="text-xs md:text-sm text-gray-900">{result.term_name}</div>
-                          <div className="text-xs text-gray-500">{result.academic_year}</div>
+                          <div className="text-xs md:text-sm text-slate-800 dark:text-slate-100">{result.term_name}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{result.academic_year}</div>
                         </td>
-                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-gray-500">
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-slate-500 dark:text-slate-400">
                           {result.class_score ?? '-'}
                         </td>
-                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-gray-500">
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-slate-500 dark:text-slate-400">
                           {result.exam_score ?? '-'}
                         </td>
                         <td className="px-3 md:px-6 py-4 whitespace-nowrap text-center">
-                          <span className="text-xs md:text-sm font-bold text-gray-900">{result.total ?? '-'}</span>
+                          <span className="text-xs md:text-sm font-bold text-slate-800 dark:text-slate-100">{result.total ?? '-'}</span>
                         </td>
                         <td className="px-3 md:px-6 py-4 whitespace-nowrap text-center">
                           <span className={`px-2 md:px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getGradeColor(result.grade || '')}`}>
                             {result.grade || '-'}
                           </span>
                         </td>
-                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500">
+                        <td className="px-3 md:px-6 py-4 whitespace-nowrap text-xs md:text-sm text-slate-500 dark:text-slate-400">
                           {result.remarks || '-'}
                         </td>
                       </tr>
@@ -359,13 +359,13 @@ export default function StudentResults() {
         {/* Summary Section */}
         {results.filter(r => selectedTerm === 'all' || r.term_id === selectedTerm).length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-6">
-            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2rem] shadow-lg shadow-gray-200/30 p-6 md:p-8 border border-gray-100 dark:border-gray-800 hover:-translate-y-1 transition-all duration-300">
               <h3 className="text-gray-600 text-sm mb-2">Total Subjects</h3>
               <p className="text-2xl md:text-3xl font-bold text-methodist-blue">
                 {results.filter(r => selectedTerm === 'all' || r.term_id === selectedTerm).length}
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2rem] shadow-lg shadow-gray-200/30 p-6 md:p-8 border border-gray-100 dark:border-gray-800 hover:-translate-y-1 transition-all duration-300">
               <h3 className="text-gray-600 text-sm mb-2">Average Score</h3>
               <p className="text-2xl md:text-3xl font-bold text-green-600">
                 {(() => {
@@ -378,7 +378,7 @@ export default function StudentResults() {
                 })()}%
               </p>
             </div>
-            <div className="bg-white rounded-lg shadow p-4 md:p-6">
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2rem] shadow-lg shadow-gray-200/30 p-6 md:p-8 border border-gray-100 dark:border-gray-800 hover:-translate-y-1 transition-all duration-300">
               <h3 className="text-gray-600 text-sm mb-2">Best Subject Grade</h3>
               <p className="text-2xl md:text-3xl font-bold text-purple-600">
                 {(() => {

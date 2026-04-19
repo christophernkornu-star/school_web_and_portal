@@ -243,7 +243,7 @@ export default function PerformancePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow">
+          <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  dark:bg-gray-800  ">
             <div className="container mx-auto px-4 py-4">
                <div className="flex items-center gap-4">
                   <Skeleton className="h-8 w-8 rounded-full" />
@@ -258,7 +258,7 @@ export default function PerformancePage() {
                  <Skeleton className="h-32 w-full rounded-lg" />
                  <Skeleton className="h-32 w-full rounded-lg" />
                </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50  dark:bg-gray-800     p-6">
                     <div className="flex justify-between items-center mb-6">
                          <div className="space-y-2">
                              <Skeleton className="h-6 w-48" />
@@ -278,11 +278,11 @@ export default function PerformancePage() {
       <div className="min-h-screen bg-gray-50 p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-methodist-blue hover:text-blue-700 mb-4" />
-            <h1 className="text-2xl md:text-3xl font-bold text-methodist-blue">Performance Trends</h1>
+            <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-blue-700 dark:text-blue-400 hover:text-blue-700 mb-4" />
+            <h1 className="text-2xl md:text-3xl font-bold text-blue-700 dark:text-blue-400">Performance Trends</h1>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-8 md:p-12 text-center">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-8 md:p-12 text-center">
             <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">No Performance Data</h3>
             <p className="text-gray-600">
@@ -299,13 +299,13 @@ export default function PerformancePage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-methodist-blue hover:text-blue-700 mb-4" />
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-methodist-blue">Performance Trends</h1>
+          <BackButton href="/student/dashboard" label="Back to Dashboard" className="text-blue-700 dark:text-blue-400 hover:text-blue-700 mb-4" />
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-blue-700 dark:text-blue-400">Performance Trends</h1>
           <p className="text-xs md:text-sm text-gray-600 mt-2">Track your academic progress over time</p>
         </div>
 
         {/* Overall Trend Card */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-8">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-4 md:p-6 mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-semibold text-gray-800 mb-2">Overall Performance</h2>
@@ -318,7 +318,7 @@ export default function PerformancePage() {
             </div>
             <div className="text-left md:text-right">
               <p className="text-sm text-gray-600">Average Across All Terms</p>
-              <p className="text-2xl md:text-3xl font-bold text-methodist-blue">
+              <p className="text-2xl md:text-3xl font-bold text-blue-700 dark:text-blue-400">
                 {termComparison.length > 0
                   ? Math.round(
                       termComparison.reduce((sum, t) => sum + t.average, 0) / termComparison.length * 10
@@ -330,7 +330,7 @@ export default function PerformancePage() {
         </div>
 
         {/* View Toggle */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-8">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-4 md:p-6 mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
             <span className="text-sm font-medium text-gray-700">View Type:</span>
             <div className="flex flex-wrap gap-2">
@@ -338,7 +338,7 @@ export default function PerformancePage() {
                 onClick={() => setSelectedView('line')}
                 className={`px-3 md:px-4 py-2 rounded-lg transition-colors text-sm md:text-base ${
                   selectedView === 'line'
-                    ? 'bg-methodist-blue text-white'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all font-bold tracking-wide'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -348,7 +348,7 @@ export default function PerformancePage() {
                 onClick={() => setSelectedView('bar')}
                 className={`px-3 md:px-4 py-2 rounded-lg transition-colors text-sm md:text-base ${
                   selectedView === 'bar'
-                    ? 'bg-methodist-blue text-white'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all font-bold tracking-wide'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -358,7 +358,7 @@ export default function PerformancePage() {
                 onClick={() => setSelectedView('radar')}
                 className={`px-3 md:px-4 py-2 rounded-lg transition-colors text-sm md:text-base ${
                   selectedView === 'radar'
-                    ? 'bg-methodist-blue text-white'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all font-bold tracking-wide'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -369,7 +369,7 @@ export default function PerformancePage() {
         </div>
 
         {/* Charts */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-8">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-4 md:p-6 mb-8">
           <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-6">
             {selectedView === 'radar' ? 'Latest Term Performance' : 'Performance Over Time'}
           </h2>
@@ -459,7 +459,7 @@ export default function PerformancePage() {
         {/* Subject Performance Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
           {subjectPerformance.map((subject) => (
-            <div key={subject.subject} className="bg-white rounded-lg shadow p-6">
+            <div key={subject.subject} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-6">
               <div className="flex items-start justify-between mb-4">
                 <h3 className="font-semibold text-base md:text-lg text-gray-800">{subject.subject}</h3>
                 {getTrendIcon(subject.trend)}
@@ -467,7 +467,7 @@ export default function PerformancePage() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <span className="text-xs md:text-sm text-gray-600">Average Score</span>
-                  <span className="text-base md:text-lg font-bold text-methodist-blue">
+                  <span className="text-base md:text-lg font-bold text-blue-700 dark:text-blue-400">
                     {subject.average}%
                   </span>
                 </div>
@@ -493,7 +493,7 @@ export default function PerformancePage() {
         </div>
 
         {/* Term Comparison */}
-        <div className="bg-white rounded-lg shadow p-4 md:p-6">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      p-4 md:p-6">
           <h2 className="text-lg md:text-xl font-semibold text-gray-800 mb-6">Term-by-Term Comparison</h2>
           <div className="space-y-4">
             {termComparison.map((term, index) => (

@@ -140,7 +140,7 @@ export default function StudentAssessmentsPage() {
   if (loading) {
      return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
+          <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  dark:bg-gray-800   sticky top-0 z-10">
             <div className="container mx-auto px-4 py-4">
                <div className="flex items-center gap-4">
                   <Skeleton className="h-8 w-8 rounded-full" />
@@ -151,7 +151,7 @@ export default function StudentAssessmentsPage() {
           <main className="flex-1 container mx-auto px-4 py-8">
              <div className="space-y-4">
                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border dark:border-gray-700">
+                    <div key={i} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50  dark:bg-gray-800     p-6 border dark:border-gray-700">
                         <div className="flex justify-between items-start mb-4">
                              <div>
                                 <Skeleton className="h-6 w-48 mb-2" />
@@ -174,7 +174,7 @@ export default function StudentAssessmentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-       <header className="bg-white shadow sticky top-0 z-10 transition-colors dark:bg-gray-800 dark:border-gray-700">
+       <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800    sticky top-0 z-10 transition-colors dark:bg-gray-800 dark:border-gray-700">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col gap-4">
             <div className="flex items-center gap-4">
@@ -223,7 +223,7 @@ export default function StudentAssessmentsPage() {
              ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {classAssessments.map((assessment) => (
-                        <div key={assessment.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-gray-700 hover:shadow-md transition-all">
+                        <div key={assessment.id} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  dark:bg-gray-800 rounded-xl shadow-sm p-5 border border-gray-100 dark:border-gray-700 hover: -md transition-all">
                              <div className="flex justify-between items-start mb-3">
                                 <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
                                     {assessment.subject_name}
@@ -265,7 +265,7 @@ export default function StudentAssessmentsPage() {
             ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {quizzes.map((quiz) => (
-                        <div key={quiz.id} className="bg-white rounded-xl shadow-sm p-5 border border-gray-100 flex flex-col justify-between h-full transition-shadow hover:shadow-md">
+                        <div key={quiz.id} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm p-5 border border-gray-100 flex flex-col justify-between h-full transition-shadow hover: -md">
                             <div>
                                 <div className="flex justify-between items-start mb-3">
                                     <span className="inline-block px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-100">

@@ -213,7 +213,7 @@ export default function ReportCardPage() {
   
   if (!student) {
       return (
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans items-center justify-center">
                {initLoading ? <Skeleton className="h-10 w-48" /> : <p>Student data not available.</p>}
           </div>
       )
@@ -222,7 +222,7 @@ export default function ReportCardPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* Header */}
-      <div className="bg-white shadow">
+      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800   ">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -268,7 +268,7 @@ export default function ReportCardPage() {
          {reportData ? (
              <div className="max-w-4xl mx-auto">
                  {/* Student Bio Card */}
-                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+                 <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 p-6 mb-6">
                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                          <div>
                              <h2 className="text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h2>
@@ -303,7 +303,7 @@ export default function ReportCardPage() {
                  </div>
 
                  {/* Grades Table */}
-                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                 <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 overflow-hidden mb-6">
                      <div className="border-b border-gray-100 bg-gray-50 px-6 py-4">
                          <h3 className="font-semibold text-gray-800">Academic Performance</h3>
                      </div>
@@ -347,7 +347,7 @@ export default function ReportCardPage() {
                  
                  {/* Attendance & Remarks */}
                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 p-6">
                         <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
                             <span className="w-1 h-4 bg-orange-400 rounded-full"></span>
                             Attendance
@@ -364,7 +364,7 @@ export default function ReportCardPage() {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 p-6">
                          <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
                             <span className="w-1 h-4 bg-green-400 rounded-full"></span>
                             Reflections

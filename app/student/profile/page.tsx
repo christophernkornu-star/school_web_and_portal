@@ -238,7 +238,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow">
+          <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /90 dark:bg-gray-900/90 backdrop-blur-md  -sm border-b border-gray-200 dark:border-gray-800">
             <div className="container mx-auto px-4 py-4">
                <div className="flex items-center gap-4">
                   <Skeleton className="h-8 w-8 rounded-full" />
@@ -248,7 +248,7 @@ export default function ProfilePage() {
           </header>
           <main className="flex-1 container mx-auto px-4 py-8">
              <div className="max-w-4xl mx-auto space-y-8">
-                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                 <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 p-8 border border-gray-100/50 dark:border-gray-800/50">
                     <div className="flex flex-col md:flex-row gap-6 items-center md:items-start mb-6">
                          <Skeleton className="h-24 w-24 rounded-full" />
                          <div className="space-y-4 flex-1 w-full">
@@ -273,7 +273,7 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 p-8">
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-lg shadow p-12 text-center">
+          <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-[3rem] p-16 text-center border-2 border-dashed border-gray-200 dark:border-gray-800">
             <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-700 mb-2">Profile Not Found</h3>
             <p className="text-gray-600">Unable to load your profile information.</p>
@@ -290,17 +290,17 @@ export default function ProfilePage() {
         <div className="mb-8">
           <button
             onClick={() => router.push('/student/dashboard')}
-            className="flex items-center gap-2 text-methodist-blue hover:text-blue-700 mb-4"
+            className="flex items-center gap-2 text-blue-700 dark:text-blue-400 hover:text-blue-700 mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </button>
-          <h1 className="text-xl md:text-3xl font-bold text-methodist-blue">My Profile</h1>
+          <h1 className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-400">My Profile</h1>
           <p className="text-gray-600 mt-2">View and manage your personal information</p>
         </div>
 
         {/* Profile Card */}
-        <div className="bg-white rounded-lg shadow mb-8">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2.5rem] shadow-2xl  -gray-200/40 mb-8 border border-gray-100/50 overflow-hidden">
           {/* Header Section */}
           <div className="bg-gradient-to-r from-methodist-blue to-blue-600 text-white p-6 md:p-8 rounded-t-lg">
             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
@@ -385,7 +385,7 @@ export default function ProfilePage() {
                 <button
                   onClick={() => setEditMode(true)
                   }
-                  className="text-sm text-methodist-blue hover:text-blue-700 font-medium"
+                  className="text-sm text-blue-700 dark:text-blue-400 hover:text-blue-700 font-medium"
                 >
                   Edit Details
                 </button>
@@ -437,7 +437,7 @@ export default function ProfilePage() {
               {!editMode && canEditProfile && (
                 <button
                   onClick={() => setEditMode(true)}
-                  className="text-sm text-methodist-blue hover:text-blue-700 font-medium"
+                  className="text-sm text-blue-700 dark:text-blue-400 hover:text-blue-700 font-medium"
                 >
                   Edit Details
                 </button>
@@ -519,7 +519,7 @@ export default function ProfilePage() {
                 <button
                   onClick={handleSaveProfile}
                   disabled={saving}
-                  className="px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all font-bold tracking-wide rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm"
                 >
                   {saving ? (
                     <>
@@ -541,7 +541,7 @@ export default function ProfilePage() {
           <div className="p-4 md:p-8 bg-gray-50 rounded-b-lg">
             <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-4">Account Settings</h3>
             
-            <div className="bg-white p-4 md:p-6 rounded-lg border border-gray-200">
+            <div className="bg-slate-50/50 dark:bg-gray-800/50 p-6 md:p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
               <h4 className="font-medium text-gray-900 mb-4">Change Password</h4>
               
               {passwordSuccess && (

@@ -584,7 +584,7 @@ export default function StudentCumulativePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white dark:bg-gray-800 shadow">
+          <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  dark:bg-gray-800  ">
             <div className="container mx-auto px-4 py-4">
                <div className="flex items-center gap-4">
                   <Skeleton className="h-8 w-8 rounded-full" />
@@ -593,7 +593,7 @@ export default function StudentCumulativePage() {
             </div>
           </header>
           <main className="flex-1 container mx-auto px-4 py-8">
-             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 max-w-4xl mx-auto">
+             <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50  dark:bg-gray-800     p-8 max-w-4xl mx-auto">
                 <div className="flex flex-col items-center gap-4 mb-8">
                     <Skeleton className="h-20 w-20 rounded-full" />
                     <Skeleton className="h-8 w-64" />
@@ -616,7 +616,7 @@ export default function StudentCumulativePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+      <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800   ">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -641,7 +641,7 @@ export default function StudentCumulativePage() {
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {reportData ? (
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50      overflow-hidden">
             <div className="overflow-x-auto p-4 md:p-6">
               <table className="min-w-full border-collapse border border-gray-300">
                 <thead>

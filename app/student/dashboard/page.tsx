@@ -100,7 +100,7 @@ export default function StudentDashboard() {
         <div className="container mx-auto px-4 -mt-16">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+                  <div key={i} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 p-8 border border-gray-100/50 dark:border-gray-800/50">
                       <div className="flex justify-between items-start mb-4">
                          <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
                            <Skeleton className="w-6 h-6" />
@@ -130,8 +130,8 @@ export default function StudentDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans items-center justify-center p-4">
+        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50     -lg p-8 max-w-md w-full text-center">
           <div className="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <LogOut className="w-8 h-8 text-red-600" />
           </div>
@@ -139,7 +139,7 @@ export default function StudentDashboard() {
           <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={handleLogout}
-            className="bg-methodist-blue text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors w-full"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/25 px-8 py-3 rounded-xl hover:-translate-y-0.5 transition-all font-bold tracking-wide transition-colors w-full"
           >
             Sign Out
           </button>
@@ -172,7 +172,7 @@ export default function StudentDashboard() {
   )
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-screen bg-slate-50 dark:bg-slate-950 flex font-sans flex-col overflow-hidden">
       {/* Header */}
       <header className="sticky top-0 z-50 relative overflow-hidden flex-none">
         {/* Ghana Flag Border */}
@@ -185,10 +185,10 @@ export default function StudentDashboard() {
               <Link href="/" className="flex items-center space-x-3">
                 <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-methodist-blue" />
                 <div>
-                  <h1 className="text-base md:text-xl font-bold text-methodist-blue">
-                    Biriwa Methodist 'C' Basic School
-                  </h1>
-                  <p className="text-[10px] md:text-xs text-methodist-blue font-semibold">Student Portal</p>
+                  <h1 className="text-xl md:text-2xl font-black text-methodist-blue tracking-tight">
+                      Biriwa Methodist 'C' Basic School
+                    </h1>
+                  <p className="text-[10px] md:text-xs text-methodist-blue font-bold tracking-wider uppercase">Student Portal</p>
                 </div>
               </Link>
               <button
@@ -210,7 +210,7 @@ export default function StudentDashboard() {
       <main className="flex-1 overflow-y-auto w-full">
         <div className="container mx-auto px-6 py-8">
         {/* Welcome Section */}
-        <div className="bg-gradient-to-br from-methodist-blue to-blue-900 text-white rounded-2xl p-6 md:p-10 mb-8 shadow-xl relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 text-white rounded-[2.5rem] p-8 md:p-12 mb-8 shadow-2xl relative overflow-hidden border border-blue-900/30">
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-methodist-gold opacity-10 rounded-full blur-3xl"></div>
           
@@ -258,10 +258,10 @@ export default function StudentDashboard() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
             <div className="flex justify-between items-start mb-2">
               <div className="bg-blue-50 p-2.5 rounded-lg group-hover:bg-blue-100 transition-colors">
-                <Calendar className="w-5 h-5 text-methodist-blue" />
+                <Calendar className="w-5 h-5 text-blue-700 dark:text-blue-400" />
               </div>
               <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Term</span>
             </div>
@@ -271,7 +271,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
             <div className="flex justify-between items-start mb-2">
               <div className="bg-green-50 p-2.5 rounded-lg group-hover:bg-green-100 transition-colors">
                 <BarChart3 className="w-5 h-5 text-ghana-green" />
@@ -284,7 +284,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
             <div className="flex justify-between items-start mb-2">
               <div className="bg-purple-50 p-2.5 rounded-lg group-hover:bg-purple-100 transition-colors">
                 <BookOpen className="w-5 h-5 text-purple-600" />
@@ -299,7 +299,7 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
             <div className="flex justify-between items-start mb-2">
               <div className="bg-yellow-50 p-2.5 rounded-lg group-hover:bg-yellow-100 transition-colors">
                 <FileText className="w-5 h-5 text-yellow-600" />
@@ -363,7 +363,7 @@ export default function StudentDashboard() {
             </div>
           </Link>
 
-          <Link href="/student/assessments" className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover:shadow-md transition-all duration-300 group hover:border-blue-400 cursor-pointer">
+          <Link href="/student/assessments" className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group hover:border-blue-400 cursor-pointer">
             <div className="flex justify-between items-start mb-2">
               <div className="bg-blue-50 p-2.5 rounded-lg group-hover:bg-blue-100 transition-colors text-blue-600">
                  <FileText className="w-5 h-5" />
@@ -418,7 +418,7 @@ export default function StudentDashboard() {
             <span className="w-1 h-6 bg-methodist-gold rounded-full mr-2"></span>
             Recent Announcements
           </h3>
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 overflow-hidden">
             {announcements.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
