@@ -171,12 +171,12 @@ export default function AuditLogsPage() {
           
           {/* Filters & Search */}
           <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50 rounded-t-3xl">
-            <div className="relative w-full md:w-96">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input 
-                type="text" 
-                placeholder="Search entities, actors, or actions..." 
-                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium placeholder:font-normal text-gray-800 shadow-sm"
+<div className="relative w-full md:w-96 mb-2 md:mb-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search entities, actors, or actions..." 
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-base md:text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium placeholder:font-normal text-gray-900 shadow-sm"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />

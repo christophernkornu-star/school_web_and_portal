@@ -568,14 +568,14 @@ export default function MockExamsPage() {
                                )}
                            </h2>
                            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                                <div className="relative flex-1 md:w-48 lg:w-64 mr-2">
-                                    <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search students..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-9 pr-4 py-2.5 w-full border-0 bg-white dark:bg-gray-900/50 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-500 dark:text-white text-sm transition-all"
+                                  <div className="relative w-full md:w-48 lg:w-64 mb-2 md:mb-0 mr-0 md:mr-2 shrink-0">
+                                      <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                      <input
+                                          type="text"
+                                          placeholder="Search students..."
+                                          value={searchQuery}
+                                          onChange={(e) => setSearchQuery(e.target.value)}
+                                          className="pl-9 pr-4 py-2.5 w-full border border-gray-200 dark:border-0 bg-white dark:bg-gray-900/50 rounded-xl shadow-sm focus:ring-2 focus:ring-emerald-500 text-gray-900 dark:text-white font-medium text-base md:text-sm transition-all"
                                     />
                                 </div>
                                 <div className="flex items-center bg-white dark:bg-gray-900/50 border-0 shadow-sm rounded-xl p-1.5 mr-2">
