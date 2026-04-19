@@ -73,9 +73,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-[100dvh] bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="sticky top-0 z-50 overflow-hidden flex-none">
+      <header className="fixed w-full top-0 z-50 flex-none bg-white">
         {/* Ghana Flag Border */}
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-ghana-red via-ghana-gold to-ghana-green"></div>
         
@@ -193,7 +193,7 @@ export default function LoginPage() {
       </header>
 
       {/* Login Form */}
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto">
+      <div className="flex-1 flex items-center justify-center pt-24 pb-12 px-4 sm:px-6 lg:px-8 mt-20 overflow-y-auto">
         <div className="max-w-md w-full space-y-8">
                     {/* Title Area */}
           <div className="text-center">

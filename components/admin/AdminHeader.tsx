@@ -164,7 +164,7 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
   const totalNotifications = pendingAdmissions + unreadComplaints + (termAlert.active && !dismissedAtt ? 1 : 0) + (termAlert.active && !dismissedRem ? 1 : 0)
 
   return (
-    <header className="sticky top-0 z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md">
+    <header className="relative z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md w-full flex-none">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         {/* Left: Mobile Toggle & Brand/Breadcrumb */}
         <div className="flex items-center gap-4">
