@@ -469,7 +469,7 @@ export default function MockExamsPage() {
   const currentMockData = mocks.find(m => m.id === selectedMock)
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 pb-[60vh] md:pb-8 font-sans text-gray-900 dark:text-gray-100 transition-colors">
         {/* Header Controls (Hidden on Print) */}
         {!showSheet && (
            <div className="max-w-6xl mx-auto space-y-6 transition-all duration-300">
