@@ -87,7 +87,7 @@ export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-[110] h-screen w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:border-gray-800 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
+          "fixed top-0 left-0 z-[110] h-screen w-64 bg-white/80 backdrop-blur-xl border-r border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:bg-gray-900 dark:border-gray-800 transition-transform duration-300 ease-in-out lg:translate-x-0 overflow-y-auto",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >

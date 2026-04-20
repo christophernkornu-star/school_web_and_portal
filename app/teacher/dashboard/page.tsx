@@ -399,7 +399,7 @@ export default function TeacherDashboard() {
               <div className="hidden md:block">
                  <div className="backdrop-blur-md bg-white/10 p-4 rounded-xl border border-white/10 shadow-inner">
                     <div className="text-sm text-blue-200 mb-1">Weekly Attendance</div>
-                    <div className="text-3xl font-bold text-white flex items-end gap-2">
+                    <div className="text-3xl font-bold text-methodist-gold flex items-end gap-2">
                        {attendanceRate}
                        <span className="text-xs text-green-300 font-medium mb-1 flex items-center">
                          <TrendingUp className="w-3 h-3 mr-1" /> On Track
@@ -414,7 +414,7 @@ export default function TeacherDashboard() {
         {/* Quick Actions Grid */}
         <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
             <CardHeader className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white pb-4">
-              <CardTitle className="text-xl font-bold flex items-center xl:gap-2"><span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>Quick Actions</CardTitle>
+              <CardTitle className="text-xl font-bold flex items-center gap-2"><span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -532,10 +532,10 @@ export default function TeacherDashboard() {
                <CardHeader className="pb-3 shrink-0 bg-gradient-to-r from-methodist-blue to-blue-800 text-white">
                  <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <Bell className="w-4 h-4 text-methodist-yellow" />
+                      <Bell className="w-4 h-4 text-methodist-gold" />
                       Notice Board
                     </CardTitle>
-                    <Link href="/teacher/announcements" className="text-sm font-semibold text-methodist-yellow hover:text-yellow-300 transition-colors">
+                      <Link href="/teacher/announcements" className="text-xs font-semibold text-methodist-blue bg-methodist-gold rounded-full px-3 py-1">
                       View All
                     </Link>
                  </div>
@@ -560,7 +560,7 @@ export default function TeacherDashboard() {
                               <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${getPriorityColor(announcement.priority)}`}>
                                  {announcement.priority || 'Notice'}
                               </span>
-                              <span className="text-[11px] font-semibold text-methodist-yellow bg-methodist-blue/5 px-2 py-0.5 rounded-md">
+                              <span className="text-[11px] font-semibold text-methodist-gold bg-methodist-blue/5 px-2 py-0.5 rounded-md">
                                  {new Date(announcement.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                               </span>
                            </div>
@@ -574,24 +574,24 @@ export default function TeacherDashboard() {
             </Card>
 
             {/* Profile Summary */}
-               <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
-                 <CardHeader className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white pb-4">
-                    <CardTitle className="text-lg font-bold flex items-center xl:gap-2"><span className="w-1.5 h-5 bg-methodist-gold rounded-full"></span>Teacher Profile</CardTitle>
-                 </CardHeader>
-                 <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-4">
-                     <div className="h-12 w-12 rounded-full bg-gradient-to-br from-methodist-blue to-blue-900 text-yellow-400 flex items-center justify-center text-methodist-blue dark:text-blue-300 font-bold text-lg">
-                        {teacher.first_name[0]}{teacher.last_name[0]}
-                     </div>
-                     <div className="overflow-hidden flex flex-col gap-1">
-                        <Tooltip content={`${teacher.first_name} ${teacher.last_name}`}>
-                           <div className="font-semibold truncate">{teacher.first_name} {teacher.last_name}</div>
-                        </Tooltip>
-                        <Tooltip content={`Teacher ID: ${teacher.teacher_id}`}>
-                           <div className="text-xs text-muted-foreground truncate">{teacher.teacher_id}</div>
-                        </Tooltip>
-                     </div>
-                  </div>
+                 <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+                   <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4 flex items-center gap-4">
+                       <div className="h-12 w-12 rounded-full bg-white/20 border-2 border-white/30 text-methodist-gold shadow-sm flex items-center justify-center font-bold text-lg">
+                          {teacher.first_name[0]}{teacher.last_name[0]}
+                       </div>
+                       <div className="overflow-hidden flex flex-col">
+                          <Tooltip content={`${teacher.first_name} ${teacher.last_name}`}>
+                             <div className="font-bold text-lg leading-tight truncate tracking-tight">{teacher.first_name} {teacher.last_name}</div>
+                          </Tooltip>
+                          <Tooltip content={`Teacher ID: ${teacher.teacher_id}`}>
+                             <div className="text-xs text-blue-200 mt-0.5 font-medium truncate flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-methodist-gold rounded-full"></span>
+                                {teacher.teacher_id}
+                             </div>
+                          </Tooltip>
+                       </div>
+                   </div>
+                   <CardContent className="p-6 pt-5">
                   <div className="grid grid-cols-2 gap-2 text-center h-20 mb-2">
                      <Tooltip content={classTooltipStr} className="h-full">
                         <div className="bg-white/80 backdrop-blur-sm p-2 rounded border shadow-sm cursor-help hover:border-blue-300 transition-colors h-full flex flex-col justify-center">
