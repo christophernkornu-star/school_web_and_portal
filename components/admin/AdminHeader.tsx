@@ -30,7 +30,7 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [pendingAdmissions, setPendingAdmissions] = useState(0)
   const [unreadComplaints, setUnreadComplaints] = useState(0)
-  const [termAlert, setTermAlert] = useState<{ progress: number, active: boolean, threshold: number, id?: string }>({ progress: 0, active: false, threshold: 90 })
+  const [termAlert, setTermAlert] = useState<{ progress: number, active: boolean, threshold: number, id?: string, totalDaysEntered?: boolean }>({ progress: 0, active: false, threshold: 90 })
   const [dismissedAtt, setDismissedAtt] = useState(false)
   const [dismissedRem, setDismissedRem] = useState(false)
   const notificationRef = useRef<HTMLDivElement>(null)
@@ -96,7 +96,13 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
         const progress = Math.min(Math.max(Math.round((daysPassed / totalDays) * 100), 0), 100)
         const threshold = thresholdRes.data?.setting_value ? Number(thresholdRes.data.setting_value) : 90
 
-        const newTermAlert = { progress, active: progress >= threshold, threshold, id: termRes.data.id }
+        const newTermAlert = { 
+          progress, 
+          active: progress >= threshold, 
+          threshold, 
+          id: termRes.data.id,
+          totalDaysEntered: termRes.data.total_days > 0 
+        }
         setTermAlert(newTermAlert)
         sessionStorage.setItem('admin_notif_term_alert', JSON.stringify(newTermAlert))
         
@@ -109,10 +115,13 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
            // Basic duplicate prevention string
            const storedKey = `admin_term_alert_${termRes.data.id}`
            if (!sessionStorage.getItem(storedKey)) {
-             new Notification('Action Required: Term Wrapping Up', {
-               body: `The term is ${progress}% complete. Please enter total attendances and student remarks for the term.`,
-               icon: '/school_crest.png'
-             })
+             const notificationBody = termRes.data.total_days > 0
+                  ? `The term is ${progress}% complete. Please remind teachers to enter student remarks for the term.`
+                  : `The term is ${progress}% complete. Please enter total attendances and student remarks for the term.`;
+               new Notification('Action Required: Term Wrapping Up', {
+                 body: notificationBody,
+                 icon: '/school_crest.png'
+               })
              sessionStorage.setItem(storedKey, 'notified')
            }
         } else if (progress >= threshold && 'Notification' in window && Notification.permission !== 'denied') {
@@ -161,7 +170,7 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
     setNotificationsOpen(false)
   }
 
-  const totalNotifications = pendingAdmissions + unreadComplaints + (termAlert.active && !dismissedAtt ? 1 : 0) + (termAlert.active && !dismissedRem ? 1 : 0)
+  const totalNotifications = pendingAdmissions + unreadComplaints + (termAlert.active && !termAlert.totalDaysEntered && !dismissedAtt ? 1 : 0) + (termAlert.active && !dismissedRem ? 1 : 0)
 
   return (
     <header className="relative z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md w-full flex-none">
@@ -267,7 +276,7 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
                           </Link>
                         )}
                         
-                        {termAlert.active && !dismissedAtt && (
+                          {termAlert.active && !termAlert.totalDaysEntered && !dismissedAtt && (
                           <Link
                             href="/admin/settings/attendance"
                             onClick={handleAttClick}

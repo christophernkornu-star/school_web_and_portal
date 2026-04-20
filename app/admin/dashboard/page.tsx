@@ -195,12 +195,12 @@ export default function AdminDashboard() {
           <div className="lg:col-span-2 space-y-6">
             
             {/* Quick Actions Panel */}
-            <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Common tasks used daily</CardDescription>
-              </CardHeader>
-              <CardContent>
+             <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+                <CardHeader className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4">
+                  <CardTitle className="text-xl font-bold flex items-center gap-2"><span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>Quick Actions</CardTitle>
+                  <CardDescription className="text-blue-100 ml-3.5">Common tasks used daily</CardDescription>
+                </CardHeader>
+                <CardContent className="p-5">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <QuickActionLink title="Add Teacher" href="/admin/teachers/add" icon={GraduationCap} />
                   <QuickActionLink title="Enroll Student" href="/admin/enrollments" icon={Users} />
@@ -211,15 +211,15 @@ export default function AdminDashboard() {
             </Card>
 
             {/* Recent Activity */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                 <div className="space-y-1">
-                   <CardTitle>Recent Activity</CardTitle>
-                   <CardDescription>Latest student admissions</CardDescription>
-                 </div>
-                 <Link href="/admin/students" className="text-sm font-medium text-blue-600 hover:text-blue-500 hover:underline">View All</Link>
-              </CardHeader>
-              <CardContent>
+             <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between px-5 py-4 bg-gradient-to-r from-methodist-blue to-blue-800 text-white">
+                   <div className="space-y-1">
+                     <CardTitle className="text-xl font-bold flex items-center gap-2"><span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>Recent Activity</CardTitle>
+                     <CardDescription className="text-blue-100 ml-3.5">Latest student admissions</CardDescription>
+                   </div>
+                   <Link href="/admin/students" className="text-sm font-bold text-methodist-gold hover:text-yellow-300 hover:underline">View All</Link>
+                </CardHeader>
+                <CardContent className="p-5">
                 <div className="space-y-4">
                    {recentActivities.length > 0 ? (
                      recentActivities.map((student: any) => (
@@ -282,14 +282,14 @@ export default function AdminDashboard() {
              </div>
 
              {/* Upcoming Events Mini */}
-             <Card>
-               <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CalendarDays className="w-5 h-5 text-red-600" />
-                    Upcoming Events
-                  </CardTitle>
-               </CardHeader>
-               <CardContent className="space-y-4">
+             <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden h-fit">
+                 <CardHeader className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4">
+                    <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                      <CalendarDays className="w-5 h-5 text-methodist-gold" />
+                      Upcoming Events
+                    </CardTitle>
+                 </CardHeader>
+                 <CardContent className="p-5 space-y-4">
                   {upcomingEvents.length > 0 ? (
                     upcomingEvents.map((event: any) => {
                       const eventDate = new Date(event.event_date)

@@ -28,7 +28,13 @@ export function PageHeader({
 
     const paths = pathname.split('/').filter(Boolean)
     const items = paths.map((path, index) => {
-        const href = `/${paths.slice(0, index + 1).join('/')}`
+        let href = `/${paths.slice(0, index + 1).join('/')}`
+        
+        // Prevent 404s for base role paths by redirecting to their dashboard
+        if (href === '/admin') href = '/admin/dashboard'
+        if (href === '/teacher') href = '/teacher/dashboard'
+        if (href === '/student') href = '/student/dashboard'
+        
         const label = path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, ' ')
         const active = index === paths.length - 1
         return { label, href, active }

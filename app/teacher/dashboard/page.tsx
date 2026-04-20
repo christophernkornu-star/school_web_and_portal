@@ -412,12 +412,12 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Quick Actions Grid */}
-        <div>
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-5 flex items-center gap-2">
-            <LayoutDashboard className="w-5 h-5 text-methodist-blue" />
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white pb-4">
+              <CardTitle className="text-xl font-bold flex items-center xl:gap-2"><span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <QuickActionCard 
               href="/teacher/attendance"
               title="Mark Attendance" 
@@ -454,10 +454,11 @@ export default function TeacherDashboard() {
               bg="bg-orange-50 dark:bg-orange-900/20"
               borderColor="hover:border-orange-200 dark:hover:border-orange-800"
             />
-          </div>
-        </div>
-
-        {/* Dashboard Content Grid */}
+            </div>
+            </CardContent>
+          </Card>
+          
+          {/* Dashboard Content Grid */}
         <div className="grid lg:grid-cols-3 gap-8">
           
           {/* Main Info Column */}
@@ -527,20 +528,20 @@ export default function TeacherDashboard() {
           <div className="space-y-6 min-w-0">
             
             {/* Notices / Announcements */}
-            <Card className="h-full border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl max-h-[500px] flex flex-col">
-               <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
+              <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+               <CardHeader className="pb-3 shrink-0 bg-gradient-to-r from-methodist-blue to-blue-800 text-white">
                  <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2 text-base">
-                      <Bell className="w-4 h-4 text-orange-500" />
+                      <Bell className="w-4 h-4 text-methodist-yellow" />
                       Notice Board
                     </CardTitle>
-                    <Link href="/teacher/announcements" className="text-xs text-methodist-blue hover:underline">
+                    <Link href="/teacher/announcements" className="text-sm font-semibold text-methodist-yellow hover:text-yellow-300 transition-colors">
                       View All
                     </Link>
                  </div>
                </CardHeader>
-               <CardContent className="pt-4 overflow-y-auto flex-1">
-                 {announcementsLoading ? (
+                 <CardContent className="pt-4">
+                   {announcementsLoading ? (
                     <div className="space-y-4">
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
@@ -552,8 +553,8 @@ export default function TeacherDashboard() {
                         <p>No new announcements</p>
                     </div>
                  ) : (
-                    <div className="space-y-4">
-                        {announcements.map((announcement) => (
+                    <div className="space-y-4 px-2">
+                            {announcements.map((announcement) => (
                          <div key={announcement.id} className="pb-3 border-b border-gray-50 dark:border-gray-700/50 last:border-0 last:pb-0">
                            <div className="flex items-center justify-between mb-1">
                               <span className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full ${getPriorityColor(announcement.priority)}`}>
@@ -565,16 +566,19 @@ export default function TeacherDashboard() {
                            </div>
                            <h4 className="text-[15px] font-semibold text-methodist-blue mb-1 break-words tracking-normal">{announcement.title}</h4>
                            <p className="text-xs text-slate-600 dark:text-slate-300 leading-normal line-clamp-2 whitespace-pre-line">{announcement.content}</p>
-                        </div>
-                        ))}
-                    </div>
-                 )}
-               </CardContent>
+                          </div>
+                          ))}
+                      </div>
+                   )}
+                 </CardContent>
             </Card>
 
             {/* Profile Summary */}
-             <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl">
-               <CardContent className="p-6">
+               <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+                 <CardHeader className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white pb-4">
+                    <CardTitle className="text-lg font-bold flex items-center xl:gap-2"><span className="w-1.5 h-5 bg-methodist-gold rounded-full"></span>Teacher Profile</CardTitle>
+                 </CardHeader>
+                 <CardContent className="p-6">
                   <div className="flex items-center gap-4 mb-4">
                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-methodist-blue to-blue-900 text-yellow-400 flex items-center justify-center text-methodist-blue dark:text-blue-300 font-bold text-lg">
                         {teacher.first_name[0]}{teacher.last_name[0]}

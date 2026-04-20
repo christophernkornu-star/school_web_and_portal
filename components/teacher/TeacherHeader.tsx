@@ -26,7 +26,7 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const notificationRef = useRef<HTMLDivElement>(null)
   
-  const [termAlert, setTermAlert] = useState<{ progress: number, active: boolean, threshold: number, id?: string }>({ progress: 0, active: false, threshold: 90 })
+  const [termAlert, setTermAlert] = useState<{ progress: number, active: boolean, threshold: number, id?: string, attendanceDone?: boolean, remarksDone?: boolean }>({ progress: 0, active: false, threshold: 90 })
   const [dismissedAtt, setDismissedAtt] = useState(false)
   const [dismissedRem, setDismissedRem] = useState(false)
 
@@ -98,7 +98,7 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
     } catch (err) {
       console.error("Error fetching teacher notifications:", err)
     }
-  }, [isClassTeacher])
+  }, [isClassTeacher, dashboardData?.assignments])
 
   useEffect(() => {
     fetchNotifications()
@@ -147,7 +147,7 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
     setNotificationsOpen(false)
   }
 
-  const totalNotifications = (termAlert.active && !dismissedAtt ? 1 : 0) + (termAlert.active && !dismissedRem ? 1 : 0)
+  const totalNotifications = (termAlert.active && !termAlert.attendanceDone && !dismissedAtt ? 1 : 0) + (termAlert.active && !termAlert.remarksDone && !dismissedRem ? 1 : 0)
 
   return (
     <header className="sticky top-0 z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md">
@@ -214,7 +214,7 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
                      </div>
                    ) : (
                      <div className="flex flex-col max-h-96 overflow-y-auto">
-                        {termAlert.active && !dismissedAtt && (
+                        {termAlert.active && !termAlert.attendanceDone && !dismissedAtt && (
                           <Link
                             href="/teacher/attendance"
                             onClick={handleAttClick}
@@ -232,7 +232,7 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
                           </Link>
                         )}
                         
-                        {termAlert.active && !dismissedRem && (
+                        {termAlert.active && !termAlert.remarksDone && !dismissedRem && (
                           <Link
                             href="/teacher/reports"
                             onClick={handleRemClick}

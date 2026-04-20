@@ -133,13 +133,22 @@ export default function StudentsPage() {
           title="Student Management" 
           description="View and manage all students in the system."
         >
-            <Link
-                href="/admin/students/add"
-                className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm"
-            >
-                <Plus className="w-4 h-4" />
-                <span>Add Student</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <button
+                  onClick={() => router.back()}
+                  className="bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-700 px-4 py-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm"
+              >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Back</span>
+              </button>
+              <Link
+                  href="/admin/students/add"
+                  className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center gap-2 text-sm font-medium shadow-sm"
+              >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Student</span>
+              </Link>
+            </div>
         </PageHeader>
         
         {/* Filters */}
