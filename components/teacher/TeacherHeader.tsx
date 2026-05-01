@@ -126,11 +126,6 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
     }
   }, [notificationRef])
 
-  const handleLogout = async () => {
-    await signOut()
-    router.push('/login?portal=teacher')
-  }
-
   const handleAttClick = () => {
     if (termAlert.id) {
       sessionStorage.setItem(`dismiss_att_${termAlert.id}`, 'true')
@@ -173,19 +168,13 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-          {/* Search Trigger (Mock) */}
+          {/* Search Trigger (Desktop only) */}
           <button
              onClick={() => document.dispatchEvent(new CustomEvent('open-command-palette'))}
              className="hidden lg:flex items-center gap-2 px-3 py-1.5 text-sm text-blue-900/70 bg-white/30 border border-blue-900/10 rounded-md hover:bg-white/50 transition-colors w-48 xl:w-64"
           >
              <Search className="h-4 w-4" />
              <span className="font-medium truncate">Search... (Ctrl+K)</span>
-          </button>
-          <button
-             onClick={() => document.dispatchEvent(new CustomEvent('open-command-palette'))}
-             className="lg:hidden p-2 text-blue-900 hover:bg-white/20 rounded-full"
-          >
-             <Search className="h-5 w-5" />
           </button>
 
           {/* Notifications */}
@@ -264,15 +253,6 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
                    {teacher?.first_name}
                 </p>
              </div>
-
-             <button
-                onClick={handleLogout}
-                className="flex items-center justify-center p-1.5 sm:px-2 sm:py-1.5 text-red-700 bg-white/30 hover:bg-white/50 rounded-lg transition-colors font-semibold shadow-sm text-sm"
-                title="Logout"
-             >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1.5">Logout</span>
-             </button>
           </div>
         </div>
       </div>

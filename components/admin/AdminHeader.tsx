@@ -149,11 +149,6 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
     }
   }, [notificationRef])
 
-  const handleLogout = async () => {
-    await signOut()
-    router.push('/login?portal=admin')
-  }
-
   const handleAttClick = () => {
     if (termAlert.id) {
       sessionStorage.setItem(`dismiss_admin_att_${termAlert.id}`, 'true')
@@ -196,13 +191,10 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2 md:gap-4">
-          {/* Search Trigger (Mock) */}
-          <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-500 bg-methodist-blue/10 hover:bg-methodist-blue/20 dark:bg-gray-800/50 border border-transparent dark:border-gray-700 rounded-xl transition-colors w-48 lg:w-64 dark:hover:bg-gray-800 transition-colors w-48 lg:w-64">
+          {/* Search Trigger (Desktop only) */}
+          <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-500 bg-methodist-blue/10 hover:bg-methodist-blue/20 dark:bg-gray-800/50 border border-transparent dark:border-gray-700 rounded-xl transition-colors w-48 lg:w-64 dark:hover:bg-gray-800">
              <Search className="h-4 w-4" />
              <span className="font-medium">Search... (Ctrl+K)</span>
-          </button>
-          <button className="sm:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
-             <Search className="h-5 w-5" />
           </button>
 
           {/* Notifications */}
@@ -334,15 +326,6 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
                 </p>
                 <p className="text-xs text-blue-900/70 mt-1 font-medium">Admin</p>
              </div>
-             
-             <button 
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 text-xs sm:text-sm text-red-700 bg-white/30 hover:bg-white/50 px-2.5 py-1.5 rounded-lg transition-colors font-semibold shadow-sm"
-                title="Logout"
-             >
-                <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Logout</span>
-             </button>
           </div>
         </div>
       </div>

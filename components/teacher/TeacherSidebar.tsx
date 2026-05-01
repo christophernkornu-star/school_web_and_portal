@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { signOut } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import { 
   LayoutDashboard, 
@@ -20,7 +21,8 @@ import {
   UserCheck,
   TrendingUp,
   FileSpreadsheet,
-  Banknote
+  Banknote,
+  LogOut
 } from 'lucide-react'
 
 const sidebarItems = [
@@ -72,6 +74,12 @@ interface TeacherSidebarProps {
 
 export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await signOut()
+    router.push('/login?portal=teacher')
+  }
 
   return (
     <>
@@ -125,6 +133,15 @@ export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
           </div>
           
           {/* Bottom Footer Area */}
+          <div className="p-4 border-t border-gray-100 dark:border-gray-800">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-3 py-2 w-full text-sm font-medium text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 transition-colors rounded-md group"
+            >
+              <LogOut className="h-4 w-4 text-red-500 group-hover:text-red-600 dark:text-red-400 dark:group-hover:text-red-300" />
+              Logout
+            </button>
+          </div>
         </div>
       </aside>
     </>
