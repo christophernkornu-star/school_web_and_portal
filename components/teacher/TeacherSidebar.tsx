@@ -108,13 +108,13 @@ export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
                         href={item.href}
                         onClick={() => setIsOpen(false)}
                         className={cn(
-                          "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors group",
-                          isActive 
-                            ? "bg-methodist-blue/10 text-methodist-blue dark:bg-methodist-blue/20 dark:text-blue-300 font-semibold" 
-                            : "text-gray-700 dark:text-gray-300 hover:bg-methodist-blue hover:text-white dark:hover:bg-methodist-gold dark:hover:text-black"
-                        )}
-                      >
-                        <item.icon className={cn("h-4 w-4", isActive ? "text-methodist-blue dark:text-blue-300" : "text-gray-500 group-hover:text-white dark:group-hover:text-black")} />
+                            "flex items-center gap-3 px-3 py-2 text-sm font-medium transition-colors group rounded-md",
+                            isActive 
+                              ? "bg-methodist-gold text-methodist-blue dark:bg-methodist-gold dark:text-methodist-blue font-bold rounded-lg" 
+                              : "text-gray-700 dark:text-gray-300 hover:bg-methodist-blue hover:text-white dark:hover:bg-methodist-gold dark:hover:text-black"
+                          )}
+                        >
+                          <item.icon className={cn("h-4 w-4", isActive ? "text-methodist-blue dark:text-methodist-blue font-bold" : "text-gray-500 group-hover:text-white dark:group-hover:text-black")} />
                         {item.label}
                       </Link>
                     )

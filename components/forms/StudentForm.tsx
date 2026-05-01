@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, User, UserPlus, AlertCircle } from 'lucide-react'
+import { Save, User, UserPlus, AlertCircle, BookOpen, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -119,14 +119,22 @@ export function StudentForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8 max-w-4xl mx-auto bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
+    <form onSubmit={handleSubmit} className="space-y-10 bg-transparent max-w-4xl mx-auto">
       {/* Personal Information */}
-      <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-           <User className="w-5 h-5 text-blue-600" />
-           Personal Information
-        </h3>
-        <div className="grid md:grid-cols-3 gap-6">
+      <section className="bg-white dark:bg-gray-800/50 p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-methodist-blue dark:bg-blue-500"></div>
+        <div className="flex items-center space-x-3 mb-8 border-b border-gray-100 dark:border-gray-700 pb-4">
+          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/40 rounded-xl">
+            <User className="w-6 h-6 text-methodist-blue dark:text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-none">
+              Personal Information
+            </h3>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1.5">Student's basic details and identity</p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
           {initialData?.profiles?.username && (
             <div className="space-y-2">
               <Label htmlFor="username">Student Username</Label>
@@ -203,12 +211,23 @@ export function StudentForm({
             {errors.gender && <p className="text-xs text-red-500">{errors.gender}</p>}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Academic Information */}
-      <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Academic Information</h3>
-        <div className="grid md:grid-cols-2 gap-6">
+      <section className="bg-white dark:bg-gray-800/50 p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-emerald-500 dark:bg-emerald-400"></div>
+        <div className="flex items-center space-x-3 mb-8 border-b border-gray-100 dark:border-gray-700 pb-4">
+          <div className="p-2.5 bg-emerald-50 dark:bg-emerald-900/40 rounded-xl">
+            <BookOpen className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-none">
+              Academic Information
+            </h3>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1.5">Class assignment and academic details</p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
           <div className="space-y-2">
             <Label htmlFor="class_id">Assigned Class <span className="text-red-500">*</span></Label>
             <Select 
@@ -255,12 +274,23 @@ export function StudentForm({
             </div>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Guardian Information (Optional) */}
-      <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Guardian Information (Optional)</h3>
-        <div className="grid md:grid-cols-3 gap-6">
+      <section className="bg-white dark:bg-gray-800/50 p-6 md:p-8 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/60 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-1.5 h-full bg-purple-500 dark:bg-purple-400"></div>
+        <div className="flex items-center space-x-3 mb-8 border-b border-gray-100 dark:border-gray-700 pb-4">
+          <div className="p-2.5 bg-purple-50 dark:bg-purple-900/40 rounded-xl">
+            <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 leading-none">
+              Guardian Information
+            </h3>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1.5">Parent or guardian contact details (Optional)</p>
+          </div>
+        </div>
+        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
           <div className="space-y-2">
             <Label htmlFor="guardian_name">Guardian Name</Label>
             <Input
@@ -294,10 +324,10 @@ export function StudentForm({
              {errors.guardian_email && <p className="text-xs text-red-500">{errors.guardian_email}</p>}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Submit Buttons */}
-      <div className="pt-6 flex justify-end gap-3">
+      <div className="pt-2 flex justify-end gap-4 border-t border-gray-100 dark:border-gray-800 mt-6">
         <Button 
             type="button" 
             variant="outline" 

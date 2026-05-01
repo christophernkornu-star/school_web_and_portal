@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, UserCog, ShieldAlert, GraduationCap, Loader2 } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -116,49 +116,94 @@ export default function EditStudentPage() {
   }
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center space-y-4">
+       <Loader2 className="w-8 h-8 text-methodist-blue animate-spin" />
+       <p className="text-gray-500 dark:text-gray-400 font-medium animate-pulse">Loading student record...</p>
     </div>
   )
 
   if (error) return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 text-center">
-      <div className="bg-white p-6 rounded-lg shadow-sm border max-w-md w-full">
-         <h2 className="text-xl font-bold text-red-600 mb-2">Access Denied</h2>
-         <p className="text-gray-600 mb-4">{error}</p>
-         <button onClick={() => router.back()} className="text-blue-600 underline">Go Back</button>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl max-w-md w-full text-center border-t-4 border-red-500">
+         <div className="mx-auto bg-red-100 dark:bg-red-900/30 w-16 h-16 rounded-full flex items-center justify-center mb-6">
+           <ShieldAlert className="w-8 h-8 text-red-600 dark:text-red-400" />
+         </div>
+         <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">Access Denied</h2>
+         <p className="text-gray-600 dark:text-gray-400 mb-8">{error}</p>
+         <button 
+          onClick={() => router.back()} 
+          className="inline-flex items-center space-x-2 px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-semibold rounded-xl transition-all"
+         >
+           <ArrowLeft className="w-4 h-4" />
+           <span>Go Back to Class List</span>
+         </button>
       </div>
     </div>
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
-      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center space-x-3">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
+      {/* Modern Header */}
+      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30 shadow-sm transition-colors">
+        <div className="container mx-auto max-w-5xl px-4 md:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center space-x-4">
             <button 
                 onClick={() => router.back()}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                className="p-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full text-gray-600 dark:text-gray-300 transition-all hover:scale-105"
                 title="Go Back"
             >
-                <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+                <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Edit Student</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Update student details</p>
+            <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-gray-700 mx-2"></div>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-methodist-blue/10 dark:bg-methodist-blue/20 rounded-lg">
+                <UserCog className="w-6 h-6 text-methodist-blue dark:text-blue-400" />
+              </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-black tracking-tight text-gray-900 dark:text-white leading-none">
+                  Edit Student Record
+                </h1>
+                <p className="text-xs md:text-sm font-medium text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1.5">
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  Update details for {student?.first_name} {student?.last_name}
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 md:px-6 py-8">
-        <StudentForm
-            initialData={student}
-            classes={teacherClasses}
-            isAdmin={false}
-            onSubmit={handleUpdate}
-            isSubmitting={saving}
-        />
+      {/* Main Content Area */}
+      <main className="container mx-auto max-w-5xl px-4 md:px-6 py-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 md:p-8">
+          {/* Information Banner */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 mb-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/30 rounded-xl gap-4">
+            <div className="flex items-start space-x-3">
+              <div className="mt-0.5 px-2 py-1 bg-white dark:bg-gray-800 shadow-sm rounded text-xs font-bold tracking-wider text-methodist-blue uppercase">
+                ID: {student?.student_id || student?.admission_number || student?.id?.substring(0, 8)?.toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                  Class Teacher Editing Mode
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Any changes made here will immediately reflect securely on the student's profile.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="max-w-4xl mx-auto">
+            <StudentForm
+              initialData={student}
+              classes={teacherClasses}
+              isAdmin={false}
+              onSubmit={handleUpdate}
+              isSubmitting={saving}
+              mode="edit"
+            />
+          </div>
+        </div>
       </main>
     </div>
   )
