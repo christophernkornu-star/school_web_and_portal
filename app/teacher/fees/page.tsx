@@ -23,6 +23,8 @@ export default function TeacherFeesPage() {
   const [selectedClass, setSelectedClass] = useState<string>('')
   const [academicYears, setAcademicYears] = useState<string[]>([])
   const [selectedYear, setSelectedYear] = useState<string>('')
+  const [terms, setTerms] = useState<any[]>([])
+  const [selectedTerm, setSelectedTerm] = useState<string>('')
   const [students, setStudents] = useState<any[]>([])
   const [feeStructures, setFeeStructures] = useState<any[]>([])
   const [payments, setPayments] = useState<any[]>([])
@@ -45,10 +47,10 @@ export default function TeacherFeesPage() {
   }, [])
 
   useEffect(() => {
-    if (selectedClass && selectedYear) {
-      loadClassData(selectedClass, selectedYear)
+    if (selectedClass && selectedYear && selectedTerm) {
+      loadClassData(selectedClass, selectedYear, selectedTerm)
     }
-  }, [selectedClass, selectedYear])
+  }, [selectedClass, selectedYear, selectedTerm])
 
   const loadInitialData = async () => {
     try {
@@ -95,24 +97,24 @@ export default function TeacherFeesPage() {
       }
 
       // Get unique academic years from terms
-      const { data: terms } = await supabase
+      const { data: termsData } = await supabase
         .from('academic_terms')
-        .select('academic_year')
+        .select('id, name, academic_year, is_current')
         .order('start_date', { ascending: false })
       
-      const uniqueYears = Array.from(new Set(terms?.map((t: any) => t.academic_year) || [])) as string[]
+      const uniqueYears = Array.from(new Set(termsData?.map((t: any) => t.academic_year) || [])) as string[]
       setAcademicYears(uniqueYears)
+      setTerms(termsData || [])
 
-      const { data: currentTerm } = await supabase
-        .from('academic_terms')
-        .select('academic_year')
-        .eq('is_current', true)
-        .single()
+      const currentTerm = termsData?.find((t: any) => t.is_current)
 
       if (currentTerm?.academic_year) {
         setSelectedYear(currentTerm.academic_year)
+        setSelectedTerm(currentTerm.id)
       } else if (uniqueYears.length > 0) {
         setSelectedYear(uniqueYears[0])
+        const firstTerm = termsData?.find((t: any) => t.academic_year === uniqueYears[0])
+        if (firstTerm) setSelectedTerm(firstTerm.id)
       }
 
       setClasses(classesData)
@@ -126,7 +128,7 @@ export default function TeacherFeesPage() {
     }
   }
 
-  const loadClassData = async (classId: string, year: string) => {
+  const loadClassData = async (classId: string, year: string, termId: string) => {
     setLoading(true)
     try {
       // Fetch students
@@ -138,14 +140,15 @@ export default function TeacherFeesPage() {
 
       setStudents(studentsData || [])
 
-      // Fetch fee structures for this academic year
+      // Fetch fee structures for this academic year and term
       const { data: feesData } = await supabase
         .from('fee_structures')
         .select(`
-          id, amount, academic_year,
+          id, amount, academic_year, term_id,
           fee_types (id, name, description)
         `)
         .eq('academic_year', year)
+        .eq('term_id', termId)
         .or(`class_id.eq.${classId},class_id.is.null`)
 
       setFeeStructures(feesData || [])
@@ -222,7 +225,7 @@ export default function TeacherFeesPage() {
       }
 
       // Refresh data
-      loadClassData(selectedClass, selectedYear)
+      loadClassData(selectedClass, selectedYear, selectedTerm)
       // Only close if it was a new payment, or reset form if editing
       if (editingPaymentId) {
         setEditingPaymentId(null)
@@ -258,7 +261,7 @@ export default function TeacherFeesPage() {
       if (error) throw error
 
       toast.success('Payment deleted successfully')
-      loadClassData(selectedClass, selectedYear)
+      loadClassData(selectedClass, selectedYear, selectedTerm)
       
       // If we were editing this payment, cancel edit
       if (editingPaymentId === paymentId) {
@@ -376,14 +379,29 @@ export default function TeacherFeesPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto">
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
+              onChange={(e) => {
+                setSelectedYear(e.target.value)
+                const termForYear = terms.find(t => t.academic_year === e.target.value)
+                if (termForYear) setSelectedTerm(termForYear.id)
+              }}
               className="pl-4 pr-8 py-2.5 border-0 rounded-xl bg-gray-50/80 dark:bg-gray-800/80 shadow-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-semibold dark:border-gray-700 dark:text-white transition-all duration-200 cursor-pointer"
             >
               {academicYears.map(year => (
                 <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+
+            <select
+              value={selectedTerm}
+              onChange={(e) => setSelectedTerm(e.target.value)}
+              className="pl-4 pr-8 py-2.5 border-0 rounded-xl bg-gray-50/80 dark:bg-gray-800/80 shadow-sm focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none text-sm font-semibold dark:border-gray-700 dark:text-white transition-all duration-200 cursor-pointer"
+              disabled={!selectedYear}
+            >
+              {terms.filter(t => t.academic_year === selectedYear).map(term => (
+                <option key={term.id} value={term.id}>{term.name}</option>
               ))}
             </select>
             
