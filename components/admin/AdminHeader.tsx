@@ -176,19 +176,19 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
     <header className="relative z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md w-full flex-none">
       <div className="h-full px-4 flex items-center justify-between gap-4">
         {/* Left: Mobile Toggle & Brand/Breadcrumb */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1">
           <button
             onClick={() => setIsOpen(true)}
-            className="lg:hidden p-2 hover:bg-white/20 text-blue-900 rounded-lg transition-colors"
+            className="lg:hidden p-1.5 sm:p-2 hover:bg-white/20 text-blue-900 rounded-lg transition-colors shrink-0"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
           
-          <div className="hidden md:flex flex-col">
-             <span className="text-xl font-black text-gray-900 dark:text-white tracking-tight leading-none">
+          <div className="flex flex-col overflow-hidden">
+             <span className="text-sm sm:text-xl font-black text-gray-900 dark:text-white tracking-tight leading-none whitespace-nowrap truncate">
                Biriwa Methodist 'C' Basic School
              </span>
-             <span className="text-sm font-bold text-methodist-blue dark:text-indigo-400 tracking-wider">
+             <span className="text-[10px] sm:text-sm font-bold text-methodist-blue dark:text-indigo-400 tracking-wider mt-0.5">
                ADMIN PORTAL
              </span>
           </div>

@@ -153,19 +153,19 @@ export function TeacherHeader({ setIsOpen }: TeacherHeaderProps) {
     <header className="sticky top-0 z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md">
       <div className="h-full px-4 md:px-6 lg:px-8 flex items-center justify-between gap-4">
         {/* Left: Mobile Toggle & Brand/Breadcrumb */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-1">
           <button
             onClick={() => setIsOpen(true)}
-            className="lg:hidden p-2 hover:bg-white/20 rounded-lg text-blue-900"
+            className="lg:hidden p-1.5 sm:p-2 hover:bg-white/20 rounded-lg text-blue-900 shrink-0"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
 
-          <div className="hidden md:flex flex-col">
-             <span className="text-xl font-black text-blue-900 tracking-tight leading-none drop-shadow-sm">
+          <div className="flex flex-col overflow-hidden">
+             <span className="text-sm sm:text-xl font-black text-blue-900 tracking-tight leading-none drop-shadow-sm whitespace-nowrap truncate">
                 Biriwa Methodist 'C' Basic School
              </span>
-             <span className="text-sm font-bold text-red-700 tracking-wider">
+             <span className="text-[10px] sm:text-sm font-bold text-red-700 tracking-wider mt-0.5">
                TEACHER PORTAL
              </span>
           </div>
