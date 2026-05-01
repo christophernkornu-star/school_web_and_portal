@@ -15,10 +15,16 @@ module.exports = {
           green: '#006B3F',
         },
         methodist: {
-          blue: '#003B5C',
-          gold: '#f2aa0d',
-          red: '#CE1126',
+          blue: 'var(--theme-primary, #003B5C)',
+          gold: 'var(--theme-secondary, #f2aa0d)',
+          red: 'var(--theme-warning, #CE1126)',
         },
+        /* New semantic mapping for the dynamic multi-tenant architecture */
+        theme: {
+          primary: 'var(--theme-primary, #003B5C)',
+          secondary: 'var(--theme-secondary, #f2aa0d)',
+          warning: 'var(--theme-warning, #CE1126)',
+        }
       },
     },
   },

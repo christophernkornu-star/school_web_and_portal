@@ -369,7 +369,7 @@ export default function AttendancePage() {
               <button
                 onClick={handleSaveAttendance}
                 disabled={saving || !selectedClass || students.length === 0 || isReadOnly}
-                className="flex items-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-md hover:shadow-lg text-white rounded-xl disabled:opacity-50 transition-all font-semibold text-xs md:text-sm"
+                className="flex items-center space-x-2 px-5 py-2.5 bg-methodist-gold hover:bg-yellow-500 shadow-md hover:shadow-lg text-methodist-blue rounded-xl disabled:opacity-50 transition-all font-semibold text-xs md:text-sm"
               >
                 <Save className="w-5 h-5" />
                 <span>{saving ? 'Saving...' : 'Save Attendance'}</span>
@@ -392,21 +392,32 @@ export default function AttendancePage() {
           </div>
         )}
 
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">Record Attendance</h1>
-          <p className="mt-2 text-xs md:text-sm text-gray-600 dark:text-gray-400">
-            Enter the number of days each student was present during {currentTerm?.name}
-          </p>
+        {/* Header Section */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-methodist-blue to-blue-800 text-white p-8 md:p-10 mb-8 shadow-xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-methodist-gold/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4"></div>
+          
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-2">
+              <span className="w-1.5 h-8 bg-methodist-gold rounded-full"></span>
+              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight drop-shadow-sm">
+                Record Attendance
+              </h1>
+            </div>
+            <p className="text-blue-100/90 text-sm md:text-base max-w-2xl font-medium ml-4">
+              Enter the number of days each student was present during {currentTerm?.name || 'the term'}
+            </p>
+          </div>
         </div>
 
         {/* Instructions & Quick Fill */}
         <div className="grid md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 rounded-2xl p-6 shadow-sm">
+          <div className="bg-methodist-blue/10 dark:bg-methodist-blue/30 border border-methodist-blue/30 dark:border-methodist-blue/50 rounded-2xl p-6 shadow-sm">
             <div className="flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-methodist-blue dark:text-blue-300 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-blue-900 dark:text-blue-300 mb-2">Quick Tips</h3>
-                <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                <h3 className="font-semibold text-methodist-blue dark:text-blue-100 mb-2">Quick Tips</h3>
+                <ul className="space-y-1 text-sm text-methodist-blue/90 dark:text-blue-200">
                   <li>• Total school days: <strong>{totalDays} days</strong></li>
                   <li>• Press Tab or Enter to move to next student</li>
                   <li>• Use "Quick Fill" to set same value for all</li>
@@ -416,11 +427,11 @@ export default function AttendancePage() {
             </div>
           </div>
 
-          <div className="bg-emerald-50/50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50 rounded-2xl p-6 shadow-sm">
-            <h3 className="font-bold text-emerald-900 dark:text-emerald-300 mb-4 text-sm md:text-base flex items-center gap-2"><span className="text-lg">⚡</span> Quick Fill All Students</h3>
+          <div className="bg-methodist-gold/10 dark:bg-methodist-gold/20 border border-methodist-gold/30 dark:border-methodist-gold/50 rounded-2xl p-6 shadow-sm">
+            <h3 className="font-bold text-methodist-blue dark:text-methodist-gold mb-4 text-sm md:text-base flex items-center gap-2"><span className="text-lg">⚡</span> Quick Fill All Students</h3>
             <div className="flex items-end space-x-3">
               <div className="flex-1">
-                <label className="block text-xs md:text-sm font-medium text-green-800 dark:text-green-300 mb-2">
+                <label className="block text-xs md:text-sm font-medium text-methodist-blue/80 dark:text-methodist-gold/80 mb-2">
                   Days Present (0-{totalDays})
                 </label>
                 <input
@@ -430,18 +441,18 @@ export default function AttendancePage() {
                   value={bulkDays}
                   onChange={(e) => setBulkDays(e.target.value)}
                   placeholder={`e.g., ${totalDays}`}
-                  className="w-full px-4 py-2.5 border-0 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm shadow-sm dark:text-white font-medium"
+                  className="w-full px-4 py-2.5 border-0 bg-white dark:bg-gray-800 rounded-xl focus:ring-2 focus:ring-methodist-blue focus:border-transparent text-sm shadow-sm dark:text-white font-medium"
                 />
               </div>
               <button
                 onClick={applyToAll}
                 disabled={!selectedClass || students.length === 0 || !bulkDays || isReadOnly}
-                className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-all font-semibold whitespace-nowrap text-xs md:text-sm shadow-sm"
+                className="px-6 py-2.5 bg-methodist-blue text-white rounded-xl hover:bg-blue-800 disabled:opacity-50 transition-all font-semibold whitespace-nowrap text-xs md:text-sm shadow-sm"
               >
                 Apply to All
               </button>
             </div>
-            <p className="text-xs text-emerald-700 dark:text-green-400 mt-2">
+            <p className="text-xs text-methodist-blue/70 dark:text-methodist-gold/70 mt-2">
               Set the same attendance for all students, then adjust individual cases
             </p>
           </div>
@@ -474,13 +485,13 @@ export default function AttendancePage() {
                   placeholder="Search students..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full sm:w-64 pl-10 pr-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-800 dark:text-white font-medium transition-all"
+                  className="w-full sm:w-64 pl-10 pr-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl text-sm focus:ring-2 focus:ring-methodist-blue focus:bg-white dark:focus:bg-gray-800 dark:text-white font-medium transition-all"
                 />
               </div>
               <select
                 value={genderFilter}
                 onChange={(e) => setGenderFilter(e.target.value as 'all' | 'male' | 'female')}
-                className="w-full sm:w-auto px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-800 dark:text-white font-medium transition-all"
+                className="w-full sm:w-auto px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl text-sm focus:ring-2 focus:ring-methodist-blue focus:bg-white dark:focus:bg-gray-800 dark:text-white font-medium transition-all"
               >
                 <option value="all">All Genders</option>
                 <option value="male">Boys</option>
@@ -548,7 +559,7 @@ export default function AttendancePage() {
                 <select
                   value={sortOrder}
                   onChange={(e) => setSortOrder(e.target.value as any)}
-                  className="w-full px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white dark:focus:bg-gray-800 text-xs md:text-sm font-medium transition-all"
+                  className="w-full px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl focus:ring-2 focus:ring-methodist-blue focus:bg-white dark:focus:bg-gray-800 text-xs md:text-sm font-medium transition-all"
                 >
                   <option value="name">Name (A-Z)</option>
                   <option value="boys-first">Boys First</option>
@@ -587,10 +598,10 @@ export default function AttendancePage() {
             <div className="bg-blue-50/50 dark:bg-blue-900/20 rounded-2xl shadow-sm p-4 md:p-6 border border-blue-100 dark:border-blue-800/50">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-blue-700 dark:text-blue-300 text-xs md:text-sm font-medium">Boys Rate</p>
-                <Users className="w-4 h-4 md:w-5 md:h-5 text-blue-600 dark:text-blue-400" />
+                <Users className="w-4 h-4 md:w-5 md:h-5 text-methodist-blue dark:text-blue-300" />
               </div>
               <p className="text-2xl md:text-4xl font-black text-blue-700 dark:text-blue-400 my-1">{stats.boysRate}%</p>
-              <p className="text-[10px] md:text-sm text-blue-600 dark:text-blue-400 mt-1">
+              <p className="text-[10px] md:text-sm text-methodist-blue dark:text-blue-300 mt-1">
                 {stats.boys} male students
               </p>
             </div>
@@ -679,7 +690,7 @@ export default function AttendancePage() {
                                   }
                                 }}
                                 onKeyDown={(e) => handleKeyDown(e, index)}
-                                className="w-20 px-2 py-1.5 text-center font-bold text-sm bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                                className="w-20 px-2 py-1.5 text-center font-bold text-sm bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg focus:bg-white focus:ring-2 focus:ring-methodist-blue focus:border-transparent dark:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                               />
                               <span className="text-sm text-gray-500 dark:text-gray-400">/ {totalDays}</span>
                             </div>

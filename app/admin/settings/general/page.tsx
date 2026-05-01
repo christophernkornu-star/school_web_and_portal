@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Globe, BookOpen, TrendingUp, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Save, Globe, BookOpen, TrendingUp, ArrowRight, Edit2, X } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -17,7 +17,10 @@ export default function GeneralSettings() {
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string>('')
   const [upperPrimaryModel, setUpperPrimaryModel] = useState('class_teacher')
-  // const [academicTerms, setAcademicTerms] = useState<any[]>([]) // Removed dynamic terms
+  const [academicTerms, setAcademicTerms] = useState<string[]>([])
+  const [currentTermId, setCurrentTermId] = useState<string>('')
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  const [renameData, setRenameData] = useState({ name: '', academic_year: '' })
   const [formData, setFormData] = useState({
     current_academic_year: '',
     current_term: '',
@@ -55,16 +58,28 @@ export default function GeneralSettings() {
 
       const systemSettingsMap = new Map(systemSettingsData?.map((s: any) => [s.setting_key, s.setting_value]) || [])
 
+      // Load distinct term names for suggestions
+      const { data: termsList } = await supabase
+        .from('academic_terms')
+        .select('name')
+        .order('name')
+      
+      if (termsList) {
+        const uniqueNames = Array.from(new Set(termsList.map((t: any) => String(t.name)))) as string[]
+        setAcademicTerms(uniqueNames)
+      }
+
       // Check if we have a current term ID in system settings (source of truth for other portals)
-      const currentTermId = systemSettingsMap.get('current_term')
+      const activeTermId = systemSettingsMap.get('current_term')
+      if (activeTermId) setCurrentTermId(activeTermId)
       let currentTermName = academicSettings?.current_term || ''
       let currentAcademicYear = academicSettings?.current_academic_year || ''
 
-      if (currentTermId) {
+      if (activeTermId) {
         const { data: termData } = await supabase
           .from('academic_terms')
           .select('name, academic_year')
-          .eq('id', currentTermId)
+          .eq('id', activeTermId)
           .single()
         
         if (termData) {
@@ -188,7 +203,7 @@ export default function GeneralSettings() {
           // Not throwing here to avoid blocking the whole save if just this fails, but good to log
         }
           
-        // Also ensure is_current flag is set correctly in academic_terms
+        // Also ensure is_current flag and dates are set correctly in academic_terms
         await supabase
           .from('academic_terms')
           .update({ is_current: false })
@@ -196,7 +211,11 @@ export default function GeneralSettings() {
           
         await supabase
           .from('academic_terms')
-          .update({ is_current: true })
+          .update({ 
+            is_current: true,
+            start_date: formData.term_start_date || null,
+            end_date: formData.term_end_date || null
+          })
           .eq('id', termId)
       } else {
         console.warn('Could not find or create term ID for sync.')
@@ -275,6 +294,55 @@ export default function GeneralSettings() {
     }
   }
 
+  const handleRenameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!currentTermId) return
+
+    setSaving(true)
+    try {
+      // 1. Update academic_terms directly
+      const { error: termError } = await supabase
+        .from('academic_terms')
+        .update({
+          name: renameData.name,
+          academic_year: renameData.academic_year
+        })
+        .eq('id', currentTermId)
+
+      if (termError) throw new Error('Failed to update term: ' + termError.message)
+
+      // 2. Update cached values in academic_settings and system_settings to match
+      if (settingsId) {
+        await supabase
+          .from('academic_settings')
+          .update({
+            current_academic_year: renameData.academic_year,
+            current_term: renameData.name
+          })
+          .eq('id', settingsId)
+      }
+
+      await supabase
+        .from('system_settings')
+        .update({ setting_value: renameData.academic_year })
+        .eq('setting_key', 'current_academic_year')
+
+      setFormData(prev => ({
+        ...prev,
+        current_academic_year: renameData.academic_year,
+        current_term: renameData.name
+      }))
+
+      toast.success('Active term renamed successfully!')
+      setShowRenameModal(false)
+    } catch (error: any) {
+      console.error('Error renaming term:', error)
+      toast.error(error.message || 'Failed to rename term.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -337,7 +405,25 @@ export default function GeneralSettings() {
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
           {/* Academic Year Settings */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4">Academic Year & Term</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base md:text-lg font-bold text-gray-800">Academic Year & Term</h2>
+              {currentTermId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRenameData({
+                      name: formData.current_term,
+                      academic_year: formData.current_academic_year
+                    })
+                    setShowRenameModal(true)
+                  }}
+                  className="flex items-center text-xs text-blue-600 hover:text-blue-800 px-3 py-1 bg-blue-50 rounded-md border border-blue-200"
+                >
+                  <Edit2 className="w-3 h-3 mr-1" />
+                  Fix Typo / Rename Active Term
+                </button>
+              )}
+            </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Current Academic Year *</label>
@@ -352,19 +438,28 @@ export default function GeneralSettings() {
               </div>
               <div>
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Current Term *</label>
-                <select
-                  required
-                  value={formData.current_term}
-                  onChange={(e) => setFormData({...formData, current_term: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                >
-                  <option value="">Select Term</option>
-                  <option value="Term 1">Term 1</option>
-                  <option value="Term 2">Term 2</option>
-                  <option value="Term 3">Term 3</option>
-                </select>
+                <div className="relative">
+                  <input
+                    list="term-options"
+                    required
+                    value={formData.current_term}
+                    onChange={(e) => setFormData({...formData, current_term: e.target.value})}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                    placeholder="Select or type a term (e.g. Term 1)"
+                  />
+                  <datalist id="term-options">
+                    {academicTerms.map(t => <option key={t} value={t} />)}
+                    {academicTerms.length === 0 && (
+                      <>
+                        <option value="Term 1" />
+                        <option value="Term 2" />
+                        <option value="Term 3" />
+                      </>
+                    )}
+                  </datalist>
+                </div>
                 <p className="mt-1 text-[10px] md:text-xs text-gray-500">
-                  Current active term for the school year
+                  Type a new name to create a term, or select an existing active term.
                 </p>
               </div>
             </div>
@@ -640,6 +735,62 @@ export default function GeneralSettings() {
             </button>
           </div>
         </form>
+
+        {showRenameModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
+            <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
+              <div className="flex justify-between items-center p-4 border-b">
+                <h3 className="text-lg font-bold text-gray-800">Fix Typo in Active Term</h3>
+                <button type="button" onClick={() => setShowRenameModal(false)} className="text-gray-500 hover:text-gray-700">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-4 bg-yellow-50 text-sm text-yellow-800 border-b border-yellow-200">
+                Only use this to fix typos in the <strong>currently active</strong> term without creating duplicates. To start a NEW term, use the main form instead.
+              </div>
+              <form onSubmit={handleRenameSubmit} className="p-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
+                  <input
+                    type="text"
+                    required
+                    value={renameData.academic_year}
+                    onChange={(e) => setRenameData({ ...renameData, academic_year: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                    placeholder="2024/2025"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Term Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={renameData.name}
+                    onChange={(e) => setRenameData({ ...renameData, name: e.target.value })}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                    placeholder="Term 1"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowRenameModal(false)}
+                    className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex-shrink-0"
+                  >
+                    {saving ? 'Updating...' : 'Update Term Record'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

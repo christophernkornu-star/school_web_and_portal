@@ -2,24 +2,13 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// In-memory cache for generic non-sensitive term lists
-const cache = {
-  data: null as any,
-  timestamp: 0
-}
-const CACHE_TTL = 1000 * 60 * 5 // 5 minutes
-
 export async function GET() {
   try {
-    // Check Cache first
-    if (cache.data && (Date.now() - cache.timestamp < CACHE_TTL)) {
-      return NextResponse.json(cache.data)
-    }
-
     // Use service role to bypass RLS
     const supabase = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -42,11 +31,12 @@ export async function GET() {
       )
     }
 
-    const responseData = termsData || []
-    cache.data = responseData
-    cache.timestamp = Date.now()
-
-    return NextResponse.json(responseData)
+    // Force browsers and CDNs to not cache the API response
+    return NextResponse.json(termsData || [], {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    })
   } catch (error: any) {
     console.error('Error in terms-list API:', error)
     return NextResponse.json(

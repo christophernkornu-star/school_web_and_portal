@@ -3,12 +3,17 @@
 @tailwind utilities;
 
 :root {
+  /* Dynamic Theme Variables for Multi-Tenant Support */
+  --theme-primary: #003B5C;
+  --theme-secondary: #f2aa0d;
+  --theme-warning: #CE1126;
+
   --ghana-red: #CE1126;
   --ghana-gold: #FCD116;
   --ghana-green: #006B3F;
-  --methodist-blue: #003B5C;
-  --methodist-gold: #FFB81C;
-  --methodist-red: #CE1126;
+  --methodist-blue: var(--theme-primary);
+  --methodist-gold: var(--theme-secondary);
+  --methodist-red: var(--theme-warning);
 }
 
 body {
