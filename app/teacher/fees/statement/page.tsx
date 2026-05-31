@@ -146,7 +146,7 @@ function ClassStatementContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-2 md:p-8 print:bg-white print:p-0 transition-colors">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-2 md:p-8 print:bg-white print:p-0 print:max-w-[210mm] print:mx-auto transition-colors">
       <div className="max-w-5xl mx-auto">
         {/* Toolbar - Hidden when printing */}
         <div className="mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 print:hidden bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border border-gray-100 dark:border-gray-800 shadow-sm p-4 md:p-6 rounded-2xl sticky top-4 z-30 transition-colors">
