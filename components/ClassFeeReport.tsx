@@ -3,12 +3,14 @@ import { format } from 'date-fns'
 
 interface ClassFeeReportProps {
   className: string
+  academicYear: string
+  termName: string
   students: any[]
   feeStructures: any[]
   payments: any[]
 }
 
-export const ClassFeeReport = React.forwardRef<HTMLDivElement, ClassFeeReportProps>(({ className, students, feeStructures, payments }, ref) => {
+export const ClassFeeReport = React.forwardRef<HTMLDivElement, ClassFeeReportProps>(({ className, academicYear, termName, students, feeStructures, payments }, ref) => {
   // Calculate totals for the whole class
   const totalClassBill = students.length * feeStructures.reduce((sum, f) => sum + Number(f.amount), 0)
   const totalClassPaid = payments.reduce((sum, p) => sum + Number(p.amount_paid), 0)
@@ -22,6 +24,8 @@ export const ClassFeeReport = React.forwardRef<HTMLDivElement, ClassFeeReportPro
         <h2 className="text-base md:text-xl font-bold uppercase break-words px-2">Class Fee Report</h2>
         <div className="flex flex-col justify-center gap-1 md:gap-8 md:flex-row mt-4 text-sm font-medium text-gray-600 dark:text-gray-400 px-2">
           <p className="break-words">Class: <span className="text-black dark:text-white font-bold">{className}</span></p>
+          <p className="break-words">Academic Year: <span className="text-black dark:text-white font-bold">{academicYear}</span></p>
+          <p className="break-words">Term: <span className="text-black dark:text-white font-bold">{termName || 'Selected Term'}</span></p>
           <p className="break-words">Date: <span className="text-black dark:text-white font-bold" suppressHydrationWarning>{format(new Date(), 'dd MMM yyyy')}</span></p>
         </div>
       </div>

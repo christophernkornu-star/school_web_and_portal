@@ -415,8 +415,8 @@ export default function TeacherFeesPage() {
               ))}
             </select>
 
-            {selectedClass && (
-              <Link href={`/teacher/fees/statement?classId=${selectedClass}`}>
+            {selectedClass && selectedYear && selectedTerm && (
+              <Link href={`/teacher/fees/statement?classId=${encodeURIComponent(selectedClass)}&academicYear=${encodeURIComponent(selectedYear)}&termId=${encodeURIComponent(selectedTerm)}`}>
                 <Button variant="outline" className="gap-2 h-10 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:bg-gray-800 dark:text-emerald-400 dark:border-emerald-800/50 dark:hover:bg-emerald-900/30 rounded-xl font-semibold transition-all duration-200 shadow-sm">
                   <FileBarChart className="h-4 w-4" />
                   <span className="hidden sm:inline">Statement</span>
