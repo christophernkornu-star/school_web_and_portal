@@ -103,50 +103,66 @@ export default function EnterScores() {
         return
     }
 
-    setCreatingAssessment(true)
+            setCreatingAssessment(true)
     try {
-        // Get class_subject_id
+        // Get current term and academic year first
+        const { data: currentTerm } = await supabase
+            .from('academic_terms')
+            .select('id, academic_year')
+            .eq('is_current', true)
+            .maybeSingle()
+        const academicYear = currentTerm?.academic_year || new Date().getFullYear().toString()
+        const termId = currentTerm?.id
+        if (!termId) throw new Error('Current term not found')
+
+        // Get class_subject_id - MUST filter by academic_year to match the unique constraint
         let { data: classSubject } = await supabase
           .from('class_subjects')
           .select('id')
           .eq('class_id', selectedClass)
           .eq('subject_id', selectedSubject)
+          .eq('academic_year', academicYear)
           .maybeSingle()
-        
+
         // If class_subject doesn't exist, try to create it automatically
         if (!classSubject) {
             console.log('Class subject not found, attempting to create one...')
-            // We need the academic year for this.
-            const { data: terms } = await supabase.from('academic_terms').select('academic_year').eq('is_current', true).limit(1)
-            const academicYear = terms?.[0]?.academic_year || new Date().getFullYear().toString()
-            
             const { data: newCS, error: createError } = await supabase
                 .from('class_subjects')
                 .insert({
                     class_id: selectedClass,
                     subject_id: selectedSubject,
                     academic_year: academicYear,
-                    teacher_id: teacher?.id // Assign to current teacher
+                    teacher_id: teacher?.id
                 })
                 .select('id')
                 .single()
-            
-            if (createError) {
-                 console.error("Failed to auto-create class_subject:", createError)
-                 throw new Error('Class subject link missing and could not be created.')
-            }
-            classSubject = newCS
-        }
 
-        // Get current term
-        const { data: terms } = await supabase
-            .from('academic_terms')
-            .select('id')
-            .eq('is_current', true)
-            .limit(1)
-        
-        const termId = terms?.[0]?.id
-        if (!termId) throw new Error('Current term not found')
+            if (createError) {
+                // Handle race condition: another request created this row first
+                if (createError.code === '23505') {
+                    const { data: existingCS } = await supabase
+                        .from('class_subjects')
+                        .select('id')
+                        .eq('class_id', selectedClass)
+                        .eq('subject_id', selectedSubject)
+                        .eq('academic_year', academicYear)
+                        .single()
+
+                    if (existingCS) {
+                        classSubject = existingCS
+                    } else {
+                        console.error("Failed to auto-create class_subject:", createError)
+                        throw new Error('Class subject link missing and could not be created.')
+                    }
+                } else {
+                    console.error("Failed to auto-create class_subject:", createError)
+                    throw new Error('Class subject link missing and could not be created.')
+                }
+            } else {
+                classSubject = newCS
+            }
+        }
 
         const { data, error } = await supabase
             .from('assessments')

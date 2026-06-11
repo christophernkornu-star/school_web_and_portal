@@ -1,65 +1,53 @@
-require('dotenv').config({ path: '.env.local' })
-const { createClient } = require('@supabase/supabase-js')
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env.local') });
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
-)
+);
+async function diagnose() {
+  console.log('=== DIAGNOSIS: Checking RLS Policies ===\n');
 
-async function diagnoseRLS() {
-  console.log('=== Diagnosing RLS Policies ===\n')
+  // Test with the anon key
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-  // Check current policies
-  const { data: policies, error: policiesError } = await supabase
-    .from('pg_policies')
-    .select('*')
-    .eq('tablename', 'students')
+  console.log('Testing anonymous access (should be BLOCKED for restricted tables):\n');
 
-  if (policiesError) {
-    console.error('Error fetching policies:', policiesError.message)
-  } else if (policies && policies.length > 0) {
-    console.log('Current policies on students table:')
-    policies.forEach(policy => {
-      console.log(`\n- ${policy.policyname}`)
-      console.log(`  Command: ${policy.cmd}`)
-      console.log(`  Roles: ${policy.roles}`)
-    })
-  } else {
-    console.log('❌ No RLS policies found on students table!')
+  const tables = ['classes', 'subjects', 'class_subjects', 'students', 'mock_scores', 'teacher_subject_assignments'];
+
+  for (const table of tables) {
+    const res = await fetch(url + '/rest/v1/' + table + '?select=count&limit=0', {
+      headers: {
+        'apikey': anonKey,
+        'Authorization': 'Bearer ' + anonKey,
+        'Accept': 'application/json'
+      }
+    });
+    const body = await res.text();
+    const status = res.status;
+    const isBlocked = status === 401 || status === 403 || body.includes('"error"') || body.includes('"message"');
+    console.log('  ' + table.padEnd(35) + ' Status: ' + status + ' ' + (isBlocked ? 'BLOCKED' : 'OPEN'));
   }
 
-  // Test access for the student
-  console.log('\n\n=== Testing Student Access ===\n')
-  
-  // First, verify the student exists
-  const { data: student, error: studentError } = await supabase
-    .from('students')
-    .select('id, student_id, profile_id, first_name, last_name')
-    .eq('student_id', 'STU2030')
-    .single()
+  // Now try with service role (should always work)
+  console.log('\nTesting service role access (should always work):\n');
 
-  if (studentError) {
-    console.error('Error fetching student:', studentError.message)
-    return
+  for (const table of tables) {
+    const res = await fetch(url + '/rest/v1/' + table + '?select=count&limit=0', {
+      headers: {
+        'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'Authorization': 'Bearer ' + process.env.SUPABASE_SERVICE_ROLE_KEY,
+        'Accept': 'application/json'
+      }
+    });
+    const body = await res.text();
+    const status = res.status;
+    console.log('  ' + table.padEnd(35) + ' Status: ' + status + ' OK');
   }
 
-  console.log('Student found:', {
-    id: student.id,
-    student_id: student.student_id,
-    name: `${student.first_name} ${student.last_name}`,
-    profile_id: student.profile_id
-  })
-
-  // Now test if they can access their own record when authenticated
-  console.log('\n=== Solution ===\n')
-  console.log('The 400 error means RLS is blocking the query.')
-  console.log('You need to run the SQL commands in: scripts/fix-student-rls.sql')
-  console.log('\nSteps:')
-  console.log('1. Open Supabase Dashboard')
-  console.log('2. Go to SQL Editor')
-  console.log('3. Copy contents of scripts/fix-student-rls.sql')
-  console.log('4. Paste and run in SQL Editor')
-  console.log('5. Try logging in again as student')
+  console.log('\n=== Diagnosis Complete ===');
 }
 
-diagnoseRLS().catch(console.error).finally(() => process.exit(0))
+diagnose().finally(() => process.exit(0));
+

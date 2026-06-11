@@ -480,7 +480,7 @@ function ClassScoresContent() {
           
           let classSubjectId = classSubject?.id
           
-          if (!classSubjectId) {
+                    if (!classSubjectId) {
              // Try to find academic year from term
              const { data: termData } = await supabase
                 .from('academic_terms')
@@ -489,8 +489,6 @@ function ClassScoresContent() {
                 .single()
              
              if (termData) {
-                 // Check if we can create it or if it exists with different criteria
-                 // For now, let's try to insert if missing (auto-create relationship)
                  const { data: newCS, error: createError } = await supabase
                     .from('class_subjects')
                     .insert({
@@ -502,10 +500,29 @@ function ClassScoresContent() {
                     .single()
                  
                  if (createError) {
-                     console.error('Error creating class_subject:', createError)
-                     throw new Error(`Subject not assigned to this class. Please contact admin.`)
+                     // Handle race condition: another request created this row first
+                     if (createError.code === '23505') {
+                         const { data: existingCS } = await supabase
+                             .from('class_subjects')
+                             .select('id')
+                             .eq('class_id', selectedClass)
+                             .eq('subject_id', subjectId)
+                             .eq('academic_year', termData.academic_year)
+                             .single()
+                         
+                         if (existingCS) {
+                             classSubjectId = existingCS.id
+                         } else {
+                             console.error('Error creating class_subject:', createError)
+                             throw new Error(`Subject not assigned to this class. Please contact admin.`)
+                         }
+                     } else {
+                         console.error('Error creating class_subject:', createError)
+                         throw new Error(`Subject not assigned to this class. Please contact admin.`)
+                     }
+                 } else {
+                     classSubjectId = newCS.id
                  }
-                 classSubjectId = newCS.id
              } else {
                  throw new Error('Could not determine academic year for class subject.')
              }
@@ -805,7 +822,7 @@ function ClassScoresContent() {
 
         let classSubjectId = classSubject?.id
 
-        if (!classSubjectId) {
+                if (!classSubjectId) {
              // Try to find academic year from term
              const { data: termData } = await supabase
                 .from('academic_terms')
@@ -825,10 +842,29 @@ function ClassScoresContent() {
                     .single()
                  
                  if (createError) {
-                     console.error('Error creating class_subject:', createError)
-                     throw new Error(`Subject ${subject.name} not assigned to this class.`)
+                     // Handle race condition: another request created this row first
+                     if (createError.code === '23505') {
+                         const { data: existingCS } = await supabase
+                             .from('class_subjects')
+                             .select('id')
+                             .eq('class_id', selectedClass)
+                             .eq('subject_id', subject.id)
+                             .eq('academic_year', termData.academic_year)
+                             .single()
+                         
+                         if (existingCS) {
+                             classSubjectId = existingCS.id
+                         } else {
+                             console.error('Error creating class_subject:', createError)
+                             throw new Error(`Subject ${subject.name} not assigned to this class.`)
+                         }
+                     } else {
+                         console.error('Error creating class_subject:', createError)
+                         throw new Error(`Subject ${subject.name} not assigned to this class.`)
+                     }
+                 } else {
+                     classSubjectId = newCS.id
                  }
-                 classSubjectId = newCS.id
              } else {
                  throw new Error('Could not determine academic year for class subject.')
              }
