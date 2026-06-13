@@ -174,7 +174,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  reactStrictMode: true,
+  reactStrictMode: false,
   experimental: {
     scrollRestoration: true,
   },

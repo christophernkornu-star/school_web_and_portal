@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle, ChevronLeft, ChevronRight, Palette, Shuffle, X } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -11,6 +11,8 @@ import { toast } from 'react-hot-toast'
 import { PageHeader } from '@/components/ui/page-header'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { SectionBadge } from '@/components/sections/SectionBadge'
+import { SectionSelector } from '@/components/sections/SectionSelector'
 
 const PAGE_SIZE = 20
 
@@ -21,16 +23,29 @@ export default function StudentsPage() {
   const [students, setStudents] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [classFilter, setClassFilter] = useState('all')
+    const [classFilter, setClassFilter] = useState('all')
+  const [sectionFilter, setSectionFilter] = useState('all')
   const [classes, setClasses] = useState<any[]>([])
+  const [sections, setSections] = useState<any[]>([])
   
+  // Section reassign modal
+  const [reassignModal, setReassignModal] = useState<{
+    student: any
+    open: boolean
+  } | null>(null)
+  const [reassigning, setReassigning] = useState(false)
+
+  // Student section data cache
+  const [studentSections, setStudentSections] = useState<Record<string, any>>({})
+
   // Pagination state
   const [page, setPage] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
 
-  // Initial load for classes
+  // Initial load for classes and sections
   useEffect(() => {
     loadClasses()
+    loadSections()
   }, [])
 
   // Debounced load for students
@@ -39,15 +54,41 @@ export default function StudentsPage() {
       loadStudents()
     }, 300)
     return () => clearTimeout(timer)
-  }, [page, searchTerm, classFilter, router, user, contextLoading])
+  }, [page, searchTerm, classFilter, sectionFilter, router, user, contextLoading])
 
-  async function loadClasses() {
+    async function loadClasses() {
     const { data: classesData } = await supabase
       .from('classes')
       .select('id, name, level')
       .order('level')
     
     if (classesData) setClasses(classesData)
+  }
+
+  async function loadSections() {
+    const { data } = await supabase
+      .from('sections')
+      .select('id, name, colour, emblem_url')
+      .eq('is_active', true)
+      .order('sort_order')
+    
+    if (data) setSections(data)
+  }
+
+  async function loadStudentSections(studentIds: string[]) {
+    if (studentIds.length === 0) return
+    const { data } = await supabase
+      .from('student_sections')
+      .select('student_id, section_id, sections(id, name, colour, emblem_url)')
+      .in('student_id', studentIds)
+
+    if (data) {
+      const map: Record<string, any> = {}
+      data.forEach((ss: any) => {
+        map[ss.student_id] = ss.sections || null
+      })
+      setStudentSections(prev => ({ ...prev, ...map }))
+    }
   }
 
   async function loadStudents() {
@@ -68,9 +109,19 @@ export default function StudentsPage() {
       `, { count: 'exact' })
       .order('first_name')
 
-    // Apply filters
+        // Apply filters
     if (classFilter !== 'all') {
       query = query.eq('class_id', classFilter)
+    }
+
+        if (sectionFilter !== 'all') {
+      // Filter by section via student_sections join
+      const { data: sectionData } = await supabase
+        .from('student_sections')
+        .select('student_id')
+        .eq('section_id', sectionFilter)
+      const sectionStudentIds = (sectionData || []).map((s: { student_id: string }) => s.student_id)
+      query = query.in('id', sectionStudentIds)
     }
 
     if (searchTerm) {
@@ -88,8 +139,29 @@ export default function StudentsPage() {
     if (studentsData) {
       setStudents(studentsData)
       setTotalCount(count || 0)
+      // Load section info for these students
+      loadStudentSections(studentsData.map((s: { id: string }) => s.id))
     }
     setLoading(false)
+  }
+
+  async function handleReassignSection(studentId: string, sectionId: string) {
+    setReassigning(true)
+    try {
+      const { error } = await supabase
+        .from('student_sections')
+        .upsert({ student_id: studentId, section_id: sectionId }, { onConflict: 'student_id' })
+
+      if (error) throw error
+
+      toast.success('Section reassigned successfully')
+      setReassignModal(null)
+      loadStudents()
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to reassign section')
+    } finally {
+      setReassigning(false)
+    }
   }
 
   const handleDeleteStudent = async (studentId: string, profileId: string) => {
@@ -126,7 +198,8 @@ export default function StudentsPage() {
     )
   }
 
-  return (
+    return (
+    <>
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <PageHeader 
@@ -154,7 +227,7 @@ export default function StudentsPage() {
         {/* Filters */}
         <Card>
           <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
+                        <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
               <div className="relative w-full sm:w-auto flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
@@ -166,20 +239,39 @@ export default function StudentsPage() {
                 />
               </div>
               
-              <div className="relative w-full sm:w-auto min-w-[200px]">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <select
-                  className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                  value={classFilter}
-                  onChange={(e) => setClassFilter(e.target.value)}
-                >
-                  <option value="all">All Classes</option>
-                  {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex flex-wrap gap-3">
+                <div className="relative w-full sm:w-auto min-w-[180px]">
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <select
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    value={classFilter}
+                    onChange={(e) => setClassFilter(e.target.value)}
+                  >
+                    <option value="all">All Classes</option>
+                    {classes.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Section Filter */}
+                <div className="relative w-full sm:w-auto min-w-[180px]">
+                  <Palette className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <select
+                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    value={sectionFilter}
+                    onChange={(e) => setSectionFilter(e.target.value)}
+                  >
+                    <option value="all">All Sections</option>
+                    {sections.map((sec) => (
+                      <option key={sec.id} value={sec.id}>
+                        {sec.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </CardContent>
@@ -212,12 +304,25 @@ export default function StudentsPage() {
                     </Badge>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+                                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
                     <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
                       <span className="block font-medium mb-1">Class</span>
                       <Badge variant="secondary" className="font-medium bg-white dark:bg-gray-800">
                         {student.classes?.name || 'Unassigned'}
                       </Badge>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
+                      <span className="block font-medium mb-1">Section</span>
+                      <div className="flex items-center gap-1">
+                        <SectionBadge section={studentSections[student.id] || null} size="sm" />
+                        <button
+                          onClick={() => setReassignModal({ student, open: true })}
+                          className="p-0.5 text-gray-400 hover:text-purple-600"
+                          title="Change Section"
+                        >
+                          <Shuffle className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 p-2 rounded">
                       <span className="block font-medium mb-1">Gender</span>
@@ -250,10 +355,11 @@ export default function StudentsPage() {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-900 dark:text-gray-300 border-b dark:border-gray-700">
-                  <tr>
+                                    <tr>
                     <th scope="col" className="px-6 py-3 font-semibold">Student Info</th>
                     <th scope="col" className="px-6 py-3 font-semibold hidden md:table-cell">Details</th>
                     <th scope="col" className="px-6 py-3 font-semibold">Class</th>
+                    <th scope="col" className="px-6 py-3 font-semibold">Section</th>
                     <th scope="col" className="px-6 py-3 font-semibold text-center">Status</th>
                     <th scope="col" className="px-6 py-3 font-semibold text-right">Actions</th>
                   </tr>
@@ -290,10 +396,22 @@ export default function StudentsPage() {
                               </div>
                           </div>
                       </td>
-                      <td className="px-6 py-4">
+                                            <td className="px-6 py-4">
                         <Badge variant="secondary" className="font-medium">
                           {student.classes?.name || 'Unassigned'}
                         </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <SectionBadge section={studentSections[student.id] || null} size="sm" />
+                          <button
+                            onClick={() => setReassignModal({ student, open: true })}
+                            className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                            title="Change Section"
+                          >
+                            <Shuffle className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-center">
                           <Badge variant={student.status === 'active' ? 'success' : 'secondary'}>
@@ -355,8 +473,66 @@ export default function StudentsPage() {
                    </button>
                </div>
           </div>
-        </Card>
+                </Card>
       </div>
     </div>
+
+            {/* Section Reassign Modal */}
+      {reassignModal?.open && reassignModal.student && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl p-6 my-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                  <Shuffle className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Change Section</h3>
+                  <p className="text-sm text-gray-500">
+                    {reassignModal.student.first_name} {reassignModal.student.last_name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReassignModal(null)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select New Section
+              </label>
+              <SectionSelector
+                value={studentSections[reassignModal.student.id]?.id || ''}
+                onChange={(sectionId, section) => {
+                  handleReassignSection(reassignModal.student.id, sectionId)
+                }}
+              />
+              {reassigning && (
+                <p className="text-xs text-purple-600 flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                  Reassigning...
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setReassignModal(null)}
+                disabled={reassigning}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
+                         bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 
+                         rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+            )}
+    </>
   )
 }

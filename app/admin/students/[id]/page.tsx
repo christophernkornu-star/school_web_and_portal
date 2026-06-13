@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, User, Trash2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Save, User, Trash2, AlertCircle, Palette, Shuffle } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { SectionBadge } from '@/components/sections/SectionBadge'
 
 
 import { StudentForm, StudentFormData } from '@/components/forms/StudentForm'
@@ -19,12 +20,16 @@ export default function EditStudentPage() {
   const params = useParams()
   const studentId = params.id as string
 
-  const [loading, setLoading] = useState(true)
+    const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [classes, setClasses] = useState<any[]>([])
   const [student, setStudent] = useState<any>(null)
+  const [studentSection, setStudentSection] = useState<any>(null)
+  const [sections, setSections] = useState<any[]>([])
+  const [showSectionModal, setShowSectionModal] = useState(false)
+  const [reassigning, setReassigning] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -43,7 +48,16 @@ export default function EditStudentPage() {
       .select('id, name') // Matches expected format
       .order('level')
 
-    if (classesData) setClasses(classesData)
+        if (classesData) setClasses(classesData)
+
+    // Load sections
+    const { data: sectionsData } = await supabase
+      .from('sections')
+      .select('id, name, colour, emblem_url')
+      .eq('is_active', true)
+      .order('sort_order')
+    
+    if (sectionsData) setSections(sectionsData)
 
     // Load student data
     const { data: studentData, error } = await supabase
@@ -62,10 +76,20 @@ export default function EditStudentPage() {
     }
 
     setStudent(studentData)
+
+    // Load student's section
+    const { data: ssData } = await supabase
+      .from('student_sections')
+      .select('section_id, sections(id, name, colour, emblem_url)')
+      .eq('student_id', studentId)
+      .maybeSingle()
+
+    if (ssData?.sections) setStudentSection(ssData.sections)
+
     setLoading(false)
   }
 
-  const handleUpdate = async (formData: StudentFormData) => {
+    const handleUpdate = async (formData: StudentFormData) => {
     setSaving(true)
 
     try {
@@ -96,6 +120,26 @@ export default function EditStudentPage() {
       toast.error(error.message || 'Failed to update student')
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function handleReassignSection(sectionId: string) {
+    setReassigning(true)
+    try {
+      const { error } = await supabase
+        .from('student_sections')
+        .upsert({ student_id: studentId, section_id: sectionId }, { onConflict: 'student_id' })
+
+      if (error) throw error
+
+      toast.success('Section updated successfully')
+      const newSection = sections.find(s => s.id === sectionId)
+      setStudentSection(newSection || null)
+      setShowSectionModal(false)
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update section')
+    } finally {
+      setReassigning(false)
     }
   }
 
@@ -163,6 +207,32 @@ export default function EditStudentPage() {
             </button>
         </div>
 
+        {/* Section Info Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <Palette className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">School Section</h3>
+                {studentSection ? (
+                  <SectionBadge section={studentSection} size="lg" className="mt-1" />
+                ) : (
+                  <p className="text-sm text-gray-400 italic mt-1">Not assigned yet</p>
+                )}
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSectionModal(true)}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+            >
+              <Shuffle className="w-4 h-4" />
+              Change Section
+            </button>
+          </div>
+        </div>
+
         <StudentForm
             initialData={student}
             classes={classes}
@@ -172,7 +242,7 @@ export default function EditStudentPage() {
         />
       </div>
 
-      {/* Delete Modal */}
+            {/* Delete Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
@@ -201,6 +271,85 @@ export default function EditStudentPage() {
                     </button>
                 </div>
             </div>
+        </div>
+      )}
+
+            {/* Section Reassign Modal */}
+      {showSectionModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl p-6 my-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                  <Shuffle className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Change Section</h3>
+                  <p className="text-sm text-gray-500">
+                    {student.first_name} {student.last_name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSectionModal(false)}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select New Section
+              </label>
+              <div className="flex flex-col gap-2">
+                {sections.map((sec: any) => (
+                  <button
+                    key={sec.id}
+                    onClick={() => handleReassignSection(sec.id)}
+                    disabled={reassigning}
+                    className={`
+                      w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                      transition-all border
+                      ${studentSection?.id === sec.id
+                        ? 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800'
+                        : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-200 hover:bg-purple-50/50'
+                      }
+                    `}
+                  >
+                    <span
+                      className="w-4 h-4 rounded-full shadow-sm flex-shrink-0"
+                      style={{ backgroundColor: sec.colour }}
+                    />
+                    <span className="flex-1 text-left">{sec.name}</span>
+                    {studentSection?.id === sec.id && (
+                      <span className="text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                        Current
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              {reassigning && (
+                <p className="text-xs text-purple-600 flex items-center gap-2 mt-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                  Updating...
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setShowSectionModal(false)}
+                disabled={reassigning}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
+                         bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 
+                         rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

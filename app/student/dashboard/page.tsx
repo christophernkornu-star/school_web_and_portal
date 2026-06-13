@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, Megaphone, Bell, Award } from 'lucide-react'
 import { signOut } from '@/lib/auth'
+import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import type { Student, Profile } from '@/lib/supabase'
 import { useStudent } from '@/components/providers/StudentContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -29,7 +30,7 @@ export default function StudentDashboard() {
   // Initialize state with cached data if available
   const [loading, setLoading] = useState(!dashboardData) // Load if no cache
   const [error, setError] = useState<string | null>(null)
-  const [allowCumulativeDownload, setAllowCumulativeDownload] = useState(dashboardData?.allowCumulativeDownload || false)
+    const [allowCumulativeDownload, setAllowCumulativeDownload] = useState(dashboardData?.allowCumulativeDownload || false)
   const [announcements, setAnnouncements] = useState<Announcement[]>(dashboardData?.announcements || [])
   const [stats, setStats] = useState(dashboardData?.stats || {
     currentTerm: 'N/A',
@@ -37,6 +38,8 @@ export default function StudentDashboard() {
     averageScore: 0,
     classPosition: 'N/A'
   })
+  const [studentSection, setStudentSection] = useState<any>(null)
+  const supabase = getSupabaseBrowserClient()
   
   useEffect(() => {
     if (contextLoading) return
@@ -63,9 +66,21 @@ export default function StudentDashboard() {
       if (Date.now() - dashboardData.lastFetched > 60 * 1000) {
         fetchDashboardData()
       }
-    } else {
+        } else {
       // First fetch
       fetchDashboardData().then(() => setLoading(false))
+    }
+
+    // Load student section
+    if (student?.id) {
+      supabase
+        .from('student_sections')
+        .select('section_id, sections(id, name, colour, emblem_url)')
+        .eq('student_id', student.id)
+                .maybeSingle()
+        .then((response: { data: any }) => {
+          if (response?.data?.sections) setStudentSection(response.data.sections)
+        })
     }
   }, [user, student, contextLoading, dashboardData, fetchDashboardData, router])
 
@@ -214,27 +229,30 @@ export default function StudentDashboard() {
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-methodist-gold opacity-10 rounded-full blur-3xl"></div>
           
-          <div className="relative z-10 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl md:text-4xl font-bold mb-2 tracking-tight">
-                Welcome back, {student ? `${student.first_name} ${student.last_name}` : 'Student'}!
-              </h2>
-              <p className="text-blue-100 text-sm md:text-base font-medium opacity-90">
-                <span className="inline-block bg-blue-800/50 px-3 py-1 rounded-full text-xs md:text-sm backdrop-blur-sm border border-blue-700/50 mr-2">
-                  ID: {student?.student_id || '...'}
-                </span>
-                <span className="inline-block bg-blue-800/50 px-3 py-1 rounded-full text-xs md:text-sm backdrop-blur-sm border border-blue-700/50">
-                  Class: {student?.classes?.name || '...'}
-                </span>
-              </p>
-            </div>
-            <div className="hidden md:block">
-              <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-full flex items-center justify-center border border-white/20 shadow-inner">
-                <User className="w-10 h-10 text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
+                    <div className="relative z-10 w-full">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h2 className="text-xl md:text-3xl lg:text-4xl font-bold mb-3 tracking-tight leading-tight">
+                            Welcome back, {student ? `${student.first_name} ${student.last_name}` : 'Student'}!
+                          </h2>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="inline-flex items-center gap-1.5 bg-blue-800/50 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-blue-700/50 tracking-wide">
+                              ID: {student?.student_id || '...'}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 bg-blue-800/50 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-blue-700/50 tracking-wide">
+                              Class: {student?.classes?.name || '...'}
+                            </span>
+                            {studentSection && (
+                              <span className="inline-flex items-center gap-1.5 bg-blue-800/50 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-blue-700/50 tracking-wide">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: studentSection.colour || '#8B5CF6' }} />
+                                {studentSection.name || 'Section'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                                        </div>
+                    </div>
 
         {/* Withheld Banner */}
         {student?.results_withheld && (

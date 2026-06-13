@@ -3,15 +3,16 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, Trash2, Phone, Mail, KeyRound, CheckSquare, Square, ArrowUpDown, Download } from 'lucide-react'
+import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, Trash2, Phone, Mail, KeyRound, CheckSquare, Square, ArrowUpDown, Download, Palette, Shuffle, X } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
+import { SectionBadge } from '@/components/sections/SectionBadge'
 
-function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, selected, selectionMode, onSelect }: { 
+function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, selected, selectionMode, onSelect, studentSection, onChangeSection }: { 
   student: any, 
   canManage: boolean, 
   onEdit: () => void, 
@@ -19,7 +20,9 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
   onDelete: () => void,
   selected: boolean,
   selectionMode: boolean,
-  onSelect: () => void
+  onSelect: () => void,
+  studentSection: any,
+  onChangeSection: () => void
 }) {
   const [touchStart, setTouchStart] = useState<number | null>(null)
   const [touchStartY, setTouchStartY] = useState<number | null>(null)
@@ -248,12 +251,44 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
             )}
         </div>
         <div>
-            <h3 className="font-black text-lg md:text-xl text-gray-900 dark:text-white truncate pr-8 mt-1">
+                        <h3 className="font-black text-lg md:text-xl text-gray-900 dark:text-white truncate pr-8 mt-1">
                 {student.last_name} {student.first_name} {student.middle_name || ''}
             </h3>
             <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{student.student_id}</p>
+            {/* Compact section indicator - visible on all screen sizes */}
+            <div className="mt-2">
+              {studentSection ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium shadow-sm border"
+                  style={{
+                    backgroundColor: (studentSection.colour || '#8B5CF6') + '15',
+                    color: studentSection.colour || '#8B5CF6',
+                    borderColor: (studentSection.colour || '#8B5CF6') + '40'
+                  }}
+                >
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: studentSection.colour || '#8B5CF6' }} />
+                  {studentSection.name?.substring(0, 3).toUpperCase() || '...'}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
+                  <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-500" />
+                  N/A
+                </span>
+              )}
+            </div>
             <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 space-y-2 mt-auto bg-gray-50/50 dark:bg-gray-900/30 p-3 rounded-xl">
                 <p className="inline-block px-3 py-1 bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-lg text-xs md:text-sm font-semibold mb-2">{student.classes?.name || 'No Class'}</p>
+                <div className="flex items-center gap-2 mb-2">
+                  <SectionBadge section={studentSection} size="sm" />
+                  {canManage && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onChangeSection(); }}
+                      className="p-0.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                      title="Change Section"
+                    >
+                      <Shuffle className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
                 {student.guardian_name && (
                 <p className="text-xs text-gray-600 dark:text-gray-300 truncate">Guardian: {student.guardian_name}</p>
                 )}
@@ -300,8 +335,14 @@ export default function MyStudentsPage() {
   const [bulkDeleteModal, setBulkDeleteModal] = useState(false)
   const [bulkDeleting, setBulkDeleting] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
-  const [bulkResetPasswordModal, setBulkResetPasswordModal] = useState(false)
+    const [bulkResetPasswordModal, setBulkResetPasswordModal] = useState(false)
   const [bulkResetting, setBulkResetting] = useState(false)
+
+  // Section state
+  const [sections, setSections] = useState<any[]>([])
+  const [studentSections, setStudentSections] = useState<Record<string, any>>({})
+  const [reassignModal, setReassignModal] = useState<{ open: boolean; student: any }>({ open: false, student: null })
+  const [reassigning, setReassigning] = useState(false)
 
   const toggleSelection = (studentId: string) => {
     if (selectedStudents.includes(studentId)) {
@@ -381,11 +422,37 @@ export default function MyStudentsPage() {
           .eq('status', 'active')
           .order('first_name')
 
-        if (studentsError) {
+                if (studentsError) {
           console.error('Error loading students:', studentsError)
           setError('Failed to load students')
         } else if (data) {
           setStudents(data)
+        }
+
+        // Load active sections
+        const { data: sectionsData } = await supabase
+          .from('sections')
+          .select('id, name, colour, emblem_url')
+          .eq('is_active', true)
+          .order('sort_order')
+        
+        if (sectionsData) setSections(sectionsData)
+
+        // Load student sections for all loaded students
+        if (data && data.length > 0) {
+          const studentIds = data.map((s: { id: string }) => s.id)
+          const { data: ssData } = await supabase
+            .from('student_sections')
+            .select('student_id, section_id, sections(id, name, colour, emblem_url)')
+            .in('student_id', studentIds)
+
+          if (ssData) {
+            const sectionMap: Record<string, any> = {}
+            ssData.forEach((ss: any) => {
+              sectionMap[ss.student_id] = ss.sections || null
+            })
+            setStudentSections(sectionMap)
+          }
         }
       } catch (err: any) {
         console.error('Unexpected error:', err)
@@ -674,6 +741,28 @@ export default function MyStudentsPage() {
       toast.error('Failed to reset passwords: ' + err.message)
     } finally {
       setBulkResetting(false)
+        }
+  }
+
+  async function handleReassignSection(studentId: string, sectionId: string) {
+    setReassigning(true)
+    try {
+      const { error } = await supabase
+        .from('student_sections')
+        .upsert({ student_id: studentId, section_id: sectionId }, { onConflict: 'student_id' })
+
+      if (error) throw error
+
+      toast.success('Section reassigned successfully')
+      
+      // Update local state
+      const newSection = sections.find(s => s.id === sectionId)
+      setStudentSections(prev => ({ ...prev, [studentId]: newSection }))
+      setReassignModal({ open: false, student: null })
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to reassign section')
+    } finally {
+      setReassigning(false)
     }
   }
 
@@ -933,7 +1022,7 @@ export default function MyStudentsPage() {
               viewMode === 'grid' ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {filteredStudents.map((student) => (
-                    <StudentCard
+                                        <StudentCard
                       key={student.id}
                       student={student}
                       canManage={canManageStudentsInClass(student.class_id)}
@@ -943,6 +1032,8 @@ export default function MyStudentsPage() {
                       selected={selectedStudents.includes(student.id)}
                       selectionMode={selectionMode}
                       onSelect={() => toggleSelection(student.id)}
+                      studentSection={studentSections[student.id] || null}
+                      onChangeSection={() => setReassignModal({ open: true, student })}
                     />
                   ))}
                 </div>
@@ -972,8 +1063,11 @@ export default function MyStudentsPage() {
                         <th className="hidden md:table-cell px-6 py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Student ID
                         </th>
-                        <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                                <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                           Class
+                        </th>
+                                                <th className="px-3 md:px-6 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                          Section
                         </th>
                         <th className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                           <div className="text-xs md:text-sm text-gray-500 dark:text-gray-300 uppercase tracking-wider">Guardian</div>
@@ -1026,10 +1120,32 @@ export default function MyStudentsPage() {
                           <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                             <div className="text-xs md:text-sm text-gray-900 dark:text-gray-100">{student.student_id}</div>
                           </td>
-                          <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                             <span className="px-1.5 md:px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                               {student.classes?.name || 'No Class'}
                             </span>
+                          </td>
+                                                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5">{studentSections?.[student.id] ? (
+                              <>
+                                <span className="block w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: studentSections[student.id].colour || '#8B5CF6' }} />
+                                <span className="text-xs font-medium" style={{ color: studentSections[student.id].colour || '#8B5CF6' }}>
+                                  {studentSections[student.id].name?.substring(0, 3).toUpperCase() || '...'}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-400">—</span>
+                            )}
+                              {canManageStudentsInClass(student.class_id) && (
+                                <button
+                                                                    onClick={() => setReassignModal({ open: true, student })}
+                                  className="p-0.5 text-gray-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors ml-1"
+                                  title="Change Section"
+                                >
+                                  <Shuffle className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </td>
                           <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-500 dark:text-gray-400">
                             {student.guardian_name || '-'}
@@ -1300,6 +1416,89 @@ export default function MyStudentsPage() {
                     <span>Reset Password</span>
                   </>
                 )}
+                            </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section Reassign Modal */}
+      {reassignModal.open && reassignModal.student && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl p-6 my-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                  <Shuffle className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Change Section</h3>
+                  <p className="text-sm text-gray-500">
+                    {reassignModal.student.first_name} {reassignModal.student.last_name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setReassignModal({ open: false, student: null })}
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select New Section
+              </label>
+              <div className="flex flex-col gap-2">
+                {sections.length === 0 ? (
+                  <p className="text-sm text-gray-400 italic">No active sections available</p>
+                ) : (
+                  sections.map((sec: any) => (
+                    <button
+                      key={sec.id}
+                      onClick={() => handleReassignSection(reassignModal.student.id, sec.id)}
+                      disabled={reassigning}
+                      className={`
+                        w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+                        transition-all border
+                        ${studentSections[reassignModal.student.id]?.id === sec.id
+                          ? 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800'
+                          : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-200 hover:bg-purple-50/50'
+                        }
+                      `}
+                    >
+                      <span
+                        className="w-4 h-4 rounded-full shadow-sm flex-shrink-0"
+                        style={{ backgroundColor: sec.colour }}
+                      />
+                      <span className="flex-1 text-left">{sec.name}</span>
+                      {studentSections[reassignModal.student.id]?.id === sec.id && (
+                        <span className="text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                          Current
+                        </span>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+              {reassigning && (
+                <p className="text-xs text-purple-600 flex items-center gap-2 mt-2">
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
+                  Updating...
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setReassignModal({ open: false, student: null })}
+                disabled={reassigning}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
+                         bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 
+                         rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

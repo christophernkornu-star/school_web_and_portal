@@ -106,7 +106,6 @@ BEGIN
     next_class_id,
     promotion_status,
     teacher_remarks,
-    decided_by_teacher_id, 
     decision_date,
     updated_at
   ) VALUES (
@@ -116,7 +115,6 @@ BEGIN
     v_next_class_id,
     p_status,
     p_remarks,
-    p_user_id,
     NOW(),
     NOW()
   )
@@ -127,7 +125,26 @@ BEGIN
     decision_date = NOW(),
     updated_at = NOW();
 
-  -- NOTE: WE DO NOT UPDATE students TABLE HERE
+  -- NOTE: WE UPDATE students TABLE HERE so the change is reflected immediately
+  IF p_status = 'graduated' THEN
+    UPDATE students SET status = 'graduated' WHERE id = p_student_id;
+    
+    INSERT INTO promotion_history (student_id, academic_year, from_class_id, to_class_id, action, performed_by, remarks)
+    VALUES (p_student_id, p_academic_year, v_current_class_id, NULL, 'graduated', p_user_id, 'Admin decision: ' || p_remarks);
+    
+  ELSIF p_status = 'repeated' THEN
+    UPDATE students SET status = 'active', class_id = v_current_class_id WHERE id = p_student_id;
+    
+    INSERT INTO promotion_history (student_id, academic_year, from_class_id, to_class_id, action, performed_by, remarks)
+    VALUES (p_student_id, p_academic_year, v_current_class_id, v_current_class_id, 'repeated', p_user_id, 'Admin decision: ' || p_remarks);
+    
+  ELSIF p_status = 'promoted' AND v_next_class_id IS NOT NULL THEN
+    UPDATE students SET class_id = v_next_class_id, status = 'active' WHERE id = p_student_id;
+    
+    INSERT INTO promotion_history (student_id, academic_year, from_class_id, to_class_id, action, performed_by, remarks)
+    VALUES (p_student_id, p_academic_year, v_current_class_id, v_next_class_id, 'promoted', p_user_id, 'Admin decision: ' || p_remarks);
+  END IF;
+
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql;

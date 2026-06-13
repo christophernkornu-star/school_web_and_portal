@@ -28,7 +28,8 @@ import {
   ScrollText,
   AlertCircle,
   X,
-  LogOut
+  LogOut,
+  Palette
 } from 'lucide-react'
 
 const sidebarItems = [
@@ -40,9 +41,10 @@ const sidebarItems = [
   },
   {
     group: 'Management',
-    items: [
+        items: [
       { href: '/admin/students', label: 'Students', icon: Users },
       { href: '/admin/teachers', label: 'Teachers', icon: GraduationCap },
+      { href: '/admin/sections', label: 'Sections', icon: Palette },
       { href: '/admin/classes', label: 'Classes', icon: Building2 },
       { href: '/admin/enrollments', label: 'Enrollments', icon: ClipboardList },
       { href: '/admin/admissions', label: 'Admissions', icon: FileCheck },

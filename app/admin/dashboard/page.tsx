@@ -1,4 +1,5 @@
-'use client'
+
+    'use client'
 
 import { Badge } from '@/components/ui/badge'
 import { Calendar, Clock } from 'lucide-react'
@@ -14,7 +15,8 @@ import {
   FileText,
   Plus,
   CalendarDays,
-  Activity
+  Activity,
+  Palette
 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
@@ -27,8 +29,8 @@ import { TeacherStatsModal } from '@/components/admin/TeacherStatsModal'
 
 const fetchDashboardStats = async () => {
   const supabase = getSupabaseBrowserClient()
-  const [studentsRes, teachersRes, classesRes, eventsRes, termsRes, recentStudentsRes, thresholdRes] = await Promise.all([
-    supabase.from('students').select('id', { count: 'exact', head: true }), 
+  const [studentsRes, teachersRes, classesRes, eventsRes, termsRes, recentStudentsRes, thresholdRes, sectionsRes, sectionCountsRes] = await Promise.all([
+        supabase.from('students').select('id', { count: 'exact', head: true }).eq('status', 'active'), 
     supabase.from('teachers').select('id', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('classes').select('id', { count: 'exact', head: true }),  
     supabase.from('events')
@@ -42,12 +44,19 @@ const fetchDashboardStats = async () => {
       .single(),
     supabase.from('students')
       .select('id, first_name, last_name, created_at, classes:class_id(name)')
+      .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(5),
-    supabase.from('system_settings')
+        supabase.from('system_settings')
       .select('setting_value')
       .eq('setting_key', 'progress_alert_threshold')
-      .maybeSingle()
+      .maybeSingle(),
+    supabase.from('sections')
+      .select('id, name, colour, is_active, sort_order')
+      .order('sort_order')
+      .order('name'),
+    supabase.from('student_sections')
+      .select('section_id')
   ])
 
   return {
@@ -60,8 +69,16 @@ const fetchDashboardStats = async () => {
     },
     upcomingEvents: eventsRes.data || [],
     currentTerm: termsRes.data || null,
-    recentActivities: recentStudentsRes.data || [],
-    alertThreshold: thresholdRes.data?.setting_value ? Number(thresholdRes.data.setting_value) : 90
+        recentActivities: recentStudentsRes.data || [],
+    alertThreshold: thresholdRes.data?.setting_value ? Number(thresholdRes.data.setting_value) : 90,
+                                sections: sectionsRes.data || [],
+        totalSectionAssignments: sectionCountsRes.data?.length || 0,
+        sectionsWithCounts: sectionsRes.data ? sectionsRes.data.map((section: any) => ({
+          ...section,
+          student_count: (sectionCountsRes.data || []).filter(
+            (ss: any) => ss.section_id === section.id
+          ).length
+        })) : []
   }
 }
 
@@ -88,7 +105,7 @@ export default function AdminDashboard() {
     return <DashboardSkeleton />
   }
 
-  const { stats, upcomingEvents, currentTerm, recentActivities, alertThreshold } = data
+    const { stats, upcomingEvents, currentTerm, recentActivities, alertThreshold, sections, totalSectionAssignments, sectionsWithCounts } = data
   const currentTime = new Date();
   const hour = currentTime.getHours();
   let greeting = 'Good evening';
@@ -183,10 +200,11 @@ export default function AdminDashboard() {
            color="amber" />
         </div>
         
-        {/* Student Stats Modal */}
-        <StudentStatsModal isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} />
-        {/* Teacher Stats Modal */}
-        <TeacherStatsModal isOpen={showTeacherModal} onClose={() => setShowTeacherModal(false)} />
+            {/* Student Stats Modal */}
+            <StudentStatsModal isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} />
+            {/* Teacher Stats Modal */}
+            <TeacherStatsModal isOpen={showTeacherModal} onClose={() => setShowTeacherModal(false)} />
+
 
         {/* Main Content Area */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -313,9 +331,73 @@ export default function AdminDashboard() {
                     <div className="text-sm text-gray-500 italic text-center py-4">No upcoming events</div>
                   )}
                   
-                  <Link href="/admin/events" className="w-full mt-4 block text-center text-sm text-blue-600 hover:text-blue-700 font-medium border-t border-gray-100 dark:border-gray-800 pt-3">
-                    View Full Calendar
-                  </Link>
+                                 </CardContent>
+             </Card>
+
+             {/* School Sections Card */}
+             <Card className="border border-white/40 shadow-[0_8px_30px_rgb(0,0,0,0.04)] bg-white/60 backdrop-blur-xl rounded-3xl overflow-hidden">
+               <CardHeader className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4">
+                 <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                   <Palette className="w-5 h-5 text-methodist-gold" />
+                   School Sections
+                 </CardTitle>
+               </CardHeader>
+               <CardContent className="p-5">
+                 {sectionsWithCounts.length === 0 ? (
+                   <div className="text-center py-8 text-gray-500">
+                     <Palette className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                     <p className="font-medium">No sections created yet</p>
+                     <Link href="/admin/sections" className="text-sm text-blue-600 hover:underline mt-1 inline-block">
+                       Create sections
+                     </Link>
+                   </div>
+                 ) : (
+                   <div className="grid grid-cols-1 gap-3">
+                     {sectionsWithCounts.map((section: any) => {
+                       const sectionStudentCount = section.student_count || 0
+                       const pct = totalSectionAssignments > 0 
+                         ? Math.round((sectionStudentCount / totalSectionAssignments) * 100) 
+                         : 0
+                       return (
+                         <Link
+                           key={section.id}
+                           href="/admin/sections"
+                           className={`
+                             flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200
+                             ${section.is_active 
+                               ? 'hover:shadow-md hover:-translate-y-0.5 bg-white dark:bg-gray-800' 
+                               : 'opacity-50 bg-gray-50 dark:bg-gray-900'
+                             }
+                           `}
+                           style={{
+                             borderColor: section.colour ? section.colour + '40' : '#e5e7eb',
+                             backgroundColor: section.colour ? section.colour + '08' : undefined
+                           }}
+                         >
+                           <span
+                             className="w-10 h-10 rounded-full shadow-sm flex-shrink-0"
+                             style={{ backgroundColor: section.colour || '#8B5CF6' }}
+                           />
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2">
+                               <span className="text-sm font-bold text-gray-800 dark:text-gray-200 truncate">
+                                 {section.name}
+                               </span>
+                               {!section.is_active && (
+                                 <span className="text-[9px] bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded-full uppercase font-bold flex-shrink-0">
+                                   Inactive
+                                 </span>
+                               )}
+                             </div>
+                             <p className="text-xs text-gray-400 mt-0.5">
+                               {sectionStudentCount} student{sectionStudentCount !== 1 ? 's' : ''} · {pct}% of total
+                             </p>
+                           </div>
+                         </Link>
+                       )
+                     })}
+                   </div>
+                 )}
                </CardContent>
              </Card>
           </div>

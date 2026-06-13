@@ -139,7 +139,7 @@ export async function signOut() {
 
 export async function getCurrentUser() {
   const browserSupabase = getBrowserSupabase()
-  try {
+    try {
     const { data: { user }, error } = await browserSupabase.auth.getUser()
     
     // If there's a session error, clear it
@@ -149,10 +149,20 @@ export async function getCurrentUser() {
     }
     
     return user
-  } catch (error) {
-    console.error('Error getting current user:', error)
+  } catch (error: any) {
+    // Ignore AbortError from Strict Mode double-invocation
+    if (error?.name === 'AbortError' || error?.message?.includes('Lock broken')) {
+      console.debug('Auth lock contention detected (Strict Mode) — retrying...')
+      // Retry once
+      try {
+        const { data: { user } } = await browserSupabase.auth.getUser()
+        return user
+      } catch {
+        return null
+      }
+    }
+        console.error('Error getting current user:', error)
     // Clear invalid session
-    const browserSupabase = getBrowserSupabase()
     await browserSupabase.auth.signOut()
     return null
   }

@@ -52,8 +52,8 @@ const Select = React.forwardRef<
 
     return (
          <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
-            <div 
-                className="relative" 
+                        <div 
+                className="relative z-10"  
                 id={`select-${Math.random().toString(36).substr(2, 9)}`}
                 ref={(node) => {
                     containerRef.current = node
@@ -122,9 +122,10 @@ const SelectContent = React.forwardRef<
     if (!open) return null
 
     return (
-         <div 
+                  <div 
             ref={ref}
-            className={`absolute left-0 w-full z-50 bg-white dark:bg-gray-900 border rounded-md shadow-md mt-1 p-1 max-h-60 overflow-auto ${className || 'top-full'}`} 
+            className={`absolute left-0 w-full z-[9999] bg-white dark:bg-gray-900 border rounded-md shadow-md mt-1 p-1 max-h-60 overflow-auto ${className || 'top-full'}`} 
+            style={{ position: 'absolute', top: '100%', left: 0 }}
             {...props}
         >
             {children}

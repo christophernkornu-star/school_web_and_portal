@@ -225,8 +225,46 @@ export async function createStudent(studentData: {
     status: 'active'
   })
 
-  if (studentError) {
+    if (studentError) {
     throw studentError
+  }
+
+  // Auto-assign to section with fewest students for balanced distribution
+  try {
+    // Get active sections with their current student counts
+    const { data: activeSections } = await supabase
+      .from('sections')
+      .select('id')
+      .eq('is_active', true)
+      .order('sort_order')
+
+    if (activeSections && activeSections.length > 0) {
+      // Get current assignment counts for each active section
+            const sectionCounts = await Promise.all(
+        activeSections.map(async (sec: { id: string }) => {
+          const { count } = await supabase
+            .from('student_sections')
+            .select('*', { count: 'exact', head: true })
+            .eq('section_id', sec.id)
+          return { id: sec.id, count: count || 0 }
+        })
+      )
+
+      // Sort by count ascending, pick the section with fewest students
+      sectionCounts.sort((a, b) => a.count - b.count)
+      const targetSectionId = sectionCounts[0].id
+
+      // Assign the new student
+      await supabase
+        .from('student_sections')
+        .upsert(
+          { student_id: userId, section_id: targetSectionId },
+          { onConflict: 'student_id' }
+        )
+    }
+  } catch (sectionError) {
+    // Silently fail section assignment — don't block student creation
+    console.warn('Failed to auto-assign section:', sectionError)
   }
 
   return { success: true, username, password }
