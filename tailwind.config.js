@@ -8,6 +8,9 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'Inter', 'sans-serif'],
+      },
       colors: {
         ghana: {
           red: '#CE1126',
@@ -30,3 +33,4 @@ module.exports = {
   },
   plugins: [],
 }
+

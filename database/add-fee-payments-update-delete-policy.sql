@@ -1,3 +1,7 @@
+-- Drop existing policies if they already exist
+DROP POLICY IF EXISTS "Staff can update payments" ON fee_payments;
+DROP POLICY IF EXISTS "Staff can delete payments" ON fee_payments;
+
 -- Allow Staff (Teachers, Admins, Head Teachers) to update fee payments
 CREATE POLICY "Staff can update payments" ON fee_payments FOR UPDATE USING (
   EXISTS (
@@ -15,3 +19,4 @@ CREATE POLICY "Staff can delete payments" ON fee_payments FOR DELETE USING (
     AND profiles.role IN ('teacher', 'admin', 'head_teacher')
   )
 );
+

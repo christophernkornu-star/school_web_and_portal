@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useStudent } from '@/components/providers/StudentContext'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { DollarSign, CheckCircle, AlertCircle, FileText, Loader2, Calendar, CreditCard, GraduationCap } from 'lucide-react'
+import { DollarSign, CheckCircle, AlertCircle, FileText, Calendar, CreditCard, GraduationCap } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 
@@ -43,6 +43,7 @@ export default function StudentFeesPage() {
   const [payments, setPayments] = useState<FeePayment[]>([])
   const [selectedTerm, setSelectedTerm] = useState<string>('')
   const [terms, setTerms] = useState<AcademicTerm[]>([])
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
   useEffect(() => {
     if (contextLoading) return
@@ -55,10 +56,48 @@ export default function StudentFeesPage() {
 
   const loadFeeData = async () => {
     try {
-      const { data: termsData } = await supabase
+      setLoading(true)
+      setErrorMsg(null)
+
+      // 1. Get the currently authenticated user directly
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      if (authError || !user) {
+        console.error('Auth error:', authError)
+        router.push('/login?portal=student')
+        return
+      }
+
+      // 2. Look up the student record ourselves using profile_id
+      const { data: studentRecord, error: studentError } = await supabase
+        .from('students')
+        .select('id, student_id, first_name, last_name, class_id, classes(id, name)')
+        .eq('profile_id', user.id)
+        .maybeSingle()
+
+      if (studentError) {
+        console.error('Error fetching student record:', studentError)
+        setErrorMsg('Could not load student data.')
+        return
+      }
+
+      if (!studentRecord) {
+        console.error('No student record found for profile:', user.id)
+        setErrorMsg('No student record linked to your account.')
+        return
+      }
+
+      console.log('✅ Student found:', studentRecord.id, studentRecord.first_name, studentRecord.last_name)
+
+      // 3. Fetch academic terms
+      const { data: termsData, error: termsError } = await supabase
         .from('academic_terms')
         .select('id, name, academic_year, is_current')
         .order('start_date', { ascending: false })
+
+      if (termsError) {
+        console.error('Error fetching terms:', termsError)
+        return
+      }
 
       const termsList = termsData || []
       setTerms(termsList)
@@ -70,35 +109,69 @@ export default function StudentFeesPage() {
         setSelectedTerm(termsList[0].id)
       }
 
-      if (student) {
-        const { data: feesData } = await supabase
-          .from('fee_structures')
-          .select(`id, amount, academic_year, term_id, fee_types(id, name, description)`)
-          .or(`class_id.eq.${student.class_id},class_id.is.null`)
-          .order('created_at', { ascending: false })
+      // 4. Fetch fee structures for this student's class
+      const { data: feesData, error: feesError } = await supabase
+        .from('fee_structures')
+        .select(`id, amount, academic_year, term_id, fee_types(id, name, description)`)
+        .or(`class_id.eq.${studentRecord.class_id},class_id.is.null`)
+        .order('created_at', { ascending: false })
 
+      if (feesError) {
+        console.error('Error fetching fee structures:', feesError)
+      } else {
+        console.log(`Found ${feesData?.length || 0} fee structures`)
         setFeeStructures(feesData || [])
+      }
 
-        const { data: paymentsData } = await supabase
-          .from('fee_payments')
-          .select('id, fee_structure_id, amount_paid, payment_date, payment_method, remarks, created_at')
-          .eq('student_id', student.id)
-          .order('created_at', { ascending: false })
+      // 5. Fetch ALL fee payments for this student (direct lookup by student UUID)
+      console.log('Fetching payments for student_id:', studentRecord.id)
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('fee_payments')
+        .select('id, fee_structure_id, amount_paid, payment_date, payment_method, remarks, created_at')
+        .eq('student_id', studentRecord.id)
+        .order('created_at', { ascending: false })
 
+      if (paymentsError) {
+        console.error('❌ Error fetching fee payments:', paymentsError)
+        setErrorMsg(`Error loading payments: ${paymentsError.message}`)
+      } else {
+        console.log(`Found ${paymentsData?.length || 0} payments for student`)
+        if (paymentsData && paymentsData.length > 0) {
+
+          paymentsData.forEach((p: FeePayment) => console.log('  - Payment:', p.id, p.amount_paid, p.payment_date, p.fee_structure_id))
+        } else {
+          console.log('⚠️ No payments found. Check if student_id in fee_payments table matches:', studentRecord.id)
+          // Try a broader query to see if there are any payments at all
+          const { data: allPayments, error: allError } = await supabase
+            .from('fee_payments')
+            .select('id, student_id, amount_paid')
+            .limit(5)
+          if (allError) {
+            console.error('❌ Even broad query failed:', allError)
+          } else {
+            console.log('All payments sample:', allPayments)
+          }
+        }
         setPayments(paymentsData || [])
       }
+
     } catch (error) {
       console.error('Error loading fee data:', error)
+      setErrorMsg('An unexpected error occurred.')
     } finally {
       setLoading(false)
     }
   }
 
+  // Fee structures for the selected term
   const filteredFees = feeStructures.filter(f => f.term_id === selectedTerm)
   const totalBill = filteredFees.reduce((sum, f) => sum + Number(f.amount), 0)
 
-  const filteredFeeIds = filteredFees.map(f => f.id)
-  const filteredPayments = payments.filter(p => filteredFeeIds.includes(p.fee_structure_id))
+  // Get fee structure IDs for the selected term to filter payments by term
+  const selectedTermFeeIds = filteredFees.map(f => f.id)
+  
+  // Filter payments to only those matching the selected term's fee structures
+  const filteredPayments = payments.filter(p => selectedTermFeeIds.includes(p.fee_structure_id))
   const totalPaid = filteredPayments.reduce((sum, p) => sum + Number(p.amount_paid), 0)
   const balance = totalBill - totalPaid
 
@@ -110,9 +183,9 @@ export default function StudentFeesPage() {
         <div className="max-w-6xl mx-auto space-y-8">
           <Skeleton className="h-8 w-32" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Skeleton className="h-32 w-full rounded-3xl" />
-            <Skeleton className="h-32 w-full rounded-3xl" />
-            <Skeleton className="h-32 w-full rounded-3xl" />
+            <Skeleton className="h-36 w-full rounded-3xl" />
+            <Skeleton className="h-36 w-full rounded-3xl" />
+            <Skeleton className="h-36 w-full rounded-3xl" />
           </div>
           <Skeleton className="h-64 w-full rounded-3xl" />
         </div>
@@ -135,6 +208,13 @@ export default function StudentFeesPage() {
           </h1>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-2">View your fee status and payment history</p>
         </div>
+
+        {/* Error Message */}
+        {errorMsg && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-4 mb-6">
+            <p className="text-red-700 dark:text-red-300 text-sm">{errorMsg}</p>
+          </div>
+        )}
 
         {/* Student Info & Term Filter */}
         <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border border-gray-100 dark:border-gray-800 rounded-3xl p-4 md:p-6 mb-6">
@@ -210,7 +290,7 @@ export default function StudentFeesPage() {
               GH₵ {totalPaid.toFixed(2)}
             </p>
             <p className="text-xs text-gray-400 mt-1">
-              {filteredPayments.length} payment{filteredPayments.length !== 1 ? 's' : ''}
+              {filteredPayments.length} payment{filteredPayments.length !== 1 ? 's' : ''} for this term
             </p>
           </div>
 
@@ -218,7 +298,7 @@ export default function StudentFeesPage() {
             balance <= 0 ? 'border-green-100 dark:border-green-800' : 'border-red-100 dark:border-red-800'
           }`}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-gray-600 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Balance</p>
+              <p className="text-gray-600 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Outstanding</p>
               <div className={`p-2 rounded-lg ${
                 balance <= 0 ? 'bg-green-50 dark:bg-green-900/40' : 'bg-red-50 dark:bg-red-900/40'
               }`}>
@@ -237,17 +317,20 @@ export default function StudentFeesPage() {
                 {statusText}
               </span>
             </div>
+            <p className="text-xs text-gray-400 mt-2">
+              {selectedTermName ? `for ${selectedTermName.name}` : ''}
+            </p>
           </div>
         </div>
 
-        {/* Fee Breakdown */}
+        {/* Fee Breakdown (filtered by selected term) */}
         {filteredFees.length === 0 ? (
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border border-gray-100 dark:border-gray-800 rounded-3xl p-12 text-center">
             <div className="bg-gray-50 dark:bg-gray-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
               <DollarSign className="w-8 h-8 text-gray-300 dark:text-gray-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">No Fees Set</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">No fee structures have been set for this term yet.</p>
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">No Fees Set for This Term</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Fee structures have not been set for {selectedTermName?.name || 'this term'} yet.</p>
           </div>
         ) : (
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden mb-8">
@@ -292,7 +375,6 @@ export default function StudentFeesPage() {
                         {feeBalance <= 0 ? 'Paid' : feePaid > 0 ? 'Partial' : 'Unpaid'}
                       </span>
                     </div>
-                    {/* Progress bar */}
                     <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-2">
                       <div 
                         className={`h-2 rounded-full transition-all duration-500 ${
@@ -312,14 +394,14 @@ export default function StudentFeesPage() {
           </div>
         )}
 
-        {/* Payment History */}
+        {/* Payment History - filtered by selected term */}
         {filteredPayments.length > 0 && (
           <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border border-gray-100 dark:border-gray-800 rounded-3xl overflow-hidden">
             <div className="p-4 md:p-6 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-lg md:text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
                 <CreditCard className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 Payment History
-                <span className="ml-2 text-sm font-normal text-gray-400">({filteredPayments.length} payment{filteredPayments.length > 1 ? 's' : ''})</span>
+                <span className="ml-2 text-sm font-normal text-gray-400">({filteredPayments.length} payment{filteredPayments.length > 1 ? 's' : ''} for {selectedTermName?.name || 'this term'})</span>
               </h2>
             </div>
             <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -354,6 +436,17 @@ export default function StudentFeesPage() {
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {/* Empty state when no payments for this term and no fees set */}
+        {filteredPayments.length === 0 && filteredFees.length === 0 && !errorMsg && (
+          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border border-gray-100 dark:border-gray-800 rounded-3xl p-12 text-center">
+            <div className="bg-gray-50 dark:bg-gray-800 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CreditCard className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">No Payment Records</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">No fee structures or payment records found for your account.</p>
           </div>
         )}
       </div>
