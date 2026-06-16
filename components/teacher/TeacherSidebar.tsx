@@ -38,7 +38,7 @@ const sidebarItems = [
       { href: '/teacher/attendance', label: 'Attendance', icon: UserCheck },
       { href: '/teacher/students', label: 'My Students', icon: Users },
       { href: '/teacher/promotions', label: 'Promotions', icon: TrendingUp },
-      { href: '/teacher/fees/statement', label: 'Fees', icon: Banknote },
+      { href: '/teacher/fees', label: 'Fees', icon: Banknote },
     ]
   },
   {

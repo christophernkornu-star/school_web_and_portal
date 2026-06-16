@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, Megaphone, Bell, Award } from 'lucide-react'
+import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, Megaphone, Bell, Award, DollarSign } from 'lucide-react'
 import { signOut } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import type { Student, Profile } from '@/lib/supabase'
@@ -361,13 +361,23 @@ export default function StudentDashboard() {
           </Link>
           )}
 
-          <Link href="/student/attendance" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-purple-200 transition-all duration-300 flex items-start space-x-4">
+                    <Link href="/student/attendance" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-purple-200 transition-all duration-300 flex items-start space-x-4">
             <div className="bg-purple-50 p-3 rounded-xl group-hover:bg-purple-100 transition-colors">
               <Calendar className="w-6 h-6 text-purple-600" />
             </div>
             <div>
               <h3 className="font-bold text-gray-800 group-hover:text-purple-600 transition-colors">Attendance</h3>
               <p className="text-sm text-gray-500 mt-1 leading-tight">View attendance records</p>
+            </div>
+          </Link>
+
+          <Link href="/student/fees" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-emerald-200 transition-all duration-300 flex items-start space-x-4">
+            <div className="bg-emerald-50 p-3 rounded-xl group-hover:bg-emerald-100 transition-colors">
+              <DollarSign className="w-6 h-6 text-emerald-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-800 group-hover:text-emerald-600 transition-colors">Fees</h3>
+              <p className="text-sm text-gray-500 mt-1 leading-tight">Check fee status and payments</p>
             </div>
           </Link>
 
