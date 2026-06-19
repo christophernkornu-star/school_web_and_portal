@@ -248,20 +248,46 @@ export default function TeacherFeesPage() {
     }
   }
 
-  const handleDeletePayment = async (paymentId: string) => {
+    const handleDeletePayment = async (paymentId: string) => {
     if (!confirm('Are you sure you want to delete this payment record? This action cannot be undone.')) return
 
     setDeletingPaymentId(paymentId)
     try {
-      const { error } = await supabase
+      // First verify the payment exists and user has access
+      const { data: checkPayment, error: checkError } = await supabase
+        .from('fee_payments')
+        .select('id')
+        .eq('id', paymentId)
+        .single()
+
+      if (checkError || !checkPayment) {
+        toast.error('Payment record not found or you do not have permission to delete it')
+        return
+      }
+
+            const { error } = await supabase
         .from('fee_payments')
         .delete()
         .eq('id', paymentId)
 
       if (error) throw error
 
+      // Verify the deletion actually happened (RLS may silently ignore)
+      const { data: verifyDelete } = await supabase
+        .from('fee_payments')
+        .select('id')
+        .eq('id', paymentId)
+        .maybeSingle()
+
+      if (verifyDelete) {
+        toast.error('Failed to delete payment. Please check your permissions.')
+        return
+      }
+
       toast.success('Payment deleted successfully')
-      loadClassData(selectedClass, selectedYear, selectedTerm)
+      
+      // Update local state immediately to avoid waiting for refetch
+      setPayments(prev => prev.filter(p => p.id !== paymentId))
       
       // If we were editing this payment, cancel edit
       if (editingPaymentId === paymentId) {
