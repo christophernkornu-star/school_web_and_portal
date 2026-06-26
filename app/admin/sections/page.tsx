@@ -65,28 +65,49 @@ export default function SectionsPage() {
       .order('name')
 
     if (data) {
-      // Get student counts for each section
+            // Get student counts for each section (only active students)
       const sectionsWithCounts = await Promise.all(
         data.map(async (sec: Section) => {
-          const { count } = await supabase
-            .from('student_sections')
-            .select('*', { count: 'exact', head: true })
-            .eq('section_id', sec.id)
-          return { ...sec, student_count: count || 0 }
+          const { data: ssData } = await supabase
+            .from("student_sections")
+            .select("student_id")
+            .eq("section_id", sec.id)
+
+          let activeCount = 0
+          if (ssData && ssData.length > 0) {
+            const studentIds = ssData.map((s: { student_id: string }) => s.student_id)
+            const { count } = await supabase
+              .from("students")
+              .select("id", { count: "exact", head: true })
+              .in("id", studentIds)
+              .eq("status", "active")
+            activeCount = count || 0
+          }
+          return { ...sec, student_count: activeCount }
         })
       )
       setSections(sectionsWithCounts)
 
-      // Calculate unassigned students count for Distribute button
+            // Calculate unassigned students count for Distribute button (only active students)
       const { data: assignedData } = await supabase
-        .from('student_sections')
-        .select('student_id')
-      const assignedIds = new Set((assignedData || []).map((s: { student_id: string }) => s.student_id))
+        .from("student_sections")
+        .select("student_id")
+      const allAssignedIds = (assignedData || []).map((s: { student_id: string }) => s.student_id)
+      // Only count assignments belonging to active students
+      let activeAssignedCount = 0
+      if (allAssignedIds.length > 0) {
+        const { count: activeAssigned } = await supabase
+          .from("students")
+          .select("id", { count: "exact", head: true })
+          .in("id", allAssignedIds)
+          .eq("status", "active")
+        activeAssignedCount = activeAssigned || 0
+      }
       const { count: totalActive } = await supabase
-        .from('students')
-        .select('id', { count: 'exact', head: true })
-        .eq('status', 'active')
-      setUnassignedCount(totalActive ? totalActive - assignedIds.size : 0)
+        .from("students")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active")
+      setUnassignedCount(totalActive ? totalActive - activeAssignedCount : 0)
     }
     setLoading(false)
   }
@@ -241,14 +262,25 @@ export default function SectionsPage() {
         return
       }
 
-      // Get current counts for each active section
+            // Get current counts for each active section (only active students)
       const sectionCounts = await Promise.all(
         active.map(async (sec: Section) => {
-          const { count } = await supabase
-            .from('student_sections')
-            .select('*', { count: 'exact', head: true })
-            .eq('section_id', sec.id)
-          return { id: sec.id, count: count || 0 }
+          const { data: ssData } = await supabase
+            .from("student_sections")
+            .select("student_id")
+            .eq("section_id", sec.id)
+
+          let activeCount = 0
+          if (ssData && ssData.length > 0) {
+            const studentIds = ssData.map((s: { student_id: string }) => s.student_id)
+            const { count } = await supabase
+              .from("students")
+              .select("id", { count: "exact", head: true })
+              .in("id", studentIds)
+              .eq("status", "active")
+            activeCount = count || 0
+          }
+          return { id: sec.id, count: activeCount }
         })
       )
 
@@ -698,14 +730,14 @@ function SectionCard({
           />
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
-              onClick={onEdit}
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title="Edit"
             >
               <Edit3 className="w-4 h-4 text-gray-500 hover:text-purple-600" />
             </button>
             <button
-              onClick={onDelete}
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               title="Delete"
             >
@@ -746,3 +778,8 @@ function SectionCard({
     </div>
   )
 }
+
+
+
+
+

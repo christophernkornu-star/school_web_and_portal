@@ -21,8 +21,7 @@ import {
   UserCheck,
   TrendingUp,
   FileSpreadsheet,
-  Banknote,
-  LogOut
+  Banknote, Palette, LogOut
 } from 'lucide-react'
 
 const sidebarItems = [
@@ -37,6 +36,7 @@ const sidebarItems = [
     items: [
       { href: '/teacher/attendance', label: 'Attendance', icon: UserCheck },
       { href: '/teacher/students', label: 'My Students', icon: Users },
+      { href: '/teacher/sections', label: 'Sections', icon: Palette },
       { href: '/teacher/promotions', label: 'Promotions', icon: TrendingUp },
       { href: '/teacher/fees', label: 'Fees', icon: Banknote },
     ]
@@ -147,3 +147,4 @@ export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
     </>
   )
 }
+
