@@ -205,7 +205,7 @@ export default function EditTeacherPage() {
         throw new Error(result.error || 'Failed to update teacher')
       }
 
-      // Validate: Check if any class already has a class teacher (excluding current teacher)
+            // Validate: Check if any class already has 2 teachers assigned as class teacher (team teaching limit)
       if (classTeacherFor.length > 0) {
         const { data: existingClassTeachers, error: checkError } = (await supabase
           .from('teacher_class_assignments')
@@ -222,20 +222,28 @@ export default function EditTeacherPage() {
 
         if (checkError) throw checkError
 
-        // Filter out teachers who are 'on_leave' - they don't count as conflicts
-        // Also check against 'On Leave' just in case of capitalization differences
-        const activeConflicts = existingClassTeachers?.filter((ct: any) => {
+        // Count how many active teachers are already class teachers for each class
+        const activeTeachers = existingClassTeachers?.filter((ct: any) => {
           const status = ct.teachers?.status?.toLowerCase()
           return status !== 'on_leave' && status !== 'on leave' && status !== 'inactive' && status !== 'transferred'
         }) || []
 
-        if (activeConflicts.length > 0) {
-          const conflictClasses = activeConflicts.map((ct: any) => {
-            const className = classes.find((c: any) => c.id === ct.class_id)?.name || 'Unknown'
-            return className
+                // Team teaching allows up to 2 teachers total per class, so only block if already 2 for a specific class
+        const classCounts: Record<string, number> = {}
+        activeTeachers.forEach((ct: any) => {
+          classCounts[ct.class_id] = (classCounts[ct.class_id] || 0) + 1
+        })
+        const overLimit = Object.entries(classCounts).filter(([_, count]) => count >= 2)
+        if (overLimit.length > 0) {
+          const conflictNames = overLimit.map(([classId, count]) => {
+            const className = classes.find((c: any) => c.id === classId)?.name || 'Unknown'
+            return `${className} (${count} teachers already)`
           })
-          throw new Error(`Cannot assign as class teacher. The following classes already have an active class teacher: ${conflictClasses.join(', ')}. Please remove the existing class teacher first.`)
+          throw new Error(`Cannot assign as class teacher. The following classes already have 2 class teachers assigned: ${conflictNames.join(', ')}. Maximum 2 teachers per class.`)
         }
+
+        // If 0 or 1 active teacher exists per class, allow it (team teaching - 1st or 2nd teacher)
+        // No conflict, just proceed
 
         // Revoke 'is_class_teacher' from inactive/on-leave teachers to free up the slot
         const revokableConflicts = existingClassTeachers?.filter((ct: any) => {
@@ -255,12 +263,34 @@ export default function EditTeacherPage() {
         }
       }
 
-      // Update class assignments (use teacher UUID id, not teacher_id string)
+
+      // Validate: Ensure no class gets more than 2 teachers assigned
+      if (assignedClasses.length > 0) {
+        const uniqueClasses = Array.from(new Set(assignedClasses))
+        for (const classId of uniqueClasses) {
+          const { count: existingCount, error: countError } = (await supabase
+            .from('teacher_class_assignments')
+            .select('id', { count: 'exact', head: true })
+            .eq('class_id', classId)
+            .neq('teacher_id', teacher.id)) as { count: number | null; error: any }
+
+          if (countError) throw countError
+
+          const totalCount = (existingCount || 0) + 1 // +1 for this teacher being assigned
+          if (totalCount > 2) {
+            const className = classes.find((c: any) => c.id === classId)?.name || 'Unknown'
+            throw new Error(`Cannot assign more than 2 teachers to ${className}. This class already has ${existingCount} teacher(s) assigned.`)
+          }
+        }
+      }
+
+            // Update class assignments (use teacher UUID id, not teacher_id string)
       // First delete existing assignments
-      await supabase
+      const { error: deleteClassError } = await supabase
         .from('teacher_class_assignments')
         .delete()
         .eq('teacher_id', teacher.id)
+      if (deleteClassError && deleteClassError.code !== 'PGRST116') throw deleteClassError // Ignore "no rows found"
 
       if (assignedClasses.length > 0) {
         // Deduplicate classes to avoid conflicts
@@ -272,16 +302,24 @@ export default function EditTeacherPage() {
           is_primary: classTeacherFor.includes(class_id), // First class teacher assignment is primary
         }))
         
-        if (classInserts.length > 0) {
-            await supabase.from('teacher_class_assignments').insert(classInserts)
+                if (classInserts.length > 0) {
+            // Use upsert to avoid 409 conflicts on unique constraint (teacher_id, class_id)
+            const { error: insertError } = await supabase
+                .from('teacher_class_assignments')
+                .upsert(classInserts, { 
+                    onConflict: 'teacher_id, class_id',
+                    ignoreDuplicates: false 
+                })
+            if (insertError) throw insertError
         }
       }
 
-      // Update subject assignments (use teacher UUID id, not teacher_id string)
-      await supabase
+            // Update subject assignments (use teacher UUID id, not teacher_id string)
+      const { error: deleteSubjError } = await supabase
         .from('teacher_subject_assignments')
         .delete()
         .eq('teacher_id', teacher.id)
+      if (deleteSubjError && deleteSubjError.code !== 'PGRST116') throw deleteSubjError // Ignore "no rows found"
 
       // Consolidate all subject assignments
       const finalSubjectAssignments = new Map<string, any>()
@@ -337,9 +375,15 @@ export default function EditTeacherPage() {
         }
       }
 
-      // 3. Batch insert all subject assignments
+            // 3. Batch insert all subject assignments (use upsert to avoid conflicts)
       if (finalSubjectAssignments.size > 0) {
-         await supabase.from('teacher_subject_assignments').insert(Array.from(finalSubjectAssignments.values()))
+         const { error: subjError } = await supabase
+            .from('teacher_subject_assignments')
+            .upsert(Array.from(finalSubjectAssignments.values()), { 
+                onConflict: 'teacher_id, class_id, subject_id',
+                ignoreDuplicates: false 
+            })
+         if (subjError) throw subjError
       }
 
       toast.success('Teacher updated successfully!')
@@ -907,12 +951,13 @@ export default function EditTeacherPage() {
           )}
 
           {/* Info box for class teacher model */}
-          {assignedClasses.some(classId => teachingModels[classId] === 'class_teacher') && (
+                    {assignedClasses.some(classId => teachingModels[classId] === 'class_teacher') && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <h3 className="font-semibold text-green-800 mb-2">✓ Class Teacher Model Classes</h3>
-              <p className="text-sm text-green-700 mb-2">
+              <div className="text-sm text-green-700 mb-2">
                 The following classes use the class teacher model and will automatically have all subjects assigned:
-              </p>
+              </div>
+              <div className="text-sm text-green-700 mt-1">Team teaching is supported — up to <strong>2 teachers</strong> per class. Both teachers get full access to view students, grade all subjects, and mark attendance.</div>
               <ul className="list-disc list-inside text-sm text-green-700">
                 {assignedClasses
                   .filter(classId => teachingModels[classId] === 'class_teacher')

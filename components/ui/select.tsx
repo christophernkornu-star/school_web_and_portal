@@ -1,4 +1,5 @@
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { ChevronDown } from "lucide-react"
 
 // A simple Select implementation using standard HTML select for robustness but styled
@@ -8,10 +9,12 @@ const SelectContext = React.createContext<{
     value?: string; 
     onValueChange?: (value: string) => void; 
     open: boolean; 
-    setOpen: (o: boolean) => void 
+    setOpen: (o: boolean) => void;
+    triggerRef: React.MutableRefObject<HTMLButtonElement | null>
 }>({ 
     open: false, 
-    setOpen: () => {} 
+    setOpen: () => {},
+    triggerRef: { current: null }
 })
 
 // Shared state or event listener to close other selects would differ, 
@@ -21,8 +24,9 @@ const Select = React.forwardRef<
     HTMLDivElement,
     { value?: string; onValueChange?: (value: string) => void; children?: React.ReactNode, name?: string }
 >(({ value, onValueChange, children }, ref) => {
-    const [open, setOpen] = React.useState(false)
+        const [open, setOpen] = React.useState(false)
     const containerRef = React.useRef<HTMLDivElement | null>(null)
+    const triggerRef = React.useRef<HTMLButtonElement | null>(null)
 
     // Listen for custom event to close other selects
     React.useEffect(() => {
@@ -51,7 +55,7 @@ const Select = React.forwardRef<
     }, [open])
 
     return (
-         <SelectContext.Provider value={{ value, onValueChange, open, setOpen }}>
+         <SelectContext.Provider value={{ value, onValueChange, open, setOpen, triggerRef }}>
                         <div 
                 className="relative z-10"  
                 id={`select-${Math.random().toString(36).substr(2, 9)}`}
@@ -72,7 +76,7 @@ const SelectTrigger = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
 >(({ className, children, ...props }, ref) => {
-    const { setOpen, open } = React.useContext(SelectContext)
+    const { setOpen, open, triggerRef } = React.useContext(SelectContext)
     
     const handleClick = (e: React.MouseEvent) => {
         if (!open) {
@@ -90,7 +94,11 @@ const SelectTrigger = React.forwardRef<
             type="button"
             className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
             onClick={handleClick}
-            ref={ref}
+                        ref={(node) => {
+                triggerRef.current = node
+                if (typeof ref === 'function') ref(node)
+                else if (ref) (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node
+            }}
             {...props}
         >
             {children}
@@ -118,18 +126,55 @@ const SelectContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, children, ...props }, ref) => {
-    const { open } = React.useContext(SelectContext)
+        const { open, setOpen, triggerRef } = React.useContext(SelectContext)
+    const contentRef = React.useRef<HTMLDivElement | null>(null)
+    const [dropdownStyle, setDropdownStyle] = React.useState<React.CSSProperties>({ display: 'none' })
+
+    React.useEffect(() => {
+        if (!open || !triggerRef.current) return
+
+        const calculatePosition = () => {
+            const triggerRect = triggerRef.current!.getBoundingClientRect()
+            const viewportHeight = window.innerHeight
+            const dropdownHeight = 240 // matches max-h-60
+            const spaceBelow = viewportHeight - triggerRect.bottom - 4
+            const spaceAbove = triggerRect.top - 4
+            const opensUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
+
+            setDropdownStyle({
+                position: 'fixed',
+                left: triggerRect.left + 'px',
+                width: Math.max(triggerRect.width, 180) + 'px',
+                zIndex: 9999,
+                top: opensUpward ? 'auto' : (triggerRect.bottom + 4) + 'px',
+                bottom: opensUpward ? (viewportHeight - triggerRect.top + 4) + 'px' : 'auto',
+            })
+        }
+
+        requestAnimationFrame(calculatePosition)
+
+        // Close on scroll
+        const handleScroll = () => setOpen(false)
+        window.addEventListener('scroll', handleScroll, { once: true })
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [open, setOpen])
+
     if (!open) return null
 
-    return (
-                  <div 
-            ref={ref}
-            className={`absolute left-0 w-full z-[9999] bg-white dark:bg-gray-900 border rounded-md shadow-md mt-1 p-1 max-h-60 overflow-auto ${className || 'top-full'}`} 
-            style={{ position: 'absolute', top: '100%', left: 0 }}
+    return createPortal(
+        <div 
+            ref={(node) => {
+                contentRef.current = node
+                if (typeof ref === 'function') ref(node)
+                else if (ref) (ref as React.MutableRefObject<HTMLDivElement | null>).current = node
+            }}
+            className={`bg-white dark:bg-gray-900 border rounded-md shadow-md p-1 max-h-60 overflow-auto ${className || ''}`} 
+            style={dropdownStyle}
             {...props}
         >
             {children}
-         </div>
+        </div>,
+        document.body
     )
 })
 SelectContent.displayName = "SelectContent"

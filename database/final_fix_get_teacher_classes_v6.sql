@@ -69,9 +69,8 @@ BEGIN
     -- We removed BOOL_OR(can_edit) because if they were given edit rights to 1 subject (like Science), 
     -- it was accidentally making can_edit_all_subjects TRUE for the entire JHS class.
     CASE 
-      WHEN (
-        COALESCE(tca.is_class_teacher, false) = true 
-        AND 
+      -- All assigned teachers in class_teacher model classes get full edit access (team teaching)
+      WHEN 
         CASE 
           WHEN c.level IN ('Kindergarten', 'KG 1', 'KG 2') OR c.level ILIKE '%KG%' THEN 'class_teacher'
           WHEN c.level IN ('Basic 1', 'Basic 2', 'Basic 3', 'lower_primary') THEN 'class_teacher'
@@ -79,12 +78,14 @@ BEGIN
           WHEN c.level IN ('Basic 4', 'Basic 5', 'Basic 6', 'upper_primary') THEN v_upper_primary_model
           ELSE 'class_teacher'
         END = 'class_teacher'
-      ) THEN true
+      THEN true
       ELSE false
     END as can_edit_all_subjects,
     
     CASE 
+      -- All assigned teachers can mark attendance (team teaching)
       WHEN COALESCE(tca.is_class_teacher, false) = true THEN true
+      WHEN tca.teacher_id IS NOT NULL THEN true
       ELSE false
     END as can_mark_attendance
     
@@ -108,10 +109,14 @@ BEGIN
     )
     OR 
     (
-        -- 2. Implicit Assignment (RESTRICTED SCOPE)
-        -- Only applies to Lower Primary & KG where one teacher teaches everything.
-        -- explicitly EXCLUDES JHS (Basic 7-9).
-        tca.is_class_teacher = true 
+        -- Any assigned teacher in class_teacher model gets implicit subject access (team teaching)
+        CASE 
+          WHEN c.level IN ('Kindergarten', 'KG 1', 'KG 2') OR c.level ILIKE '%KG%' THEN 'class_teacher'
+          WHEN c.level IN ('Basic 1', 'Basic 2', 'Basic 3', 'lower_primary') THEN 'class_teacher'
+          WHEN c.level IN ('JHS 1', 'JHS 2', 'JHS 3', 'Basic 7', 'Basic 8', 'Basic 9', 'jhs') THEN 'subject_teacher'
+          WHEN c.level IN ('Basic 4', 'Basic 5', 'Basic 6', 'upper_primary') THEN v_upper_primary_model
+          ELSE 'class_teacher'
+        END = 'class_teacher'
         AND 
         (
            -- Match 'Basic 1-3' to 'lower_primary'
