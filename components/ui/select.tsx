@@ -5,6 +5,8 @@ import { ChevronDown } from "lucide-react"
 // A simple Select implementation using standard HTML select for robustness but styled
 // Note: Keep the API compatible with Shadcn UI where possible
 
+let selectIdCounter = 0
+
 const SelectContext = React.createContext<{ 
     value?: string; 
     onValueChange?: (value: string) => void; 
@@ -27,6 +29,8 @@ const Select = React.forwardRef<
         const [open, setOpen] = React.useState(false)
     const containerRef = React.useRef<HTMLDivElement | null>(null)
     const triggerRef = React.useRef<HTMLButtonElement | null>(null)
+    // Stable id across re-renders
+    const [selectId] = React.useState(() => `select-${++selectIdCounter}`)
 
     // Listen for custom event to close other selects
     React.useEffect(() => {
@@ -41,24 +45,24 @@ const Select = React.forwardRef<
         }
     }, [])
 
-    // Close on click outside
-    React.useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (open && containerRef.current && !containerRef.current.contains(event.target as Node)) {
-                setOpen(false)
+        // Close on click outside
+        React.useEffect(() => {
+            const handleClickOutside = (event: MouseEvent) => {
+                if (open && containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                    setOpen(false)
+                }
             }
-        }
-        document.addEventListener("mousedown", handleClickOutside)
-        return () => {
-             document.removeEventListener("mousedown", handleClickOutside)
-        }
-    }, [open])
+            document.addEventListener("mousedown", handleClickOutside)
+            return () => {
+                 document.removeEventListener("mousedown", handleClickOutside)
+            }
+        }, [open])
 
     return (
          <SelectContext.Provider value={{ value, onValueChange, open, setOpen, triggerRef }}>
                         <div 
-                className="relative z-10"  
-                id={`select-${Math.random().toString(36).substr(2, 9)}`}
+                            className="relative"  
+                            id={selectId}
                 ref={(node) => {
                     containerRef.current = node
                     if (typeof ref === 'function') ref(node)

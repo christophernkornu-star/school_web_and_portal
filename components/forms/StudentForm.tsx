@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -25,13 +25,13 @@ export interface StudentFormData {
   guardian_name: string
   guardian_phone: string
   guardian_email: string
-  status?: string // Optional for teachers
+  status?: string
 }
 
 interface StudentFormProps {
-  initialData?: any // Student object if editing
-  classes: any[] // List of available classes
-  isAdmin?: boolean // Flag to show admin-only fields like Status
+  initialData?: any
+  classes: any[]
+  isAdmin?: boolean
   onSubmit: (data: StudentFormData) => Promise<void>
   isSubmitting: boolean
   mode?: 'add' | 'edit'
@@ -50,7 +50,7 @@ export function StudentForm({
     middle_name: '',
     last_name: '',
     date_of_birth: '',
-    gender: 'Male', // Default gender
+    gender: 'Male',
     class_id: '',
     guardian_name: '',
     guardian_phone: '',
@@ -60,7 +60,6 @@ export function StudentForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Initialize form data when initialData is provided
   useEffect(() => {
     if (initialData) {
       setFormData({
@@ -82,19 +81,14 @@ export function StudentForm({
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}
-
     if (!formData.first_name.trim()) newErrors.first_name = 'First Name is required'
     if (!formData.last_name.trim()) newErrors.last_name = 'Last Name is required'
     if (!formData.date_of_birth) newErrors.date_of_birth = 'Date of Birth is required'
     if (!formData.gender) newErrors.gender = 'Gender is required'
     if (!formData.class_id) newErrors.class_id = 'Class is required'
-
-    // Guardian Info is OPTIONAL
-    // Only basic format validation if provided
     if (formData.guardian_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.guardian_email)) {
       newErrors.guardian_email = 'Invalid email format'
     }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -102,13 +96,11 @@ export function StudentForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-
     await onSubmit(formData)
   }
 
   const handleChange = (field: keyof StudentFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    // Clear error when user types
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev }
@@ -230,47 +222,37 @@ export function StudentForm({
         <div className="grid md:grid-cols-2 gap-6 lg:gap-8">
           <div className="space-y-2">
             <Label htmlFor="class_id">Assigned Class <span className="text-red-500">*</span></Label>
-            <Select 
-              value={formData.class_id} 
-              onValueChange={(value) => handleChange('class_id', value)}
+            <select
+              id="class_id"
+              value={formData.class_id}
+              onChange={(e) => handleChange('class_id', e.target.value)}
+              className={`flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${errors.class_id ? 'border-red-500' : ''}`}
             >
-              <SelectTrigger className={errors.class_id ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Select Class">
-                  {classes.find((c: any) => (c.id || c.class_id) === formData.class_id)?.name || 
-                   classes.find((c: any) => (c.id || c.class_id) === formData.class_id)?.class_name}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {classes.map((cls) => (
-                  <SelectItem key={cls.id || cls.class_id} value={cls.id || cls.class_id}>
-                    {cls.name || cls.class_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <option value="" disabled>Select Class</option>
+              {classes.map((cls) => (
+                <option key={cls.id || cls.class_id} value={cls.id || cls.class_id}>
+                  {cls.name || cls.class_name}
+                </option>
+              ))}
+            </select>
             {errors.class_id && <p className="text-xs text-red-500">{errors.class_id}</p>}
           </div>
 
           {isAdmin && (
             <div className="space-y-2">
               <Label htmlFor="status">Status</Label>
-              <Select 
-                value={formData.status} 
-                onValueChange={(value) => handleChange('status', value)}
+              <select
+                id="status"
+                value={formData.status}
+                onChange={(e) => handleChange('status', e.target.value)}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Status">
-                    {formData.status ? (formData.status.charAt(0).toUpperCase() + formData.status.slice(1)) : undefined}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="graduated">Graduated</SelectItem>
-                  <SelectItem value="transferred">Transferred</SelectItem>
-                  <SelectItem value="expelled">Expelled</SelectItem>
-                </SelectContent>
-              </Select>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="graduated">Graduated</option>
+                <option value="transferred">Transferred</option>
+                <option value="expelled">Expelled</option>
+              </select>
             </div>
           )}
         </div>
