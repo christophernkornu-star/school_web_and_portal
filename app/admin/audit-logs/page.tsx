@@ -17,7 +17,8 @@ import {
   Clock,
   Filter,
   User,
-  GraduationCap
+  GraduationCap,
+  DollarSign
 } from 'lucide-react'
 
 interface AuditProfile {
@@ -36,6 +37,16 @@ interface AuditLog {
   profiles?: AuditProfile
 }
 
+const entityNameMap: Record<string, string> = {
+  fee_types: 'Fee Types',
+  fee_structures: 'Fee Structures',
+  fee_payments: 'Fee Payments',
+  scores: 'Student Scores',
+  students: 'Student Profile',
+  student_attendance: 'Attendance',
+  student_remarks: 'Remarks',
+}
+
 export default function AuditLogsPage() {
   const supabase = getSupabaseBrowserClient()
   const [logs, setLogs] = useState<AuditLog[]>([])
@@ -45,6 +56,7 @@ export default function AuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
   const [inspectedStudentName, setInspectedStudentName] = useState<string | null>(null)
   const [inspectedStudentClass, setInspectedStudentClass] = useState<string | null>(null)
+  const [inspectedFeeType, setInspectedFeeType] = useState<string | null>(null)
 
   useEffect(() => {
     fetchLogs()
@@ -54,6 +66,7 @@ export default function AuditLogsPage() {
     if (!selectedLog) {
       setInspectedStudentName(null)
       setInspectedStudentClass(null)
+      setInspectedFeeType(null)
       return
     }
 
@@ -83,6 +96,46 @@ export default function AuditLogsPage() {
           }
         })
     }
+
+    // Fetch fee type name for fee_structures and fee_payments
+    if (selectedLog.entity_name === 'fee_structures' && selectedLog.entity_id) {
+      supabase
+        .from('fee_structures')
+        .select('fee_types(name)')
+        .eq('id', selectedLog.entity_id)
+        .single()
+        .then(({ data, error }: any) => {
+          if (data?.fee_types && !error) {
+            setInspectedFeeType(data.fee_types.name)
+          }
+        })
+    } else if (selectedLog.entity_name === 'fee_types' && selectedLog.entity_id) {
+      supabase
+        .from('fee_types')
+        .select('name')
+        .eq('id', selectedLog.entity_id)
+        .single()
+        .then(({ data, error }: any) => {
+          if (data?.name && !error) {
+            setInspectedFeeType(data.name)
+          }
+        })
+    } else if (selectedLog.entity_name === 'fee_payments') {
+      // Try to get fee type from the new_data or old_data
+      const feeStructId = selectedLog.new_data?.fee_structure_id || selectedLog.old_data?.fee_structure_id
+      if (feeStructId) {
+        supabase
+          .from('fee_structures')
+          .select('fee_types(name)')
+          .eq('id', feeStructId)
+          .single()
+          .then(({ data, error }: any) => {
+            if (data?.fee_types && !error) {
+              setInspectedFeeType(data.fee_types.name)
+            }
+          })
+      }
+    }
   }, [selectedLog, supabase])
 
   async function fetchLogs() {
@@ -104,7 +157,7 @@ export default function AuditLogsPage() {
           )
         `)
         .order('created_at', { ascending: false })
-        .limit(150)
+        .limit(500)
 
       if (error) throw error
       setLogs((data as any[]) || [])
@@ -141,7 +194,7 @@ export default function AuditLogsPage() {
           <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-indigo-50/60 to-transparent pointer-events-none"></div>
           
           <div className="flex items-center gap-4 relative z-10">
-            <BackButton href="/admin" className="shadow-sm" />
+            <BackButton href="/admin/dashboard" className="shadow-sm" />
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">
                 <ShieldAlert className="w-8 h-8 text-indigo-600" />
@@ -266,7 +319,9 @@ export default function AuditLogsPage() {
                       </td>
                       <td className="p-4 sm:px-6 whitespace-nowrap py-4">
                         <div>
-                          <p className="text-gray-900 font-bold text-[13px]">{log.entity_name}</p>
+                          <p className="text-gray-900 font-bold text-[13px]">
+                            {(entityNameMap[log.entity_name] || log.entity_name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}
+                          </p>
                           <p className="text-[11px] text-gray-400 font-mono tracking-tight group-hover:text-indigo-500 transition-colors cursor-help mt-0.5" title={log.entity_id}>
                             id: {log.entity_id.substring(0,8)}...
                           </p>
@@ -305,22 +360,28 @@ export default function AuditLogsPage() {
                 <div className="flex flex-col ml-2">
                   <h3 className="text-xl font-black text-gray-900 tracking-tight">
                     <span className="text-gray-400 font-bold mr-2 text-sm uppercase tracking-widest">Entity:</span> 
-                    {selectedLog.entity_name}
+                    {(entityNameMap[selectedLog.entity_name] || selectedLog.entity_name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))}
                   </h3>
-                  {inspectedStudentName && (
-                    <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                    {inspectedStudentName && (
                       <div className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-700 bg-indigo-50/60 w-fit px-2.5 py-0.5 rounded-md border border-indigo-100 shadow-sm">
                         <User className="w-3.5 h-3.5" />
                         <span>{inspectedStudentName}</span>
                       </div>
-                      {inspectedStudentClass && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50/60 w-fit px-2.5 py-0.5 rounded-md border border-emerald-100 shadow-sm">
-                          <GraduationCap className="w-3.5 h-3.5" />
-                          <span>{inspectedStudentClass}</span>
-                        </div>
-                      )}
-                    </div>
                   )}
+                    {inspectedStudentClass && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50/60 w-fit px-2.5 py-0.5 rounded-md border border-emerald-100 shadow-sm">
+                        <GraduationCap className="w-3.5 h-3.5" />
+                        <span>{inspectedStudentClass}</span>
+                      </div>
+                    )}
+                    {inspectedFeeType && (
+                      <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 bg-amber-50/60 w-fit px-2.5 py-0.5 rounded-md border border-amber-100 shadow-sm">
+                        <DollarSign className="w-3.5 h-3.5" />
+                        <span>{inspectedFeeType}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <button 
