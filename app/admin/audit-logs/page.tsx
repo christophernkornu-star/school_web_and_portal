@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
@@ -209,6 +210,24 @@ export default function AuditLogsPage() {
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
             Live Activity Monitored
           </div>
+        </div>
+
+        {/* Sub Navigation Tabs */}
+        <div className="flex items-center gap-2 bg-white px-2 py-2 rounded-2xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100">
+          <Link
+            href="/admin/audit-logs"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs font-black rounded-xl transition-all tracking-wide bg-indigo-600 text-white shadow-md"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            All Events
+          </Link>
+          <Link
+            href="/admin/audit-logs/finance"
+            className="flex items-center gap-2 px-5 py-2.5 text-xs font-black rounded-xl transition-all tracking-wide text-gray-500 hover:text-gray-900 hover:bg-gray-100"
+          >
+            <DollarSign className="w-4 h-4" />
+            Finance
+          </Link>
         </div>
 
         {/* Quick Stats Grid */}

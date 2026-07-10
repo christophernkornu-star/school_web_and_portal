@@ -423,7 +423,7 @@ const generateReportCardContent = (
               <div class="info-cell"><span class="info-label">POS. IN CLASS:</span><span class="info-value">${reportData.position ? `${reportData.position}${getOrdinalSuffix(reportData.position)}` : 'N/A'}</span></div>
             </div>
             <div class="info-row">
-              <div class="info-cell"><span class="info-label">CLASS:</span><span class="info-value">${className}</span></div>
+              <div class="info-cell"><span class="info-label">CLASS:</span><span class="info-value">${className}${student.section_name ? ` | SECTION: ${student.section_name.toUpperCase()}` : ''}</span></div>
               <div class="info-cell"><span class="info-label">VACATION DATE:</span><span class="info-value">${vacationDate || 'TBA'}</span></div>
             </div>
             <div class="info-row">

@@ -215,8 +215,8 @@ export default function AdminStudentReportPage() {
             <BackButton href="/admin/reports/student" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h1>
-              <p className="text-sm text-gray-600">
-                {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}
+                            <p className="text-sm text-gray-600">
+                {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
               </p>
             </div>
           </div>

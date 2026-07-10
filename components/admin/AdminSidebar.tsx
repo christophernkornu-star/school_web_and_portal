@@ -29,7 +29,8 @@ import {
   AlertCircle,
   X,
   LogOut,
-  Palette
+  Palette,
+  History
 } from 'lucide-react'
 
 const sidebarItems = [

@@ -314,8 +314,8 @@ export default function TeacherStudentReportPage() {
             </BackButton>
             <div>
               <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">{student.profiles?.full_name}</h1>
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
-                {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
+                {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
               </p>
             </div>
           </div>

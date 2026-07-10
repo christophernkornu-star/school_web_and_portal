@@ -276,8 +276,8 @@ export default function ReportCardPage() {
                                  <span className="flex items-center gap-1">
                                      <span className="font-semibold">ID:</span> {student.student_id}
                                  </span>
-                                 <span className="flex items-center gap-1">
-                                     <span className="font-semibold">Class:</span> {student.classes?.name}
+                                                                  <span className="flex items-center gap-1">
+                                     <span className="font-semibold">Class:</span> {student.classes?.name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
                                  </span>
                                  <span className="flex items-center gap-1">
                                      <span className="font-semibold">Term:</span> {reportData.termName}

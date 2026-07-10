@@ -33,7 +33,19 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
     .eq('id', studentId)
     .single()
 
-    if (studentError) throw studentError
+        if (studentError) throw studentError
+
+    // Fetch section info
+    let sectionName: string | null = null
+    const { data: sectionData } = await supabase
+        .from('student_sections')
+        .select('sections(name)')
+        .eq('student_id', studentId)
+        .maybeSingle()
+    
+    if (sectionData?.sections?.name) {
+        sectionName = sectionData.sections.name
+    }
 
     // 2. Fetch Academic Settings (With in-memory caching for bulk generation)
     if (!cachedSettings || (Date.now() - settingsCacheTime > SETTINGS_TTL)) {
@@ -362,6 +374,9 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
             }
         }
     }
+
+    // Add section name to student data
+    studentData.section_name = sectionName
 
     return { student: studentData, reportData: report, settings, scoreSettings }
 }
