@@ -11,6 +11,7 @@ import { toast } from 'react-hot-toast'
 import { useReportCardData } from '@/lib/reports/hooks'
 import { generateReportHTML } from '@/lib/reports/generator'
 import { ReportCardTheme, ReportRemarks } from '@/lib/reports/types'
+import { getAutoRemark } from '@/lib/remark-utils'
 
 export default function ReportCardPage() {
   const router = useRouter()
@@ -148,7 +149,7 @@ export default function ReportCardPage() {
     scoreSettings 
   } = useReportCardData(studentId || '', selectedTermId)
   
-  const handleDownload = () => {
+    const handleDownload = () => {
       if (!reportData || !student || !academicSettings) return
       setDownloading(true)
       
@@ -159,13 +160,21 @@ export default function ReportCardPage() {
             return
         }
         
-        // Use remarks from reportData directly since students can't edit them
+        // Use auto remarks if stored remarks are not available
+        const storedRemarks = reportData.remarks || {}
+        const avgScore = reportData.averageScore || 0
+        const attendance = reportData.attendance
+        const attendancePercent = attendance && attendance.total > 0
+          ? (attendance.present / attendance.total) * 100
+          : undefined
+        const seed = student.id
+
         const remarks: ReportRemarks = {
-            attitude: reportData.remarks?.attitude || '',
-            interest: reportData.remarks?.interest || '',
-            conduct: reportData.remarks?.conduct || '',
-            classTeacher: reportData.remarks?.classTeacher || '',
-            headTeacher: reportData.remarks?.headTeacher || ''
+            attitude: storedRemarks.attitude || getAutoRemark('attitude', avgScore, attendancePercent, seed),
+            interest: storedRemarks.interest || getAutoRemark('interest', avgScore, attendancePercent, seed),
+            conduct: storedRemarks.conduct || getAutoRemark('conduct', avgScore, attendancePercent, seed),
+            classTeacher: storedRemarks.classTeacher || getAutoRemark('classTeacher', avgScore, attendancePercent, seed),
+            headTeacher: storedRemarks.headTeacher || getAutoRemark('headTeacher', avgScore, attendancePercent, seed)
         }
         
         // Pass aggregate if available (for JHS)
@@ -364,19 +373,31 @@ export default function ReportCardPage() {
                         </div>
                     </div>
 
-                    <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 p-6">
+                                        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 p-6">
                          <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
                             <span className="w-1 h-4 bg-green-400 rounded-full"></span>
                             Reflections
                         </h3>
                         <div className="space-y-4">
                             <div className="bg-gray-50 rounded-lg p-3">
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Attitude</span>
+                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.attitude || getAutoRemark('attitude', reportData.averageScore || 0, reportData.attendance?.total ? (reportData.attendance.present / reportData.attendance.total) * 100 : undefined, student.id)}"</p>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Interest</span>
+                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.interest || getAutoRemark('interest', reportData.averageScore || 0, reportData.attendance?.total ? (reportData.attendance.present / reportData.attendance.total) * 100 : undefined, student.id)}"</p>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3">
+                                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Conduct</span>
+                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.conduct || getAutoRemark('conduct', reportData.averageScore || 0, reportData.attendance?.total ? (reportData.attendance.present / reportData.attendance.total) * 100 : undefined, student.id)}"</p>
+                            </div>
+                            <div className="bg-gray-50 rounded-lg p-3">
                                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Class Teacher</span>
-                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.classTeacher || 'No remark yet'}"</p>
+                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.classTeacher || getAutoRemark('classTeacher', reportData.averageScore || 0, reportData.attendance?.total ? (reportData.attendance.present / reportData.attendance.total) * 100 : undefined, student.id)}"</p>
                             </div>
                             <div className="bg-gray-50 rounded-lg p-3">
                                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-1">Head Teacher</span>
-                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.headTeacher || 'No remark yet'}"</p>
+                                <p className="text-sm text-gray-700 italic">"{reportData.remarks?.headTeacher || getAutoRemark('headTeacher', reportData.averageScore || 0, reportData.attendance?.total ? (reportData.attendance.present / reportData.attendance.total) * 100 : undefined, student.id)}"</p>
                             </div>
                         </div>
                     </div>
