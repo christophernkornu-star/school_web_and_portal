@@ -10,6 +10,7 @@ import { toast } from 'react-hot-toast'
 import { fetchReportCardData } from '@/lib/reports/fetcher'
 import { generateBatchReportHTML } from '@/lib/reports/generator'
 import { ReportCardTheme } from '@/lib/reports/types'
+import { getAutoRemark } from '@/lib/remark-utils'
 
 function BulkReportCardsContent() {
   const router = useRouter()
@@ -68,18 +69,26 @@ function BulkReportCardsContent() {
                  setScoreSettings(res.scoreSettings)
               }
 
-              if (res.student && res.reportData) {
-                  results.push({
-                      student: res.student,
-                      reportData: res.reportData,
-                      remarks: res.reportData.remarks || {
-                          attitude: '-',
-                          interest: '-',
-                          conduct: '-',
-                          classTeacher: '-',
-                          headTeacher: '-'
-                      }
-                  })
+                            if (res.student && res.reportData) {
+                                const storedRemarks = res.reportData.remarks || {}
+                                const avgScore = res.reportData.averageScore || 0
+                                const attendance = res.reportData.attendance
+                                const attendancePercent = attendance && attendance.total > 0
+                                  ? (attendance.present / attendance.total) * 100
+                                  : undefined
+                                const seed = res.student.id
+
+                                results.push({
+                                    student: res.student,
+                                    reportData: res.reportData,
+                                    remarks: {
+                                        attitude: storedRemarks.attitude || getAutoRemark('attitude', avgScore, attendancePercent, seed),
+                                        interest: storedRemarks.interest || getAutoRemark('interest', avgScore, attendancePercent, seed),
+                                        conduct: storedRemarks.conduct || getAutoRemark('conduct', avgScore, attendancePercent, seed),
+                                        classTeacher: storedRemarks.classTeacher || getAutoRemark('classTeacher', avgScore, attendancePercent, seed),
+                                        headTeacher: storedRemarks.headTeacher || getAutoRemark('headTeacher', avgScore, attendancePercent, seed)
+                                    }
+                                })
               }
           } catch (e) {
               console.error(`Error fetching for student ${studentIds[i]}`, e)
