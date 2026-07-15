@@ -1,5 +1,6 @@
 import { getOrdinalSuffix, isPromotionTerm } from '@/lib/academic-utils'
 import { ReportCardData, ReportRemarks, ReportCardTheme } from './types'
+import { formatDateDDMMMYYYY } from '@/lib/date-utils'
 
 // Helper to get promotion status text
 function getPromotionStatusText(report: ReportCardData): string {
@@ -378,11 +379,11 @@ const generateReportCardContent = (
   const { logoImage, methodistLogoImage, signatureImage: signatureBase64 } = theme
   const studentName = student.profiles?.full_name || `${student.last_name || ''} ${student.first_name || ''}`.trim()
   const className = (student.classes?.name || student.classes?.class_name || '').toUpperCase()
-  const vacationDate = academicSettings?.vacation_start_date 
-    ? new Date(academicSettings.vacation_start_date).toLocaleDateString() 
+    const vacationDate = academicSettings?.vacation_start_date 
+    ? formatDateDDMMMYYYY(academicSettings.vacation_start_date)
     : 'TBA'
   const reopeningDate = academicSettings?.school_reopening_date 
-    ? new Date(academicSettings.school_reopening_date).toLocaleDateString() 
+    ? formatDateDDMMMYYYY(academicSettings.school_reopening_date)
     : 'TBA'
 
   return `
@@ -512,9 +513,9 @@ const generateReportCardContent = (
             </div>
           </div>
 
-          <!-- Footer Note -->
+                    <!-- Footer Note -->
           <div class="footer-note">
-            © Biriwa Methodist School. All rights reserved. This document is official only when presented in its original color format with the blue textured watermark. Generated on: ${new Date().toLocaleDateString()}.
+            © Biriwa Methodist School. All rights reserved. This document is official only when presented in its original color format with the blue textured watermark. Generated on: ${formatDateDDMMMYYYY(new Date())}.
           </div>
           <div class="copyright-footer">@2025 FortSoft. All rights reserved.</div>
         </div>
@@ -567,7 +568,7 @@ export const generateBatchReportHTML = (
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Batch Report Cards - ${new Date().toLocaleDateString()}</title>
+        <title>Batch Report Cards - ${formatDateDDMMMYYYY(new Date())}</title>
         <style>${getReportStyles(theme.watermarkImage)}</style>
       </head>
       <body>

@@ -9,6 +9,7 @@ import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { formatDateDDMMYYYY, formatDateDDMMMYYYY } from '@/lib/date-utils'
 
 export default function GeneralSettings() {
   const router = useRouter()
@@ -465,9 +466,14 @@ export default function GeneralSettings() {
             </div>
           </div>
 
-          {/* Term Dates */}
+                    {/* Term Dates */}
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-bold text-gray-800 mb-4">Term Dates</h2>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-blue-800">
+                Dates are stored in the system as <strong>dd/mm/yyyy</strong> format. Pick a date below and it will be shown on report cards as e.g. <strong>08/Nov/2026</strong>.
+              </p>
+            </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Term Start Date (Reopening)</label>
@@ -477,7 +483,13 @@ export default function GeneralSettings() {
                   onChange={(e) => setFormData({...formData, term_start_date: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                 />
-                <p className="mt-1 text-[10px] md:text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500">
+                  Display format: <span className="font-mono font-semibold text-gray-700">{formatDateDDMMYYYY(formData.term_start_date)}</span>
+                  {formData.term_start_date && (
+                    <span className="ml-2 text-gray-400">→ {formatDateDDMMMYYYY(formData.term_start_date)} (on report card)</span>
+                  )}
+                </p>
+                <p className="text-[10px] md:text-xs text-gray-400">
                   Also sets the School Reopening Date
                 </p>
               </div>
@@ -489,7 +501,13 @@ export default function GeneralSettings() {
                   onChange={(e) => setFormData({...formData, term_end_date: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                 />
-                <p className="mt-1 text-[10px] md:text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500">
+                  Display format: <span className="font-mono font-semibold text-gray-700">{formatDateDDMMYYYY(formData.term_end_date)}</span>
+                  {formData.term_end_date && (
+                    <span className="ml-2 text-gray-400">→ {formatDateDDMMMYYYY(formData.term_end_date)} (on report card)</span>
+                  )}
+                </p>
+                <p className="text-[10px] md:text-xs text-gray-400">
                   Also sets the Vacation Start Date
                 </p>
               </div>
@@ -501,6 +519,9 @@ export default function GeneralSettings() {
                   onChange={(e) => setFormData({...formData, next_term_starts: e.target.value})}
                   className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Display format: <span className="font-mono font-semibold text-gray-700">{formatDateDDMMYYYY(formData.next_term_starts)}</span>
+                </p>
               </div>
             </div>
           </div>
