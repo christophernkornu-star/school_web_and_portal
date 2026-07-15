@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, Settings as SettingsIcon, School, Bell, Lock, Globe, Calendar } from 'lucide-react'
+import { ArrowLeft, Settings as SettingsIcon, School, Bell, Lock, Globe, Calendar, TrendingUp } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -155,12 +155,19 @@ export default function SettingsPage() {
       color: 'green',
       href: '/admin/settings/general'
     },
-    {
+        {
       title: 'Attendance Settings',
       description: 'Configure term days and attendance tracking',
       icon: Calendar,
       color: 'blue',
       href: '/admin/settings/attendance'
+    },
+    {
+      title: 'Promotion Criteria',
+      description: 'Set criteria for student promotion: overall average, core subjects, aggregate, attendance',
+      icon: TrendingUp,
+      color: 'purple',
+      href: '/admin/settings/promotion-criteria'
     },
   ]
 
