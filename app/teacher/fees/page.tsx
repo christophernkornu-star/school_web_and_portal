@@ -656,11 +656,19 @@ export default function TeacherFeesPage() {
                         className="w-full p-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none text-sm dark:bg-gray-600 dark:border-gray-500 dark:text-white"
                       >
                         <option value="">Select Fee</option>
-                        {feeStructures.map(fee => (
-                          <option key={fee.id} value={fee.id}>
-                            {fee.fee_types?.name} (GH₵ {fee.amount})
-                          </option>
-                        ))}
+                                                {feeStructures.map(fee => {
+                          // Calculate balance for this fee type for the selected student
+                          const status = selectedStudent
+                            ? getStudentPaymentStatus(selectedStudent.id, fee.id, fee.amount)
+                            : null
+                          const owing = status && status.balance > 0
+                          return (
+                            <option key={fee.id} value={fee.id}>
+                              {fee.fee_types?.name} (GH₵ {fee.amount})
+                              {owing ? ` - Owing (GHC ${status.balance})` : ''}
+                            </option>
+                          )
+                        })}
                       </select>
                     </div>
 
@@ -802,7 +810,7 @@ export default function TeacherFeesPage() {
                                       className="p-1.5 text-rose-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30 rounded-md transition-colors disabled:opacity-50"
                                       title="Delete Payment"
                                     >
-                                      {deletingPaymentId === payment.id ? (
+                                                                            {deletingPaymentId === payment.id ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                       ) : (
                                         <Trash2 className="w-4 h-4" />

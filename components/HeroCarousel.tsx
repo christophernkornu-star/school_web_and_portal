@@ -67,19 +67,19 @@ export default function HeroCarousel({ photos }: { photos: any[] }) {
         <div className="relative max-w-5xl mx-auto">
           {/* Main Slideshow Container */}
           <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
-            {/* Image with Transitions */}
-            <div className="relative w-full h-full">
-              <Image
-                src={photos[currentPhotoIndex].photo_url}
-                alt={photos[currentPhotoIndex].title}
-                fill
-                priority
-                className="object-cover object-center"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
-              />
+              {/* Image with Transitions */}
+              <div className="relative w-full h-full flex items-center justify-center">
+                <Image
+                  src={photos[currentPhotoIndex].photo_url}
+                  alt={photos[currentPhotoIndex].title}
+                  fill
+                  priority
+                  className="object-contain p-2"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+                />
               
-              {/* Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
+                {/* Gradient Overlay for caption area only */}
+                <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-black/80 via-black/30 to-transparent bg-opacity-60"></div>
               
               {/* Loading Shimmer Effect during transition */}
               {isTransitioning && (

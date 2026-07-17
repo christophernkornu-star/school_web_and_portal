@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileText, Upload, Camera, AlertCircle, CheckCircle } from 'lucide-react'
+import { ArrowLeft, FileText, AlertCircle, CheckCircle } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -37,9 +37,6 @@ interface Teacher {
 function ExamScoresContent() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
-  const searchParams = useSearchParams()
-  const method = searchParams.get('method') || 'manual'
-
   const [loading, setLoading] = useState(true)
   const [teacher, setTeacher] = useState<Teacher | null>(null)
   const [teacherClasses, setTeacherClasses] = useState<TeacherClass[]>([])
@@ -54,12 +51,10 @@ function ExamScoresContent() {
   const [selectedStudent, setSelectedStudent] = useState('')
   const [currentTermName, setCurrentTermName] = useState('')
   
-  const [examScore, setExamScore] = useState('')
-  const [csvFile, setCsvFile] = useState<File | null>(null)
+    const [examScore, setExamScore] = useState('')
   
   const [submitting, setSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [uploadResults, setUploadResults] = useState<any>(null)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState('')
   const [isReadOnly, setIsReadOnly] = useState(false)
@@ -386,167 +381,6 @@ function ExamScoresContent() {
     }
   }
 
-  async function handleCsvUpload(e: React.FormEvent) {
-    e.preventDefault()
-    if (!csvFile || isReadOnly) return
-    setSubmitting(true)
-    setUploadResults(null)
-    setFormErrors({})
-
-    try {
-      const text = await csvFile.text()
-      const lines = text.split('\n').filter(line => line.trim())
-
-      if (lines.length < 2) {
-        setFormErrors({ csv: 'CSV must contain header and data rows' })
-        setSubmitting(false)
-        return
-      }
-
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
-      
-      const detectedSubjects: Subject[] = []
-      const subjectNames = new Set<string>()
-
-      headers.forEach(header => {
-        if (header === 'student_name') return
-        const match = header.match(/^(.+?)_exam$/)
-        if (match) {
-          subjectNames.add(match[1].replace(/_/g, ' '))
-        }
-      })
-
-      for (const subjectName of subjectNames) {
-        const subject = filteredSubjects.find(s => 
-          s.name.toLowerCase().replace(/\s+/g, ' ') === subjectName.toLowerCase()
-        )
-        if (subject) {
-          detectedSubjects.push(subject)
-        } else {
-          setFormErrors({ csv: `Subject "${subjectName}" not found` })
-          setSubmitting(false)
-          return
-        }
-      }
-
-      if (detectedSubjects.length === 0) {
-        setFormErrors({ csv: 'No valid subjects detected. Headers should be: student_name, subject_name_exam' })
-        setSubmitting(false)
-        return
-      }
-
-      const results = {
-        success: 0,
-        failed: 0,
-        errors: [] as string[]
-      }
-
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim())
-        const rowData: any = {}
-        headers.forEach((header, index) => {
-          rowData[header] = values[index]
-        })
-
-        if (!rowData.student_name) {
-          results.failed++
-          results.errors.push(`Row ${i + 1}: Missing student_name`)
-          continue
-        }
-
-        const nameParts = rowData.student_name.trim().split(/\s+/)
-        const lastName = nameParts[0]
-        const firstName = nameParts.slice(1).join(' ') || lastName
-
-        const { data: studentData } = await supabase
-          .from('students')
-          .select('id')
-          .eq('class_id', selectedClass)
-          .ilike('last_name', lastName)
-          .ilike('first_name', `%${firstName}%`)
-          .maybeSingle() as { data: any }
-
-        if (!studentData) {
-          results.failed++
-          results.errors.push(`Row ${i + 1}: Student "${rowData.student_name}" not found`)
-          continue
-        }
-
-        for (const subject of detectedSubjects) {
-          const shortName = subject.name.replace(/\s+/g, '_').toLowerCase()
-          const examScoreKey = `${shortName}_exam`
-          const examScoreValue = parseFloat(rowData[examScoreKey])
-
-          if (isNaN(examScoreValue)) continue
-
-          if (examScoreValue < 0 || examScoreValue > 100) {
-            results.failed++
-            results.errors.push(`Row ${i + 1}, ${subject.name}: Invalid exam score (must be 0-100)`)
-            continue
-          }
-
-          const convertedExamScore = convertExamScore(examScoreValue)
-
-          const { data: existingScore } = await supabase
-            .from('scores')
-            .select('*')
-            .eq('student_id', studentData.id)
-            .eq('subject_id', subject.id)
-            .eq('term_id', selectedTerm)
-            .maybeSingle() as { data: any }
-
-          if (existingScore) {
-            const classScore = existingScore.class_score || 0
-            const newTotal = classScore + convertedExamScore
-
-            const { error } = await supabase
-              .from('scores')
-              .update({
-                exam_score: convertedExamScore,
-                total: newTotal,
-                teacher_id: teacher!.id
-              })
-              .eq('id', existingScore.id)
-
-            if (error) {
-              results.failed++
-              results.errors.push(`Row ${i + 1}, ${subject.name}: ${error.message}`)
-            } else {
-              results.success++
-            }
-          } else {
-            const { error } = await supabase
-              .from('scores')
-              .insert({
-                student_id: studentData.id,
-                subject_id: subject.id,
-                term_id: selectedTerm,
-                class_score: 0,
-                exam_score: convertedExamScore,
-                total: convertedExamScore,
-                teacher_id: teacher!.id
-              })
-
-            if (error) {
-              results.failed++
-              results.errors.push(`Row ${i + 1}, ${subject.name}: ${error.message}`)
-            } else {
-              results.success++
-            }
-          }
-        }
-      }
-
-      setUploadResults(results)
-      setCsvFile(null)
-    } catch (error: any) {
-      console.error('Error uploading CSV:', error)
-      setFormErrors({ csv: error.message || 'Failed to upload CSV' })
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -587,33 +421,10 @@ function ExamScoresContent() {
           </div>
         )}
 
-        <div className="flex space-x-2 mb-6">
-          <Link
-            href="/teacher/upload-scores/exam?method=manual"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'manual' ? 'bg-ghana-red text-white' : 'bg-white text-gray-700'}`}
-          >
-            <FileText className="w-4 h-4 inline mr-2" />
-            Manual
-          </Link>
-          <Link
-            href="/teacher/upload-scores/exam?method=csv"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'csv' ? 'bg-ghana-red text-white' : 'bg-white text-gray-700'}`}
-          >
-            <Upload className="w-4 h-4 inline mr-2" />
-            CSV
-          </Link>
-          <Link
-            href="/teacher/upload-scores/exam?method=ocr"
-            className={`px-4 py-2 rounded text-xs md:text-sm ${method === 'ocr' ? 'bg-ghana-red text-white' : 'bg-white text-gray-700'}`}
-          >
-            <Camera className="w-4 h-4 inline mr-2" />
-            OCR
-          </Link>
-        </div>
+        
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {method === 'manual' && (
-            <form onSubmit={handleManualSubmit}>
+                <div className="bg-white rounded-lg shadow-md p-6">
+          <form onSubmit={handleManualSubmit}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class *</label>
@@ -712,94 +523,11 @@ function ExamScoresContent() {
                   {submitting ? 'Submitting...' : 'Submit Exam Score'}
                 </button>
               </div>
-            </form>
-          )}
-
-          {method === 'csv' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Class *</label>
-                <select
-                  value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm"
-                  disabled={isReadOnly}
-                >
-                  <option value="">Select class</option>
-                  {teacherClasses.map(cls => (
-                    <option key={cls.class_id} value={cls.class_id}>{cls.class_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">CSV File *</label>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm disabled:cursor-not-allowed"
-                  disabled={isReadOnly}
-                />
-                <p className="text-xs md:text-sm text-gray-500 mt-1">
-                  Format: student_name, mathematics_exam, english_language_exam, ...
-                </p>
-              </div>
-
-              {formErrors.csv && (
-                <div className="flex items-center space-x-2 text-red-600 text-xs md:text-sm">
-                  <AlertCircle className="w-4 h-4" />
-                  <p>{formErrors.csv}</p>
-                </div>
-              )}
-
-              {uploadResults && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-xs md:text-sm">
-                  <p className="font-medium">Upload Results:</p>
-                  <p className="text-green-600">✓ Success: {uploadResults.success}</p>
-                  <p className="text-red-600">✗ Failed: {uploadResults.failed}</p>
-                  {uploadResults.errors.length > 0 && (
-                    <div className="mt-2 max-h-40 overflow-y-auto">
-                      {uploadResults.errors.map((err: string, i: number) => (
-                        <p key={i} className="text-xs md:text-sm text-red-600">{err}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              <button
-                onClick={handleCsvUpload}
-                disabled={submitting || !csvFile || !selectedClass}
-                className="w-full bg-ghana-red text-white py-3 rounded-lg hover:bg-red-700 transition disabled:bg-gray-400 text-xs md:text-sm"
-              >
-                {submitting ? 'Uploading...' : 'Upload CSV'}
-              </button>
-            </div>
-          )}
-
-          {method === 'ocr' && (
-            <div className="text-center py-8">
-              <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 text-xs md:text-sm">OCR feature coming soon</p>
-              <Link
-                href="/teacher/scores/ocr"
-                className="text-ghana-red hover:underline mt-2 inline-block text-xs md:text-sm"
-              >
-                Or use existing OCR page →
-              </Link>
-            </div>
-          )}
+                        </form>
         </div>
       </div>
     </div>
   )
 }
 
-export default function ExamScoresPage() {
-  return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <ExamScoresContent />
-    </Suspense>
-  )
-}
+export default ExamScoresContent
