@@ -136,7 +136,7 @@ BEGIN
     promotion_status = v_decision_status,
     teacher_remarks = p_remarks,
     decided_by = v_teacher_profile_id,
-    requires_admin_approval = TRUE,
+    requires_admin_approval = TRUE, -- Reset to require admin approval even if previously confirmed
     decision_date = NOW(),
     updated_at = NOW();
 

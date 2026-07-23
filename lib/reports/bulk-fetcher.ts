@@ -88,7 +88,7 @@ export async function fetchBulkReportCardData(studentIds: string[], termId?: str
     
     let requiredSubjectNames: string[] = []
     if (levelCategory) {
-        const { data: subjectData } = await supabase.from('subjects').select('name').eq('level_category', levelCategory).eq('is_active', true).order('name')
+        const { data: subjectData } = await supabase.from('subjects').select('name').eq('level', levelCategory).order('name')
         if (subjectData) requiredSubjectNames = subjectData.map((s: any) => s.name)
     }
 
@@ -123,7 +123,7 @@ export async function fetchBulkReportCardData(studentIds: string[], termId?: str
     let promotionData: any[] = []
     if (isThirdTerm) {
         const { data: p } = await supabase
-            .from('promotion_metrics')
+            .from('student_promotions')
             .select('*')
             .in('student_id', studentIds)
             .eq('academic_year', targetTermYear)
@@ -194,6 +194,8 @@ export async function fetchBulkReportCardData(studentIds: string[], termId?: str
             totalClassSize,
             aggregate,
             attendance,
+            promotionDecision: studentPromotion?.promotion_status || undefined,
+            promotionStatus: studentPromotion?.teacher_remarks || undefined,
             remarks: stuRemark ? {
                 attitude: stuRemark.attitude,
                 interest: stuRemark.interest,

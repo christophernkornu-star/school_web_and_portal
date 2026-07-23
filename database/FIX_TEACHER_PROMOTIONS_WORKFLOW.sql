@@ -167,22 +167,7 @@ DECLARE
   v_next_class_id UUID;
   v_teacher_profile_id UUID;
   v_decision_status VARCHAR;
-  v_existing_status VARCHAR;
-  v_existing_approved BOOLEAN;
 BEGIN
-  -- GUARD: Check if a confirmed decision already exists for this student+year
-  SELECT promotion_status, requires_admin_approval 
-  INTO v_existing_status, v_existing_approved
-  FROM student_promotions 
-  WHERE student_id = p_student_id AND academic_year = p_academic_year;
-
-  -- If admin already confirmed (requires_admin_approval = FALSE), reject duplicate
-  IF v_existing_status IS NOT NULL AND v_existing_approved = FALSE THEN
-    RAISE NOTICE 'Student % already has a confirmed decision (%s) for year %. Skipping duplicate.', 
-      p_student_id, v_existing_status, p_academic_year;
-    RETURN TRUE; -- Silently succeed (idempotent)
-  END IF;
-
   -- Get the student's current class
   SELECT class_id INTO v_current_class_id FROM students WHERE id = p_student_id;
   
@@ -230,7 +215,7 @@ BEGIN
     promotion_status = v_decision_status,
     teacher_remarks = p_remarks,
     decided_by = v_teacher_profile_id,
-    requires_admin_approval = TRUE,
+    requires_admin_approval = TRUE, -- Reset to require admin approval even if previously confirmed
     decision_date = NOW(),
     updated_at = NOW();
 

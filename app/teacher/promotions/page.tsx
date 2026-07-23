@@ -135,9 +135,9 @@ function StudentPromotionsPage() {
     }
   }
 
-    async function fetchRecommendations() {
-    setLoadingRecommendations(true)
-    setError(null)
+        async function fetchRecommendations() {
+        setLoadingRecommendations(true)
+        setError(null)
     
     try {
       const passMark = 30;
@@ -167,9 +167,39 @@ function StudentPromotionsPage() {
 
       const termIds = termsData?.map(t => t.id) || []
 
-      // Step 3: Calculate TOTAL scores per student from the scores table
-      // Using total column which is class_score + exam_score
-      let scoresMap: {[key: string]: { total: number, count: number }} = {}
+      // Step 3: Get total subjects
+      // This ensures all students are evaluated against the same standard
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('level')
+        .eq('id', selectedClass)
+        .single() as { data: any }
+
+            const level = classData?.level
+      let levelCategory = ''
+      
+      if (typeof level === 'string') {
+        levelCategory = level.toLowerCase()
+      } else if (typeof level === 'number') {
+        if (level >= 1 && level <= 2) levelCategory = 'kindergarten'
+        else if (level >= 3 && level <= 5) levelCategory = 'lower_primary'
+        else if (level >= 6 && level <= 8) levelCategory = 'upper_primary'
+        else if (level >= 9) levelCategory = 'jhs'
+      }
+      
+      let totalSubjectsForClass = 0
+      
+            if (levelCategory) {
+        const { data: subjectData } = await supabase
+          .from('subjects')
+          .select('id')
+          .eq('level', levelCategory)
+        if (subjectData) totalSubjectsForClass = subjectData.length
+      }
+
+      // Step 4: Calculate TOTAL scores per student from the scores table
+      // Average = total score across all terms / total subjects the class takes
+      let scoresMap: {[key: string]: { total: number }} = {}
       
       if (termIds.length > 0) {
         const { data: scoresData } = await supabase
@@ -182,32 +212,33 @@ function StudentPromotionsPage() {
         if (scoresData) {
           scoresData.forEach((s: any) => {
             if (!scoresMap[s.student_id]) {
-              scoresMap[s.student_id] = { total: 0, count: 0 }
+              scoresMap[s.student_id] = { total: 0 }
             }
             scoresMap[s.student_id].total += s.total
-            scoresMap[s.student_id].count++
           })
         }
       }
 
-      // Step 4: Get existing promotion records for the current year
-      const { data: promotionsData } = await supabase
-        .from('student_promotions')
-        .select('*')
-        .in('student_id', studentIds)
-        .eq('academic_year', academicYear)
+            // Step 5: Get existing promotion records for the current year
+            const { data: promotionsData } = await supabase
+              .from('student_promotions')
+              .select('*')
+              .in('student_id', studentIds)
+              .eq('academic_year', academicYear)
 
-      const promoMap = new Map((promotionsData as any[])?.map((p: any) => [p.student_id, p]) || [])
+            const promoMap = new Map((promotionsData as any[])?.map((p: any) => [p.student_id, p]) || [])
 
-      // Step 5: Build recommendations using REAL calculated scores
+            // Step 7: Build recommendations
+            // Average = total score across all terms / total subjects the class takes
+      const divisor = totalSubjectsForClass || 1
+
       const transformedData: StudentRecommendation[] = []
       const initialDecisions = new Map<string, PromotionDecision>()
 
       studentsData.forEach((student: any) => {
-        const scoreInfo = scoresMap[student.id] || { total: 0, count: 0 }
-        const totalSubjects = scoreInfo.count
+        const scoreInfo = scoresMap[student.id] || { total: 0 }
         const totalScore = scoreInfo.total
-        const averageScore = totalSubjects > 0 ? totalScore / totalSubjects : 0
+        const averageScore = totalScore / divisor
 
         const promo = promoMap.get(student.id)
         const status = promo?.promotion_status || 'pending'
@@ -216,7 +247,7 @@ function StudentPromotionsPage() {
         const rec: StudentRecommendation = {
           student_id: student.id,
           student_name: `${student.last_name} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name}`,
-          total_subjects: totalSubjects,
+          total_subjects: divisor,
           total_score: totalScore,
           average_score: averageScore,
           minimum_required: passMark,
@@ -226,7 +257,6 @@ function StudentPromotionsPage() {
         
         transformedData.push(rec)
 
-        // Pre-fill decision
         let currentDecision: 'promote' | 'repeat' | null = null
         
         if (status === 'promoted' || status === 'graduated') {
@@ -244,18 +274,18 @@ function StudentPromotionsPage() {
         })
       })
 
-      // Sort by student name
-      transformedData.sort((a, b) => a.student_name.localeCompare(b.student_name))
+            // Sort by student name
+            transformedData.sort((a, b) => a.student_name.localeCompare(b.student_name))
 
-      setRecommendations(transformedData)
-      setDecisions(initialDecisions)
+            setRecommendations(transformedData)
+            setDecisions(initialDecisions)
 
-    } catch (error: any) {
-      console.error('Error fetching recommendations:', error)
-      setError(error.message || 'Failed to load recommendations')
-    } finally {
-      setLoadingRecommendations(false)
-    }
+        } catch (error: any) {
+          console.error('Error fetching recommendations:', error)
+          setError(error.message || 'Failed to load recommendations')
+        } finally {
+          setLoadingRecommendations(false)
+        }
   }
 
   function updateDecision(studentId: string, decision: 'promote' | 'repeat' | null, remarks?: string) {
@@ -294,47 +324,47 @@ function StudentPromotionsPage() {
       return
     }
 
-    setSubmitting(true)
-    setSubmitted(true) // Lock to prevent any further submission attempts
+        setSubmitting(true)
+    setSubmitted(true)
     setError(null)
 
+    let hasError = false
+
     try {
-      // Get next class for promotions
-      const { data: progressionData } = await supabase
-        .from('class_progression')
-        .select('next_class_id, is_graduation')
-        .eq('current_class_id', selectedClass)
-        .maybeSingle()
-
             // Submit each decision using the save_teacher_promotion_decisions function
-      // KEY CHANGE: This function ONLY saves the decision in student_promotions.
-      // It does NOT update students.class_id. Students will NOT disappear from class.
-      // Admin must confirm decisions to execute actual class movement.
-      for (const [studentId, decision] of decisions.entries()) {
-        if (!decision.decision) continue
+            for (const [studentId, decision] of decisions.entries()) {
+              if (!decision.decision) continue
 
-        const { error: decisionError } = await (supabase
-          .rpc as any)('save_teacher_promotion_decisions', {
-            p_student_id: studentId,
-            p_academic_year: academicYear,
-            p_decision: decision.decision,  // 'promote' or 'repeat'
-            p_remarks: decision.remarks || '',
-            p_teacher_id: teacher.id  // teachers.id (internal ID)
-          })
+              const { data: rpcData, error: decisionError } = await (supabase
+                .rpc as any)('save_teacher_promotion_decisions', {
+                  p_student_id: studentId,
+                  p_academic_year: academicYear,
+                  p_decision: decision.decision,
+                  p_remarks: decision.remarks || '',
+                  p_teacher_id: teacher.id
+                })
 
-        if (decisionError) throw decisionError
-      }
+              if (decisionError) {
+                console.error(`Error saving decision for student ${studentId}:`, decisionError)
+                hasError = true
+              }
+            }
 
-      setSubmitSuccess(true)
-
-      // Update success message to explain the new workflow
-      setTimeout(() => {
-        setSubmitSuccess(false)
-      }, 8000)
+            if (hasError) {
+              setError('Some decisions could not be saved. Please try again.')
+              setSubmitted(false)
+            } else {
+              setSubmitSuccess(true)
+              // Keep current in-memory decisions
+              setTimeout(() => {
+                setSubmitSuccess(false)
+              }, 10000)
+            }
 
     } catch (error: any) {
       console.error('Error submitting decisions:', error)
       setError(error.message || 'Failed to submit decisions')
+      setSubmitted(false)
     } finally {
       setSubmitting(false)
     }
@@ -576,7 +606,7 @@ function StudentPromotionsPage() {
                               </td>
                               <td className="px-4 md:px-6 py-4">
                                 <div className="text-sm text-gray-900 dark:text-white">
-                                  <div>Total: {rec.total_score.toFixed(2)} / {(rec.total_subjects * 100).toFixed(2)}</div>
+                                  <div>Total: {rec.total_score.toFixed(2)}</div>
                                   <div className="text-xs text-gray-500 dark:text-gray-400">
                                     Average: {rec.average_score.toFixed(2)} | Required: {rec.minimum_required.toFixed(2)}
                                   </div>
