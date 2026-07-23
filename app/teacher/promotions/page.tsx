@@ -49,7 +49,8 @@ function StudentPromotionsPage() {
   const [recommendations, setRecommendations] = useState<StudentRecommendation[]>([])
   const [decisions, setDecisions] = useState<Map<string, PromotionDecision>>(new Map())
   const [loadingRecommendations, setLoadingRecommendations] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false) // Guard against double-submit
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -134,93 +135,106 @@ function StudentPromotionsPage() {
     }
   }
 
-  async function fetchRecommendations() {
+    async function fetchRecommendations() {
     setLoadingRecommendations(true)
     setError(null)
     
     try {
-      // Fetch all active students in the class
-      // We left join student_promotions to see current status
-      const { data, error } = await supabase
+      const passMark = 30;
+
+      // Step 1: Get all active students in this class
+      const { data: studentsData, error: studentsError } = await supabase
         .from('students')
-        .select(`
-          id,
-          first_name,
-          middle_name,
-          last_name,
-          student_promotions(
-            promotion_status,
-            average_score,
-            total_subjects,
-            total_score,
-            teacher_remarks,
-            requires_teacher_decision
-          )
-        `)
+        .select('id, first_name, middle_name, last_name')
         .eq('class_id', selectedClass)
         .eq('status', 'active')
-        // We can't easily filter the nested resource by academic_year here without !inner.
-        // Instead, we'll filter in memory or rely on the UI to handle the array.
-        // But since student_promotions has a composite key, we should get the right one if we could filter.
-        // Using a focused strategy:
-        
-      if (error) throw error
 
-      // Transform data
-      const transformedData: StudentRecommendation[] = []
-      const initialDecisions = new Map<string, PromotionDecision>()
+      if (studentsError) throw studentsError
+      if (!studentsData || studentsData.length === 0) {
+        setRecommendations([])
+        setDecisions(new Map())
+        setLoadingRecommendations(false)
+        return
+      }
 
-      // Get system passing average from settings or default to 50
-      // We can fetch this once or hardcode. Let's fetch alongside or just assume 30 as per context.
-      // Ideally we fetched settingsConfig earlier, but let's stick to the view logic.
-      const passMark = 30; // Based on previous conversations
+      const studentIds = studentsData.map((s: any) => s.id)
 
-      // Clean fetching approach:
-      // 1. Get all students
-      // 2. Get their promotion records for this year
-      const studentIds = data?.map((s: any) => s.id) || [];
+      // Step 2: Get all terms for the current academic year
+      const { data: termsData } = await supabase
+        .from('academic_terms')
+        .select('id')
+        .eq('academic_year', academicYear) as { data: any[] | null }
+
+      const termIds = termsData?.map(t => t.id) || []
+
+      // Step 3: Calculate TOTAL scores per student from the scores table
+      // Using total column which is class_score + exam_score
+      let scoresMap: {[key: string]: { total: number, count: number }} = {}
       
-      const { data: promotions } = await supabase
+      if (termIds.length > 0) {
+        const { data: scoresData } = await supabase
+          .from('scores')
+          .select('student_id, total')
+          .in('term_id', termIds)
+          .in('student_id', studentIds)
+          .not('total', 'is', null) as { data: any[] | null }
+
+        if (scoresData) {
+          scoresData.forEach((s: any) => {
+            if (!scoresMap[s.student_id]) {
+              scoresMap[s.student_id] = { total: 0, count: 0 }
+            }
+            scoresMap[s.student_id].total += s.total
+            scoresMap[s.student_id].count++
+          })
+        }
+      }
+
+      // Step 4: Get existing promotion records for the current year
+      const { data: promotionsData } = await supabase
         .from('student_promotions')
         .select('*')
         .in('student_id', studentIds)
         .eq('academic_year', academicYear)
 
-      const promoMap = new Map((promotions as any[])?.map((p: any) => [p.student_id, p]));
+      const promoMap = new Map((promotionsData as any[])?.map((p: any) => [p.student_id, p]) || [])
 
-      data?.forEach((student: any) => {
-        const promo: any = promoMap.get(student.id) || {};
-        
-        // Use promo stats if available, otherwise 0
-        const average = promo.average_score || 0;
-        const totalSub = promo.total_subjects || 0;
-        const totalScore = promo.total_score || 0;
-        const status = promo.promotion_status || 'pending'; // 'promoted', 'repeated', 'pending' or null
-        const remarks = promo.teacher_remarks || '';
+      // Step 5: Build recommendations using REAL calculated scores
+      const transformedData: StudentRecommendation[] = []
+      const initialDecisions = new Map<string, PromotionDecision>()
+
+      studentsData.forEach((student: any) => {
+        const scoreInfo = scoresMap[student.id] || { total: 0, count: 0 }
+        const totalSubjects = scoreInfo.count
+        const totalScore = scoreInfo.total
+        const averageScore = totalSubjects > 0 ? totalScore / totalSubjects : 0
+
+        const promo = promoMap.get(student.id)
+        const status = promo?.promotion_status || 'pending'
+        const remarks = promo?.teacher_remarks || ''
 
         const rec: StudentRecommendation = {
           student_id: student.id,
           student_name: `${student.last_name} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name}`,
-          total_subjects: totalSub,
+          total_subjects: totalSubjects,
           total_score: totalScore,
-          average_score: average,
+          average_score: averageScore,
           minimum_required: passMark,
-          meets_criteria: average >= passMark,
-          recommendation: (average >= passMark) ? 'promote' : 'repeat' // Auto recommendation
+          meets_criteria: averageScore >= passMark,
+          recommendation: (averageScore >= passMark) ? 'promote' : 'repeat'
         }
         
-        transformedData.push(rec);
+        transformedData.push(rec)
 
-        // Pre-fill decision if exists, otherwise use the auto-recommendation
-        let currentDecision: 'promote' | 'repeat' | null = null;
+        // Pre-fill decision
+        let currentDecision: 'promote' | 'repeat' | null = null
         
         if (status === 'promoted' || status === 'graduated') {
-          currentDecision = 'promote';
+          currentDecision = 'promote'
         } else if (status === 'repeated') {
-          currentDecision = 'repeat';
+          currentDecision = 'repeat'
         } else {
-          // If no status yet (or pending), use the calculated recommendation
-          currentDecision = (average >= passMark) ? 'promote' : 'repeat';
+          currentDecision = (averageScore >= passMark) ? 'promote' : 'repeat'
         }
         
         initialDecisions.set(student.id, {
@@ -228,10 +242,10 @@ function StudentPromotionsPage() {
           decision: currentDecision, 
           remarks: remarks
         })
-      });
+      })
 
       // Sort by student name
-      transformedData.sort((a, b) => a.student_name.localeCompare(b.student_name));
+      transformedData.sort((a, b) => a.student_name.localeCompare(b.student_name))
 
       setRecommendations(transformedData)
       setDecisions(initialDecisions)
@@ -257,7 +271,13 @@ function StudentPromotionsPage() {
     })
   }
 
-  async function handleSubmit() {
+    async function handleSubmit() {
+    // GUARD: Prevent double-submit (e.g. slow network + impatient user)
+    if (submitted || submitting) {
+      toast.error('Already submitting, please wait...')
+      return
+    }
+
     if (!selectedClass || !academicYear || !teacher) {
       setError('Missing required information')
       return
@@ -275,6 +295,7 @@ function StudentPromotionsPage() {
     }
 
     setSubmitting(true)
+    setSubmitted(true) // Lock to prevent any further submission attempts
     setError(null)
 
     try {
@@ -285,26 +306,31 @@ function StudentPromotionsPage() {
         .eq('current_class_id', selectedClass)
         .maybeSingle()
 
-      // Submit each decision using the execute_admin_promotion_decision function
+            // Submit each decision using the save_teacher_promotion_decisions function
+      // KEY CHANGE: This function ONLY saves the decision in student_promotions.
+      // It does NOT update students.class_id. Students will NOT disappear from class.
+      // Admin must confirm decisions to execute actual class movement.
       for (const [studentId, decision] of decisions.entries()) {
         if (!decision.decision) continue
 
         const { error: decisionError } = await (supabase
-          .rpc as any)('execute_admin_promotion_decision', {
+          .rpc as any)('save_teacher_promotion_decisions', {
             p_student_id: studentId,
             p_academic_year: academicYear,
-            p_user_id: teacher.profile_id, // Using profile_id (auth user id)
-            p_status: decision.decision === 'promote' ? 'promoted' : 'repeated',
-            p_remarks: decision.remarks || ''
+            p_decision: decision.decision,  // 'promote' or 'repeat'
+            p_remarks: decision.remarks || '',
+            p_teacher_id: teacher.id  // teachers.id (internal ID)
           })
 
         if (decisionError) throw decisionError
       }
 
       setSubmitSuccess(true)
+
+      // Update success message to explain the new workflow
       setTimeout(() => {
         setSubmitSuccess(false)
-      }, 5000)
+      }, 8000)
 
     } catch (error: any) {
       console.error('Error submitting decisions:', error)
@@ -406,9 +432,10 @@ function StudentPromotionsPage() {
           <div className="mb-6 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/60 rounded-2xl shadow-sm p-4 flex items-start space-x-3">
             <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-emerald-800 dark:text-emerald-300 font-medium text-sm md:text-base">Promotion decisions submitted successfully!</p>
+                            <p className="text-emerald-800 dark:text-emerald-300 font-medium text-sm md:text-base">Promotion recommendations submitted successfully!</p>
               <p className="text-emerald-700 dark:text-green-200 text-xs md:text-sm mt-1">
-                These students will be promoted or repeated according to your decisions.
+                Your decisions have been saved. These recommendations will appear on student report cards. 
+                Students will remain in their current class until an <strong>administrator confirms</strong> the decisions.
               </p>
             </div>
           </div>
@@ -455,8 +482,10 @@ function StudentPromotionsPage() {
                 <p className="text-blue-700 dark:text-blue-300">
                   <strong>Teacher Override:</strong> You can review and change these decisions below. For example, you may choose to repeat a student who passed but is not mature enough, or promote a student on probation.
                 </p>
-                <p className="text-blue-700 dark:text-blue-300 mt-3">
-                  Click <strong>Submit</strong> to save your final decisions.
+                                <p className="text-blue-700 dark:text-blue-300 mt-3">
+                  <strong>Important:</strong> Your decisions will appear on report cards but students will NOT be moved
+                  to their next class until an <strong>administrator confirms</strong> them.
+                  Click <strong>Submit</strong> to save your decisions.
                 </p>
               </div>
             </div>
@@ -681,7 +710,7 @@ function StudentPromotionsPage() {
                         </Link>
                         <button
                           onClick={handleSubmit}
-                          disabled={submitting || recommendations.length === 0}
+                          disabled={submitted || submitting || recommendations.length === 0}
                           className="px-6 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 transition text-sm font-medium shadow-sm"
                         >
                           {submitting ? (

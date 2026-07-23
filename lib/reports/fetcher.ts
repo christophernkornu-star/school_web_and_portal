@@ -316,11 +316,12 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
         // But this runs on client (browser), so fetch is fine.
         fetch(`/api/class-rankings?classId=${studentData.class_id}&termId=${targetTermId}`),
         
-        isThirdTerm ? supabase
-            .rpc('get_or_create_promotion_status', {
-              p_student_id: studentId,
-              p_academic_year: academicYear
-            }) : Promise.resolve({ data: [] })
+                isThirdTerm ? supabase
+            .from('student_promotions')
+            .select('*')
+            .eq('student_id', studentId)
+            .eq('academic_year', academicYear)
+            .maybeSingle() : Promise.resolve({ data: null })
     ])
 
     report.attendance = {
@@ -364,14 +365,15 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
         })
     }
     
-    if (isThirdTerm) {
+        if (isThirdTerm) {
         const promotionData = (promotionDataResult as any).data
-        if (promotionData && promotionData.length > 0) {
-            const promotion = promotionData[0]
-            report.promotionDecision = promotion.promotion_status
-            if (promotion.teacher_remarks) {
-            report.promotionStatus = promotion.teacher_remarks
+        if (promotionData) {
+            report.promotionDecision = promotionData.promotion_status
+            if (promotionData.teacher_remarks) {
+            report.promotionStatus = promotionData.teacher_remarks
             }
+            // Store full promotion data for report card display
+            report.promotionData = promotionData
         }
     }
 

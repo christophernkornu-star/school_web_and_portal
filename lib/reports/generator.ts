@@ -7,10 +7,25 @@ function getPromotionStatusText(report: ReportCardData): string {
   // If we have a stored decision from DB, use it
   if (report.promotionDecision) {
     const status = report.promotionDecision.toLowerCase()
-    if (status === 'promoted') return 'PROMOTED'
+    
+    // Check if this is a teacher's pending decision (needs admin approval)
+    const promoData = report.promotionData as any
+    const pendingApproval = promoData?.requires_admin_approval === true
+    
+
+        if (status === 'promoted') {
+      return pendingApproval ? 'PROMOTED' : 'PROMOTED'
+    }
     if (status === 'promoted_probation') return 'PROMOTED ON PROBATION'
-    if (status === 'repeated') return 'REPEATED'
+    if (status === 'repeated') {
+      return pendingApproval ? 'REPEATED' : 'REPEATED'
+    }
+
+
+
+
     if (status === 'graduated') return 'GRADUATED'
+    if (status === 'pending') return 'PENDING'
     return status.toUpperCase()
   }
 
@@ -377,7 +392,7 @@ const generateReportCardContent = (
   examScorePercentage: number
 ) => {
   const { logoImage, methodistLogoImage, signatureImage: signatureBase64 } = theme
-  const studentName = student.profiles?.full_name || `${student.last_name || ''} ${student.first_name || ''}`.trim()
+  const studentName = `${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`.trim()
   const className = (student.classes?.name || student.classes?.class_name || '').toUpperCase()
     const vacationDate = academicSettings?.vacation_start_date 
     ? formatDateDDMMMYYYY(academicSettings.vacation_start_date)
@@ -535,7 +550,7 @@ export const generateReportHTML = (
     <!DOCTYPE html>
     <html>
       <head>
-        <title>Report Card - ${student.profiles?.full_name || 'Student'}</title>
+        <title>Report Card - ${`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`.trim()}</title>
         <style>${getReportStyles(theme.watermarkImage)}</style>
       </head>
       <body>

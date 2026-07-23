@@ -233,19 +233,23 @@ export default function AcademicYearTransition() {
           <div className="flex items-start space-x-3">
             <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
             <div>
-              <h3 className="font-bold text-blue-900 mb-2">How Academic Year Transition Works</h3>
+                            <h3 className="font-bold text-blue-900 mb-2">How Academic Year Transition Works</h3>
               <ul className="space-y-2 text-sm text-blue-800">
                 <li className="flex items-start">
                   <span className="mr-2">•</span>
-                  <span><strong>Students with {passingAverage}% or higher average</strong> (across all 3 terms) will be automatically promoted to the next class.</span>
+                  <span><strong>Students with {passingAverage}% or higher average</strong> will be automatically marked as "Promoted" but will remain in their current class.</span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">•</span>
-                  <span><strong>Students below {passingAverage}% average</strong> will require class teacher decision (promote or repeat).</span>
+                  <span><strong>Students below {passingAverage}% average</strong> will be marked as "Pending" and require class teacher decision.</span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">•</span>
-                  <span>Class teachers will be notified to review and decide on students requiring their decision.</span>
+                  <span><strong>No students will be moved</strong> until an admin confirms promotions from the <strong>Admin Promotions</strong> page.</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="mr-2">•</span>
+                  <span>Class teachers will review and decide on students requiring their input.</span>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">•</span>
@@ -379,9 +383,9 @@ export default function AcademicYearTransition() {
               </div>
             )}
 
-            <div className="mt-4 pt-4 border-t border-green-200">
+                        <div className="mt-4 pt-4 border-t border-green-200">
               <p className="text-sm text-green-800">
-                <strong>Next Steps:</strong> Class teachers can now review and decide on students requiring their decision in the Teacher Promotions page.
+                <strong>Next Steps:</strong> Go to the <strong>Admin Promotions</strong> page to review and confirm all promotions. Students will only move to their next class after admin confirmation.
               </p>
             </div>
           </div>
