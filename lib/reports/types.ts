@@ -50,5 +50,8 @@ export interface ReportCardData {
   promotionStatus?: string // Teacher remarks on promotion
   promotionDecision?: string // Actual decision (promoted, repeated, etc)
   promotionData?: any // Full promotion record if applicable
+  vacationDate?: string // Dated string (e.g. 2025-12-20) for THIS term's vacation start
+  reopeningDate?: string // Dated string for when this term reopens
 
 }
+

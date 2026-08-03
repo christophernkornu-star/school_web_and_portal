@@ -16,6 +16,8 @@ interface Term {
   academic_year: string
   start_date: string
   end_date: string
+  vacation_date: string
+  reopening_date: string
   is_current: boolean
   created_at: string
 }
@@ -33,11 +35,13 @@ export default function TermsPage() {
   const [selectedYear, setSelectedYear] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState({
     name: 'Term 1',
     academic_year: '',
     start_date: '',
     end_date: '',
+    vacation_date: '',
+    reopening_date: '',
     is_current: false
   })
 
@@ -78,13 +82,15 @@ export default function TermsPage() {
         .eq('is_current', true)
     }
 
-    const { data: newTerm, error } = await supabase
+        const { data: newTerm, error } = await supabase
       .from('academic_terms')
       .insert({
         name: formData.name,
         academic_year: formData.academic_year,
         start_date: formData.start_date,
         end_date: formData.end_date,
+        vacation_date: formData.vacation_date || null,
+        reopening_date: formData.reopening_date || null,
         is_current: formData.is_current
       })
       .select()
@@ -152,13 +158,15 @@ export default function TermsPage() {
         .neq('id', selectedTerm.id)
     }
 
-    const { error } = await supabase
+        const { error } = await supabase
       .from('academic_terms')
       .update({
         name: formData.name,
         academic_year: formData.academic_year,
         start_date: formData.start_date,
         end_date: formData.end_date,
+        vacation_date: formData.vacation_date || null,
+        reopening_date: formData.reopening_date || null,
         is_current: formData.is_current
       })
       .eq('id', selectedTerm.id)
@@ -317,11 +325,13 @@ export default function TermsPage() {
 
   const openEditModal = (term: Term) => {
     setSelectedTerm(term)
-    setFormData({
+        setFormData({
       name: term.name,
       academic_year: term.academic_year,
       start_date: term.start_date,
       end_date: term.end_date,
+      vacation_date: term.vacation_date || '',
+      reopening_date: term.reopening_date || '',
       is_current: term.is_current
     })
     setShowEditModal(true)
@@ -332,12 +342,14 @@ export default function TermsPage() {
     setShowDeleteModal(true)
   }
 
-  const resetForm = () => {
+    const resetForm = () => {
     setFormData({
       name: 'Term 1',
       academic_year: '',
       start_date: '',
       end_date: '',
+      vacation_date: '',
+      reopening_date: '',
       is_current: false
     })
     setSelectedTerm(null)
@@ -493,9 +505,17 @@ export default function TermsPage() {
                         <span className="text-gray-600">Start Date:</span>
                         <span className="font-medium">{new Date(term.start_date).toLocaleDateString()}</span>
                       </div>
-                      <div className="flex justify-between">
+                                            <div className="flex justify-between">
                         <span className="text-gray-600">End Date:</span>
                         <span className="font-medium">{new Date(term.end_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Vacation Date:</span>
+                        <span className="font-medium">{term.vacation_date ? new Date(term.vacation_date).toLocaleDateString() : 'TBA'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Reopening Date:</span>
+                        <span className="font-medium">{term.reopening_date ? new Date(term.reopening_date).toLocaleDateString() : 'TBA'}</span>
                       </div>
                     </div>
 
@@ -574,12 +594,32 @@ export default function TermsPage() {
                 />
               </div>
 
-              <div>
+                            <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                 <input
                   type="date"
                   value={formData.end_date}
                   onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vacation Date</label>
+                <input
+                  type="date"
+                  value={formData.vacation_date}
+                  onChange={(e) => setFormData({ ...formData, vacation_date: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reopening Date</label>
+                <input
+                  type="date"
+                  value={formData.reopening_date}
+                  onChange={(e) => setFormData({ ...formData, reopening_date: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 />
               </div>
@@ -658,12 +698,32 @@ export default function TermsPage() {
                 />
               </div>
 
-              <div>
+                            <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
                 <input
                   type="date"
                   value={formData.end_date}
                   onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vacation Date</label>
+                <input
+                  type="date"
+                  value={formData.vacation_date}
+                  onChange={(e) => setFormData({ ...formData, vacation_date: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reopening Date</label>
+                <input
+                  type="date"
+                  value={formData.reopening_date}
+                  onChange={(e) => setFormData({ ...formData, reopening_date: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                 />
               </div>

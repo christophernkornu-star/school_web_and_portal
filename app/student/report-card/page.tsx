@@ -140,9 +140,10 @@ export default function ReportCardPage() {
 
   // Now use the shared hook!
   // We pass studentId and selectedTermId.
-  // The hook returns { reportData, ... }
-  const { 
+        const { 
     loading: reportLoading, 
+    error: reportError,
+    refresh: refreshReport,
     reportData, 
     student, 
     academicSettings, 
@@ -217,6 +218,28 @@ export default function ReportCardPage() {
                  <Skeleton className="h-96 w-full rounded-lg" />
             </div>
         </div>
+      )
+  }
+  
+    if (reportError && !reportData) {
+      return (
+          <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+              <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-red-100 dark:border-red-900/40 p-8 text-center">
+                  <FileText className="w-14 h-14 text-red-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Couldn&apos;t load your report</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
+                      There was a problem connecting to load your report card.
+                      Please check your internet connection and try again.
+                  </p>
+                  <button
+                      onClick={() => refreshReport()}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                      <RefreshCw className="w-4 h-4" />
+                      Retry
+                  </button>
+              </div>
+          </div>
       )
   }
   

@@ -154,13 +154,15 @@ export default function GeneralSettings() {
 
       // If term doesn't exist, create it
       if (!termId && formData.current_term && formData.current_academic_year) {
-        const { data: newTerm, error: createTermError } = await supabase
+                const { data: newTerm, error: createTermError } = await supabase
           .from('academic_terms')
           .insert({
             name: formData.current_term,
             academic_year: formData.current_academic_year,
             start_date: formData.term_start_date || new Date().toISOString().split('T')[0],
             end_date: formData.term_end_date || new Date().toISOString().split('T')[0],
+            vacation_date: formData.term_end_date || null,
+            reopening_date: formData.term_start_date || null,
             is_current: true
           })
           .select('id')
@@ -210,12 +212,16 @@ export default function GeneralSettings() {
           .update({ is_current: false })
           .neq('id', termId)
           
-        await supabase
+                await supabase
           .from('academic_terms')
           .update({ 
             is_current: true,
             start_date: formData.term_start_date || null,
-            end_date: formData.term_end_date || null
+            end_date: formData.term_end_date || null,
+            // Keep this term's per-term dates in sync with the simple settings.
+            // Reopening = when this term starts; Vacation = when this term ends.
+            vacation_date: formData.term_end_date || null,
+            reopening_date: formData.term_start_date || null
           })
           .eq('id', termId)
       } else {

@@ -25,11 +25,12 @@ export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<Subject[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
-  const [saving, setSaving] = useState(false)
+    const [activeLevel, setActiveLevel] = useState<string>('')
+    const [showAddModal, setShowAddModal] = useState(false)
+    const [showEditModal, setShowEditModal] = useState(false)
+    const [showDeleteModal, setShowDeleteModal] = useState(false)
+    const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null)
+    const [saving, setSaving] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -172,9 +173,10 @@ export default function SubjectsPage() {
   }
 
   const filteredSubjects = subjects.filter(subject =>
-    subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    subject.code.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+      (activeLevel === '' || subject.level === activeLevel) &&
+      (subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      subject.code.toLowerCase().includes(searchTerm.toLowerCase()))
+    )
 
   if (loading) {
     return (
@@ -252,8 +254,8 @@ export default function SubjectsPage() {
       </header>
 
       <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {/* Search */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+                {/* Search */}
+        <div className="bg-white rounded-lg shadow p-4 mb-4">
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
             <input
@@ -266,16 +268,39 @@ export default function SubjectsPage() {
           </div>
         </div>
 
+        {/* Category Tabs */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {[
+            { value: '', label: 'All' },
+            { value: 'kindergarten', label: 'Kindergarten' },
+            { value: 'lower_primary', label: 'Lower Primary' },
+            { value: 'upper_primary', label: 'Upper Primary' },
+            { value: 'jhs', label: 'JHS' },
+          ].map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveLevel(tab.value)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                activeLevel === tab.value
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         {filteredSubjects.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? 'No subjects found' : 'No subjects yet'}
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm || activeLevel ? 'No subjects found' : 'No subjects yet'}
             </h3>
             <p className="text-gray-600 mb-6">
-              {searchTerm ? 'Try a different search term' : 'Get started by adding your first subject'}
+              {searchTerm || activeLevel ? 'Try a different search term or tab' : 'Get started by adding your first subject'}
             </p>
-            {!searchTerm && (
+            {!searchTerm && !activeLevel && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"

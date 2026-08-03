@@ -61,6 +61,21 @@ export async function fetchBulkReportCardData(studentIds: string[], termId?: str
     
     if (!targetTermId) return []
 
+    // Fetch THIS term's own vacation & reopening dates (per-term dates fix).
+    // Each report card now carries the dates from ITS OWN term record instead of
+    // the single global academic_settings row.
+    let termVacationDate: string | null = null
+    let termReopeningDate: string | null = null
+    {
+      const { data: termDates } = await supabase
+        .from('academic_terms')
+        .select('vacation_date, reopening_date')
+        .eq('id', targetTermId)
+        .maybeSingle()
+      termVacationDate = termDates?.vacation_date || null
+      termReopeningDate = termDates?.reopening_date || null
+    }
+
     // 4. Fetch Scores (Only for target term to save mem)
     const { data: grades } = await supabase
         .from('scores')
@@ -194,6 +209,8 @@ export async function fetchBulkReportCardData(studentIds: string[], termId?: str
             totalClassSize,
             aggregate,
             attendance,
+            vacationDate: termVacationDate || undefined,
+            reopeningDate: termReopeningDate || undefined,
             promotionDecision: studentPromotion?.promotion_status || undefined,
             promotionStatus: studentPromotion?.teacher_remarks || undefined,
             remarks: stuRemark ? {

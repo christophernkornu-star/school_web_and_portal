@@ -104,6 +104,75 @@ export default function PromotionsPage() {
 
       const termIds = termsData?.map(t => t.id) || []
 
+            const numberOfTerms = termIds.length || 1
+
+      // Precompute a subject count per class using the same robust resolution as the
+      // teacher portal:
+      //   1) Level-based subject list (Lower/Upper Primary, JHS)
+      //   2) Subjects actually allocated to the class via class_subjects
+      //   3) Distinct subjects that have recorded scores for that class's students
+      //      (covers KG, where the subjects table may have no level rows yet)
+      const classSubjectCounts: {[key: string]: number} = {}
+
+      // Group students by class
+      const classStudentIds: {[key: string]: string[]} = {}
+      studentsData.forEach((s: any) => {
+        const cid = s.class_id || 'unknown'
+        if (!classStudentIds[cid]) classStudentIds[cid] = []
+        classStudentIds[cid].push(s.id)
+      })
+
+      // Build a helper inline since we can't declare local functions inside a block here.
+      for (const cid of Object.keys(classStudentIds)) {
+        let count = 0
+        const classInfo = classesData?.find((c: any) => c.id === cid)
+        if (classInfo) {
+          const cLevel = classInfo.level
+          let levelCategory = ''
+          if (typeof cLevel === 'string') {
+            levelCategory = cLevel.toLowerCase()
+          } else if (typeof cLevel === 'number') {
+            if (cLevel >= 1 && cLevel <= 2) levelCategory = 'kindergarten'
+            else if (cLevel >= 3 && cLevel <= 5) levelCategory = 'lower_primary'
+            else if (cLevel >= 6 && cLevel <= 8) levelCategory = 'upper_primary'
+            else if (cLevel >= 9) levelCategory = 'jhs'
+          }
+          if (levelCategory) {
+            const { data: subjectData } = await supabase
+              .from('subjects')
+              .select('id')
+              .eq('level', levelCategory)
+            if (subjectData && subjectData.length > 0) {
+              count = subjectData.length
+            } else {
+              const { data: classSubjectsData } = await supabase
+                .from('class_subjects')
+                .select('subject_id')
+                .eq('class_id', cid)
+                .eq('academic_year', currentYear)
+              if (classSubjectsData && classSubjectsData.length > 0) {
+                count = classSubjectsData.length
+              } else {
+                if (termIds.length > 0 && classStudentIds[cid].length > 0) {
+                  const { data: derivedSubjects } = await supabase
+                    .from('scores')
+                    .select('subject_id')
+                    .in('term_id', termIds)
+                    .in('student_id', classStudentIds[cid])
+                  if (derivedSubjects && derivedSubjects.length > 0) {
+                    count = new Set(derivedSubjects.map((d: any) => d.subject_id)).size
+                  }
+                }
+              }
+            }
+          }
+        }
+        classSubjectCounts[cid] = count
+      }
+
+      // Total score per student: sum of every scored subject across all terms.
+      // Any subject allocated to the level but WITHOUT a score row simply does not
+      // add to the numerator, while still counting in the denominator (i.e. treated as 0).
       let scoresMap: {[key: string]: number} = {}
       if (termIds.length > 0) {
         const { data: scoresData } = await supabase
@@ -112,16 +181,9 @@ export default function PromotionsPage() {
           .in('term_id', termIds) as { data: any[] | null }
 
         if (scoresData) {
-          // Calculate average per student
-          const studentScores: {[key: string]: number[]} = {}
           scoresData.forEach(s => {
-            if (!studentScores[s.student_id]) studentScores[s.student_id] = []
-            studentScores[s.student_id].push(s.total)
-          })
-          
-          Object.keys(studentScores).forEach(studentId => {
-            const scores = studentScores[studentId]
-            scoresMap[studentId] = scores.reduce((a, b) => a + b, 0) / scores.length
+            if (!scoresMap[s.student_id]) scoresMap[s.student_id] = 0
+            scoresMap[s.student_id] += s.total
           })
         }
       }
@@ -129,9 +191,13 @@ export default function PromotionsPage() {
       // Merge data
       const studentsWithPromotion = studentsData.map(student => {
         const promotion = promotionsData?.find(p => p.student_id === student.id)
+        const subjectCount = classSubjectCounts[student.class_id] || 0
+        const divisor = (subjectCount * numberOfTerms) || 1
+        const totalScore = scoresMap[student.id] || 0
+        const average = totalScore / divisor
         return {
           ...student,
-          average_score: scoresMap[student.id] || 0,
+          average_score: average,
           promotion_status: promotion?.promotion_status || '',
           teacher_remarks: promotion?.teacher_remarks || ''
         }
@@ -143,9 +209,8 @@ export default function PromotionsPage() {
     setLoading(false)
   }
 
-  const getAutoPromotion = (average: number): string => {
-    if (average >= 50) return 'promoted'
-    if (average >= 40) return 'promoted' // On trial
+    const getAutoPromotion = (average: number): string => {
+    if (average >= 30) return 'promoted'
     return 'repeated'
   }
 
@@ -695,10 +760,9 @@ export default function PromotionsPage() {
                               </div>
                               <div className="text-[10px] md:text-xs text-gray-500">{student.student_id}</div>
                             </td>
-                            <td className="px-4 py-3">
+                                                        <td className="px-4 py-3">
                               <span className={`text-xs md:text-sm font-semibold ${
-                                (student.average_score || 0) >= 50 ? 'text-green-600' :
-                                (student.average_score || 0) >= 40 ? 'text-yellow-600' : 'text-red-600'
+                                (student.average_score || 0) >= 30 ? 'text-green-600' : 'text-red-600'
                               }`}>
                                 {(student.average_score || 0).toFixed(1)}%
                               </span>
@@ -784,9 +848,8 @@ export default function PromotionsPage() {
                           </div>
                           <div className="flex flex-col items-end">
                             <span className="text-xs text-gray-500 mb-1">Average</span>
-                            <span className={`text-sm font-bold ${
-                              (student.average_score || 0) >= 50 ? 'text-green-600' :
-                              (student.average_score || 0) >= 40 ? 'text-yellow-600' : 'text-red-600'
+                                                        <span className={`text-sm font-bold ${
+                              (student.average_score || 0) >= 30 ? 'text-green-600' : 'text-red-600'
                             }`}>
                               {(student.average_score || 0).toFixed(1)}%
                             </span>

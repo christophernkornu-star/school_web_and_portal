@@ -152,6 +152,35 @@ export function isPromotionTerm(termName: string): boolean {
 }
 
 /**
+ * Returns a chronological ordering key [yearStart, termNumber] for a term.
+ *
+ * Terms are canonically ordered by their academic year (the leading 4-digit
+ * year of the academic_year string) and then by the term number within that
+ * year (Term 1 < Term 2 < Term 3). This is robust when start_date is missing
+ * or inconsistent, and handles both academic year formats ("2025/2026" and
+ * "2025/26").
+ */
+export function getTermOrderParts(termName: string, academicYear: string): [number, number] {
+    // Leading 4-digit year indicates the academic year it starts in.
+    const yearMatch = String(academicYear || '').match(/(\d{4})/);
+    const yearStart = yearMatch ? parseInt(yearMatch[1], 10) : 0;
+
+    // Extract term number from a name like "Term 1", "1st Term", "Third Term".
+    const termMatch = String(termName || '').match(/term\s*(\d+)/i);
+    let termNumber = 0;
+    if (termMatch) {
+        termNumber = parseInt(termMatch[1], 10);
+    } else {
+        const low = String(termName || '').toLowerCase();
+        if (low.includes('third') || low.includes('3rd')) termNumber = 3;
+        else if (low.includes('second') || low.includes('2nd')) termNumber = 2;
+        else if (low.includes('first') || low.includes('1st')) termNumber = 1;
+    }
+
+    return [yearStart, termNumber];
+}
+
+/**
  * Standardizes student name display format (Last, Middle First)
  */
 export function formatStudentName(student: { first_name?: string | null, middle_name?: string | null, last_name?: string | null }): string {

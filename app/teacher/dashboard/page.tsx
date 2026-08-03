@@ -30,6 +30,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip } from '@/components/ui/tooltip-custom'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { getTermOrderParts } from '@/lib/academic-utils'
 import { StudentStatsModal } from '@/components/admin/StudentStatsModal'
 import { TeacherClassesModal } from '@/components/teacher/TeacherClassesModal'
 import { differenceInDays } from 'date-fns'
@@ -70,9 +71,20 @@ export default function TeacherDashboard() {
                p_teacher_id: teacher.teacher_id
            });
 
-           if (!rpcError && rpcData && rpcData.length > 0) {
+                      if (!rpcError && rpcData && rpcData.length > 0) {
+               // Sort into strict chronological order (academic year, then term number).
+               // The RPC orders by start_date, which may be missing/inconsistent across
+               // terms, causing a jumbled x-axis (e.g. Term 2 then next-year Term 1 then
+               // Term 3). Re-sorting client-side guarantees Term 1 -> Term 2 -> Term 3 -> ...
+               const sortedRpc = [...rpcData].sort((a: any, b: any) => {
+                   const [ya, ta] = getTermOrderParts(a.term_name, a.term_name)
+                   const [yb, tb] = getTermOrderParts(b.term_name, b.term_name)
+                   if (ya !== yb) return ya - yb
+                   if (ta !== tb) return ta - tb
+                   return 0
+               });
                // Map RPC data to chart format
-               const chartData = rpcData.map((d: any) => ({
+               const chartData = sortedRpc.map((d: any) => ({
                    termName: d.term_name,
                    score: Math.round(d.average_score),
                    maxScore: Math.round(d.max_score || 0)
@@ -80,6 +92,7 @@ export default function TeacherDashboard() {
                setPerformanceData(chartData);
                setPerformanceLoading(false);
                return; // Exit if RPC succeeded
+
            } else if (rpcError) {
                console.warn("RPC Optimization failed/not found, falling back to manual aggregation:", rpcError.message);
                // Continue to fallback...
@@ -117,8 +130,16 @@ export default function TeacherDashboard() {
                 return;
             }
             
-            // Reverse to chronological order for chart (Oldest -> Newest)
-            const sortedTerms = [...terms].reverse();
+                        // Sort into strict chronological order (academic year, then term number)
+            // rather than relying on start_date, which may be missing/inconsistent and
+            // caused the x-axis to appear jumbled (e.g. Term 2 -> next-year Term 1 -> Term 3).
+            const sortedTerms = [...terms].sort((a: any, b: any) => {
+                const [ya, ta] = getTermOrderParts(a.name, a.academic_year)
+                const [yb, tb] = getTermOrderParts(b.name, b.academic_year)
+                if (ya !== yb) return ya - yb
+                if (ta !== tb) return ta - tb
+                return 0
+            });
             const termIds = sortedTerms.map((t: any) => t.id);
 
             // 3. Fetch Student IDs in Classes

@@ -187,14 +187,41 @@ function StudentPromotionsPage() {
         else if (level >= 9) levelCategory = 'jhs'
       }
       
-      let totalSubjectsForClass = 0
-      
-            if (levelCategory) {
+                  let totalSubjectsForClass = 0
+
+      if (levelCategory) {
+        // 1) Primary: subject list based on the class level
         const { data: subjectData } = await supabase
           .from('subjects')
           .select('id')
           .eq('level', levelCategory)
-        if (subjectData) totalSubjectsForClass = subjectData.length
+        if (subjectData && subjectData.length > 0) {
+          totalSubjectsForClass = subjectData.length
+        } else {
+          // 2) Fallback: subjects actually allocated to this specific class
+          const { data: classSubjectsData } = await supabase
+            .from('class_subjects')
+            .select('subject_id')
+            .eq('class_id', selectedClass)
+            .eq('academic_year', academicYear)
+          if (classSubjectsData && classSubjectsData.length > 0) {
+            totalSubjectsForClass = classSubjectsData.length
+          } else {
+            // 3) Last resort: derive the subject count from the distinct subjects that
+            //    have recorded scores for this class's students (handles KG, where the
+            //    subjects table may have no level rows yet).
+            if (termIds.length > 0 && studentIds.length > 0) {
+              const { data: derivedSubjects } = await supabase
+                .from('scores')
+                .select('subject_id')
+                .in('term_id', termIds)
+                .in('student_id', studentIds)
+              if (derivedSubjects && derivedSubjects.length > 0) {
+                totalSubjectsForClass = new Set(derivedSubjects.map((s: any) => s.subject_id)).size
+              }
+            }
+          }
+        }
       }
 
       // Step 4: Calculate TOTAL scores per student from the scores table
@@ -228,9 +255,10 @@ function StudentPromotionsPage() {
 
             const promoMap = new Map((promotionsData as any[])?.map((p: any) => [p.student_id, p]) || [])
 
-            // Step 7: Build recommendations
-            // Average = total score across all terms / total subjects the class takes
-      const divisor = totalSubjectsForClass || 1
+                        // Step 7: Build recommendations
+            // Average = total score across all terms / (total subjects × number of terms)
+      const numberOfTerms = termIds.length || 1
+      const divisor = (totalSubjectsForClass * numberOfTerms) || 1
 
       const transformedData: StudentRecommendation[] = []
       const initialDecisions = new Map<string, PromotionDecision>()

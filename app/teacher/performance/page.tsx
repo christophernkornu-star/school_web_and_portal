@@ -7,6 +7,7 @@ import { ArrowLeft, BarChart3, TrendingUp, Award, Users, AlertCircle, Download, 
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
+import { getTermOrderParts } from '@/lib/academic-utils'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
@@ -520,9 +521,9 @@ export default function PerformancePage() {
           term_id,
           subject_id,
           total,
-          students!inner(class_id),
+                    students!inner(class_id),
           subjects(name),
-          academic_terms(name, start_date)
+          academic_terms(name, academic_year, start_date)
         `)
         .in('students.class_id', classIds) as { data: any[] | null; error: any }
 
@@ -535,15 +536,16 @@ export default function PerformancePage() {
       }
 
       // Calculate overall trends (class average per term)
-      const termAverages = new Map<string, { sum: number; count: number; name: string; passCount: number; startDate: string }>()
+            const termAverages = new Map<string, { sum: number; count: number; name: string; passCount: number; startDate: string; academicYear: string }>()
       
       scoresData.forEach((score: any) => {
         const termId = score.term_id
         const termName = score.academic_terms?.name || 'Unknown'
         const startDate = score.academic_terms?.start_date || ''
+        const academicYear = score.academic_terms?.academic_year || ''
         
         if (!termAverages.has(termId)) {
-          termAverages.set(termId, { sum: 0, count: 0, name: termName, passCount: 0, startDate })
+          termAverages.set(termId, { sum: 0, count: 0, name: termName, passCount: 0, startDate, academicYear })
         }
         
         const termData = termAverages.get(termId)!
@@ -552,16 +554,23 @@ export default function PerformancePage() {
         if (score.total >= 50) termData.passCount += 1
       })
 
-      // Convert to array and sort by date
+            // Convert to array and sort chronologically (academic year, then term number)
+      // rather than by start_date, which may be missing/inconsistent for some terms.
       const overallTrendData: TermTrend[] = Array.from(termAverages.entries())
         .map(([termId, data]) => ({
           termName: data.name,
           classAverage: Math.round((data.sum / data.count) * 10) / 10,
           passRate: Math.round((data.passCount / data.count) * 100 * 10) / 10,
-          startDate: data.startDate
+          academicYear: data.academicYear
         }))
-        .sort((a: any, b: any) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
-        .map(({ startDate, ...rest }) => rest)
+        .sort((a: any, b: any) => {
+          const [ya, ta] = getTermOrderParts(a.termName, a.academicYear)
+          const [yb, tb] = getTermOrderParts(b.termName, b.academicYear)
+          if (ya !== yb) return ya - yb
+          if (ta !== tb) return ta - tb
+          return 0
+        })
+        .map(({ academicYear, ...rest }) => rest)
 
       setOverallTrends(overallTrendData)
 
@@ -606,9 +615,15 @@ export default function PerformancePage() {
 
       // Convert to chart data format
       const allTermIds = Array.from(new Set(scoresData.map((s: any) => s.term_id)))
-      const termOrder = allTerms
+            const termOrder = allTerms
         .filter(t => allTermIds.includes(t.id))
-        .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+        .sort((a: any, b: any) => {
+          const [ya, ta] = getTermOrderParts(a.name, a.academic_year)
+          const [yb, tb] = getTermOrderParts(b.name, b.academic_year)
+          if (ya !== yb) return ya - yb
+          if (ta !== tb) return ta - tb
+          return 0
+        })
 
       const subjectTrendData: SubjectTrend[] = termOrder.map(term => {
         const dataPoint: SubjectTrend = { termName: term.name }

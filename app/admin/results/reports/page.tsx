@@ -105,7 +105,7 @@ export default function ReportsPage() {
     try {
       const [classesRes, termsRes, settingsRes, systemSettingsRes] = await Promise.all([
         supabase.from('classes').select('id, name').order('name'),
-        supabase.from('academic_terms').select('id, name, academic_year, is_current').order('start_date', { ascending: false }),
+        supabase.from('academic_terms').select('id, name, academic_year, is_current, vacation_date, reopening_date').order('start_date', { ascending: false }),
         supabase.from('academic_settings').select('*').single(),
         supabase.from('system_settings').select('class_score_percentage, exam_score_percentage').single()
       ])
@@ -268,7 +268,7 @@ export default function ReportsPage() {
              }
              
              // Construct ReportCardData strict type
-             const reportDataObj: ReportCardData = {
+                          const reportDataObj: ReportCardData = {
                  termId: selectedTerm,
                  termName: term?.name || '',
                  year: term?.academic_year || '',
@@ -278,6 +278,8 @@ export default function ReportsPage() {
                  position: position,
                  totalClassSize: students.length,
                  attendance: { present: 0, total: 0 },
+                 vacationDate: term?.vacation_date || undefined,
+                 reopeningDate: term?.reopening_date || undefined,
                  remarks: {
                      attitude: '',
                      interest: '',

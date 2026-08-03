@@ -393,13 +393,22 @@ const generateReportCardContent = (
 ) => {
   const { logoImage, methodistLogoImage, signatureImage: signatureBase64 } = theme
   const studentName = `${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`.trim()
-  const className = (student.classes?.name || student.classes?.class_name || '').toUpperCase()
-    const vacationDate = academicSettings?.vacation_start_date 
-    ? formatDateDDMMMYYYY(academicSettings.vacation_start_date)
-    : 'TBA'
-  const reopeningDate = academicSettings?.school_reopening_date 
-    ? formatDateDDMMMYYYY(academicSettings.school_reopening_date)
-    : 'TBA'
+    const className = (student.classes?.name || student.classes?.class_name || '').toUpperCase()
+  // Vacation/reopening dates are now stored PER TERM on the academic_terms table.
+  // Prefer the report card's own term dates (reportData.vacationDate / reportData.reopeningDate);
+  // fall back to the global academic_settings (which holds only the CURRENT term) and finally 'TBA'.
+  // This stops setting up the next term from mutating already-issued report cards, which previously
+  // all read the single global academic_settings row.
+  const vacationDate = reportData?.vacationDate
+    ? formatDateDDMMMYYYY(reportData.vacationDate)
+    : academicSettings?.vacation_start_date
+      ? formatDateDDMMMYYYY(academicSettings.vacation_start_date)
+      : 'TBA'
+  const reopeningDate = reportData?.reopeningDate
+    ? formatDateDDMMMYYYY(reportData.reopeningDate)
+    : academicSettings?.school_reopening_date
+      ? formatDateDDMMMYYYY(academicSettings.school_reopening_date)
+      : 'TBA'
 
   return `
         <div class="report-card">

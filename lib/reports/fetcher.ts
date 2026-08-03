@@ -197,8 +197,21 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
         }
     }
 
-    const report = termGroups[targetTermId]
-    
+        const report = termGroups[targetTermId]
+
+    // Fetch THIS term's own vacation & reopening dates (per-term dates fix).
+    // Previously all report cards read the single global academic_settings row,
+    // which caused them to show the NEXT term's dates as soon as admin saved them.
+    {
+      const { data: termDates } = await supabase
+        .from('academic_terms')
+        .select('vacation_date, reopening_date')
+        .eq('id', targetTermId)
+        .maybeSingle()
+      report.vacationDate = termDates?.vacation_date || undefined
+      report.reopeningDate = termDates?.reopening_date || undefined
+    }
+
     // Fetch subjects based on level
     const classLevel = studentData.classes?.level
     let levelCategory = ''
