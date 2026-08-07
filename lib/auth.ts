@@ -91,7 +91,26 @@ export async function signInWithUsername(username: string, password: string) {
     }
   }
 
-  // Ensure user metadata has the role (crucial for middleware)
+    // Check if user is a student and if they have graduated
+  if (role === 'student') {
+    const { data: studentData } = await browserSupabase
+      .from('students')
+      .select('status')
+      .eq('profile_id', data.user.id)
+      .maybeSingle()
+    
+    if (studentData && studentData.status === 'graduated') {
+      console.log('❌ Student account has graduated')
+      await browserSupabase.auth.signOut()
+      return { 
+        data: null, 
+        error: { message: 'Your account has been marked as graduated and no longer has access. Contact the school administrator.' }, 
+        role: null 
+      }
+    }
+  }
+
+    // Ensure user metadata has the role (crucial for middleware)
   if (role && data.user && data.user.user_metadata?.role !== role) {
     console.log('🔄 Updating user metadata with role:', role)
     await browserSupabase.auth.updateUser({

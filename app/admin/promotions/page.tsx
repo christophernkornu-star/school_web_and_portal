@@ -45,9 +45,12 @@ export default function PromotionsPage() {
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
   const [activeTab, setActiveTab] = useState<'manage' | 'pending'>('manage')
-  const [pendingDecisions, setPendingDecisions] = useState<any[]>([])
+    const [pendingDecisions, setPendingDecisions] = useState<any[]>([])
     const [confirming, setConfirming] = useState<string | null>(null)
   const [loadingPending, setLoadingPending] = useState(false)
+  // Multi-confirm: which pending decisions are selected for bulk confirm/reject.
+  const [selectedPending, setSelectedPending] = useState<string[]>([])
+  const [bulkConfirming, setBulkConfirming] = useState(false)
 
   useEffect(() => {
     loadAvailableYears()
@@ -370,11 +373,12 @@ export default function PromotionsPage() {
     }
   }
 
-  async function handleYearChange(newYear: string) {
+    async function handleYearChange(newYear: string) {
     if (!newYear || newYear === academicYear) return
     setAcademicYear(newYear)
     setPromotionChanges({})
     setSelectedStudents([])
+    setSelectedPending([])
     setLoading(true)
     await loadData(newYear)
         if (activeTab === 'pending') {
@@ -444,13 +448,95 @@ export default function PromotionsPage() {
 
       if (error) throw error
 
-      toast.success('Teacher decision rejected. Student status reset to pending.')
+            toast.success('Teacher decision rejected. Student status reset to pending.')
       await loadPendingDecisions()
     } catch (error: any) {
       console.error('Error rejecting decision:', error)
       toast.error(error.message || 'Failed to reject decision')
     } finally {
       setConfirming(null)
+    }
+  }
+
+  // --- Multi-confirm: bulk confirm / reject selected pending decisions ------
+
+  const handleSelectPendingDecision = (studentId: string) => {
+    setSelectedPending(prev =>
+      prev.includes(studentId)
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    )
+  }
+
+  const handleSelectAllPending = () => {
+    const allIds = pendingDecisions.map(d => d.student_id)
+    const allSelected = allIds.length > 0 && allIds.every(id => selectedPending.includes(id))
+    setSelectedPending(allSelected ? [] : allIds)
+  }
+
+  async function handleBulkConfirmPending() {
+    if (selectedPending.length === 0) return
+    setBulkConfirming(true)
+    try {
+      const user = await getCurrentUser()
+      if (!user) throw new Error('Not authenticated')
+
+      let confirmed = 0
+      for (const studentId of selectedPending) {
+        const record = pendingDecisions.find(p => p.student_id === studentId)
+        if (!record) continue
+        const { error } = await supabase.rpc('execute_admin_promotion_decision', {
+          p_student_id: studentId,
+          p_academic_year: academicYear,
+          p_user_id: user.id,
+          p_status: record.promotion_status,
+          p_remarks: record.teacher_remarks || ''
+        })
+        if (error) throw error
+        confirmed++
+      }
+
+      toast.success(`Confirmed ${confirmed} promotion decision${confirmed === 1 ? '' : 's'}!`)
+      setSelectedPending([])
+      await loadPendingDecisions()
+      refreshPriorPendingCount(academicYear)
+    } catch (error: any) {
+      console.error('Error confirming selected decisions:', error)
+      toast.error(error.message || 'Failed to confirm selected decisions')
+    } finally {
+      setBulkConfirming(false)
+    }
+  }
+
+  async function handleBulkRejectPending() {
+    if (selectedPending.length === 0) return
+    setBulkConfirming(true)
+    try {
+      let rejected = 0
+      for (const studentId of selectedPending) {
+        const { error } = await supabase
+          .from('student_promotions')
+          .update({
+            requires_admin_approval: false,
+            promotion_status: 'pending',
+            teacher_remarks: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('student_id', studentId)
+          .eq('academic_year', academicYear)
+        if (error) throw error
+        rejected++
+      }
+
+      toast.success(`Rejected ${rejected} teacher decision${rejected === 1 ? '' : 's'}. Students reset to pending.`)
+      setSelectedPending([])
+      await loadPendingDecisions()
+      refreshPriorPendingCount(academicYear)
+    } catch (error: any) {
+      console.error('Error rejecting selected decisions:', error)
+      toast.error(error.message || 'Failed to reject selected decisions')
+    } finally {
+      setBulkConfirming(false)
     }
   }
 
@@ -740,15 +826,85 @@ export default function PromotionsPage() {
                   All teacher recommendations have been processed. There are no pending decisions to review.
                 </p>
               </div>
-            ) : (
+                        ) : (
               <div className="space-y-4">
+                {/* Select-all toolbar */}
+                <div className="bg-white rounded-lg shadow border border-gray-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={pendingDecisions.length > 0 && pendingDecisions.every(d => selectedPending.includes(d.student_id))}
+                      onChange={handleSelectAllPending}
+                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                    />
+                    <span>Select All</span>
+                    <span className="text-xs text-gray-500">({pendingDecisions.length} pending)</span>
+                  </label>
+                  {selectedPending.length > 0 && (
+                    <span className="text-sm text-purple-800">
+                      <strong>{selectedPending.length}</strong> selected
+                    </span>
+                  )}
+                </div>
+
+                {/* Bulk confirm / reject action bar */}
+                {selectedPending.length > 0 && (
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="bg-purple-100 p-2 rounded-full">
+                        <UserCheck className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <span className="font-medium text-purple-900">
+                        {selectedPending.length} student{selectedPending.length === 1 ? '' : 's'} selected
+                      </span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
+                      <button
+                        onClick={handleBulkConfirmPending}
+                        disabled={bulkConfirming}
+                        className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center space-x-2 transition-colors"
+                      >
+                        {bulkConfirming ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Check className="w-4 h-4" />
+                        )}
+                        <span>Confirm Selected</span>
+                      </button>
+                      <button
+                        onClick={handleBulkRejectPending}
+                        disabled={bulkConfirming}
+                        className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center space-x-2 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>Reject Selected</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedPending([])}
+                        disabled={bulkConfirming}
+                        className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {pendingDecisions.map((decision) => {
                   const student = decision.students
+                  const isPendingSelected = selectedPending.includes(decision.student_id)
                   return (
-                    <div key={decision.student_id} className="bg-white rounded-lg shadow border border-amber-200 p-4 md:p-6">
+                    <div key={decision.student_id} className={`bg-white rounded-lg shadow border border-amber-200 p-4 md:p-6 ${isPendingSelected ? 'ring-2 ring-purple-500' : ''}`}>
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3">
+                            <input
+                              type="checkbox"
+                              checked={isPendingSelected}
+                              onChange={() => handleSelectPendingDecision(decision.student_id)}
+                              className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 mt-0.5"
+                              aria-label={`Select ${student?.first_name} ${student?.last_name}`}
+                            />
                             <div>
                               <h4 className="font-semibold text-gray-900">
                                 {student?.first_name} {student?.last_name}

@@ -77,11 +77,14 @@ export default function ClassesPage() {
     // Get student counts for each class
     const studentCounts = new Map<string, number>()
     if (classesData) {
-      for (const cls of classesData) {
+            for (const cls of classesData) {
+        // Only count ACTIVE students so graduated/inactive students don't
+        // inflate the class roster. This matches the teacher portal's view.
         const { count } = await supabase
           .from('students')
           .select('*', { count: 'exact', head: true })
           .eq('class_id', cls.id)
+          .eq('status', 'active')
         studentCounts.set(cls.id, count || 0)
       }
     }
