@@ -36,36 +36,70 @@ export default function PromotionsPage() {
   const [saving, setSaving] = useState(false)
   const [students, setStudents] = useState<Student[]>([])
   const [classes, setClasses] = useState<any[]>([])
-  const [classFilter, setClassFilter] = useState('all')
+    const [classFilter, setClassFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [academicYear, setAcademicYear] = useState('')
+  const [availableYears, setAvailableYears] = useState<string[]>([])
+  const [priorPendingCount, setPriorPendingCount] = useState(0)
   const [promotionChanges, setPromotionChanges] = useState<{[key: string]: { status: string, remarks: string }}>({})
-    const [selectedStudents, setSelectedStudents] = useState<string[]>([])
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
   const [activeTab, setActiveTab] = useState<'manage' | 'pending'>('manage')
   const [pendingDecisions, setPendingDecisions] = useState<any[]>([])
-  const [confirming, setConfirming] = useState<string | null>(null)
+    const [confirming, setConfirming] = useState<string | null>(null)
   const [loadingPending, setLoadingPending] = useState(false)
 
   useEffect(() => {
-    loadData()
+    loadAvailableYears()
   }, [])
 
-  async function loadData() {
+  // Load the distinct academic years that exist in the promotion records,
+  // so historical years (which may no longer be the "current" year) remain
+  // reachable in the selector.
+  async function loadAvailableYears() {
     const user = await getCurrentUser()
     if (!user) {
       router.push('/login?portal=admin')
       return
     }
 
-    // Get current academic year
+    const { data: yearsData } = await supabase
+      .from('student_promotions')
+      .select('academic_year')
+      .order('academic_year', { ascending: false }) as { data: { academic_year: string }[] | null }
+
+    const years = Array.from(new Set((yearsData || []).map(y => y.academic_year).filter(Boolean)))
+
+    // Merge in the settings-inferred current year so the selector never appears
+    // empty, even if no promotion records exist yet for the latest year.
     const { data: settingsData } = await supabase
       .from('academic_settings')
       .select('current_academic_year')
       .limit(1) as { data: any[] | null }
 
-    const currentYear = settingsData?.[0]?.current_academic_year || '2024/2025'
-    setAcademicYear(currentYear)
+    const currentYear = settingsData?.[0]?.current_academic_year
+    if (currentYear && !years.includes(currentYear)) {
+      years.unshift(currentYear)
+    }
+
+    setAvailableYears(years)
+
+    // Default the selection to the current/inferred year.
+    const initialYear = currentYear || years[0] || ''
+    setAcademicYear(initialYear)
+
+    // Load the promotion data for the selected year.
+    await loadData(initialYear)
+  }
+
+    async function loadData(year?: string) {
+    const user = await getCurrentUser()
+    if (!user) {
+      router.push('/login?portal=admin')
+      return
+    }
+
+    const targetYear = year || academicYear
 
     // Load classes
     const { data: classesData } = await supabase
@@ -89,22 +123,22 @@ export default function PromotionsPage() {
       .eq('status', 'active')
       .order('first_name') as { data: any[] | null }
 
-    if (studentsData) {
+        if (studentsData) {
       // Load existing promotion records
       const { data: promotionsData } = await supabase
         .from('student_promotions')
         .select('*')
-        .eq('academic_year', currentYear) as { data: PromotionRecord[] | null }
+        .eq('academic_year', targetYear) as { data: PromotionRecord[] | null }
 
       // Load all terms for calculating averages
       const { data: termsData } = await supabase
         .from('academic_terms')
         .select('id')
-        .eq('academic_year', currentYear) as { data: any[] | null }
+        .eq('academic_year', targetYear) as { data: any[] | null }
 
       const termIds = termsData?.map(t => t.id) || []
 
-            const numberOfTerms = termIds.length || 1
+      const numberOfTerms = termIds.length || 1
 
       // Precompute a subject count per class using the same robust resolution as the
       // teacher portal:
@@ -145,11 +179,11 @@ export default function PromotionsPage() {
             if (subjectData && subjectData.length > 0) {
               count = subjectData.length
             } else {
-              const { data: classSubjectsData } = await supabase
+                            const { data: classSubjectsData } = await supabase
                 .from('class_subjects')
                 .select('subject_id')
                 .eq('class_id', cid)
-                .eq('academic_year', currentYear)
+                .eq('academic_year', targetYear)
               if (classSubjectsData && classSubjectsData.length > 0) {
                 count = classSubjectsData.length
               } else {
@@ -290,7 +324,8 @@ export default function PromotionsPage() {
     )
   }
 
-  async function loadPendingDecisions() {
+    async function loadPendingDecisions(year?: string) {
+    const targetYear = year || academicYear
     setLoadingPending(true)
     try {
       const { data } = await supabase
@@ -302,7 +337,7 @@ export default function PromotionsPage() {
             classes:class_id (name)
           )
         `)
-        .eq('academic_year', academicYear)
+        .eq('academic_year', targetYear)
         .eq('requires_admin_approval', true)
         .order('decision_date', { ascending: false })
 
@@ -316,11 +351,51 @@ export default function PromotionsPage() {
     }
   }
 
+      // Count pending decisions in years OTHER than the currently selected year,
+  // so admins are alerted to unconfirmed work that might otherwise go unnoticed
+  // after a year transition.
+    async function refreshPriorPendingCount(year?: string) {
+    const currentYear = year || academicYear
+    try {
+      const { data } = await supabase
+        .from('student_promotions')
+        .select('academic_year')
+        .eq('requires_admin_approval', true)
+      const pending = (data || [])
+        .map((r: any) => r.academic_year)
+        .filter((y: string) => y && y !== currentYear)
+      setPriorPendingCount(new Set(pending).size)
+    } catch (error) {
+      console.error('Error counting prior-year pending decisions:', error)
+    }
+  }
+
+  async function handleYearChange(newYear: string) {
+    if (!newYear || newYear === academicYear) return
+    setAcademicYear(newYear)
+    setPromotionChanges({})
+    setSelectedStudents([])
+    setLoading(true)
+    await loadData(newYear)
+        if (activeTab === 'pending') {
+      await loadPendingDecisions(newYear)
+    }
+    await refreshPriorPendingCount(newYear)
+    setLoading(false)
+  }
+
+      useEffect(() => {
+    refreshPriorPendingCount()
+  }, [academicYear])
+
+  // Reload pending decisions whenever the pending tab is shown or the selected
+  // year changes (e.g. via the header selector or tab navigation).
   useEffect(() => {
-    if (academicYear && activeTab === 'pending') {
+    if (activeTab === 'pending' && academicYear) {
       loadPendingDecisions()
     }
-  }, [academicYear, activeTab])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, academicYear])
 
   async function handleConfirmDecision(studentId: string, status: string) {
     setConfirming(studentId)
@@ -467,7 +542,7 @@ export default function PromotionsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
+            <header className="bg-white shadow">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-4">
@@ -477,17 +552,51 @@ export default function PromotionsPage() {
                 <p className="text-xs md:text-sm text-gray-600">Manage student promotion decisions for {academicYear}</p>
               </div>
             </div>
-            <button
-              onClick={handleSaveAll}
-              disabled={saving || Object.keys(promotionChanges).length === 0}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
-            >
-              <Save className="w-5 h-5" />
-              <span>{saving ? 'Saving...' : 'Save All Changes'}</span>
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <select
+                  value={academicYear}
+                  onChange={(e) => handleYearChange(e.target.value)}
+                  className="w-full sm:w-44 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white appearance-none"
+                  aria-label="Select academic year"
+                >
+                  {availableYears.length === 0 && <option value="">Select year</option>}
+                  {availableYears.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={handleSaveAll}
+                disabled={saving || Object.keys(promotionChanges).length === 0}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
+              >
+                <Save className="w-5 h-5" />
+                <span>{saving ? 'Saving...' : 'Save All Changes'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Prior-year pending-decision alert: surfaces unconfirmed decisions from
+          academic years other than the one currently selected, which otherwise
+          could be silently missed after a year transition. */}
+      {priorPendingCount > 0 && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="container mx-auto px-4 md:px-6 py-3">
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <p className="text-amber-800 text-xs md:text-sm">
+                <strong>Heads up:</strong> You have unconfirmed promotion decisions in{' '}
+                <strong>{priorPendingCount} other academic {priorPendingCount === 1 ? 'year' : 'years'}</strong>.
+                Use the academic year selector above to review and confirm them before they are missed.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
             <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
         {/* Tabs: Manage All | Pending Teacher Decisions */}

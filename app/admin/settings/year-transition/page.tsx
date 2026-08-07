@@ -9,7 +9,7 @@ import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { isPromotionTerm } from '@/lib/academic-utils'
+import { isPromotionTerm, isValidAcademicYear, suggestNextAcademicYear } from '@/lib/academic-utils'
 
 export default function AcademicYearTransition() {
   const router = useRouter()
@@ -38,14 +38,13 @@ export default function AcademicYearTransition() {
 
       const settingsMap = new Map<string, string>(settingsData?.map((s: any) => [s.setting_key, s.setting_value]) || [])
       
-      const currentYear = settingsMap.get('current_academic_year')
+            const currentYear = settingsMap.get('current_academic_year')
       if (currentYear) {
         setCurrentAcademicYear(currentYear)
         
-        // Generate next year suggestion
-        const [startYear] = currentYear.split('/')
-        const nextStartYear = parseInt(startYear) + 1
-        setNewAcademicYear(`${nextStartYear}/${nextStartYear + 1}`)
+        // Generate next year suggestion in canonical YYYY/YY format (e.g. 2026/27)
+        const suggestion = suggestNextAcademicYear(currentYear)
+        if (suggestion) setNewAcademicYear(suggestion)
       }
 
       const termId = settingsMap.get('current_term')
@@ -74,9 +73,9 @@ export default function AcademicYearTransition() {
 
   const isTerm3 = isPromotionTerm(currentTerm)
 
-  const handleTransition = async () => {
-    if (!newAcademicYear.match(/^\d{4}\/\d{4}$/)) {
-      toast.error('Invalid academic year format. Use YYYY/YYYY format (e.g., 2025/2026)')
+    const handleTransition = async () => {
+    if (!isValidAcademicYear(newAcademicYear)) {
+      toast.error('Invalid academic year format. Use YYYY/YY format (e.g., 2026/27)')
       return
     }
 
@@ -269,16 +268,16 @@ export default function AcademicYearTransition() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 New Academic Year
               </label>
-              <input
+                            <input
                 type="text"
                 value={newAcademicYear}
                 onChange={(e) => setNewAcademicYear(e.target.value)}
-                placeholder="e.g., 2025/2026"
+                placeholder="e.g., 2026/27"
                 className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
                 disabled={transitioning}
               />
               <p className="mt-1 text-sm text-gray-500">
-                Format: YYYY/YYYY (e.g., 2025/2026)
+                Format: YYYY/YY (e.g., 2026/27)
               </p>
             </div>
 

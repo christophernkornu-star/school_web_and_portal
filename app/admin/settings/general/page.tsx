@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { formatDateDDMMYYYY, formatDateDDMMMYYYY } from '@/lib/date-utils'
+import { isValidAcademicYear } from '@/lib/academic-utils'
 
 export default function GeneralSettings() {
   const router = useRouter()
@@ -17,11 +18,12 @@ export default function GeneralSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string>('')
-  const [upperPrimaryModel, setUpperPrimaryModel] = useState('class_teacher')
-  const [academicTerms, setAcademicTerms] = useState<string[]>([])
+    const [upperPrimaryModel, setUpperPrimaryModel] = useState('class_teacher')
   const [currentTermId, setCurrentTermId] = useState<string>('')
   const [showRenameModal, setShowRenameModal] = useState(false)
   const [renameData, setRenameData] = useState({ name: '', academic_year: '' })
+  const [yearError, setYearError] = useState('')
+  const [renameYearError, setRenameYearError] = useState('')
   const [formData, setFormData] = useState({
     current_academic_year: '',
     current_term: '',
@@ -58,17 +60,6 @@ export default function GeneralSettings() {
         .select('*') as { data: any[] | null }
 
       const systemSettingsMap = new Map(systemSettingsData?.map((s: any) => [s.setting_key, s.setting_value]) || [])
-
-      // Load distinct term names for suggestions
-      const { data: termsList } = await supabase
-        .from('academic_terms')
-        .select('name')
-        .order('name')
-      
-      if (termsList) {
-        const uniqueNames = Array.from(new Set(termsList.map((t: any) => String(t.name)))) as string[]
-        setAcademicTerms(uniqueNames)
-      }
 
       // Check if we have a current term ID in system settings (source of truth for other portals)
       const activeTermId = systemSettingsMap.get('current_term')
@@ -114,8 +105,16 @@ export default function GeneralSettings() {
     loadSettings()
   }, [router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate the academic year format (canonical: YYYY/YY, e.g. 2026/27).
+    if (!isValidAcademicYear(formData.current_academic_year)) {
+      setYearError('Academic year must be in YYYY/YY format (e.g. 2026/27).')
+      toast.error('Academic year must be in YYYY/YY format (e.g. 2026/27).')
+      return
+    }
+    setYearError('')
     setSaving(true)
 
     try {
@@ -301,9 +300,17 @@ export default function GeneralSettings() {
     }
   }
 
-  const handleRenameSubmit = async (e: React.FormEvent) => {
+    const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentTermId) return
+
+    // Validate the academic year format in the rename modal too.
+    if (!isValidAcademicYear(renameData.academic_year)) {
+      setRenameYearError('Academic year must be in YYYY/YY format (e.g. 2026/27).')
+      toast.error('Academic year must be in YYYY/YY format (e.g. 2026/27).')
+      return
+    }
+    setRenameYearError('')
 
     setSaving(true)
     try {
@@ -417,11 +424,12 @@ export default function GeneralSettings() {
               {currentTermId && (
                 <button
                   type="button"
-                  onClick={() => {
+                                    onClick={() => {
                     setRenameData({
                       name: formData.current_term,
                       academic_year: formData.current_academic_year
                     })
+                    setRenameYearError('')
                     setShowRenameModal(true)
                   }}
                   className="flex items-center text-xs text-blue-600 hover:text-blue-800 px-3 py-1 bg-blue-50 rounded-md border border-blue-200"
@@ -432,41 +440,42 @@ export default function GeneralSettings() {
               )}
             </div>
             <div className="grid md:grid-cols-2 gap-6">
-              <div>
+                            <div>
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Current Academic Year *</label>
                 <input
                   type="text"
                   required
                   value={formData.current_academic_year}
-                  onChange={(e) => setFormData({...formData, current_academic_year: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                  placeholder="2024/2025"
+                  onChange={(e) => {
+                    setFormData({...formData, current_academic_year: e.target.value})
+                    if (isValidAcademicYear(e.target.value)) setYearError('')
+                  }}
+                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue ${yearError ? 'border-red-500' : ''}`}
+                  placeholder="2026/27"
                 />
+                {yearError ? (
+                  <p className="mt-1 text-xs text-red-600">{yearError}</p>
+                ) : (
+                  <p className="mt-1 text-xs text-gray-500">Format: YYYY/YY (e.g. 2026/27)</p>
+                )}
               </div>
-              <div>
+                            <div>
                 <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Current Term *</label>
                 <div className="relative">
-                  <input
-                    list="term-options"
+                  <select
                     required
                     value={formData.current_term}
                     onChange={(e) => setFormData({...formData, current_term: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                    placeholder="Select or type a term (e.g. Term 1)"
-                  />
-                  <datalist id="term-options">
-                    {academicTerms.map(t => <option key={t} value={t} />)}
-                    {academicTerms.length === 0 && (
-                      <>
-                        <option value="Term 1" />
-                        <option value="Term 2" />
-                        <option value="Term 3" />
-                      </>
-                    )}
-                  </datalist>
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue bg-white"
+                  >
+                    <option value="" disabled>Select a term</option>
+                    <option value="Term 1">Term 1</option>
+                    <option value="Term 2">Term 2</option>
+                    <option value="Term 3">Term 3</option>
+                  </select>
                 </div>
-                <p className="mt-1 text-[10px] md:text-xs text-gray-500">
-                  Type a new name to create a term, or select an existing active term.
+                <p className="mt-1 text-xs text-gray-500">
+                  Select from Term 1, Term 2, or Term 3.
                 </p>
               </div>
             </div>
@@ -776,16 +785,24 @@ export default function GeneralSettings() {
                 Only use this to fix typos in the <strong>currently active</strong> term without creating duplicates. To start a NEW term, use the main form instead.
               </div>
               <form onSubmit={handleRenameSubmit} className="p-4 space-y-4">
-                <div>
+                                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
                   <input
                     type="text"
                     required
                     value={renameData.academic_year}
-                    onChange={(e) => setRenameData({ ...renameData, academic_year: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                    placeholder="2024/2025"
+                    onChange={(e) => {
+                      setRenameData({ ...renameData, academic_year: e.target.value })
+                      if (isValidAcademicYear(e.target.value)) setRenameYearError('')
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue ${renameYearError ? 'border-red-500' : ''}`}
+                    placeholder="2026/27"
                   />
+                  {renameYearError ? (
+                    <p className="mt-1 text-xs text-red-600">{renameYearError}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">Format: YYYY/YY (e.g. 2026/27)</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Term Name</label>

@@ -1,4 +1,3 @@
-
 /**
  * Standardized Grading Utilities
  * Used across Mock Exams, Report Cards, and Student Portals
@@ -76,14 +75,14 @@ export function calculateAggregate(scores: ScoreInput[]): { total: number, subje
     let math: number | null = null
     let science: number | null = null
     let social: number | null = null
-    
+
     // Store others with their values
     const others: { val: number, name: string }[] = []
-    
+
     scores.forEach(s => {
         const cat = getSubjectCategory(s.subjectName)
         const gradeVal = getGradeValue(s.score)
-        
+
         if (cat === 'english') {
             english = english === null ? gradeVal : Math.min(english, gradeVal)
         } else if (cat === 'math') {
@@ -104,26 +103,21 @@ export function calculateAggregate(scores: ScoreInput[]): { total: number, subje
     total += safeVal(math)
     total += safeVal(science)
     total += safeVal(social)
-    
-    // Track subjects used for debugging/display if needed
-    // Note: core subjects are always "used" in the calculation logic (even if 9)
-    // but we won't list them in "subjectsUsed" return unless specifically requested, 
-    // for now let's just return the best 2 electives names? 
-    
+
     // Sort others (ascending, lower is better)
     others.sort((a, b) => a.val - b.val)
-    
+
     // Take best 2
     const bestOthers = others.slice(0, 2)
-    
+
     // If less than 2, fill with 9s
     if (bestOthers.length < 2) {
         const missing = 2 - bestOthers.length
         total += missing * 9
     }
-    
+
     bestOthers.forEach(o => total += o.val)
-    
+
     return {
         total,
         subjectsUsed: bestOthers.map(o => o.name)
@@ -190,3 +184,48 @@ export function formatStudentName(student: { first_name?: string | null, middle_
     const first = student.first_name || '';
     return `${last}, ${mid}${first}`.trim().replace(/^, /, '').replace(/, $/, '');
 }
+
+/**
+ * Canonical academic year format used across the system.
+ *
+ * The system historically stored years in BOTH "YYYY/YYYY" (e.g. 2025/2026)
+ * and "YYYY/YY" (e.g. 2025/26), which caused inconsistent year dropdowns.
+ * The canonical format is now the short **YYYY/YY** form, matching the Admin
+ * General Settings screen, so new entries are always written like "2026/27".
+ */
+export const ACADEMIC_YEAR_PATTERN = /^\d{4}\/\d{2}$/
+
+/**
+ * Validates an academic year string against the canonical YYYY/YY format.
+ * Example: "2026/27" -> true, "2025/2026" -> false, "2026" -> false.
+ */
+export function isValidAcademicYear(value: string): boolean {
+    return ACADEMIC_YEAR_PATTERN.test(String(value || '').trim())
+}
+
+/**
+ * Normalizes an academic year to the canonical YYYY/YY form.
+ * Accepts "2025/26" and "2025/2026" (both -> "2025/26").
+ * Returns an empty string if the input cannot be converted.
+ */
+export function normalizeAcademicYear(value: string): string {
+    const v = String(value || '').trim()
+    const m = v.match(/(\d{4})\s*\/?\s*(\d{2,4})/)
+    if (!m) return ''
+    const start = m[1]
+    const endRaw = m[2].length === 2 ? m[2] : String(m[2]).slice(-2) // take last 2 digits
+    return `${start}/${endRaw}`
+}
+
+/**
+ * Suggests the next academic year in canonical YYYY/YY form.
+ * Given "2026/27" it returns "2027/28". Robust to YYYY/YYYY input too.
+ */
+export function suggestNextAcademicYear(currentYear: string): string {
+    const startMatch = String(currentYear || '').match(/(\d{4})/)
+    if (!startMatch) return ''
+    const start = parseInt(startMatch[1], 10)
+    const next = start + 1
+    return `${start}/${String(next).slice(-2)}`
+}
+

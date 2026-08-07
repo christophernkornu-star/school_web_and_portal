@@ -391,7 +391,7 @@ export default function ClassReportPage() {
             </select>
           </div>
 
-          <div>
+                                        <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Term</label>
             <select 
               value={selectedTerm}
@@ -400,7 +400,7 @@ export default function ClassReportPage() {
             >
               <option value="">-- Select Term --</option>
               {terms.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
+                <option key={t.id} value={t.id}>{t.name} ({t.academic_year})</option>
               ))}
             </select>
           </div>
