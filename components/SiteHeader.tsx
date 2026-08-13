@@ -50,7 +50,7 @@ export default function SiteHeader() {
             {/* Navigation Menu */}
             <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-6 flex-shrink-0">
               {/* Desktop Navigation */}
-              <nav className="hidden min-[1025px]:flex items-center space-x-3 xl:space-x-6">
+              <nav className="hidden xl:flex items-center space-x-3 2xl:space-x-6">
                 <Link href="/" className="group relative text-xs xl:text-sm font-semibold xl:font-bold transition-all duration-200 pb-1 whitespace-nowrap drop-shadow-lg">
                   <span className={`transition-colors ${pathname === '/' ? 'text-blue-900' : 'text-white group-hover:text-blue-900'}`}>Home</span>
                   <span className={`absolute bottom-0 left-0 h-0.5 bg-blue-900 transition-all duration-300 ${pathname === '/' ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
@@ -82,7 +82,7 @@ export default function SiteHeader() {
               </nav>
               
               {/* Portal Login Button */}
-              <Link href="/login" className="hidden min-[1025px]:flex group relative bg-blue-900 text-white text-xs xl:text-sm font-bold xl:font-extrabold py-2.5 xl:py-3 px-5 xl:px-7 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 whitespace-nowrap">
+              <Link href="/login" className="hidden xl:flex group relative bg-blue-900 text-white text-xs 2xl:text-sm font-bold 2xl:font-extrabold py-2.5 xl:py-3 px-5 xl:px-7 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-110 whitespace-nowrap">
                 <span className="relative z-10 flex items-center space-x-2">
                   <span>PORTAL</span>
                   <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +95,7 @@ export default function SiteHeader() {
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="max-[1024px]:flex hidden text-white hover:text-methodist-blue transition-colors p-2 relative w-10 h-10 items-center justify-center"
+                className="xl:hidden flex text-white hover:text-methodist-blue transition-colors p-2 relative w-10 h-10 items-center justify-center"
                 aria-label="Toggle menu"
               >
                 <div className="w-6 h-5 relative flex flex-col justify-between">
@@ -112,9 +112,9 @@ export default function SiteHeader() {
       {/* Bottom Accent Line */}
       <div className="h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"></div>
       
-      {/* Mobile Menu */}
+            {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="max-[1024px]:block hidden bg-white border-t border-gray-200 shadow-lg">
+        <div className="xl:hidden block bg-white border-t border-gray-200 shadow-lg">
           <nav className="container mx-auto px-6 py-4 space-y-3">
             <Link href="/" className={`block font-bold py-2 px-4 rounded-lg transition-all duration-200 ${pathname === '/' ? 'bg-blue-900 text-white' : 'text-methodist-blue hover:bg-ghana-gold hover:text-white'}`}
               onClick={() => setMobileMenuOpen(false)}>
