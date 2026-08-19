@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle, ChevronLeft, ChevronRight, Palette, Shuffle, X } from 'lucide-react'
+
+import { Users, Search, Filter, Edit, Trash2, ArrowLeft, Plus, Check, AlertCircle, ChevronLeft, ChevronRight, Palette, Shuffle, X, RotateCcw, Loader2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -16,6 +17,15 @@ import { SectionSelector } from '@/components/sections/SectionSelector'
 
 const PAGE_SIZE = 20
 
+// Status filter tabs shown above the student list.
+const STATUS_TABS = [
+  { value: 'all', label: 'All' },
+  { value: 'active', label: 'Active' },
+  { value: 'transferred', label: 'Transferred' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'graduated', label: 'Graduated' },
+]
+
 export default function StudentsPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
@@ -25,15 +35,20 @@ export default function StudentsPage() {
   const [searchTerm, setSearchTerm] = useState('')
     const [classFilter, setClassFilter] = useState('all')
   const [sectionFilter, setSectionFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('active')
   const [classes, setClasses] = useState<any[]>([])
   const [sections, setSections] = useState<any[]>([])
   
-  // Section reassign modal
+    // Section reassign modal
   const [reassignModal, setReassignModal] = useState<{
     student: any
     open: boolean
   } | null>(null)
   const [reassigning, setReassigning] = useState(false)
+
+  // Re-activate modal (for transferred / inactive / graduated students)
+  const [reactivateModal, setReactivateModal] = useState<{ student: any | null }>({ student: null })
+  const [reactivating, setReactivating] = useState(false)
 
   // Student section data cache
   const [studentSections, setStudentSections] = useState<Record<string, any>>({})
@@ -48,13 +63,13 @@ export default function StudentsPage() {
     loadSections()
   }, [])
 
-  // Debounced load for students
+    // Debounced load for students
   useEffect(() => {
     const timer = setTimeout(() => {
       loadStudents()
     }, 300)
     return () => clearTimeout(timer)
-  }, [page, searchTerm, classFilter, sectionFilter, router, user, contextLoading])
+  }, [page, searchTerm, classFilter, sectionFilter, statusFilter, router, user, contextLoading])
 
     async function loadClasses() {
     const { data: classesData } = await supabase
@@ -109,9 +124,13 @@ export default function StudentsPage() {
       `, { count: 'exact' })
       .order('first_name')
 
-        // Apply filters
+                // Apply filters
     if (classFilter !== 'all') {
       query = query.eq('class_id', classFilter)
+    }
+
+        if (statusFilter !== 'all') {
+      query = query.eq('status', statusFilter)
     }
 
         if (sectionFilter !== 'all') {
@@ -164,7 +183,7 @@ export default function StudentsPage() {
     }
   }
 
-  const handleDeleteStudent = async (studentId: string, profileId: string) => {
+    const handleDeleteStudent = async (studentId: string, profileId: string) => {
     if (!confirm('Are you sure you want to delete this student? This action cannot be undone.')) return
     
     try {
@@ -183,6 +202,46 @@ export default function StudentsPage() {
     } catch (error) {
       console.error('Error deleting student:', error)
       toast.error('Failed to delete student')
+    }
+  }
+
+  // Re-activate a previously transferred/inactive/graduated student. This is a soft
+  // re-enrolment: ALL historical scores, remarks, and promotion records are preserved.
+  async function handleReactivate() {
+    const student = reactivateModal.student
+    if (!student) return
+
+    setReactivating(true)
+    try {
+      const updates: any = { status: 'active' }
+      if (student.status === 'graduated') {
+        updates.graduated_at = null
+      }
+      const { error } = await supabase
+        .from('students')
+        .update(updates)
+        .eq('id', student.id)
+      if (error) throw error
+
+      toast.success('Student re-activated with historical records intact')
+      setReactivateModal({ student: null })
+      loadStudents()
+    } catch (error: any) {
+      console.error('Error reactivating student:', error)
+      toast.error(error.message || 'Failed to re-activate student')
+    } finally {
+      setReactivating(false)
+    }
+  }
+
+    // Helper to render a status badge with the right colour per status.
+  function statusBadgeVariant(status: string) {
+    switch (status) {
+      case 'active': return 'success' as const
+      case 'transferred': return 'warning' as const
+      case 'inactive': return 'secondary' as const
+      case 'graduated': return 'secondary' as const
+      default: return 'secondary' as const
     }
   }
 
@@ -256,7 +315,7 @@ export default function StudentsPage() {
                   </select>
                 </div>
 
-                {/* Section Filter */}
+                                {/* Section Filter */}
                 <div className="relative w-full sm:w-auto min-w-[180px]">
                   <Palette className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <select
@@ -273,6 +332,30 @@ export default function StudentsPage() {
                   </select>
                 </div>
               </div>
+            </div>
+
+            {/* Status Filter Tabs */}
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-100 dark:border-gray-700 pt-4">
+              {STATUS_TABS.map((tab) => {
+                const isActive = statusFilter === tab.value
+                const isNonActive = tab.value !== 'all' && tab.value !== 'active'
+                return (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    onClick={() => { setStatusFilter(tab.value); setPage(1) }}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors border ${
+                      isActive
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : isNonActive
+                          ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800 dark:hover:bg-amber-900/30'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                )
+              })}
             </div>
           </CardContent>
         </Card>
@@ -332,13 +415,22 @@ export default function StudentsPage() {
 
                   <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                      <span className="text-xs text-gray-400 truncate max-w-[150px]">{student.email || 'No Email'}</span>
-                     <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-2">
                           <Link 
                               href={`/admin/students/${student.id}`}
                               className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40 rounded-md transition-colors text-xs font-medium px-3"
                           >
                               View
                           </Link>
+                          {student.status !== 'active' && (
+                            <button
+                              onClick={() => setReactivateModal({ student })}
+                              className="p-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/40 rounded-md transition-colors"
+                              title="Re-activate student"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                               onClick={() => handleDeleteStudent(student.id, student.profile_id)}
                               className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 rounded-md transition-colors"
@@ -414,11 +506,11 @@ export default function StudentsPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                          <Badge variant={student.status === 'active' ? 'success' : 'secondary'}>
-                              {student.status || 'Active'}
+                          <Badge variant={statusBadgeVariant(student.status)}>
+                            {student.status || 'Active'}
                           </Badge>
                       </td>
-                      <td className="px-6 py-4 text-right">
+                                          <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link 
                               href={`/admin/students/${student.id}`}
@@ -427,6 +519,15 @@ export default function StudentsPage() {
                           >
                               <Edit className="w-4 h-4" />
                           </Link>
+                          {student.status !== 'active' && (
+                            <button
+                              onClick={() => setReactivateModal({ student })}
+                              className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/40 rounded-md transition-colors"
+                              title="Re-activate student (keeps historical records)"
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </button>
+                          )}
                           <button
                               onClick={() => handleDeleteStudent(student.id, student.profile_id)}
                               className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 dark:text-gray-400 dark:hover:text-red-400 rounded-md transition-colors"
@@ -477,7 +578,7 @@ export default function StudentsPage() {
       </div>
     </div>
 
-            {/* Section Reassign Modal */}
+                        {/* Section Reassign Modal */}
       {reassignModal?.open && reassignModal.student && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl p-6 my-8">
@@ -533,6 +634,72 @@ export default function StudentsPage() {
           </div>
         </div>
             )}
+
+      {/* Re-activate Confirmation Modal */}
+      {reactivateModal.student && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl p-6 my-8">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                <RotateCcw className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Re-activate Student</h3>
+                <p className="text-sm text-gray-500">
+                  {reactivateModal.student.first_name} {reactivateModal.student.last_name}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              This student is currently marked as{' '}
+              <span className="font-semibold capitalize">{reactivateModal.student.status}</span>. Re-activating will move
+              them back to the <span className="font-semibold">active</span> status.
+            </p>
+
+            <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 mb-2">
+              <p className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>
+                  <strong>All historical scores, remarks, and promotion records are preserved.</strong> The student will
+                  reappear in the active roster. If the student was marked graduated, the graduation date is cleared so they
+                  can be reassigned to a current class.
+                </span>
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setReactivateModal({ student: null })}
+                disabled={reactivating}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
+                         bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 
+                         rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReactivate}
+                disabled={reactivating}
+                className="px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 
+                         rounded-xl flex items-center gap-2 disabled:opacity-50 transition-colors"
+              >
+                {reactivating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Reactivating...
+                  </>
+                ) : (
+                  <>
+                    <RotateCcw className="w-4 h-4" />
+                    Re-activate
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }

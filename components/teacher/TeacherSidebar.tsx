@@ -50,10 +50,11 @@ const sidebarItems = [
       { href: '/teacher/manage-scores', label: 'Manage Scores', icon: FileText },
     ]
   },
-  {
+    {
     group: 'Reports & Performance',
     items: [
       { href: '/teacher/reports', label: 'Report Cards', icon: ScrollText },
+      { href: '/teacher/reports/historical', label: 'Historical Reports', icon: FileText },
       { href: '/teacher/performance', label: 'Analytics', icon: BarChart3 },
     ]
   },

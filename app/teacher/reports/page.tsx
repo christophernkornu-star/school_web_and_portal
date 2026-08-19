@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileText, BarChart3, Download, Users, TrendingUp, Eye, Filter, CheckSquare, Square, Printer, Wand2 } from 'lucide-react'
+import { ArrowLeft, FileText, BarChart3, Download, Users, TrendingUp, Eye, Filter, CheckSquare, Square, Printer, Wand2, Archive } from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { getAutoRemark } from '@/lib/remark-utils'
 import { isClassTeacher } from '@/lib/teacher-permissions'
+import { resolveActiveAcademicYear, filterTermsByActiveYear } from '@/lib/academic-year'
 
 interface Student {
   id: string
@@ -40,11 +41,12 @@ export default function ReportsPage() {
   const [view, setView] = useState<'overview' | 'students' | 'subjects'>('overview')
   const [subjectAnalysis, setSubjectAnalysis] = useState<any[]>([])
   const [generatingPDF, setGeneratingPDF] = useState(false)
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkGenerating, setBulkGenerating] = useState(false)
   const [isAutoGenerating, setIsAutoGenerating] = useState(false)
   const [isTeacherClassTeacher, setIsTeacherClassTeacher] = useState(false)
+  const [activeYear, setActiveYear] = useState('')
 
   useEffect(() => {
     async function loadData() {
@@ -73,14 +75,22 @@ export default function ReportsPage() {
           }
         }
 
-        // Load academic terms via API to bypass RLS
+                // Load academic terms via API to bypass RLS
+        // We only surface the ACTIVE academic year's terms here; past years are
+        // reachable through the dedicated Historical Reports page.
         try {
+          const year = await resolveActiveAcademicYear(supabase)
+          setActiveYear(year)
+
           const termsResponse = await fetch('/api/terms-list', { cache: 'no-store' })
           if (termsResponse.ok) {
             const termsData = await termsResponse.json()
-            if (termsData && termsData.length > 0) {
-              setTerms(termsData)
-              setSelectedTerm(termsData[0].id)
+            const activeTerms = filterTermsByActiveYear(termsData || [], year)
+            if (activeTerms && activeTerms.length > 0) {
+              setTerms(activeTerms)
+              setSelectedTerm(activeTerms[0].id)
+            } else {
+              setTerms([])
             }
           } else {
             // Fallback to direct query
@@ -89,10 +99,13 @@ export default function ReportsPage() {
               .select('*')
               .order('start_date', { ascending: false })
               .order('academic_year', { ascending: false }) as { data: any[] | null }
-            
-            if (termsData && termsData.length > 0) {
-              setTerms(termsData)
-              setSelectedTerm(termsData[0].id)
+
+            const activeTerms = filterTermsByActiveYear(termsData || [], year)
+            if (activeTerms && activeTerms.length > 0) {
+              setTerms(activeTerms)
+              setSelectedTerm(activeTerms[0].id)
+            } else {
+              setTerms([])
             }
           }
         } catch (termsError) {
@@ -453,6 +466,17 @@ export default function ReportsPage() {
       </header>
 
       <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Active-year notice */}
+        <div className="flex flex-wrap items-center gap-2 bg-methodist-blue/5 border border-methodist-blue/20 text-methodist-blue rounded-xl px-4 py-3 mb-4 text-xs md:text-sm">
+          <Archive className="w-4 h-4 shrink-0" />
+          <span className="flex-1 min-w-[220px]">
+            Showing <strong>{activeYear || 'the current academic year'}</strong> only. Past academic years are available under{' '}
+            <Link href="/teacher/reports/historical" className="underline font-semibold hover:text-blue-900">
+              Historical Reports
+            </Link>.
+          </span>
+        </div>
+
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6 backdrop-blur-sm transition-colors">
           <div className="flex items-center gap-2 mb-4">
@@ -534,12 +558,19 @@ export default function ReportsPage() {
             <TrendingUp className="w-4 h-4 inline-block mr-2" />
             Subject Analysis
           </button>
-          <Link
+                    <Link
             href="/teacher/class-report"
             className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:-translate-y-0.5 flex items-center justify-center gap-2"
           >
             <Printer className="w-4 h-4" />
             Class Broadsheet
+          </Link>
+                    <Link
+            href="/teacher/reports/historical"
+            className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg bg-gradient-to-r from-methodist-blue to-blue-900 text-white hover:-translate-y-0.5 flex items-center justify-center gap-2"
+          >
+            <Archive className="w-4 h-4" />
+            Historical
           </Link>
         </div>
 

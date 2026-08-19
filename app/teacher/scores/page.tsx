@@ -37,11 +37,13 @@ interface Student {
 function ScoreInput({ 
   initialValue, 
   max, 
-  onChange 
+  onChange,
+  readOnly = false
 }: { 
   initialValue: string | number; 
   max: number; 
   onChange: (val: string) => void;
+  readOnly?: boolean;
 }) {
   const [val, setVal] = useState(initialValue);
   
@@ -56,9 +58,15 @@ function ScoreInput({
       max={max}
       step="0.1"
       value={val}
+      readOnly={readOnly}
+      title={readOnly ? 'Class score is auto-calculated from assessments' : undefined}
       onChange={(e) => setVal(e.target.value)}
       onBlur={() => onChange(val.toString())}
-      className="w-14 md:w-16 px-1 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-1 focus:ring-ghana-green focus:border-ghana-green text-xs md:text-sm dark:bg-gray-700 dark:text-white"
+      className={`w-14 md:w-16 px-1 py-1 text-center border rounded focus:ring-1 text-xs md:text-sm dark:bg-gray-700 dark:text-white ${
+        readOnly
+          ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+          : 'border-gray-300 dark:border-gray-600 focus:ring-ghana-green focus:border-ghana-green'
+      }`}
     />
   );
 }
@@ -84,8 +92,9 @@ export default function ExamScoresPage() {
   const [currentTermName, setCurrentTermName] = useState('')
   const [terms, setTerms] = useState<any[]>([])
   
-  const [classScorePercentage, setClassScorePercentage] = useState(40)
+    const [classScorePercentage, setClassScorePercentage] = useState(40)
   const [examScorePercentage, setExamScorePercentage] = useState(60)
+  const [allowClassScoreEntry, setAllowClassScoreEntry] = useState(true)
 
   // Grid view state
   const [gridScores, setGridScores] = useState<Record<string, Record<string, { class_score: string, exam_score: string, id?: string }>>>({})
@@ -144,7 +153,7 @@ export default function ExamScoresPage() {
           termsRes,
           currentTermRes
         ] = await Promise.all([
-          supabase.from('system_settings').select('*').in('setting_key', ['class_score_percentage', 'exam_score_percentage']),
+          supabase.from('system_settings').select('*').in('setting_key', ['class_score_percentage', 'exam_score_percentage', 'allow_teacher_class_score_entry']),
           getTeacherData(user.id),
           supabase.from('subjects').select('id, name, code, level').order('name'),
           supabase.from('academic_terms').select('*').order('created_at', { ascending: false }),
@@ -152,12 +161,14 @@ export default function ExamScoresPage() {
         ])
 
         // 1. Process Grading Settings
-        if (settingsRes.data) {
+                if (settingsRes.data) {
           settingsRes.data.forEach((setting: any) => {
             if (setting.setting_key === 'class_score_percentage') {
               setClassScorePercentage(Number(setting.setting_value))
             } else if (setting.setting_key === 'exam_score_percentage') {
               setExamScorePercentage(Number(setting.setting_value))
+            } else if (setting.setting_key === 'allow_teacher_class_score_entry') {
+              setAllowClassScoreEntry(setting.setting_value !== 'false')
             }
           })
         }
@@ -515,6 +526,9 @@ export default function ExamScoresPage() {
   }
 
   function handleGridScoreChange(studentId: string, subjectId: string, field: 'class_score' | 'exam_score', value: string) {
+    // Block manual class score entries when the admin has disabled it
+    if (field === 'class_score' && !allowClassScoreEntry) return
+    
     // Allow empty string
     if (value === '') {
         setGridScores(prev => ({
@@ -982,8 +996,18 @@ export default function ExamScoresPage() {
               </div>
 
               {/* Grid Table */}
-              {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
+                            {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
                 <div>
+                  {!allowClassScoreEntry && (
+                    <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-lg p-3 text-xs md:text-sm">
+                      <div className="flex items-start space-x-2">
+                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>
+                          Class score entry is <strong>disabled</strong>. The class score is auto-calculated from recorded assessments and cannot be edited manually. You can still enter the <strong>Exam Score</strong>.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
                     <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">
                       Enter Scores ({students.length} Students)
@@ -1065,7 +1089,7 @@ export default function ExamScoresPage() {
                           <tr>
                             {selectedSubjects.map(subjectId => (
                                 <Fragment key={subjectId}>
-                                    <th key={`${subjectId}-class`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Class ({classScorePercentage}%)</th>
+                                    <th key={`${subjectId}-class`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Class ({classScorePercentage}%){!allowClassScoreEntry ? ' *' : ''}</th>
                                     <th key={`${subjectId}-exam`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Exam (100%)</th>
                                     <th key={`${subjectId}-total`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Total</th>
                                     <th key={`${subjectId}-grade`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] border-r dark:border-r-gray-600 bg-gray-50 dark:bg-gray-700">Grade</th>
@@ -1131,10 +1155,11 @@ export default function ExamScoresPage() {
 
                                     return (
                                         <Fragment key={subjectId}>
-                                            <td key={`${subjectId}-class`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
+                                                                                        <td key={`${subjectId}-class`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
                                                 <ScoreInput
                                                     initialValue={scores.class_score}
                                                     max={40}
+                                                    readOnly={!allowClassScoreEntry}
                                                     onChange={(val) => handleGridScoreChange(student.id, subjectId, 'class_score', val)}
                                                 />
                                             </td>

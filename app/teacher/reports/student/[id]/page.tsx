@@ -60,12 +60,15 @@ function RemarkDropdown({ options, onSelect }: { options: string[], onSelect: (v
 }
 
 export default function TeacherStudentReportPage() {
-  const router = useRouter()
+    const router = useRouter()
   const supabase = getSupabaseBrowserClient()
   const params = useParams()
   const searchParams = useSearchParams()
   const studentId = params.id as string
   const termId = searchParams.get('term')
+  const classParam = searchParams.get('class')
+  // If we came from the teacher historical reports page, back-link there; otherwise default
+  const backHref = classParam ? '/teacher/reports/historical' : '/teacher/reports'
   
   const [downloading, setDownloading] = useState(false)
   const [remarks, setRemarks] = useState<ReportRemarks>({
@@ -106,7 +109,14 @@ export default function TeacherStudentReportPage() {
       academicSettings, 
       scoreSettings,
       refresh 
-  } = useReportCardData(studentId, termId || undefined)
+  } = useReportCardData(
+    studentId,
+    termId || undefined,
+    // When not arriving from the historical reports page (i.e. normal teacher roster
+    // view of a current student), do not surface previous-class historical records for
+    // terms that were not started for the student's current class.
+    { restrictCurrentClassOnly: !classParam }
+  )
 
   // Check if current teacher is the class teacher
   useEffect(() => {
@@ -293,12 +303,43 @@ export default function TeacherStudentReportPage() {
     )
   }
 
-  if (error || !student || !reportData) {
+    if (error || !student || !reportData) {
     return (
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">Error loading report card</p>
-          <BackButton href="/teacher/reports" />
+          <BackButton href={backHref} />
+        </div>
+      </div>
+    )
+  }
+
+  // Term has not been started/completed for the class this student was in that term.
+  if (reportData.termHasStarted === false) {
+    return (
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center mb-6">
+            <BackButton href={backHref} />
+          </div>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
+                        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">No Record Found for This Term</h2>
+            <p className="text-gray-600 dark:text-gray-300 mb-4">
+              There is no report record available for <strong>{[student?.last_name, student?.middle_name, student?.first_name].filter(Boolean).join(' ')}</strong> for <strong>{reportData.termName} ({reportData.year})</strong>.
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
+              No scores were recorded for this student for this term in this class, so no report card can be generated.
+              Note that this term may not have been started or completed for the class the student belonged to during that period.
+            </p>
+            <div className="mt-6">
+              <BackButton href={backHref} />
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -309,13 +350,13 @@ export default function TeacherStudentReportPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-center bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-100 dark:border-gray-700/50 p-5 rounded-2xl shadow-sm">
           <div className="flex items-center gap-4">
-            <BackButton href="/teacher/reports">
+            <BackButton href={backHref}>
               <span className="flex items-center gap-2"><List className="w-4 h-4" /> Back to List</span>
             </BackButton>
             <div>
-              <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">{student.profiles?.full_name}</h1>
+                            <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">{student.profiles?.full_name}</h1>
                             <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
-                {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
+                {reportData.termName} - {reportData.year} | {reportData.termClassName || student.classes?.name || student.classes?.class_name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
               </p>
             </div>
           </div>

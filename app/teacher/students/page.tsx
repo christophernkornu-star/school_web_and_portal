@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, Trash2, Phone, Mail, KeyRound, CheckSquare, Square, ArrowUpDown, Download, Palette, Shuffle, X } from 'lucide-react'
+import { ArrowLeft, Users, Search, GraduationCap, AlertCircle, Filter, Grid, List, Edit, TrendingUp, Phone, Mail, KeyRound, CheckSquare, Square, ArrowUpDown, Download, Palette, Shuffle, X } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -12,12 +12,12 @@ import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { SectionBadge } from '@/components/sections/SectionBadge'
 
-function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, selected, selectionMode, onSelect, studentSection, onChangeSection }: { 
+function StudentCard({ student, canManage, onEdit, onResetPassword, onStatusChange, selected, selectionMode, onSelect, studentSection, onChangeSection }: { 
   student: any, 
   canManage: boolean, 
   onEdit: () => void, 
   onResetPassword: () => void, 
-  onDelete: () => void,
+  onStatusChange: () => void,
   selected: boolean,
   selectionMode: boolean,
   onSelect: () => void,
@@ -148,8 +148,8 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
              if (deltaX > deltaY && deltaX > minSwipeDistance) {
                  const signedDistance = touchStart - currentX
                  if (signedDistance > minSwipeDistance) {
-                     setOffset(-100) // Left swipe -> Delete
-                 } else if (signedDistance < -minSwipeDistance) {
+                     setOffset(-100) // Left swipe -> Status change
+                  } else if (signedDistance < -minSwipeDistance) {
                      setOffset(100) // Right swipe -> Reset
                  } else {
                      setOffset(0)
@@ -194,14 +194,14 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
             </button>
         </div>
 
-        {/* Right Action (Delete) - Revealed on Left Swipe */}
-        <div className={`flex items-center justify-end w-full h-full bg-red-100 dark:bg-red-900/50 absolute right-0 top-0 transition-opacity duration-300 ${offset < 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
+                {/* Right Action (Status Change) - Revealed on Left Swipe */}
+        <div className={`flex items-center justify-end w-full h-full bg-purple-100 dark:bg-purple-900/50 absolute right-0 top-0 transition-opacity duration-300 ${offset < 0 ? 'opacity-100 z-10' : 'opacity-0 -z-10'}`}>
             <button 
-                onClick={(e) => { e.stopPropagation(); onDelete(); setOffset(0); }}
-                className="pl-4 pr-6 h-full flex items-center justify-end space-x-2 text-red-700 dark:text-red-400 font-medium w-1/2"
+                onClick={(e) => { e.stopPropagation(); onStatusChange(); setOffset(0); }}
+                className="pl-4 pr-6 h-full flex items-center justify-end space-x-2 text-purple-700 dark:text-purple-400 font-medium w-1/2"
             >
-                <span>Delete</span>
-                <Trash2 className="w-5 h-5" />
+                <span>Status</span>
+                <TrendingUp className="w-5 h-5" />
             </button>
         </div>
       </div>
@@ -240,12 +240,12 @@ function StudentCard({ student, canManage, onEdit, onResetPassword, onDelete, se
                     >
                         <KeyRound className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </button>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onDelete(); }}
-                        className="p-1.5 md:p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition"
-                        title="Delete student"
+                                        <button
+                        onClick={(e) => { e.stopPropagation(); onStatusChange(); }}
+                        className="p-1.5 md:p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg transition"
+                        title="Change status"
                     >
-                        <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4" />
                     </button>
                 </div>
             )}
@@ -324,16 +324,18 @@ export default function MyStudentsPage() {
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedClass, setSelectedClass] = useState('all')
-  const [sortBy, setSortBy] = useState('name_asc')
+    const [sortBy, setSortBy] = useState('name_asc')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [deleteModal, setDeleteModal] = useState<{ show: boolean; student: any | null }>({ show: false, student: null })
-  const [deleting, setDeleting] = useState(false)
-  const [resetPasswordModal, setResetPasswordModal] = useState<{ show: boolean; student: any | null }>({ show: false, student: null })
-  const [resetting, setResetting] = useState(false)
+  const [statusModal, setStatusModal] = useState<{ show: boolean; student: any | null }>({ show: false, student: null })
+  const [statusPending, setStatusPending] = useState<string>('')
+  const [statusUpdating, setStatusUpdating] = useState(false)
+    const [resetting, setResetting] = useState(false)
   const [resetSuccess, setResetSuccess] = useState(false)
+  const [resetPasswordModal, setResetPasswordModal] = useState<{ show: boolean; student: any | null }>({ show: false, student: null })
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
-  const [bulkDeleteModal, setBulkDeleteModal] = useState(false)
-  const [bulkDeleting, setBulkDeleting] = useState(false)
+  const [bulkStatusModal, setBulkStatusModal] = useState(false)
+  const [bulkStatusPending, setBulkStatusPending] = useState<string>('')
+  const [bulkStatusUpdating, setBulkStatusUpdating] = useState(false)
   const [selectionMode, setSelectionMode] = useState(false)
     const [bulkResetPasswordModal, setBulkResetPasswordModal] = useState(false)
   const [bulkResetting, setBulkResetting] = useState(false)
@@ -639,50 +641,52 @@ export default function MyStudentsPage() {
     }
   }
 
-  async function handleDelete() {
-    if (!deleteModal.student) return
+    async function handleStatusChange() {
+    if (!statusModal.student || !statusPending) return
 
-    setDeleting(true)
+    setStatusUpdating(true)
     try {
       const { error } = await supabase
         .from('students')
-        .delete()
-        .eq('id', deleteModal.student.id)
+        .update({ status: statusPending })
+        .eq('id', statusModal.student.id)
 
       if (error) throw error
 
-      // Remove from local state
-      setStudents(students.filter(s => s.id !== deleteModal.student.id))
-      setDeleteModal({ show: false, student: null })
-      toast.success('Student deleted successfully')
+      // Update local state: remove from active list since status is no longer active
+      setStudents(students.filter(s => s.id !== statusModal.student.id))
+      setStatusModal({ show: false, student: null })
+      setStatusPending('')
+      toast.success(`Student marked as ${statusPending}`)
     } catch (err: any) {
-      toast.error('Failed to delete student: ' + err.message)
+      toast.error('Failed to update student status: ' + err.message)
     } finally {
-      setDeleting(false)
+      setStatusUpdating(false)
     }
   }
 
-  async function handleBulkDelete() {
-    if (selectedStudents.length === 0) return
+  async function handleBulkStatusChange() {
+    if (selectedStudents.length === 0 || !bulkStatusPending) return
 
-    setBulkDeleting(true)
+    setBulkStatusUpdating(true)
     try {
       const { error } = await supabase
         .from('students')
-        .delete()
+        .update({ status: bulkStatusPending })
         .in('id', selectedStudents)
 
       if (error) throw error
 
-      // Remove from local state
+      // Update local state
       setStudents(students.filter(s => !selectedStudents.includes(s.id)))
       setSelectedStudents([])
-      setBulkDeleteModal(false)
-      toast.success('Selected students deleted')
+      setBulkStatusModal(false)
+      setBulkStatusPending('')
+      toast.success(`Selected students marked as ${bulkStatusPending}`)
     } catch (err: any) {
-      toast.error('Failed to delete students: ' + err.message)
+      toast.error('Failed to update students: ' + err.message)
     } finally {
-      setBulkDeleting(false)
+      setBulkStatusUpdating(false)
     }
   }
 
@@ -844,12 +848,12 @@ export default function MyStudentsPage() {
                             >
                                 <KeyRound className="w-5 h-5" />
                             </button>
-                            <button 
-                                onClick={() => setBulkDeleteModal(true)}
-                                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
-                                title="Delete Selected"
+                                                        <button 
+                                onClick={() => setBulkStatusModal(true)}
+                                className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg"
+                                title="Change Status"
                             >
-                                <Trash2 className="w-5 h-5" />
+                                <TrendingUp className="w-5 h-5" />
                             </button>
                         </>
                     )}
@@ -1026,9 +1030,9 @@ export default function MyStudentsPage() {
                       key={student.id}
                       student={student}
                       canManage={canManageStudentsInClass(student.class_id)}
-                      onEdit={() => router.push(`/teacher/students/edit/${student.id}`)}
+                                            onEdit={() => router.push(`/teacher/students/edit/${student.id}`)}
                       onResetPassword={() => setResetPasswordModal({ show: true, student })}
-                      onDelete={() => setDeleteModal({ show: true, student })}
+                      onStatusChange={() => setStatusModal({ show: true, student })}
                       selected={selectedStudents.includes(student.id)}
                       selectionMode={selectionMode}
                       onSelect={() => toggleSelection(student.id)}
@@ -1183,12 +1187,12 @@ export default function MyStudentsPage() {
                                 >
                                   <KeyRound className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </button>
-                                <button
-                                  onClick={() => setDeleteModal({ show: true, student })}
-                                  className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-0.5 md:p-1"
-                                  title="Delete"
+                                                                <button
+                                  onClick={() => setStatusModal({ show: true, student })}
+                                  className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 p-0.5 md:p-1"
+                                  title="Change Status"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                  <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4" />
                                 </button>
                               </div>
                             ) : (
@@ -1293,41 +1297,67 @@ export default function MyStudentsPage() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteModal.show && (
+            {/* Status Change Modal */}
+      {statusModal.show && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-4 md:p-6 transition-colors">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-red-100 dark:bg-red-900/30 p-2 md:p-3 rounded-full">
-                <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600 dark:text-red-400" />
+              <div className="bg-purple-100 dark:bg-purple-900/30 p-2 md:p-3 rounded-full">
+                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Delete Student</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Change Student Status</h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-6 text-xs md:text-sm">
-              Are you sure you want to delete <span className="font-semibold text-gray-900 dark:text-gray-100">{deleteModal.student?.last_name} {deleteModal.student?.first_name}</span>? This action cannot be undone.
+            <p className="text-gray-600 dark:text-gray-300 mb-2 text-xs md:text-sm">
+              Set a new status for <span className="font-semibold text-gray-900 dark:text-gray-100">{statusModal.student?.last_name} {statusModal.student?.first_name}</span>.
             </p>
+            <p className="text-gray-500 dark:text-gray-400 mb-4 text-xs">
+              This removes the student from your active list but keeps their historical records intact.
+            </p>
+            <div className="space-y-2 mb-6">
+              {[
+                { value: 'transferred', label: 'Transferred', desc: 'Student has moved to another school.', color: 'text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/30' },
+                { value: 'inactive', label: 'Inactive', desc: 'Student is no longer attending.', color: 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setStatusPending(opt.value)}
+                  className={`w-full flex items-start gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all border ${
+                    statusPending === opt.value
+                      ? 'border-purple-300 bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-200'
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-purple-200'
+                  }`}
+                >
+                  <div className="flex-1">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${opt.color}`}>{opt.label}</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{opt.desc}</p>
+                  </div>
+                  {statusPending === opt.value && <span className="text-purple-600 font-bold">✓</span>}
+                </button>
+              ))}
+              <p className="text-[11px] text-gray-400">Graduation is handled through the admin promotions workflow.</p>
+            </div>
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setDeleteModal({ show: false, student: null })}
-                disabled={deleting}
+                onClick={() => { setStatusModal({ show: false, student: null }); setStatusPending(''); }}
+                disabled={statusUpdating}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 text-xs md:text-sm"
               >
                 Cancel
               </button>
               <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center space-x-2 text-xs md:text-sm"
+                onClick={handleStatusChange}
+                disabled={statusUpdating || !statusPending}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center space-x-2 text-xs md:text-sm"
               >
-                {deleting ? (
+                {statusUpdating ? (
                   <>
                     <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
-                    <span>Deleting...</span>
+                    <span>Updating...</span>
                   </>
                 ) : (
                   <>
-                    <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Delete</span>
+                    <TrendingUp className="w-3 h-3 md:w-4 md:h-4" />
+                    <span>Update Status</span>
                   </>
                 )}
               </button>
@@ -1336,41 +1366,63 @@ export default function MyStudentsPage() {
         </div>
       )}
 
-      {/* Bulk Delete Confirmation Modal */}
-      {bulkDeleteModal && (
+            {/* Bulk Status Change Modal */}
+      {bulkStatusModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-4 md:p-6 transition-colors">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-red-100 dark:bg-red-900/30 p-2 md:p-3 rounded-full">
-                <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-600 dark:text-red-400" />
+              <div className="bg-purple-100 dark:bg-purple-900/30 p-2 md:p-3 rounded-full">
+                <TrendingUp className="w-5 h-5 md:w-6 md:h-6 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Delete Multiple Students</h3>
+              <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-gray-100">Change Status for Selected Students</h3>
             </div>
-            <p className="text-gray-600 dark:text-gray-300 mb-6 text-xs md:text-sm">
-              Are you sure you want to delete <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''}</span>? This action cannot be undone.
+            <p className="text-gray-600 dark:text-gray-300 mb-2 text-xs md:text-sm">
+              Set a new status for <span className="font-semibold text-gray-900 dark:text-gray-100">{selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''}</span>. This keeps their historical records intact.
             </p>
+            <div className="space-y-2 mb-6">
+              {[
+                { value: 'transferred', label: 'Transferred', desc: 'Students have moved to another school.', color: 'text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/30' },
+                { value: 'inactive', label: 'Inactive', desc: 'Students are no longer attending.', color: 'text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setBulkStatusPending(opt.value)}
+                  className={`w-full flex items-start gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all border ${
+                    bulkStatusPending === opt.value
+                      ? 'border-purple-300 bg-purple-50 dark:bg-purple-900/20 ring-2 ring-purple-200'
+                      : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-purple-200'
+                  }`}
+                >
+                  <div className="flex-1">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${opt.color}`}>{opt.label}</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{opt.desc}</p>
+                  </div>
+                  {bulkStatusPending === opt.value && <span className="text-purple-600 font-bold">✓</span>}
+                </button>
+              ))}
+            </div>
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setBulkDeleteModal(false)}
-                disabled={bulkDeleting}
+                onClick={() => { setBulkStatusModal(false); setBulkStatusPending(''); }}
+                disabled={bulkStatusUpdating}
                 className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 text-xs md:text-sm"
               >
                 Cancel
               </button>
               <button
-                onClick={handleBulkDelete}
-                disabled={bulkDeleting}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center space-x-2 text-xs md:text-sm"
+                onClick={handleBulkStatusChange}
+                disabled={bulkStatusUpdating || !bulkStatusPending}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center space-x-2 text-xs md:text-sm"
               >
-                {bulkDeleting ? (
+                {bulkStatusUpdating ? (
                   <>
                     <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
-                    <span>Deleting...</span>
+                    <span>Updating...</span>
                   </>
                 ) : (
                   <>
-                    <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
-                    <span>Delete {selectedStudents.length} Student{selectedStudents.length > 1 ? 's' : ''}</span>
+                    <TrendingUp className="w-3 h-3 md:w-4 md:h-4" />
+                    <span>Update {selectedStudents.length} Student{selectedStudents.length > 1 ? 's' : ''}</span>
                   </>
                 )}
               </button>

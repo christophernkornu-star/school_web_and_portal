@@ -3,10 +3,11 @@
 import { useState, useEffect, Fragment } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Printer } from 'lucide-react'
+import { ArrowLeft, Printer, Archive } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
+import { resolveActiveAcademicYear, filterTermsByActiveYear } from '@/lib/academic-year'
 import Image from 'next/image'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
@@ -71,8 +72,9 @@ export default function ClassReportPage() {
   const [classes, setClasses] = useState<any[]>([])
   const [terms, setTerms] = useState<any[]>([])
   
-  const [selectedClass, setSelectedClass] = useState('')
+    const [selectedClass, setSelectedClass] = useState('')
   const [selectedTerm, setSelectedTerm] = useState('')
+  const [activeYear, setActiveYear] = useState('')
   
   const [sheetData, setSheetData] = useState<{
     students: ProcessedStudent[]
@@ -102,15 +104,19 @@ export default function ClassReportPage() {
         
         setClasses(classTeacherClasses)
 
-        // Load terms
+                // Load terms (active academic year only; past years are in Historical Reports)
+        const activeYear = await resolveActiveAcademicYear(supabase)
+        setActiveYear(activeYear)
+
         const { data: termsData } = await supabase
           .from('academic_terms')
           .select('*')
           .order('start_date', { ascending: false })
           .order('created_at', { ascending: false })
         
-        if (termsData) {
-          setTerms(termsData)
+        const activeTerms = filterTermsByActiveYear(termsData || [], activeYear)
+        if (activeTerms) {
+          setTerms(activeTerms)
           // Auto-select current term
           const { data: settings } = await supabase
             .from('system_settings')
@@ -118,8 +124,10 @@ export default function ClassReportPage() {
             .eq('setting_key', 'current_term')
             .single()
             
-          if (settings) {
+          if (settings && activeTerms.some((t: any) => t.id === settings.setting_value)) {
             setSelectedTerm(settings.setting_value)
+          } else if (activeTerms.length > 0) {
+            setSelectedTerm(activeTerms[0].id)
           }
         }
 
@@ -144,26 +152,50 @@ export default function ClassReportPage() {
       const selectedTermData = terms.find(t => t.id === selectedTerm)
       const termName = selectedTermData ? `${selectedTermData.name} (${selectedTermData.academic_year})` : ''
 
-      // 2. Get Students
-      const { data: studentsData, error: studentsError } = await supabase
+                        // 2. Get All Scores for this class and term, scoped to the term's conducting class.
+      // We scope by scores.class_id (added/backfilled by database/historical-reports.sql)
+      // so that, for cross-level transitions (e.g. a promoted child who now has scores in a
+      // higher class), we do NOT merge the previous class's old scores into the selected
+      // class's broadsheet columns.
+      const { data: scoresAll } = await supabase
+        .from('scores')
+        .select('student_id, subject_id, class_score, exam_score, total, class_id')
+        .eq('term_id', selectedTerm)
+
+      // Determine the term's conducting class from the scores' class_id (falling back to
+      // the currently selected class for legacy/backfilled-edge rows without a class_id).
+      const conductingClassId = scoresAll?.find((s: any) => s.class_id)?.class_id || selectedClass
+
+      // Keep only scores recorded for the term's conducting class. Students who were in a
+      // different class that term (e.g. before a promotion) are excluded from this sheet.
+      const scoresData = (scoresAll || []).filter(
+        (s: any) => !s.class_id || s.class_id === conductingClassId
+      )
+
+      // 3. Get the CURRENT ACTIVE roster of the selected class.
+      // The broadsheet reflects the active session only: students who are currently active
+      // in this class. Any student no longer active (graduated / transferred / moved to a
+      // different class) is intentionally excluded — their historical records belong in the
+      // Historical Reports section, not this sheet.
+      const { data: currentStudents } = await supabase
         .from('students')
         .select('id, first_name, last_name, middle_name, gender')
         .eq('class_id', selectedClass)
         .eq('status', 'active')
         .order('first_name')
 
-      if (studentsError || !studentsData || studentsData.length === 0) {
+      const studentsData = currentStudents || []
+
+      // Further restrict scores to only the active students present in the sheet, so we
+      // never surface a moved/graduated student's data in this broadsheet.
+      const activeIds = new Set(studentsData.map((st: any) => st.id))
+      const activeScores = scoresData.filter((s: any) => activeIds.has(s.student_id))
+
+      if (!studentsData || studentsData.length === 0) {
         toast.error('No students found in this class.')
         setGenerating(false)
         return
       }
-
-      // 3. Get All Scores for this class and term (Moved up to help discover active subjects)
-      const { data: scoresData } = await supabase
-        .from('scores')
-        .select('student_id, subject_id, class_score, exam_score, total')
-        .in('student_id', studentsData.map((s: any) => s.id))
-        .eq('term_id', selectedTerm)
 
       // 4. Assemble ALL Subjects assigned to this class
       const subjectsMap = new Map<string, Subject>()
@@ -202,8 +234,8 @@ export default function ClassReportPage() {
         .from('subjects')
         .select('id, name, code, level')
         
-      // Find existing score subject IDs to always include them
-      const subjectsWithScores = new Set(scoresData?.map((s: any) => s.subject_id) || [])
+            // Find existing score subject IDs to always include them
+      const subjectsWithScores = new Set(activeScores?.map((s: any) => s.subject_id) || [])
 
       if (allSubjectsData) {
         allSubjectsData.forEach((s: any) => {
@@ -254,7 +286,7 @@ export default function ClassReportPage() {
         let totalScoreSum = 0
 
         subjects.forEach((subject: any) => {
-          const score = scoresData?.find((s: any) => s.student_id === student.id && s.subject_id === subject.id)
+          const score = activeScores?.find((s: any) => s.student_id === student.id && s.subject_id === subject.id)
           if (score && score.total !== null) {
             studentScores[subject.id] = {
               classScore: score.class_score || '-',
@@ -374,6 +406,17 @@ export default function ClassReportPage() {
               Print Report
             </button>
           )}
+                </div>
+
+        {/* Active-year notice */}
+        <div className="flex items-center gap-2 bg-methodist-blue/5 border border-methodist-blue/20 text-methodist-blue rounded-xl px-4 py-3 mb-4 text-xs md:text-sm">
+          <Archive className="w-4 h-4 shrink-0" />
+          <span className="flex-1">
+            Showing <strong>{activeYear || 'the current academic year'}</strong> only. Past academic years are available under{' '}
+            <Link href="/teacher/reports/historical" className="underline font-semibold hover:text-blue-900">
+              Historical Reports
+            </Link>.
+          </span>
         </div>
 
         <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end transition-colors">

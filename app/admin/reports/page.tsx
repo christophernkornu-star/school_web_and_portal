@@ -2,12 +2,13 @@
 
 import Link from 'next/link'
 import BackButton from '@/components/ui/back-button'
-import { ArrowLeft, BarChart3, FileDown, Printer, FileText } from 'lucide-react'
+import { ArrowLeft, BarChart3, FileDown, Printer, FileText, Archive } from 'lucide-react'
 
 export default function ReportsPage() {
   // List of available report types
   const reportTypes = [
     { name: 'Student Report Cards', description: 'Generate report cards for students', icon: BarChart3, color: 'blue', href: '/admin/reports/student' },
+    { name: 'Historical Reports', description: 'Past term reports by class, including graduated students', icon: Archive, color: 'purple', href: '/admin/reports/historical' },
     { name: 'Cumulative Records', description: 'View cumulative academic performance', icon: FileText, color: 'orange', href: '/admin/reports/cumulative' },
     { name: 'Attendance Reports', description: 'View and export attendance statistics', icon: FileDown, color: 'green', href: '/admin/reports/attendance' },
     { name: 'Financial Reports', description: 'Fee collection and expense reports', icon: Printer, color: 'yellow', href: '/admin/reports/financial' },

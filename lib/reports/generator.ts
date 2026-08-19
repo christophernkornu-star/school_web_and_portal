@@ -391,9 +391,11 @@ const generateReportCardContent = (
   classScorePercentage: number,
   examScorePercentage: number
 ) => {
-  const { logoImage, methodistLogoImage, signatureImage: signatureBase64 } = theme
+    const { logoImage, methodistLogoImage, signatureImage: signatureBase64 } = theme
   const studentName = `${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`.trim()
-    const className = (student.classes?.name || student.classes?.class_name || '').toUpperCase()
+    // Use the TERM's conducting class for the label (fixes cross-level transitions where
+    // the student's current class differs from the class they were in for this term).
+    const className = (reportData.termClassName || student.classes?.name || student.classes?.class_name || '').toUpperCase()
   // Vacation/reopening dates are now stored PER TERM on the academic_terms table.
   // Prefer the report card's own term dates (reportData.vacationDate / reportData.reopeningDate);
   // fall back to the global academic_settings (which holds only the CURRENT term) and finally 'TBA'.

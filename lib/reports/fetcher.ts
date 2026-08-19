@@ -10,7 +10,11 @@ const SETTINGS_TTL = 1000 * 60 * 5 // 5 minutes
 
 // Helper function to fetch data for a single student properly
 // Exported so bulk reports can use it
-export async function fetchReportCardData(studentId: string, termId?: string) {
+export async function fetchReportCardData(
+  studentId: string,
+  termId?: string,
+  options?: { restrictCurrentClassOnly?: boolean }
+) {
     const supabase = getSupabaseBrowserClient()
 
     // 1. Fetch Student Info
@@ -208,58 +212,112 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
         .select('vacation_date, reopening_date')
         .eq('id', targetTermId)
         .maybeSingle()
-      report.vacationDate = termDates?.vacation_date || undefined
+            report.vacationDate = termDates?.vacation_date || undefined
       report.reopeningDate = termDates?.reopening_date || undefined
     }
 
-    // Fetch subjects based on level
-    const classLevel = studentData.classes?.level
+        // Determine the CLASS that produced the scores for the TARGET term.
+    // This is the critical fix for cross-level transitions (e.g. Basic 6 -> Basic 7).
+    // We must NOT use the student's CURRENT class to build the subject set for a
+    // historical term — that would merge the previous level's scored subjects with
+    // the current level's subjects. We derive the term's class from scores.class_id
+    // (added & backfilled by database/historical-reports.sql), falling back to the
+    // student's current class only when no class was captured.
+    const targetTermGradesAll = grades?.filter((g: any) => g.term_id === targetTermId) || []
+
+    // When viewing a student's report from their CURRENT class (e.g. a teacher on the
+    // standard report roster, or the student portal), we must NOT surface historical
+    // scores from a PREVIOUS class just because the teacher selected an earlier term.
+    // If we did, a Basic 7 teacher selecting a past term would see the student's Basic 6
+    // records. Instead we restrict to scores recorded under the student's current class
+    // and, when there are none for that class in the selected term, report it as no record.
+    const restrictCurrent = !!options?.restrictCurrentClassOnly
+    const targetTermGrades = restrictCurrent
+      ? targetTermGradesAll.filter((g: any) => g.class_id === studentData.class_id)
+      : targetTermGradesAll
+
+    const targetTermClassId = targetTermGrades.find((g: any) => g.class_id)?.class_id
+      || (!restrictCurrent ? studentData.class_id : null)
+
+    // Fetch that class's level (so we show the subject set for the class the
+    // student was actually in that term, not the class they're in now).
+    let termClassLevel: number | string | null = null
+    let termClassName: string | null = null
+    let termJHS = false
+    if (targetTermClassId) {
+      const { data: termClass } = await supabase
+        .from('classes')
+        .select('name, level')
+        .eq('id', targetTermClassId)
+        .maybeSingle()
+            if (termClass) {
+        termClassLevel = (termClass as any).level
+        termClassName = String((termClass as any).name || '').trim() || null
+        const ln = String((termClass as any).name || '').toLowerCase()
+        termJHS = ln.includes('jhs') || ln.includes('basic 7') || ln.includes('basic 8') || ln.includes('basic 9')
+      }
+    }
+
+    // If the student has NO recorded scores at all for the target term, this term
+    // simply hasn't been started/completed for the class they belong to in it.
+    // Do NOT inject the current class's subjects here — otherwise we'd fabricate a
+    // report for a term the student never did at this level.
+    const termHasStarted = targetTermGrades.length > 0
+
+    // Fetch subjects based on the TERM's class level (not the current class)
     let levelCategory = ''
-    
-    if (typeof classLevel === 'string') {
-        levelCategory = classLevel.toLowerCase()
-    } else if (typeof classLevel === 'number') {
-        if (classLevel >= 1 && classLevel <= 2) levelCategory = 'kindergarten'
-        else if (classLevel >= 3 && classLevel <= 5) levelCategory = 'lower_primary'
-        else if (classLevel >= 6 && classLevel <= 8) levelCategory = 'upper_primary'
-        else if (classLevel >= 9) levelCategory = 'jhs'
+    if (typeof termClassLevel === 'string') {
+      levelCategory = termClassLevel.toLowerCase()
+    } else if (typeof termClassLevel === 'number') {
+      if (termClassLevel >= 1 && termClassLevel <= 2) levelCategory = 'kindergarten'
+      else if (termClassLevel >= 3 && termClassLevel <= 5) levelCategory = 'lower_primary'
+      else if (termClassLevel >= 6 && termClassLevel <= 8) levelCategory = 'upper_primary'
+      else if (termClassLevel >= 9) levelCategory = 'jhs'
     }
 
     try {
-        const { data: allSubjects } = await supabase
+      const { data: allSubjects } = await supabase
         .from('subjects')
         .select('id, name, level')
         .order('name')
 
-        if (allSubjects) {
-            const relevantSubjects = allSubjects.filter((sub: any) => 
-                !sub.level || sub.level.toLowerCase() === levelCategory
-            )
+      if (allSubjects && termHasStarted) {
+        const relevantSubjects = allSubjects.filter((sub: any) =>
+          !sub.level || sub.level.toLowerCase() === levelCategory
+        )
 
-            const existingSubjectIds = new Set(
-                grades?.filter((g: any) => g.term_id === targetTermId).map((g: any) => g.subject_id)
-            )
+        const existingSubjectIds = new Set(
+          targetTermGrades.map((g: any) => g.subject_id)
+        )
 
-            relevantSubjects.forEach((sub: any) => {
-                if (!existingSubjectIds.has(sub.id)) {
-                    report.grades.push({
-                        id: `missing-${sub.id}`,
-                        subject_name: sub.name,
-                        class_score: null,
-                        exam_score: null,
-                        total: null,
-                        grade: '-',
-                        remarks: null,
-                        term_id: targetTermId,
-                        rank: null
-                    })
-                }
+        relevantSubjects.forEach((sub: any) => {
+          if (!existingSubjectIds.has(sub.id)) {
+            report.grades.push({
+              id: `missing-${sub.id}`,
+              subject_name: sub.name,
+              class_score: null,
+              exam_score: null,
+              total: null,
+              grade: '-',
+              remarks: null,
+              term_id: targetTermId,
+              rank: null
             })
-            report.grades.sort((a, b) => a.subject_name.localeCompare(b.subject_name))
-        }
+          }
+        })
+        report.grades.sort((a, b) => a.subject_name.localeCompare(b.subject_name))
+      }
     } catch (err) {
-        console.error('Error fetching subjects:', err)
+      console.error('Error fetching subjects:', err)
     }
+
+    // Flag whether this term has actually started/been completed for this class,
+    // so the report UI can show a clear "not started/completed" message instead of
+    // a blank or mixed report.
+        report.termHasStarted = termHasStarted
+    report.termClassLevel = termClassLevel
+    report.termClassId = targetTermClassId
+    report.termClassName = termClassName
 
     // Calculations
     // Calculate total score from all grades (treating null as 0)
@@ -272,14 +330,8 @@ export async function fetchReportCardData(studentId: string, termId?: string) {
         ? Math.round(report.totalScore / totalSubjects * 10) / 10
         : 0
 
-    // Aggregate
-    const className = (studentData.classes?.name || studentData.classes?.class_name || '').toLowerCase()
-    const isJHS = className.includes('jhs') || 
-                className.includes('basic 7') || 
-                className.includes('basic 8') || 
-                className.includes('basic 9')
-    
-    if (isJHS) {
+        // Aggregate (based on the TERM's class, not the student's current class)
+    if (termJHS) {
         const calcInput = report.grades
             .filter(g => g.total !== null)
             .map(g => ({

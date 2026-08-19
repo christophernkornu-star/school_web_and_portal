@@ -8,7 +8,11 @@ import { fetchReportCardData } from './fetcher'
 const MAX_ATTEMPTS = 3
 const RETRY_BASE_DELAY_MS = 800
 
-export function useReportCardData(studentId: string, termId?: string) {
+export function useReportCardData(
+  studentId: string,
+  termId?: string,
+  options?: { restrictCurrentClassOnly?: boolean }
+) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<any>(null)
   const [student, setStudent] = useState<any>(null)
@@ -23,7 +27,7 @@ export function useReportCardData(studentId: string, termId?: string) {
     
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-      const { student: s, reportData: r, settings, scoreSettings: fetchedScoreSettings } = await fetchReportCardData(studentId, termId)
+      const { student: s, reportData: r, settings, scoreSettings: fetchedScoreSettings } = await fetchReportCardData(studentId, termId, options)
 
       setStudent(s)
       setReportData(r)
@@ -47,7 +51,7 @@ export function useReportCardData(studentId: string, termId?: string) {
     }
       }
     }
-  }, [studentId, termId])
+  }, [studentId, termId, options?.restrictCurrentClassOnly])
 
   useEffect(() => {
     loadData()

@@ -21,6 +21,9 @@ export default function AdminStudentReportPage() {
   const searchParams = useSearchParams()
   const studentId = params.id as string
   const termId = searchParams.get('term')
+  const classParam = searchParams.get('class')
+  // If we came from the historical reports page, back-link there; otherwise default
+  const backHref = classParam ? '/admin/reports/historical' : '/admin/reports/student'
   
   const [downloading, setDownloading] = useState(false)
   const [remarks, setRemarks] = useState<ReportRemarks>({
@@ -41,7 +44,13 @@ export default function AdminStudentReportPage() {
       academicSettings, 
       scoreSettings,
       refresh 
-  } = useReportCardData(studentId, termId || undefined)
+  } = useReportCardData(
+    studentId,
+    termId || undefined,
+    // When not arriving from the historical reports page, do not surface
+    // previous-class historical records for terms not started in the current class.
+    { restrictCurrentClassOnly: !classParam }
+  )
 
   // Sync remarks when report data loads
   useEffect(() => {
@@ -201,7 +210,39 @@ export default function AdminStudentReportPage() {
       <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">Error loading report card</p>
-          <BackButton href="/admin/reports/student" />
+          <BackButton href={backHref} />
+        </div>
+      </div>
+    )
+  }
+
+    // Term has not been started/completed for the class this student was in that term.
+  // Show a clear notice instead of a blank/mixed report (no cross-level fabrication).
+  if (reportData.termHasStarted === false) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center mb-6">
+            <BackButton href={backHref} />
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+                        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
+              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">No Record Found for This Term</h2>
+            <p className="text-gray-600 mb-4">
+              There is no report record available for <strong>{[student?.last_name, student?.middle_name, student?.first_name].filter(Boolean).join(' ')}</strong> for <strong>{reportData.termName} ({reportData.year})</strong>.
+            </p>
+            <p className="text-gray-500 text-sm">
+              No scores were recorded for this student for this term in this class, so no report card can be generated.
+              Note that this term may not have been started or completed for the class the student belonged to during that period.
+            </p>
+            <div className="mt-6">
+              <BackButton href={backHref} />
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -212,11 +253,11 @@ export default function AdminStudentReportPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
           <div className="flex items-center gap-4">
-            <BackButton href="/admin/reports/student" />
+            <BackButton href={backHref} />
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h1>
-                            <p className="text-sm text-gray-600">
-                {reportData.termName} - {reportData.year} | {student.classes?.name || student.classes?.class_name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
+                            <h1 className="text-xl md:text-2xl font-bold text-gray-800">{student.profiles?.full_name}</h1>
+              <p className="text-sm text-gray-600">
+                {reportData.termName} - {reportData.year} | {reportData.termClassName || student.classes?.name || student.classes?.class_name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
               </p>
             </div>
           </div>

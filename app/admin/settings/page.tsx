@@ -6,9 +6,9 @@ import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, Settings as SettingsIcon, School, Bell, Lock, Globe, Calendar, TrendingUp } from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { ArrowLeft, Settings as SettingsIcon, School, Bell, Lock, Globe, Calendar, TrendingUp, Archive } from 'lucide-react'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -162,12 +162,19 @@ export default function SettingsPage() {
       color: 'blue',
       href: '/admin/settings/attendance'
     },
-    {
+        {
       title: 'Promotion Criteria',
       description: 'Set criteria for student promotion: overall average, core subjects, aggregate, attendance',
       icon: TrendingUp,
       color: 'purple',
       href: '/admin/settings/promotion-criteria'
+    },
+    {
+      title: 'Historical Reports & Retention',
+      description: 'Configure graduate history retention window and purge expired records',
+      icon: Archive,
+      color: 'purple',
+      href: '/admin/settings/historical-reports'
     },
   ]
 

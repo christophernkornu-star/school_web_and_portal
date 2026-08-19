@@ -63,7 +63,7 @@ function BulkReportCardsContent() {
       const total = studentIds.length
       for (let i = 0; i < total; i++) {
           try {
-              const res = await fetchReportCardData(studentIds[i], termId)
+              const res = await fetchReportCardData(studentIds[i], termId, { restrictCurrentClassOnly: true })
               
               if (res.scoreSettings && i === 0) {
                  setScoreSettings(res.scoreSettings)

@@ -12,6 +12,7 @@ import { useReportCardData } from '@/lib/reports/hooks'
 import { generateReportHTML } from '@/lib/reports/generator'
 import { ReportCardTheme, ReportRemarks } from '@/lib/reports/types'
 import { getAutoRemark } from '@/lib/remark-utils'
+import { resolveActiveAcademicYear, filterTermsByActiveYear } from '@/lib/academic-year'
 
 export default function ReportCardPage() {
   const router = useRouter()
@@ -21,7 +22,7 @@ export default function ReportCardPage() {
   const [studentId, setStudentId] = useState<string | null>(null)
   const [selectedTermId, setSelectedTermId] = useState<string | undefined>(undefined)
   const [availableTerms, setAvailableTerms] = useState<{id: string, name: string, year: string}[]>([])
-  const [initLoading, setInitLoading] = useState(true)
+    const [initLoading, setInitLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
   const [theme, setTheme] = useState<ReportCardTheme>({})
 
@@ -81,7 +82,36 @@ export default function ReportCardPage() {
              termsMap.set(currentTerm.id, { id: currentTerm.id, name: currentTerm.name, year: currentTerm.academic_year })
         }
         
-        let terms = Array.from(termsMap.values())
+                let terms = Array.from(termsMap.values())
+        
+                // Respect admin setting: by default students see ONLY the active academic
+        // year's terms; if an admin enables "student portal history", past years
+        // become visible here too.
+        try {
+          const activeAcademicYear = await resolveActiveAcademicYear(supabase)
+          // Read the admin setting through a server-side route because the
+          // historical_reports_settings table is admin-only under RLS and the
+          // student's client session has no access to it.
+          let showHist = false
+                    try {
+            const resp = await fetch('/api/student-portal/history-setting', { cache: 'no-store' })
+            if (resp.ok) {
+              const data = await resp.json()
+              showHist = data?.showHistory === true
+            }
+          } catch (fetchErr) {
+            console.error('Error fetching student portal history setting:', fetchErr)
+          }
+
+          if (!showHist) {
+            // Adapt to TermLike shape (student terms use `year`, helper expects `academic_year`)
+            const adapted = terms.map((t: any) => ({ ...t, academic_year: t.year }))
+            const activeOnly = filterTermsByActiveYear(adapted, activeAcademicYear)
+            terms = activeOnly.map((t: any) => ({ id: t.id, name: t.name, year: t.academic_year }))
+          }
+        } catch (yearErr) {
+          console.error('Error resolving active year for student portal:', yearErr)
+        }
         
         // Sort terms: Current term first or by year/name
         // For simplicity, just use what we have or sort manually if needed
@@ -89,7 +119,7 @@ export default function ReportCardPage() {
         setAvailableTerms(terms)
         if (terms.length > 0) {
             // Default to current term or first available
-            if (currentTerm) setSelectedTermId(currentTerm.id)
+            if (currentTerm && terms.some((t: any) => t.id === currentTerm.id)) setSelectedTermId(currentTerm.id)
             else setSelectedTermId(terms[0].id)
         }
 

@@ -35,6 +35,7 @@ export default function GeneralSettings() {
     allow_online_admission: true,
     allow_result_viewing: true,
     allow_cumulative_download: false,
+    allow_teacher_class_score_entry: true,
     class_score_percentage: 40,
     exam_score_percentage: 60,
     progress_alert_threshold: 90,
@@ -92,6 +93,7 @@ export default function GeneralSettings() {
           allow_online_admission: academicSettings.allow_online_admission ?? true,
           allow_result_viewing: academicSettings.allow_result_viewing ?? true,
           allow_cumulative_download: systemSettingsMap.get('allow_cumulative_download') === 'true',
+          allow_teacher_class_score_entry: systemSettingsMap.get('allow_teacher_class_score_entry') !== 'false',
           class_score_percentage: Number(systemSettingsMap.get('class_score_percentage')) || 40,
           exam_score_percentage: Number(systemSettingsMap.get('exam_score_percentage')) || 60,
           progress_alert_threshold: Number(systemSettingsMap.get('progress_alert_threshold')) || 90,
@@ -250,7 +252,20 @@ export default function GeneralSettings() {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'setting_key' })
 
-      if (cumulativeError) throw new Error('Failed to update cumulative download setting: ' + cumulativeError.message)
+            if (cumulativeError) throw new Error('Failed to update cumulative download setting: ' + cumulativeError.message)
+
+      // 3.5 Update allow_teacher_class_score_entry
+      const { error: classScoreEntryError } = await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'allow_teacher_class_score_entry',
+          setting_value: String(formData.allow_teacher_class_score_entry),
+          setting_type: 'boolean',
+          description: 'Allow teachers to manually enter class scores on the Exam Scores page',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'setting_key' })
+
+      if (classScoreEntryError) throw new Error('Failed to update class score entry setting: ' + classScoreEntryError.message)
 
       // 4. Update class_score_percentage
       const { error: classScoreError } = await supabase
@@ -707,8 +722,21 @@ export default function GeneralSettings() {
                 </div>
                 <input
                   type="checkbox"
-                  checked={formData.allow_cumulative_download}
+                                    checked={formData.allow_cumulative_download}
                   onChange={(e) => setFormData({...formData, allow_cumulative_download: e.target.checked})}
+                  className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
+                <div>
+                  <p className="font-medium text-gray-800">Allow Teacher Class Score Entry</p>
+                  <p className="text-sm text-gray-600">Allow teachers to manually enter class scores on the Exam Scores page. When disabled, the class score field is read-only and auto-calculated from assessments.</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={formData.allow_teacher_class_score_entry}
+                  onChange={(e) => setFormData({...formData, allow_teacher_class_score_entry: e.target.checked})}
                   className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
                 />
               </label>

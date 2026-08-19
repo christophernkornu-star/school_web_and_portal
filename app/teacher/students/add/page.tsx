@@ -7,6 +7,7 @@ import { ArrowLeft, UserPlus, Upload, Users, Download, AlertCircle, CheckCircle,
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess, isTeacherAssignedToClass } from '@/lib/teacher-permissions'
+import { toast } from 'react-hot-toast'
 
 interface TeacherClass {
   class_id: string
@@ -35,9 +36,12 @@ export default function AddStudentPage() {
     guardian_phone: '',
     guardian_email: ''
   })
-  const [submitting, setSubmitting] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+  // Duplicate-detection modal: a previously-enrolled (non-active) student may exist.
+  const [duplicateModal, setDuplicateModal] = useState<{ show: boolean; candidate: any | null }>({ show: false, candidate: null })
+  const [checkingDuplicate, setCheckingDuplicate] = useState(false)
 
   // CSV upload state
   const [csvFile, setCsvFile] = useState<File | null>(null)
@@ -131,13 +135,90 @@ export default function AddStudentPage() {
       errors.guardian_email = 'Please enter a valid email address'
     }
 
-    setFormErrors(errors)
+        setFormErrors(errors)
     return Object.keys(errors).length === 0
   }
 
-  async function handleManualSubmit(e: React.FormEvent) {
+    // Search for a previously-enrolled (non-active) student by full name, so we can prompt
+  // to re-activate their existing record instead of creating a duplicate.
+  async function findExistingStudent(first: string, last: string) {
+    if (!first || !last) return null
+    const qFirst = first.trim()
+    const qLast = last.trim()
+
+    const { data } = await supabase
+      .from('students')
+      .select('id, first_name, middle_name, last_name, student_id, gender, status, graduated_at, classes(id, name)')
+      .ilike('first_name', qFirst)
+      .ilike('last_name', qLast)
+      .neq('status', 'active')
+      .limit(1)
+
+    return data?.[0] || null
+  }
+
+    async function handleManualSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
+    if (!teacher) return
+    await performInsert(false)
+  }
+
+  // Re-activate a previously-enrolled student instead of creating a duplicate, keeping
+  // all their historical records intact. Only re-assigns to the new class; does NOT touch
+  // promotion records.
+  async function handleReactivateExisting() {
+    const candidate = duplicateModal.candidate
+    if (!candidate) return
+
+    setCheckingDuplicate(true)
+    try {
+      const updates: any = {
+        status: 'active',
+        class_id: manualFormData.class_id,
+      }
+      if (candidate.status === 'graduated') {
+        updates.graduated_at = null
+      }
+      const { error } = await supabase
+        .from('students')
+        .update(updates)
+        .eq('id', candidate.id)
+      if (error) throw error
+
+      toast.success('Student re-activated with historical records intact')
+      setDuplicateModal({ show: false, candidate: null })
+      setManualFormData({
+        first_name: '',
+        middle_name: '',
+        last_name: '',
+        date_of_birth: '',
+        gender: '',
+        class_id: '',
+        guardian_name: '',
+        guardian_phone: '',
+        guardian_email: ''
+      })
+      setFormErrors({})
+      setSubmitSuccess(true)
+      setTimeout(() => setSubmitSuccess(false), 5000)
+    } catch (error: any) {
+      console.error('Error reactivating student:', error)
+      toast.error('Failed to re-activate student: ' + error.message)
+    } finally {
+      setCheckingDuplicate(false)
+    }
+  }
+
+    // User confirms it's a DIFFERENT person — close the prompt and create a new record,
+  // bypassing the duplicate check this time.
+  function handleProceedAsNew() {
+    setDuplicateModal({ show: false, candidate: null })
+    performInsert(true)
+  }
+
+  // Core insert logic. When skipDuplicateCheck is true, we proceed regardless of any
+  // same-name student (the user already confirmed this is a new person).
+  async function performInsert(skipDuplicateCheck = false) {
     if (!teacher) return
 
     // Validate form
@@ -149,6 +230,19 @@ export default function AddStudentPage() {
     setSubmitSuccess(false)
 
     try {
+      // Duplicate detection: if a previously-enrolled (non-active) student has the same
+      // full name, pause and ask the teacher to re-activate instead of duplicating.
+            if (!skipDuplicateCheck) {
+        setCheckingDuplicate(true)
+        const existing = await findExistingStudent(manualFormData.first_name, manualFormData.last_name)
+        setCheckingDuplicate(false)
+        if (existing) {
+          setSubmitting(false)
+          setDuplicateModal({ show: true, candidate: existing })
+          return
+        }
+      }
+
       // Verify teacher is assigned to selected class
       const isAssigned = await isTeacherAssignedToClass(teacher.id, manualFormData.class_id)
       if (!isAssigned) {
@@ -179,14 +273,14 @@ export default function AddStudentPage() {
       })
 
       const result = await response.json()
-      
+
       if (!response.ok || result.failed > 0) {
         throw new Error(result.errors?.[0] || result.error || 'Failed to add student')
       }
 
       // Show success message
       setSubmitSuccess(true)
-      
+
       // Reset form
       setManualFormData({
         first_name: '',
@@ -998,10 +1092,95 @@ Mary,Ann,Smith,2016-03-20,female,,,`
                   </button>
                 </div>
               </div>
-            </div>
+                        </div>
           )}
         </div>
       </main>
+
+      {/* Duplicate / Returning Student Detection Modal */}
+      {duplicateModal.show && duplicateModal.candidate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-amber-100 p-2 rounded-full">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">A Similar Student Was Found</h3>
+            </div>
+            <p className="text-gray-600 text-sm mb-4">
+              We found a previously-enrolled student with the same full name. Is this the <strong>same person</strong>?
+              If so, re-activating preserves their historical records instead of creating a duplicate.
+            </p>
+
+            {/* Candidate historical summary */}
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-2">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Full Name</p>
+                  <p className="font-medium text-gray-900">
+                    {[duplicateModal.candidate.last_name, duplicateModal.candidate.middle_name, duplicateModal.candidate.first_name].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Student ID</p>
+                  <p className="font-medium text-gray-900">{duplicateModal.candidate.student_id || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Gender</p>
+                  <p className="font-medium text-gray-900">{duplicateModal.candidate.gender || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Current Status</p>
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold uppercase ${
+                    duplicateModal.candidate.status === 'graduated' ? 'bg-purple-100 text-purple-800'
+                    : duplicateModal.candidate.status === 'transferred' ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-gray-100 text-gray-700'
+                  }`}>{duplicateModal.candidate.status}</span>
+                </div>
+                {duplicateModal.candidate.classes?.name && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Last Class</p>
+                    <p className="font-medium text-gray-900">{duplicateModal.candidate.classes.name}</p>
+                  </div>
+                )}
+                {duplicateModal.candidate.graduated_at && (
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Graduated</p>
+                    <p className="font-medium text-gray-900">{new Date(duplicateModal.candidate.graduated_at).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mb-5">
+              Re-activating keeps this student&apos;s previous scores, remarks, and promotion history intact.
+            </p>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+              <button
+                onClick={handleProceedAsNew}
+                disabled={checkingDuplicate}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 text-sm"
+              >
+                No — different person, create new
+              </button>
+              <button
+                onClick={handleReactivateExisting}
+                disabled={checkingDuplicate}
+                className="px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+              >
+                {checkingDuplicate ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                    Re-activating...
+                  </>
+                ) : (
+                  <>Yes — this is the same student, re-activate</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

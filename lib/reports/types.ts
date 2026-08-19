@@ -53,5 +53,11 @@ export interface ReportCardData {
   vacationDate?: string // Dated string (e.g. 2025-12-20) for THIS term's vacation start
   reopeningDate?: string // Dated string for when this term reopens
 
+  // Historical / cross-level report metadata (set by fetcher)
+  termHasStarted?: boolean           // true if the student has scores for this term (i.e. the term was actually conducted for this class)
+  termClassLevel?: number | string | null // the level of the class that produced the scores for this term
+  termClassId?: string | null             // the class the scores were recorded under for this term
+  termClassName?: string | null           // the NAME of the class that produced the scores for this term (for the label)
+
 }
 
