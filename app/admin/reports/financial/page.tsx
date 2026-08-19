@@ -8,6 +8,7 @@ import { format, startOfDay, endOfDay, isSameDay, parseISO, subDays } from 'date
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { resolveActiveAcademicYear, filterTermsByActiveYear } from '@/lib/academic-year'
 
 type Tab = 'overview' | 'collections' | 'debts'
 
@@ -25,6 +26,8 @@ export default function FinancialReportsPage() {
   // Filters
   const [dateRange, setDateRange] = useState('today') // today, week, month, all
   const [selectedClass, setSelectedClass] = useState('all')
+  const [selectedTerm, setSelectedTerm] = useState('all')
+  const [terms, setTerms] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
@@ -34,9 +37,18 @@ export default function FinancialReportsPage() {
   const loadData = async () => {
     setLoading(true)
     try {
-      // 1. Load Classes
+            // 1. Load Classes
       const { data: cls } = await supabase.from('classes').select('id, name').order('name')
       setClasses(cls || [])
+
+      // 1.5 Load Academic Terms (active academic year only) for the term filter.
+      const activeYear = await resolveActiveAcademicYear(supabase)
+      const { data: allTerms } = await supabase
+        .from('academic_terms')
+        .select('id, name, academic_year, start_date, end_date')
+        .order('start_date', { ascending: true })
+      const activeTerms = filterTermsByActiveYear(allTerms || [], activeYear)
+      setTerms(activeTerms)
 
       // 2. Get Current Academic Year
       const { data: currentTerm } = await supabase
@@ -80,10 +92,30 @@ export default function FinancialReportsPage() {
     }
   }
 
-  // --- Calculations ---
+    // --- Calculations ---
+
+  // Dates (start/end inclusive) of the selected term, or null if "All Terms".
+  const getSelectedTermDateRange = (): { start: string; end: string } | null => {
+    if (!selectedTerm || selectedTerm === 'all') return null
+    const term = terms.find(t => t.id === selectedTerm)
+    if (!term || !term.start_date || !term.end_date) return null
+    return { start: term.start_date, end: term.end_date }
+  }
+
+  const paymentWithinTerm = (paymentDate: string | null | undefined, range: { start: string; end: string } | null): boolean => {
+    if (!range) return true
+    if (!paymentDate) return false
+    const date = paymentDate.slice(0, 10) // normalize to yyyy-MM-dd
+    return date >= range.start && date <= range.end
+  }
 
   const getFilteredPayments = () => {
     let filtered = [...payments]
+
+    const termRange = getSelectedTermDateRange()
+
+    // Term Filter
+    filtered = filtered.filter(p => paymentWithinTerm(p.payment_date, termRange))
     
     // Date Filter
     const today = new Date()
@@ -154,10 +186,11 @@ export default function FinancialReportsPage() {
       })
     })
 
-    // Calculate Paid (from Payments)
+        // Calculate Paid (from Payments)
+    const termRange = getSelectedTermDateRange()
     payments.forEach(payment => {
       const record = debtMap.get(payment.student_id)
-      if (record) {
+      if (record && paymentWithinTerm(payment.payment_date, termRange)) {
         record.totalPaid += Number(payment.amount_paid)
       }
     })
@@ -317,7 +350,7 @@ export default function FinancialReportsPage() {
                 <option value="month">This Month</option>
                 <option value="all">All Time</option>
               </select>
-              <select
+                            <select
                 className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                 value={selectedClass}
                 onChange={(e) => setSelectedClass(e.target.value)}
@@ -325,6 +358,17 @@ export default function FinancialReportsPage() {
                 <option value="all">All Classes</option>
                 {classes.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              <select
+                className="w-full sm:w-auto border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 outline-none"
+                value={selectedTerm}
+                onChange={(e) => setSelectedTerm(e.target.value)}
+                title="Filter by academic term (uses that term's date range)"
+              >
+                <option value="all">All Terms</option>
+                {terms.map(t => (
+                  <option key={t.id} value={t.id}>{t.name} ({t.academic_year})</option>
                 ))}
               </select>
             </div>

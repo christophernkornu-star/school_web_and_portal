@@ -169,14 +169,14 @@ export default function AdminHistoricalReportsPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center mb-6">
-          <BackButton href="/admin/reports" />
-          <div className="ml-4">
-            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-              <Archive className="w-6 h-6 text-purple-600" />
+        <div className="flex items-start sm:items-center mb-6">
+          <BackButton href="/admin/reports" className="mt-1 sm:mt-0" />
+          <div className="ml-3 sm:ml-4">
+            <h1 className="text-lg sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <Archive className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
               Historical Reports
             </h1>
-            <p className="text-gray-600">Browse past term reports by class, including graduated students</p>
+            <p className="text-xs sm:text-sm text-gray-600">Browse past term reports by class, including graduated students</p>
           </div>
         </div>
 
@@ -246,91 +246,132 @@ export default function AdminHistoricalReportsPage() {
 
         {/* Roster */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-            <h2 className="font-semibold text-gray-800">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 className="font-semibold text-gray-800 text-sm sm:text-base">
               Students in {classes.find(c => c.id === selectedClass)?.name || 'class'}
               {selectedTermInfo ? ` — ${selectedTermInfo.name} ${selectedYear}` : ''}
             </h2>
             <span className="text-sm text-gray-500">{roster.length} student{roster.length === 1 ? '' : 's'}</span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Report</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {loading || loadingRoster ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <tr key={i}>
-                      <td className="px-6 py-4">
-                        <Skeleton className="h-4 w-48" />
-                      </td>
-                      <td className="px-6 py-4 text-center"><Skeleton className="h-4 w-12 mx-auto" /></td>
-                      <td className="px-6 py-4 text-center"><Skeleton className="h-5 w-16 mx-auto rounded-full" /></td>
-                      <td className="px-6 py-4 text-right"><Skeleton className="h-8 w-24 ml-auto rounded" /></td>
-                    </tr>
-                  ))
-                ) : filteredRoster.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-6 py-12 text-center">
-                      {selectedClass && selectedTerm
-                        ? <p className="text-gray-500">No students have scores recorded for this class &amp; term yet.</p>
-                        : <p className="text-gray-500">Select a class, year, and term to view the historical roster.</p>}
-                    </td>
-                  </tr>
-                ) : (
-                  filteredRoster.map((st: any) => (
-                    <tr key={st.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+          {(loading || loadingRoster) ? (
+            <div className="p-4 space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-4 w-full" />
+                </div>
+              ))}
+            </div>
+          ) : filteredRoster.length === 0 ? (
+            <div className="px-6 py-12 text-center">
+              {selectedClass && selectedTerm
+                ? <p className="text-gray-500">No students have scores recorded for this class &amp; term yet.</p>
+                : <p className="text-gray-500">Select a class, year, and term to view the historical roster.</p>}
+            </div>
+          ) : (
+            <>
+              {/* Mobile card view */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {filteredRoster.map((st: any) => (
+                  <div key={st.id} className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium text-gray-900 text-sm break-words">
                           {[st.last_name, st.middle_name, st.first_name].filter(Boolean).join(', ')}
                         </div>
-                        <div className="text-sm text-gray-500">{st.student_id}</div>
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm text-gray-500">{st.gender}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          st.status === 'graduated' ? 'bg-purple-100 text-purple-800'
-                          : st.status === 'transferred' ? 'bg-yellow-100 text-yellow-800'
-                          : st.status === 'inactive' ? 'bg-gray-100 text-gray-700'
-                          : 'bg-green-100 text-green-800'
-                        }`}>
-                          {st.status === 'graduated' ? 'Graduated' : st.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/admin/reports/student/${st.id}?term=${selectedTerm}&class=${selectedClass}`}
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200"
-                          >
-                            <FileText className="w-4 h-4 mr-1" />
-                            View Report
-                          </Link>
-                          {st.status !== 'active' && (
-                            <button
-                              onClick={() => setReactivateModal({ show: true, student: st })}
-                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200"
-                              title="Re-activate this student (keeps historical records)"
-                            >
-                              <RotateCcw className="w-4 h-4 mr-1" />
-                              Re-activate
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                        <div className="text-xs text-gray-500 mt-0.5">{st.student_id} · {st.gender || '—'}</div>
+                      </div>
+                      <span className={`shrink-0 px-2 py-1 text-xs font-semibold rounded-full ${
+                        st.status === 'graduated' ? 'bg-purple-100 text-purple-800'
+                        : st.status === 'transferred' ? 'bg-yellow-100 text-yellow-800'
+                        : st.status === 'inactive' ? 'bg-gray-100 text-gray-700'
+                        : 'bg-green-100 text-green-800'
+                      }`}>
+                        {st.status === 'graduated' ? 'Graduated' : st.status}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/admin/reports/student/${st.id}?term=${selectedTerm}&class=${selectedClass}`}
+                        className="inline-flex items-center flex-1 justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200"
+                      >
+                        <FileText className="w-3.5 h-3.5 mr-1.5" />
+                        View Report
+                      </Link>
+                      {st.status !== 'active' && (
+                        <button
+                          onClick={() => setReactivateModal({ show: true, student: st })}
+                          className="inline-flex items-center flex-1 justify-center px-3 py-2 border border-transparent text-xs font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200"
+                          title="Re-activate this student (keeps historical records)"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+                          Re-activate
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Report</th>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredRoster.map((st: any) => (
+                      <tr key={st.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm font-medium text-gray-900">
+                            {[st.last_name, st.middle_name, st.first_name].filter(Boolean).join(', ')}
+                          </div>
+                          <div className="text-sm text-gray-500">{st.student_id}</div>
+                        </td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-500">{st.gender}</td>
+                        <td className="px-6 py-4 text-center">
+                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                            st.status === 'graduated' ? 'bg-purple-100 text-purple-800'
+                            : st.status === 'transferred' ? 'bg-yellow-100 text-yellow-800'
+                            : st.status === 'inactive' ? 'bg-gray-100 text-gray-700'
+                            : 'bg-green-100 text-green-800'
+                          }`}>
+                            {st.status === 'graduated' ? 'Graduated' : st.status}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/admin/reports/student/${st.id}?term=${selectedTerm}&class=${selectedClass}`}
+                              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-purple-700 bg-purple-100 hover:bg-purple-200"
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              View Report
+                            </Link>
+                            {st.status !== 'active' && (
+                              <button
+                                onClick={() => setReactivateModal({ show: true, student: st })}
+                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-emerald-700 bg-emerald-100 hover:bg-emerald-200"
+                                title="Re-activate this student (keeps historical records)"
+                              >
+                                <RotateCcw className="w-4 h-4 mr-1" />
+                                Re-activate
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

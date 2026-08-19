@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Search, FileText, Download, Users, Filter, Loader2 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { resolveActiveAcademicYear, filterTermsByActiveYear } from '@/lib/academic-year'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
@@ -45,19 +46,22 @@ export default function AdminStudentReportsPage() {
         setSelectedClass(classesData[0].id)
       }
 
-      // Fetch terms
-      const { data: termsData } = await supabase
+            // Fetch terms restricted to the ACTIVE academic year only.
+      // Past years are available via the dedicated Historical Reports page.
+      const activeYear = await resolveActiveAcademicYear(supabase)
+      const { data: allTerms } = await supabase
         .from('academic_terms')
         .select('*')
         .order('start_date', { ascending: false })
       
-      setTerms(termsData || [])
+      const activeTerms = filterTermsByActiveYear(allTerms || [], activeYear)
+      setTerms(activeTerms)
       // Set current term or first term
-      const currentTerm = termsData?.find((t: any) => t.is_current)
+      const currentTerm = activeTerms.find((t: any) => t.is_current)
       if (currentTerm) {
         setSelectedTerm(currentTerm.id)
-      } else if (termsData && termsData.length > 0) {
-        setSelectedTerm(termsData[0].id)
+      } else if (activeTerms.length > 0) {
+        setSelectedTerm(activeTerms[0].id)
       }
 
     } catch (error) {
