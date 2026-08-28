@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Fragment } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Printer, Archive } from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
@@ -65,6 +65,7 @@ const getShortSubjectName = (name: string) => {
 
 export default function ClassReportPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = getSupabaseBrowserClient()
   
   const [loading, setLoading] = useState(true)
@@ -75,6 +76,9 @@ export default function ClassReportPage() {
     const [selectedClass, setSelectedClass] = useState('')
   const [selectedTerm, setSelectedTerm] = useState('')
   const [activeYear, setActiveYear] = useState('')
+    // When opened from Historical Reports (with ?historical=1), we browse past
+  // academic years' broadsheets instead of the live active-year terms only.
+  const [historical, setHistorical] = useState<boolean>(false)
   
   const [sheetData, setSheetData] = useState<{
     students: ProcessedStudent[]
@@ -83,9 +87,15 @@ export default function ClassReportPage() {
     termName: string
   } | null>(null)
 
-  useEffect(() => {
+    useEffect(() => {
     async function loadInitialData() {
       try {
+                // Read query params once (stable at mount).
+        const isHistorical = searchParams.get('historical') === '1'
+        const presetClassId = searchParams.get('class') || ''
+        const presetTermId = searchParams.get('term') || ''
+        setHistorical(isHistorical)
+
         const user = await getCurrentUser()
         if (!user) {
           router.push('/login?portal=teacher')
@@ -104,7 +114,8 @@ export default function ClassReportPage() {
         
         setClasses(classTeacherClasses)
 
-                // Load terms (active academic year only; past years are in Historical Reports)
+        // Load terms. In historical mode we surface ALL academic years so a past
+        // term's broadsheet can be regenerated; otherwise only the active year.
         const activeYear = await resolveActiveAcademicYear(supabase)
         setActiveYear(activeYear)
 
@@ -114,21 +125,35 @@ export default function ClassReportPage() {
           .order('start_date', { ascending: false })
           .order('created_at', { ascending: false })
         
-        const activeTerms = filterTermsByActiveYear(termsData || [], activeYear)
-        if (activeTerms) {
-          setTerms(activeTerms)
-          // Auto-select current term
-          const { data: settings } = await supabase
-            .from('system_settings')
-            .select('setting_value')
-            .eq('setting_key', 'current_term')
-            .single()
-            
-          if (settings && activeTerms.some((t: any) => t.id === settings.setting_value)) {
-            setSelectedTerm(settings.setting_value)
-          } else if (activeTerms.length > 0) {
-            setSelectedTerm(activeTerms[0].id)
+        const availableTerms = isHistorical
+          ? (termsData || [])
+          : filterTermsByActiveYear(termsData || [], activeYear)
+        if (availableTerms && availableTerms.length > 0) {
+          setTerms(availableTerms)
+
+          // 1. A term explicitly requested in the URL (historical deep-link) wins.
+          const requestedTerm = availableTerms.some((t: any) => t.id === presetTermId)
+          if (presetTermId && requestedTerm) {
+            setSelectedTerm(presetTermId)
+          } else {
+            // 2. Auto-select current term (active-year flow).
+            const { data: settings } = await supabase
+              .from('system_settings')
+              .select('setting_value')
+              .eq('setting_key', 'current_term')
+              .single()
+              
+            if (settings && availableTerms.some((t: any) => t.id === settings.setting_value)) {
+              setSelectedTerm(settings.setting_value)
+            } else {
+              setSelectedTerm(availableTerms[0].id)
+            }
           }
+        }
+
+        // Pre-select the class provided in the URL (historical deep-link).
+        if (presetClassId && classTeacherClasses.some(c => c.class_id === presetClassId)) {
+          setSelectedClass(presetClassId)
         }
 
         setLoading(false)
@@ -139,7 +164,7 @@ export default function ClassReportPage() {
     }
 
     loadInitialData()
-  }, [router])
+  }, [router, searchParams])
 
   async function generateReport() {
     if (!selectedClass || !selectedTerm) return
@@ -157,10 +182,25 @@ export default function ClassReportPage() {
       // so that, for cross-level transitions (e.g. a promoted child who now has scores in a
       // higher class), we do NOT merge the previous class's old scores into the selected
       // class's broadsheet columns.
-      const { data: scoresAll } = await supabase
-        .from('scores')
-        .select('student_id, subject_id, class_score, exam_score, total, class_id')
-        .eq('term_id', selectedTerm)
+                        // IMPORTANT: Supabase caps a single query at 1000 rows by default, but a
+      // whole term holds ~2900+ score rows across all classes. An unpaginated fetch
+      // would silently drop everything past row 1000 — most of the later classes/
+      // students — so the broadsheet would only show a fraction of a class (e.g.
+      // ~22 of 56 students) while the report cards (which query per class) still
+      // ranked the full cohort. We therefore page through ALL rows so the broadsheet
+      // roster exactly matches the report cards.
+            const PAGE = 1000
+      let scoresAll: any[] = []
+      for (let from = 0; ; from += PAGE) {
+        const { data: page } = await supabase
+          .from('scores')
+          .select('student_id, subject_id, class_score, exam_score, total, class_id, students(id, first_name, middle_name, last_name, gender)')
+          .eq('term_id', selectedTerm)
+          .range(from, from + PAGE - 1)
+        const rows = page || []
+        scoresAll = scoresAll.concat(rows)
+        if (rows.length < PAGE) break
+      }
 
       // Determine the term's conducting class from the scores' class_id (falling back to
       // the currently selected class for legacy/backfilled-edge rows without a class_id).
@@ -172,107 +212,91 @@ export default function ClassReportPage() {
         (s: any) => !s.class_id || s.class_id === conductingClassId
       )
 
-      // 3. Get the CURRENT ACTIVE roster of the selected class.
-      // The broadsheet reflects the active session only: students who are currently active
-      // in this class. Any student no longer active (graduated / transferred / moved to a
-      // different class) is intentionally excluded — their historical records belong in the
-      // Historical Reports section, not this sheet.
-      const { data: currentStudents } = await supabase
-        .from('students')
-        .select('id, first_name, last_name, middle_name, gender')
-        .eq('class_id', selectedClass)
-        .eq('status', 'active')
-        .order('first_name')
+      // 3. Determine the roster of students displayed on the sheet.
+      //    - ACTIVE mode: the current active roster of the selected class (only the
+      //      live session's students appear).
+      //    - HISTORICAL mode: derived from the students who actually have scores for
+      //      this class + term, so graduated/transferred students still show up.
+      let studentsData: any[] = []
+      if (historical) {
+        const map = new Map<string, any>()
+        ;(scoresData || []).forEach((s: any) => {
+          const st = s.students
+          if (!st) return
+          if (!map.has(st.id)) {
+            map.set(st.id, {
+              id: st.id,
+              first_name: st.first_name,
+              last_name: st.last_name,
+              middle_name: st.middle_name,
+              gender: st.gender
+            })
+          }
+        })
+        studentsData = Array.from(map.values())
+          .sort((a: any, b: any) => (a.last_name || '').localeCompare(b.last_name || '') ||
+                                     (a.first_name || '').localeCompare(b.first_name || ''))
+      } else {
+        const { data: currentStudents } = await supabase
+          .from('students')
+          .select('id, first_name, last_name, middle_name, gender')
+          .eq('class_id', selectedClass)
+          .eq('status', 'active')
+          .order('first_name')
+        studentsData = currentStudents || []
+      }
 
-      const studentsData = currentStudents || []
-
-      // Further restrict scores to only the active students present in the sheet, so we
-      // never surface a moved/graduated student's data in this broadsheet.
-      const activeIds = new Set(studentsData.map((st: any) => st.id))
-      const activeScores = scoresData.filter((s: any) => activeIds.has(s.student_id))
+      // Further restrict scores to only the students present in the sheet, so we
+      // never surface a moved/graduated student's data out of context.
+      const rosterIds = new Set(studentsData.map((st: any) => st.id))
+      const activeScores = scoresData.filter((s: any) => rosterIds.has(s.student_id))
 
       if (!studentsData || studentsData.length === 0) {
-        toast.error('No students found in this class.')
+        toast.error('No students found for this class and term.')
         setGenerating(false)
         return
       }
 
-      // 4. Assemble ALL Subjects assigned to this class
+            // 4. Assemble the subject set.
+      //    IMPORTANT: To keep the broadsheet EXACTLY in line with the individual
+      //    report cards (which are the source of truth), we build the subject
+      //    columns exactly the way lib/reports/fetcher.ts does:
+      //      - subjects of the class's level category (including subjects with no
+      //        level set), PLUS
+      //      - any subject that actually holds recorded scores for this class+term.
+      //    We intentionally do NOT pull from class_subjects and do NOT de-duplicate
+      //    by root name here, because the report card does neither. Adding extra
+      //    class_subjects-only subjects or merging duplicate roots would change the
+      //    column set / average divisor and make the broadsheet differ from the
+      //    report cards.
       const subjectsMap = new Map<string, Subject>()
-      
-      // 4a. Get explicitly assigned subjects from class_subjects
-      const { data: classSubjectsData } = await supabase
-        .from('class_subjects')
-        .select('subject_id, subjects(id, name, code)')
-        .eq('class_id', selectedClass)
 
-      if (classSubjectsData) {
-        classSubjectsData.forEach((cs: any) => {
-          const subject = cs.subjects as Subject | null
-          if (subject?.id) subjectsMap.set(subject.id, subject)
-        })
-      }
-
-      // 4b. Get subjects matching the class level (as fallback for primary/KG classes)
       const classNameLower = className.toLowerCase()
       let category = ''
+      if (classNameLower.includes('kg')) category = 'kindergarten'
+      else if (/basic [1-3]|primary [1-3]/.test(classNameLower)) category = 'lower_primary'
+      else if (/basic [4-6]|primary [4-6]/.test(classNameLower)) category = 'upper_primary'
+      else if (/basic [7-9]|jhs [1-3]/.test(classNameLower)) category = 'jhs'
 
-      if (classNameLower.includes('kg')) {
-        category = 'kindergarten'
-      } else if (classNameLower.includes('basic 1') || classNameLower.includes('basic 2') || classNameLower.includes('basic 3') ||
-                 classNameLower.includes('primary 1') || classNameLower.includes('primary 2') || classNameLower.includes('primary 3')) {
-        category = 'lower_primary'
-      } else if (classNameLower.includes('basic 4') || classNameLower.includes('basic 5') || classNameLower.includes('basic 6') ||
-                 classNameLower.includes('primary 4') || classNameLower.includes('primary 5') || classNameLower.includes('primary 6')) {
-        category = 'upper_primary'
-      } else if (classNameLower.includes('basic 7') || classNameLower.includes('basic 8') || classNameLower.includes('basic 9') ||
-                 classNameLower.includes('jhs 1') || classNameLower.includes('jhs 2') || classNameLower.includes('jhs 3')) {
-        category = 'jhs'
-      }
+      const subjectsWithScores = new Set(activeScores?.map((s: any) => s.subject_id) || [])
 
       const { data: allSubjectsData } = await supabase
         .from('subjects')
         .select('id, name, code, level')
-        
-            // Find existing score subject IDs to always include them
-      const subjectsWithScores = new Set(activeScores?.map((s: any) => s.subject_id) || [])
 
       if (allSubjectsData) {
         allSubjectsData.forEach((s: any) => {
-          // Include if the subject is part of this class's level, OR if it has a score
-          if (s.level === category || subjectsWithScores.has(s.id)) {
+          const matchesCategory = !s.level || String(s.level).toLowerCase() === category
+          if (matchesCategory || subjectsWithScores.has(s.id)) {
             if (!subjectsMap.has(s.id)) {
-              subjectsMap.set(s.id, { id: s.id, name: s.name, code: s.code })   
+              subjectsMap.set(s.id, { id: s.id, name: s.name, code: s.code })
             }
           }
         })
       }
 
-      // Deduplicate subjects sharing the same base name (e.g., "Mathematics" and "Mathematics (UP)")
-      const cleanNameMap = new Map<string, any>()
-      Array.from(subjectsMap.values()).forEach((subject: any) => {
-        // Strip out trailing (LP), (UP), (JHS), etc., so we just compare root names
-        const cleanName = subject.name.replace(/\s*\(\s*(LP|UP|JHS|KG|Nursery|Creche)\s*\)\s*$/i, '').trim().toUpperCase()
-        
-        if (cleanNameMap.has(cleanName)) {
-          const existing = cleanNameMap.get(cleanName)
-          const newHasScores = subjectsWithScores.has(subject.id)
-          const existingHasScores = subjectsWithScores.has(existing.id)
-
-          if (newHasScores && !existingHasScores) {
-            // Replace dummy subject with one that actually has reported scores
-            cleanNameMap.set(cleanName, subject)
-          } else if (newHasScores && existingHasScores) {
-            // Edge case: if, due to an error, scores exist for BOTH subjects, we must map both to not hide data
-            cleanNameMap.set(`${cleanName}_${subject.id}`, subject)
-          } 
-          // Default: if neither has scores, keep the first one we saw (the "existing" entry)
-        } else {
-          cleanNameMap.set(cleanName, subject)
-        }
-      })
-
-      const subjects = Array.from(cleanNameMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+      // Sort by subject name — the same ordering the report card applies.
+      const subjects = Array.from(subjectsMap.values()).sort((a, b) => a.name.localeCompare(b.name))
 
       if (subjects.length === 0) {
         toast.error('No subjects found for this class.')
@@ -392,10 +416,15 @@ export default function ClassReportPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8 print:p-0 print:bg-white transition-colors duration-200">
       {/* No Print Section: Controls */}
       <div className="max-w-[1400px] mx-auto mb-6 md:mb-8 print:hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4">
-            <BackButton className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors inline-flex text-gray-800 dark:text-gray-200" />
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Class Report Sheet</h1>
+            <BackButton
+              href={historical ? '/teacher/reports/historical' : undefined}
+              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors inline-flex text-gray-800 dark:text-gray-200"
+            />
+            <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+              {historical ? 'Historical Class Report Sheet' : 'Class Report Sheet'}
+            </h1>
           </div>
           {sheetData && (
             <button 
@@ -408,16 +437,18 @@ export default function ClassReportPage() {
           )}
                 </div>
 
-        {/* Active-year notice */}
-        <div className="flex items-center gap-2 bg-methodist-blue/5 border border-methodist-blue/20 text-methodist-blue rounded-xl px-4 py-3 mb-4 text-xs md:text-sm">
-          <Archive className="w-4 h-4 shrink-0" />
-          <span className="flex-1">
-            Showing <strong>{activeYear || 'the current academic year'}</strong> only. Past academic years are available under{' '}
-            <Link href="/teacher/reports/historical" className="underline font-semibold hover:text-blue-900">
-              Historical Reports
-            </Link>.
-          </span>
-        </div>
+        {/* Active-year notice (hidden in historical mode — this is a past-year broadsheet) */}
+        {!historical && (
+          <div className="flex items-center gap-2 bg-methodist-blue/5 border border-methodist-blue/20 text-methodist-blue rounded-xl px-4 py-3 mb-4 text-xs md:text-sm">
+            <Archive className="w-4 h-4 shrink-0" />
+            <span className="flex-1">
+              Showing <strong>{activeYear || 'the current academic year'}</strong> only. Past academic years are available under{' '}
+              <Link href="/teacher/reports/historical" className="underline font-semibold hover:text-blue-900">
+                Historical Reports
+              </Link>.
+            </span>
+          </div>
+        )}
 
         <div className="bg-white dark:bg-gray-800 p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end transition-colors">
           <div>
@@ -539,15 +570,15 @@ export default function ClassReportPage() {
                           const score = student.scores[subject.id]
                           return (
                             <Fragment key={`${student.student.id}-${subject.id}`}>
-                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.classScore === 'number' ? Math.round(score.classScore) : score.classScore}</td>
-                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.examScore === 'number' ? Math.round(score.examScore) : score.examScore}</td>
-                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-semibold">{typeof score.total === 'number' ? Math.round(score.total) : score.total}</td>
+                                                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.classScore === 'number' ? Number(score.classScore).toFixed(1) : score.classScore}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center">{typeof score.examScore === 'number' ? Number(score.examScore).toFixed(1) : score.examScore}</td>
+                                <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-semibold">{typeof score.total === 'number' ? Number(score.total).toFixed(1) : score.total}</td>
                                 <td className="subject-divider-right border border-blue-900 dark:border-blue-400 p-0.5 text-center">{score.position}</td>
                               </Fragment>
                             )
                           })}
-                          <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{typeof student.grandTotal === 'number' ? Math.round(student.grandTotal) : student.grandTotal}</td>
-                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{Math.round(student.average)}</td>
+                                                    <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{typeof student.grandTotal === 'number' ? Number(student.grandTotal).toFixed(1) : student.grandTotal}</td>
+                        <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{typeof student.average === 'number' ? Number(student.average).toFixed(1) : student.average}</td>
                         <td className="border border-blue-900 dark:border-blue-400 p-0.5 text-center font-bold bg-green-50 dark:bg-green-900/20">{student.position}</td>
                       </tr>
                     ))}

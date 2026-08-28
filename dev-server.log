@@ -1,0 +1,38 @@
+
+> biriwa-methodist-sms@1.0.1 dev
+> node scripts/dev-server.js
+
+
+
+[36m------------------------------------------------------------[0m
+[32m   Local:   http://localhost:3000[0m
+[32m   Network: http://10.65.187.71:3000[0m
+[36m------------------------------------------------------------[0m
+
+Starting Next.js server...
+
+  [1m[38;2;173;127;168m▲ Next.js 14.2.35[39m[22m
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+  - Environments: .env.local
+  - Experiments (use with caution):
+    · scrollRestoration
+
+ [32m[1m✓[22m[39m Starting...
+ [37m[1m○[22m[39m (pwa) PWA support is disabled.
+ [32m[1m✓[22m[39m Ready in 6.6s
+ [37m[1m○[22m[39m Compiling /middleware ...
+ [32m[1m✓[22m[39m Compiled /middleware in 3.6s (191 modules)
+ [37m[1m○[22m[39m Compiling / ...
+Browserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ [32m[1m✓[22m[39m Compiled / in 22.7s (1091 modules)
+ GET / [32m200[39m in 25191ms
+ [32m[1m✓[22m[39m Compiled in 2.8s (488 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (140kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ [37m[1m○[22m[39m Compiling /login ...
+ [32m[1m✓[22m[39m Compiled /login in 1161ms (1082 modules)
+ GET /login?portal=teacher [32m200[39m in 1666ms
+ GET /login?portal=teacher [32m200[39m in 87ms
+^C^C^C^C

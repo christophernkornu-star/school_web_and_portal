@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip } from '@/components/ui/tooltip-custom'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTermOrderParts } from '@/lib/academic-utils'
+import { resolveActiveAcademicYear, filterTermsByActiveYear } from '@/lib/academic-year'
 import { StudentStatsModal } from '@/components/admin/StudentStatsModal'
 import { TeacherClassesModal } from '@/components/teacher/TeacherClassesModal'
 import { differenceInDays } from 'date-fns'
@@ -117,23 +118,26 @@ export default function TeacherDashboard() {
                 return;
             }
 
-            // 2. Fetch Last 4 Terms
-            const { data: terms, error: termsError } = await supabase
+                        // 2. Fetch Terms belonging to the ACTIVE academic year only.
+            // When a new academic year begins, the dashboard chart resets to start
+            // again at that year's Term 1 and end at Term 3 of the same year.
+            const activeYear = await resolveActiveAcademicYear(supabase)
+            const { data: allTerms, error: termsError } = await supabase
                 .from('academic_terms')
                 .select('id, name, academic_year, start_date')
-                .order('start_date', { ascending: false }) // Most recent first
-                .limit(4);
+                .order('start_date', { ascending: false }); // Most recent first
                 
-            if (termsError || !terms || terms.length === 0) {
+            if (termsError || !allTerms || allTerms.length === 0) {
                 console.error("Error fetching terms or no terms found:", termsError);
                 setPerformanceLoading(false);
                 return;
             }
-            
-                        // Sort into strict chronological order (academic year, then term number)
+            const activeTerms = filterTermsByActiveYear(allTerms, activeYear);
+
+            // Sort into strict chronological order (academic year, then term number)
             // rather than relying on start_date, which may be missing/inconsistent and
-            // caused the x-axis to appear jumbled (e.g. Term 2 -> next-year Term 1 -> Term 3).
-            const sortedTerms = [...terms].sort((a: any, b: any) => {
+            // caused the x-axis to appear jumbled (e.g. Term 2 -> Term 3 -> Term 1).
+            const sortedTerms = [...activeTerms].sort((a: any, b: any) => {
                 const [ya, ta] = getTermOrderParts(a.name, a.academic_year)
                 const [yb, tb] = getTermOrderParts(b.name, b.academic_year)
                 if (ya !== yb) return ya - yb

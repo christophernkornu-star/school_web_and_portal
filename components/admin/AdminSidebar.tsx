@@ -66,7 +66,7 @@ const sidebarItems = [
     items: [
       { href: '/admin/assignments', label: 'Assignments', icon: FileText },
       { href: '/admin/results', label: 'Results', icon: BarChart3 },
-      { href: '/admin/reports', label: 'Report Cards', icon: ScrollText },
+      { href: '/admin/reports', label: 'Reports', icon: ScrollText },
     ]
   },
   {

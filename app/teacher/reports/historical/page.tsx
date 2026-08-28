@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, FileText, Loader2, Archive, Users } from 'lucide-react'
+import { Search, FileText, Loader2, Archive, Users, Printer } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -11,6 +11,7 @@ import { resolveActiveAcademicYear, isPastYear } from '@/lib/academic-year'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
+import ClassReportSheet, { ClassReportPrintStyles } from '@/components/teacher/ClassReportSheet'
 
 interface TeacherClass { class_id: string; class_name: string }
 interface TermItem { id: string; name: string; academic_year: string }
@@ -22,6 +23,13 @@ export default function TeacherHistoricalReportsPage() {
   const [loadingRoster, setLoadingRoster] = useState(false)
   const [classes, setClasses] = useState<TeacherClass[]>([])
   const [selectedClass, setSelectedClass] = useState('')
+  // Class ids where this teacher is the CLASS TEACHER (only those can generate
+  // a class broadsheet).
+  const [classTeacherClasses, setClassTeacherClasses] = useState<string[]>([])
+
+  // Active tab: 'reportcards' lists per-student report cards; 'broadsheet'
+  // shows the whole-class class report sheet for the selected past class + term.
+  const [activeTab, setActiveTab] = useState<'reportcards' | 'broadsheet'>('reportcards')
 
   // Grouped terms by academic year for a clean "Year > Term" drill-down
   const [years, setYears] = useState<string[]>([])
@@ -31,6 +39,10 @@ export default function TeacherHistoricalReportsPage() {
 
   const [roster, setRoster] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+
+  // Ref to the class broadsheet so we can print ONLY the sheet in a dedicated
+  // window (the portal's sidebar/header/filters should not appear in print).
+  const broadsheetRef = useRef<HTMLDivElement>(null)
 
   // Load the teacher's assigned classes + academic years
   useEffect(() => {
@@ -49,6 +61,9 @@ export default function TeacherHistoricalReportsPage() {
           class_name: c.class_name
         }))
         setClasses(assignedClasses)
+        setClassTeacherClasses(
+          classAccess.filter(c => c.is_class_teacher === true).map(c => c.class_id)
+        )
 
         // Load all academic years (for the drill-down) — PAST years only.
         // The current/active academic year is intentionally excluded because this
@@ -153,6 +168,40 @@ export default function TeacherHistoricalReportsPage() {
            (st.first_name || '').toLowerCase().includes(q) ||
            (st.student_id || '').toLowerCase().includes(q)
   })
+
+  // Print ONLY the class broadsheet in a fresh window, carrying over the current
+  // document's styles (Tailwind + print rules) so the sheet renders exactly as on
+  // screen while the portal's sidebar/header/filters are excluded.
+  function handlePrintBroadsheet() {
+    const el = broadsheetRef.current
+    if (!el) return
+
+    const printWindow = window.open('', '_blank', 'width=1100,height=900')
+    if (!printWindow) {
+      toast.error('Popup blocked — please allow popups to print.')
+      return
+    }
+
+    const styles = Array.from(
+      document.querySelectorAll('style, link[rel="stylesheet"]')
+    ).map(node => node.outerHTML).join('\n')
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8" />
+<title>Class Broadsheet</title>
+${styles}
+<style>
+  body { margin: 0; }
+</style>
+</head>
+<body>${el.outerHTML}
+<script>
+  window.onload = function() { setTimeout(function(){ window.print(); }, 300); };
+</` + `script>
+</body></html>`)
+    printWindow.document.close()
+  }
 
   if (loading) {
     return (
@@ -267,14 +316,51 @@ export default function TeacherHistoricalReportsPage() {
           </div>
         </div>
 
+        {/* Tabs: Report Cards | Class Broadsheet */}
+        <div className="flex items-center gap-1 mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => setActiveTab('reportcards')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'reportcards'
+                ? 'bg-methodist-blue text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Report Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('broadsheet')}
+            disabled={!classTeacherClasses.includes(selectedClass)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'broadsheet'
+                ? 'bg-methodist-blue text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            } ${!classTeacherClasses.includes(selectedClass) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            <Users className="w-4 h-4" />
+            Class Broadsheet
+          </button>
+        </div>
+        {activeTab === 'broadsheet' && !classTeacherClasses.includes(selectedClass) && (
+          <p className="text-xs text-gray-500 -mt-3 mb-4">
+            You must be the class teacher of the selected class to view its broadsheet.
+          </p>
+        )}
+
         {/* Roster */}
+        {activeTab === 'reportcards' ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="font-semibold text-gray-800 text-sm sm:text-base">
               Students in {selectedClassName}
               {selectedTermInfo ? ` — ${selectedTermInfo.name} ${selectedYear}` : ''}
             </h2>
-            <span className="text-sm text-gray-500">{roster.length} student{roster.length === 1 ? '' : 's'}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">{roster.length} student{roster.length === 1 ? '' : 's'}</span>
+            </div>
           </div>
 
           {loadingRoster ? (
@@ -372,6 +458,43 @@ export default function TeacherHistoricalReportsPage() {
             </>
           )}
         </div>
+        ) : (
+          /* Class Broadsheet tab: the whole-class report sheet for the past class + term */
+          <div>
+            {selectedClass && selectedTerm && classTeacherClasses.includes(selectedClass) ? (
+              <>
+                <div className="mb-4 flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                  <div className="text-sm font-semibold text-gray-800">
+                    Class Broadsheet — {selectedClassName}
+                    {selectedTermInfo ? ` — ${selectedTermInfo.name} ${selectedYear}` : ''}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePrintBroadsheet}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-methodist-blue text-white text-sm font-medium rounded-lg hover:bg-methodist-blue/90 transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print / Download
+                  </button>
+                </div>
+                <div ref={broadsheetRef}>
+                  <ClassReportSheet
+                    classId={selectedClass}
+                    termId={selectedTerm}
+                    historical
+                  />
+                </div>
+                <ClassReportPrintStyles />
+              </>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-500 text-sm">
+                {!classTeacherClasses.includes(selectedClass)
+                  ? 'You must be the class teacher of the selected class to view its broadsheet.'
+                  : 'Select a class and term to generate the class report sheet.'}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

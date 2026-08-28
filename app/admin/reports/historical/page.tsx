@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, FileText, Loader2, Archive, Users, RotateCcw, X } from 'lucide-react'
+import { Search, FileText, Loader2, Archive, Users, RotateCcw, X, Printer } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { resolveActiveAcademicYear, isPastYear } from '@/lib/academic-year'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
+import ClassReportSheet, { ClassReportPrintStyles } from '@/components/teacher/ClassReportSheet'
 
 interface ClassItem { id: string; name: string }
 interface TermItem { id: string; name: string; academic_year: string }
@@ -21,6 +22,10 @@ export default function AdminHistoricalReportsPage() {
   const [classes, setClasses] = useState<ClassItem[]>([])
   const [selectedClass, setSelectedClass] = useState('')
 
+  // Active tab: 'reportcards' lists per-student report cards; 'broadsheet'
+  // shows the whole-class class report sheet for the selected past class + term.
+  const [activeTab, setActiveTab] = useState<'reportcards' | 'broadsheet'>('reportcards')
+
   // Grouped terms by academic year for a clean "Year > Term" drill-down
   const [years, setYears] = useState<string[]>([])
   const [selectedYear, setSelectedYear] = useState('')
@@ -31,6 +36,10 @@ export default function AdminHistoricalReportsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [reactivateModal, setReactivateModal] = useState<{ show: boolean; student: any | null }>({ show: false, student: null })
   const [reactivating, setReactivating] = useState(false)
+
+  // Ref to the class broadsheet so we can print ONLY the sheet in a dedicated
+  // window (the admin page — sidebar, header, filters — should not appear in print).
+  const broadsheetRef = useRef<HTMLDivElement>(null)
 
   // Load classes + academic years (from academic_terms)
   useEffect(() => {
@@ -130,6 +139,8 @@ export default function AdminHistoricalReportsPage() {
 
   const selectedTermInfo = terms.find(t => t.id === selectedTerm)
 
+  const selectedClassName = classes.find(c => c.id === selectedClass)?.name || 'class'
+
   const filteredRoster = roster.filter((st: any) => {
     const q = searchTerm.toLowerCase()
     return (st.last_name || '').toLowerCase().includes(q) ||
@@ -164,6 +175,41 @@ export default function AdminHistoricalReportsPage() {
     } finally {
       setReactivating(false)
     }
+  }
+
+  // Print ONLY the class broadsheet in a fresh window, carrying over the current
+  // document's styles (Tailwind + print rules) so the sheet renders exactly as on
+  // screen while the portal's sidebar/header/filters are excluded.
+  function handlePrintBroadsheet() {
+    const el = broadsheetRef.current
+    if (!el) return
+
+    const printWindow = window.open('', '_blank', 'width=1100,height=900')
+    if (!printWindow) {
+      toast.error('Popup blocked — please allow popups to print.')
+      return
+    }
+
+    // Bring along the app's stylesheets so Tailwind classes are applied.
+    const styles = Array.from(
+      document.querySelectorAll('style, link[rel="stylesheet"]')
+    ).map(node => node.outerHTML).join('\n')
+
+    printWindow.document.write(`<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8" />
+<title>Class Broadsheet</title>
+${styles}
+<style>
+  body { margin: 0; }
+</style>
+</head>
+<body>${el.outerHTML}
+<script>
+  window.onload = function() { setTimeout(function(){ window.print(); }, 300); };
+</` + `script>
+</body></html>`)
+    printWindow.document.close()
   }
 
   return (
@@ -244,7 +290,36 @@ export default function AdminHistoricalReportsPage() {
           </div>
         </div>
 
-        {/* Roster */}
+        {/* Tabs: Report Cards | Class Broadsheet */}
+        <div className="flex items-center gap-1 mb-6 bg-white rounded-xl shadow-sm border border-gray-200 p-1 w-fit">
+          <button
+            type="button"
+            onClick={() => setActiveTab('reportcards')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'reportcards'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <FileText className="w-4 h-4" />
+            Report Cards
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('broadsheet')}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              activeTab === 'broadsheet'
+                ? 'bg-purple-600 text-white shadow-sm'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            Class Broadsheet
+          </button>
+        </div>
+
+        {/* Roster / Broadsheet */}
+        {activeTab === 'reportcards' ? (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <h2 className="font-semibold text-gray-800 text-sm sm:text-base">
@@ -373,6 +448,41 @@ export default function AdminHistoricalReportsPage() {
             </>
           )}
         </div>
+        ) : (
+          /* Class Broadsheet tab: the whole-class report sheet for the past class + term */
+          <div>
+            {selectedClass && selectedTerm ? (
+              <>
+                <div className="mb-4 flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 p-3">
+                  <div className="text-sm font-semibold text-gray-800">
+                    Class Broadsheet — {selectedClassName}
+                    {selectedTermInfo ? ` — ${selectedTermInfo.name} ${selectedYear}` : ''}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handlePrintBroadsheet}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4" />
+                    Print / Download
+                  </button>
+                </div>
+                <div ref={broadsheetRef}>
+                  <ClassReportSheet
+                    classId={selectedClass}
+                    termId={selectedTerm}
+                    historical
+                  />
+                </div>
+                <ClassReportPrintStyles />
+              </>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center text-gray-500 text-sm">
+                Select a class and term to generate the class report sheet.
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Re-activate Confirmation Modal */}

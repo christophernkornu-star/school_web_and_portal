@@ -359,6 +359,11 @@ export async function fetchReportCardData(
     const isThirdTerm = isPromotionTerm(report.termName)
     const academicYear = report.year || ''
 
+    // Fall back to the student's current class for the ranking cohort only when we
+    // have no term-class (e.g. scores not yet backfilled with class_id in a live
+    // active-year report). For historical terms targetTermClassId is always set.
+    const rankClassId = targetTermClassId || studentData.class_id
+
     const [attendanceResult, termMetadata, rankingsResponse, promotionDataResult] = await Promise.all([
         supabase
         .from('student_attendance')
@@ -373,13 +378,21 @@ export async function fetchReportCardData(
         .eq('id', targetTermId)
         .single(),
 
-        // Note: fetch is not correct here if run on server, but this is client side code usually.
-        // But for bulk loop, calling internal API might be slow.
-        // We can optimize this later. For now, we simulate or call fetch relative.
-        // Or better: Use database RPCs if possible, or just accept the API call.
-        // Since we are moving this to shared library, we must assume window.fetch is available or use Axios.
-        // But this runs on client (browser), so fetch is fine.
-        fetch(`/api/class-rankings?classId=${studentData.class_id}&termId=${targetTermId}`),
+                // Rank the student within the class they were ACTUALLY in for the target
+        // term, not their current class. The class-rankings API keys on the
+        // student's *current* class_id + active status, which is wrong for a past
+        // term (e.g. Basic 8 Term 3: most/all students have since been promoted to
+        // Basic 9, so querying by current class would not surface the original
+        // cohort). Instead we pull every score recorded under the term's conducting
+        // class (scores.class_id — added & backfilled by historical-reports.sql),
+        // which yields exactly the roster shown on the class broadsheet.
+                (rankClassId
+          ? supabase
+              .from('scores')
+              .select('student_id, subject_id, total, subjects(name)')
+              .eq('class_id', rankClassId)
+              .eq('term_id', targetTermId)
+          : Promise.resolve({ data: [] })),
         
                 isThirdTerm ? supabase
             .from('student_promotions')
@@ -396,10 +409,11 @@ export async function fetchReportCardData(
     report.daysPresent = report.attendance.present // compat
     report.totalDays = report.attendance.total // compat
 
-    if (rankingsResponse && rankingsResponse.ok) {
-        const rankingsData = await rankingsResponse.json()
-        const classScores = rankingsData.scores || []
-        report.totalClassSize = rankingsData.totalClassSize || 1
+        const classScores = (rankingsResponse as any)?.data || []
+    if (classScores.length > 0) {
+        // Roster size = number of DISTINCT students with scores in this class+term,
+        // which matches the number of rows shown on the class broadsheet.
+        report.totalClassSize = new Set(classScores.map((s: any) => s.student_id)).size || 1
         
         const uniqueSubjects = new Set(classScores.map((s: any) => s.subject_id))
         const totalSubjectsCount = uniqueSubjects.size || 1
