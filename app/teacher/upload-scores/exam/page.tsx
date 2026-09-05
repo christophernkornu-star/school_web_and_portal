@@ -356,6 +356,7 @@ function ExamScoresContent() {
             student_id: selectedStudent,
             subject_id: selectedSubject,
             term_id: selectedTerm,
+            class_id: selectedClass,
             class_score: 0,
             exam_score: convertedExamScore,
             total: total,

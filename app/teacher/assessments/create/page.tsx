@@ -643,7 +643,7 @@ export default function CreateQuizPage() {
                              <input
                                 type="number"
                                 value={question.points}
-                                onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value))}
+                                onChange={(e) => updateQuestion(index, 'points', parseInt(e.target.value) || 0)}
                                 className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
                                 placeholder="Points"
                                 min={0}

@@ -19,6 +19,7 @@ export default function QuizDetailsPage() {
   const [attempts, setAttempts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
+  const [reverting, setReverting] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null) // State for delete operation
 
   // Filter States
@@ -91,6 +92,32 @@ export default function QuizDetailsPage() {
         toast.error(error.message || 'Failed to sync scores')
     } finally {
         setSyncing(false)
+    }
+  }
+
+  const handleUnsync = async () => {
+    if (!confirm("This will remove this quiz's scores from the gradebook and restore what was there before. Continue?")) {
+        return
+    }
+
+    try {
+        setReverting(true)
+        const { data, error } = await supabase.rpc('unsync_scores_from_gradebook', {
+            p_quiz_id: quizId
+        })
+
+        if (error) throw error
+
+        if (data === false) {
+            toast('Nothing to revert — this quiz was never pushed to the gradebook.')
+        } else {
+            toast.success('Reverted. Gradebook restored to its previous state.')
+        }
+    } catch (error: any) {
+        console.error('Unsync error:', error)
+        toast.error(error.message || 'Failed to revert scores')
+    } finally {
+        setReverting(false)
     }
   }
 
@@ -205,6 +232,14 @@ export default function QuizDetailsPage() {
                 >
                     <UploadCloud className="w-4 h-4" />
                     <span>{syncing ? 'Syncing...' : 'Push to Gradebook'}</span>
+                </button>
+                <button
+                    onClick={handleUnsync}
+                    disabled={reverting}
+                    className="flex-shrink-0 flex items-center space-x-2 px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium disabled:opacity-50 whitespace-nowrap transition-all"
+                >
+                    <RotateCcw className="w-4 h-4" />
+                    <span>{reverting ? 'Reverting...' : 'Remove from Gradebook'}</span>
                 </button>
             </div>
           </div>
@@ -338,13 +373,18 @@ export default function QuizDetailsPage() {
                                             {percentage}%
                                         </td>
                                         <td className="px-4 md:px-6 py-3 whitespace-nowrap">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                                attempt.status === 'graded' 
-                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300' 
-                                                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                                            }`}>
-                                                {attempt.status}
-                                            </span>
+                                            {attempt.status === 'submitted' ? (
+                                                <Link
+                                                    href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
+                                                    className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors inline-block"
+                                                >
+                                                    Needs Grading
+                                                </Link>
+                                            ) : (
+                                                <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                                    {attempt.status}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-4 md:px-6 py-3 text-right whitespace-nowrap">
                                             <button 

@@ -560,6 +560,7 @@ export default function EnterScores() {
                   student_id: studentId,
                   subject_id: selectedSubject,
                   term_id: termId,
+                  class_id: selectedClass,
                   teacher_id: teacher?.id,
                   class_score: calculatedClassScore,
                   exam_score: examScore,

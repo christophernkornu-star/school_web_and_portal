@@ -636,6 +636,7 @@ export default function ExamScoresPage() {
                     student_id: studentId,
                     subject_id: subjectId,
                     term_id: selectedTerm,
+                    class_id: selectedClass,
                     class_score: isNaN(storedClassScore) ? 0 : storedClassScore,
                     exam_score: isNaN(storedExamScore) ? 0 : storedExamScore,
                     total: total,
