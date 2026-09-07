@@ -218,28 +218,28 @@ export default function QuizDetailsPage() {
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{quiz.classes?.name} • {quiz.subjects?.name}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto pb-1 md:pb-0 no-scrollbar">
+            <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
                  <Link
                     href={`/teacher/assessments/edit/${quizId}`}
-                    className="flex-shrink-0 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-sm font-medium whitespace-nowrap transition-colors"
+                    className="flex items-center justify-center px-2 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors"
                 >
                     Edit
                 </Link>
                 <button
                     onClick={handleSync}
                     disabled={syncing}
-                    className="flex-shrink-0 flex items-center space-x-2 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 text-sm font-medium disabled:opacity-50 whitespace-nowrap shadow-sm active:scale-95 transition-all"
+                    className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 text-xs sm:text-sm font-medium disabled:opacity-50 whitespace-nowrap shadow-sm active:scale-95 transition-all"
                 >
-                    <UploadCloud className="w-4 h-4" />
-                    <span>{syncing ? 'Syncing...' : 'Push to Gradebook'}</span>
+                    <UploadCloud className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{syncing ? 'Syncing...' : 'Push'}<span className="hidden sm:inline"> to Gradebook</span></span>
                 </button>
                 <button
                     onClick={handleUnsync}
                     disabled={reverting}
-                    className="flex-shrink-0 flex items-center space-x-2 px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium disabled:opacity-50 whitespace-nowrap transition-all"
+                    className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-xs sm:text-sm font-medium disabled:opacity-50 whitespace-nowrap transition-all"
                 >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>{reverting ? 'Reverting...' : 'Remove from Gradebook'}</span>
+                    <RotateCcw className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{reverting ? 'Reverting...' : 'Remove'}<span className="hidden sm:inline"> from Gradebook</span></span>
                 </button>
             </div>
           </div>
@@ -317,96 +317,149 @@ export default function QuizDetailsPage() {
                     </div>
                 </div>
             </div>
-            <div className="overflow-x-auto w-full">
-                <table className="min-w-full text-sm text-left">
-                    <thead className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium uppercase text-xs tracking-wider">
-                        <tr>
-                            <th className="px-4 md:px-6 py-3 whitespace-nowrap">Student Name</th>
-                            <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Gender</th>
-                            <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Submitted At</th>
-                            <th className="px-4 md:px-6 py-3 whitespace-nowrap">Score</th>
-                            <th className="hidden sm:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Percentage</th>
-                            <th className="px-4 md:px-6 py-3 whitespace-nowrap">Status</th>
-                            <th className="px-4 md:px-6 py-3 text-right whitespace-nowrap">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                        {attempts.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                                    <div className="flex flex-col items-center justify-center">
-                                       <Users className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-                                       <p>No attempts recorded yet.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        ) : filteredAttempts.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                                    <div className="flex flex-col items-center justify-center">
-                                       <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-                                       <p>No students match your filter.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        ) : (
-                            filteredAttempts.map((attempt) => {
-                                const percentage = quiz.total_points > 0 
-                                    ? ((attempt.score / quiz.total_points) * 100).toFixed(1) 
-                                    : '0'
-                                    
-                                return (
-                                    <tr key={attempt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                        <td className="px-4 md:px-6 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                                            {attempt.students.last_name} {attempt.students.first_name} {attempt.students.middle_name}
-                                        </td>
-                                        <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                            {attempt.students.gender || '-'}
-                                        </td>
-                                        <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                            {new Date(attempt.end_time || attempt.created_at).toLocaleString()}
-                                        </td>
-                                        <td className="px-4 md:px-6 py-3 font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                                            {attempt.score}
-                                        </td>
-                                         <td className="hidden sm:table-cell px-4 md:px-6 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                            {percentage}%
-                                        </td>
-                                        <td className="px-4 md:px-6 py-3 whitespace-nowrap">
-                                            {attempt.status === 'submitted' ? (
-                                                <Link
-                                                    href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
-                                                    className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors inline-block"
-                                                >
-                                                    Needs Grading
-                                                </Link>
+            {attempts.length === 0 ? (
+                <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col items-center justify-center">
+                       <Users className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
+                       <p>No attempts recorded yet.</p>
+                    </div>
+                </div>
+            ) : filteredAttempts.length === 0 ? (
+                <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                    <div className="flex flex-col items-center justify-center">
+                       <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
+                       <p>No students match your filter.</p>
+                    </div>
+                </div>
+            ) : (
+                <>
+                    {/* Mobile card list (below sm) */}
+                    <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
+                        {filteredAttempts.map((attempt) => {
+                            const percentage = quiz.total_points > 0
+                                ? ((attempt.score / quiz.total_points) * 100).toFixed(1)
+                                : '0'
+
+                            return (
+                                <div key={attempt.id} className="p-4 active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors">
+                                    <div className="flex items-start justify-between gap-3 mb-2">
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                                                {attempt.students.last_name} {attempt.students.first_name} {attempt.students.middle_name}
+                                            </p>
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                                {attempt.students.gender || '-'} • {new Date(attempt.end_time || attempt.created_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteAttempt(attempt.id)}
+                                            disabled={deletingId === attempt.id}
+                                            className="flex-shrink-0 text-red-600 dark:text-red-400 p-2 -m-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50 transition-colors"
+                                            title="Reset Attempt (Allow Retake)"
+                                        >
+                                            {deletingId === attempt.id ? (
+                                                <span className="animate-spin text-xs">...</span>
                                             ) : (
-                                                <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                                                    {attempt.status}
-                                                </span>
+                                                <RotateCcw className="w-5 h-5" />
                                             )}
-                                        </td>
-                                        <td className="px-4 md:px-6 py-3 text-right whitespace-nowrap">
-                                            <button 
-                                                onClick={() => handleDeleteAttempt(attempt.id)}
-                                                disabled={deletingId === attempt.id}
-                                                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50 transition-colors"
-                                                title="Reset Attempt (Allow Retake)"
+                                        </button>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-baseline gap-2">
+                                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{attempt.score}</span>
+                                            <span className="text-xs text-gray-400 dark:text-gray-500">/ {quiz.total_points} ({percentage}%)</span>
+                                        </div>
+                                        {attempt.status === 'submitted' ? (
+                                            <Link
+                                                href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
+                                                className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
                                             >
-                                                {deletingId === attempt.id ? (
-                                                    <span className="animate-spin text-xs">...</span>
+                                                Needs Grading
+                                            </Link>
+                                        ) : (
+                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                                {attempt.status}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {/* Table (sm and up) */}
+                    <div className="hidden sm:block overflow-x-auto w-full">
+                        <table className="min-w-full text-sm text-left">
+                            <thead className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium uppercase text-xs tracking-wider">
+                                <tr>
+                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Student Name</th>
+                                    <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Gender</th>
+                                    <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Submitted At</th>
+                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Score</th>
+                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Percentage</th>
+                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Status</th>
+                                    <th className="px-4 md:px-6 py-3 text-right whitespace-nowrap">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                                {filteredAttempts.map((attempt) => {
+                                    const percentage = quiz.total_points > 0 
+                                        ? ((attempt.score / quiz.total_points) * 100).toFixed(1) 
+                                        : '0'
+                                        
+                                    return (
+                                        <tr key={attempt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                            <td className="px-4 md:px-6 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
+                                                {attempt.students.last_name} {attempt.students.first_name} {attempt.students.middle_name}
+                                            </td>
+                                            <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                                {attempt.students.gender || '-'}
+                                            </td>
+                                            <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                                {new Date(attempt.end_time || attempt.created_at).toLocaleString()}
+                                            </td>
+                                            <td className="px-4 md:px-6 py-3 font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">
+                                                {attempt.score}
+                                            </td>
+                                             <td className="px-4 md:px-6 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                                {percentage}%
+                                            </td>
+                                            <td className="px-4 md:px-6 py-3 whitespace-nowrap">
+                                                {attempt.status === 'submitted' ? (
+                                                    <Link
+                                                        href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
+                                                        className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors inline-block"
+                                                    >
+                                                        Needs Grading
+                                                    </Link>
                                                 ) : (
-                                                    <RotateCcw className="w-5 h-5 md:w-4 md:h-4" />
+                                                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                                                        {attempt.status}
+                                                    </span>
                                                 )}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                )
-                            })
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                                            </td>
+                                            <td className="px-4 md:px-6 py-3 text-right whitespace-nowrap">
+                                                <button 
+                                                    onClick={() => handleDeleteAttempt(attempt.id)}
+                                                    disabled={deletingId === attempt.id}
+                                                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50 transition-colors"
+                                                    title="Reset Attempt (Allow Retake)"
+                                                >
+                                                    {deletingId === attempt.id ? (
+                                                        <span className="animate-spin text-xs">...</span>
+                                                    ) : (
+                                                        <RotateCcw className="w-4 h-4" />
+                                                    )}
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            )}
         </div>
       </main>
     </div>

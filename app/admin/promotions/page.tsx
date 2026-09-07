@@ -1,12 +1,28 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, UserCheck, Users, Search, Filter, Check, X, AlertCircle, TrendingUp, Save, Clock, Loader2 } from 'lucide-react'
+import {
+  ArrowLeft,
+  UserCheck,
+  Users,
+  Search,
+  Filter,
+  Check,
+  X,
+  AlertCircle,
+  TrendingUp,
+  Save,
+  Clock,
+  Loader2,
+  Calendar,
+  Sparkles,
+  ChevronRight
+} from 'lucide-react'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 
@@ -33,205 +49,205 @@ export default function PromotionsPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
   const [loading, setLoading] = useState(true)
+  const [loadingClass, setLoadingClass] = useState(false)
   const [saving, setSaving] = useState(false)
   const [students, setStudents] = useState<Student[]>([])
   const [classes, setClasses] = useState<any[]>([])
-    const [classFilter, setClassFilter] = useState('all')
+  const [selectedClassId, setSelectedClassId] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [academicYear, setAcademicYear] = useState('')
   const [availableYears, setAvailableYears] = useState<string[]>([])
   const [priorPendingCount, setPriorPendingCount] = useState(0)
-  const [promotionChanges, setPromotionChanges] = useState<{[key: string]: { status: string, remarks: string }}>({})
+  const [promotionChanges, setPromotionChanges] = useState<{ [key: string]: { status: string; remarks: string } }>({})
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkStatus, setBulkStatus] = useState('')
   const [activeTab, setActiveTab] = useState<'manage' | 'pending'>('manage')
-    const [pendingDecisions, setPendingDecisions] = useState<any[]>([])
-    const [confirming, setConfirming] = useState<string | null>(null)
+  const [pendingDecisions, setPendingDecisions] = useState<any[]>([])
+  const [confirming, setConfirming] = useState<string | null>(null)
   const [loadingPending, setLoadingPending] = useState(false)
-  // Multi-confirm: which pending decisions are selected for bulk confirm/reject.
   const [selectedPending, setSelectedPending] = useState<string[]>([])
   const [bulkConfirming, setBulkConfirming] = useState(false)
 
+  // 1. Initial Setup: Load Years and Classes
   useEffect(() => {
-    loadAvailableYears()
+    async function initPage() {
+      const user = await getCurrentUser()
+      if (!user) {
+        router.push('/login?portal=admin')
+        return
+      }
+
+      // Fetch classes
+      const { data: classesData } = await supabase
+        .from('classes')
+        .select('*')
+        .order('level') as { data: any[] | null }
+
+      const loadedClasses = classesData || []
+      setClasses(loadedClasses)
+
+      // Fetch distinct academic years
+      const { data: yearsData } = await supabase
+        .from('student_promotions')
+        .select('academic_year')
+        .order('academic_year', { ascending: false }) as { data: { academic_year: string }[] | null }
+
+      const years = Array.from(new Set((yearsData || []).map(y => y.academic_year).filter(Boolean)))
+
+      const { data: settingsData } = await supabase
+        .from('academic_settings')
+        .select('current_academic_year')
+        .limit(1) as { data: any[] | null }
+
+      const currentYear = settingsData?.[0]?.current_academic_year
+      if (currentYear && !years.includes(currentYear)) {
+        years.unshift(currentYear)
+      }
+
+      setAvailableYears(years)
+      const initialYear = currentYear || years[0] || ''
+      setAcademicYear(initialYear)
+
+      const initialClass = loadedClasses[0]?.id || ''
+      setSelectedClassId(initialClass)
+
+      if (initialClass && initialYear) {
+        await loadClassData(initialYear, initialClass, loadedClasses)
+      } else {
+        setLoading(false)
+      }
+    }
+
+    initPage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Load the distinct academic years that exist in the promotion records,
-  // so historical years (which may no longer be the "current" year) remain
-  // reachable in the selector.
-  async function loadAvailableYears() {
-    const user = await getCurrentUser()
-    if (!user) {
-      router.push('/login?portal=admin')
+  // 2. Optimized Class-Scoped Loader
+  const loadClassData = async (targetYear: string, targetClassId: string, currentClasses?: any[]) => {
+    if (!targetYear || !targetClassId) {
+      setStudents([])
+      setLoading(false)
+      setLoadingClass(false)
       return
     }
 
-    const { data: yearsData } = await supabase
-      .from('student_promotions')
-      .select('academic_year')
-      .order('academic_year', { ascending: false }) as { data: { academic_year: string }[] | null }
+    setLoadingClass(true)
+    const classList = currentClasses || classes
+    const classInfo = classList.find((c: any) => c.id === targetClassId)
 
-    const years = Array.from(new Set((yearsData || []).map(y => y.academic_year).filter(Boolean)))
+    try {
+      // Fetch ONLY students in the selected class
+      const { data: studentsData, error: studentError } = await supabase
+        .from('students')
+        .select(`
+          id,
+          student_id,
+          first_name,
+          last_name,
+          class_id,
+          classes:class_id(name)
+        `)
+        .eq('status', 'active')
+        .eq('class_id', targetClassId)
+        .order('first_name') as { data: any[] | null; error: any }
 
-    // Merge in the settings-inferred current year so the selector never appears
-    // empty, even if no promotion records exist yet for the latest year.
-    const { data: settingsData } = await supabase
-      .from('academic_settings')
-      .select('current_academic_year')
-      .limit(1) as { data: any[] | null }
+      if (studentError) throw studentError
 
-    const currentYear = settingsData?.[0]?.current_academic_year
-    if (currentYear && !years.includes(currentYear)) {
-      years.unshift(currentYear)
-    }
+      const classStudents = studentsData || []
+      const studentIds = classStudents.map(s => s.id)
 
-    setAvailableYears(years)
+      if (studentIds.length === 0) {
+        setStudents([])
+        setLoading(false)
+        setLoadingClass(false)
+        return
+      }
 
-    // Default the selection to the current/inferred year.
-    const initialYear = currentYear || years[0] || ''
-    setAcademicYear(initialYear)
-
-    // Load the promotion data for the selected year.
-    await loadData(initialYear)
-  }
-
-    async function loadData(year?: string) {
-    const user = await getCurrentUser()
-    if (!user) {
-      router.push('/login?portal=admin')
-      return
-    }
-
-    const targetYear = year || academicYear
-
-    // Load classes
-    const { data: classesData } = await supabase
-      .from('classes')
-      .select('*')
-      .order('level') as { data: any[] | null }
-
-    if (classesData) setClasses(classesData)
-
-    // Load students with their term 3 scores
-    const { data: studentsData } = await supabase
-      .from('students')
-      .select(`
-        id,
-        student_id,
-        first_name,
-        last_name,
-        class_id,
-        classes:class_id(name)
-      `)
-      .eq('status', 'active')
-      .order('first_name') as { data: any[] | null }
-
-        if (studentsData) {
-      // Load existing promotion records
-      const { data: promotionsData } = await supabase
-        .from('student_promotions')
-        .select('*')
-        .eq('academic_year', targetYear) as { data: PromotionRecord[] | null }
-
-      // Load all terms for calculating averages
+      // Fetch Terms for this year
       const { data: termsData } = await supabase
         .from('academic_terms')
         .select('id')
         .eq('academic_year', targetYear) as { data: any[] | null }
 
       const termIds = termsData?.map(t => t.id) || []
-
       const numberOfTerms = termIds.length || 1
 
-      // Precompute a subject count per class using the same robust resolution as the
-      // teacher portal:
-      //   1) Level-based subject list (Lower/Upper Primary, JHS)
-      //   2) Subjects actually allocated to the class via class_subjects
-      //   3) Distinct subjects that have recorded scores for that class's students
-      //      (covers KG, where the subjects table may have no level rows yet)
-      const classSubjectCounts: {[key: string]: number} = {}
+      // Fetch existing promotion records ONLY for this cohort
+      const { data: promotionsData } = await supabase
+        .from('student_promotions')
+        .select('*')
+        .eq('academic_year', targetYear)
+        .in('student_id', studentIds) as { data: PromotionRecord[] | null }
 
-      // Group students by class
-      const classStudentIds: {[key: string]: string[]} = {}
-      studentsData.forEach((s: any) => {
-        const cid = s.class_id || 'unknown'
-        if (!classStudentIds[cid]) classStudentIds[cid] = []
-        classStudentIds[cid].push(s.id)
-      })
+      // Compute subject count ONLY for this class
+      let subjectCount = 0
+      if (classInfo) {
+        const cLevel = classInfo.level
+        let levelCategory = ''
+        if (typeof cLevel === 'string') {
+          levelCategory = cLevel.toLowerCase()
+        } else if (typeof cLevel === 'number') {
+          if (cLevel >= 1 && cLevel <= 2) levelCategory = 'kindergarten'
+          else if (cLevel >= 3 && cLevel <= 5) levelCategory = 'lower_primary'
+          else if (cLevel >= 6 && cLevel <= 8) levelCategory = 'upper_primary'
+          else if (cLevel >= 9) levelCategory = 'jhs'
+        }
 
-      // Build a helper inline since we can't declare local functions inside a block here.
-      for (const cid of Object.keys(classStudentIds)) {
-        let count = 0
-        const classInfo = classesData?.find((c: any) => c.id === cid)
-        if (classInfo) {
-          const cLevel = classInfo.level
-          let levelCategory = ''
-          if (typeof cLevel === 'string') {
-            levelCategory = cLevel.toLowerCase()
-          } else if (typeof cLevel === 'number') {
-            if (cLevel >= 1 && cLevel <= 2) levelCategory = 'kindergarten'
-            else if (cLevel >= 3 && cLevel <= 5) levelCategory = 'lower_primary'
-            else if (cLevel >= 6 && cLevel <= 8) levelCategory = 'upper_primary'
-            else if (cLevel >= 9) levelCategory = 'jhs'
-          }
-          if (levelCategory) {
-            const { data: subjectData } = await supabase
-              .from('subjects')
-              .select('id')
-              .eq('level', levelCategory)
-            if (subjectData && subjectData.length > 0) {
-              count = subjectData.length
-            } else {
-                            const { data: classSubjectsData } = await supabase
-                .from('class_subjects')
+        if (levelCategory) {
+          const { data: subjectData } = await supabase
+            .from('subjects')
+            .select('id')
+            .eq('level', levelCategory)
+
+          if (subjectData && subjectData.length > 0) {
+            subjectCount = subjectData.length
+          } else {
+            const { data: classSubjectsData } = await supabase
+              .from('class_subjects')
+              .select('subject_id')
+              .eq('class_id', targetClassId)
+              .eq('academic_year', targetYear)
+
+            if (classSubjectsData && classSubjectsData.length > 0) {
+              subjectCount = classSubjectsData.length
+            } else if (termIds.length > 0) {
+              const { data: derivedSubjects } = await supabase
+                .from('scores')
                 .select('subject_id')
-                .eq('class_id', cid)
-                .eq('academic_year', targetYear)
-              if (classSubjectsData && classSubjectsData.length > 0) {
-                count = classSubjectsData.length
-              } else {
-                if (termIds.length > 0 && classStudentIds[cid].length > 0) {
-                  const { data: derivedSubjects } = await supabase
-                    .from('scores')
-                    .select('subject_id')
-                    .in('term_id', termIds)
-                    .in('student_id', classStudentIds[cid])
-                  if (derivedSubjects && derivedSubjects.length > 0) {
-                    count = new Set(derivedSubjects.map((d: any) => d.subject_id)).size
-                  }
-                }
+                .in('term_id', termIds)
+                .in('student_id', studentIds)
+
+              if (derivedSubjects && derivedSubjects.length > 0) {
+                subjectCount = new Set(derivedSubjects.map((d: any) => d.subject_id)).size
               }
             }
           }
         }
-        classSubjectCounts[cid] = count
       }
 
-      // Total score per student: sum of every scored subject across all terms.
-      // Any subject allocated to the level but WITHOUT a score row simply does not
-      // add to the numerator, while still counting in the denominator (i.e. treated as 0).
-      let scoresMap: {[key: string]: number} = {}
+      // Fetch scores ONLY for this cohort across the terms
+      const scoresMap: { [key: string]: number } = {}
       if (termIds.length > 0) {
         const { data: scoresData } = await supabase
           .from('scores')
           .select('student_id, total')
-          .in('term_id', termIds) as { data: any[] | null }
+          .in('term_id', termIds)
+          .in('student_id', studentIds) as { data: any[] | null }
 
         if (scoresData) {
           scoresData.forEach(s => {
-            if (!scoresMap[s.student_id]) scoresMap[s.student_id] = 0
-            scoresMap[s.student_id] += s.total
+            scoresMap[s.student_id] = (scoresMap[s.student_id] || 0) + (s.total || 0)
           })
         }
       }
 
-      // Merge data
-      const studentsWithPromotion = studentsData.map(student => {
+      // Merge results
+      const divisor = (subjectCount * numberOfTerms) || 1
+      const mergedStudents = classStudents.map(student => {
         const promotion = promotionsData?.find(p => p.student_id === student.id)
-        const subjectCount = classSubjectCounts[student.class_id] || 0
-        const divisor = (subjectCount * numberOfTerms) || 1
         const totalScore = scoresMap[student.id] || 0
         const average = totalScore / divisor
+
         return {
           ...student,
           average_score: average,
@@ -240,15 +256,39 @@ export default function PromotionsPage() {
         }
       })
 
-      setStudents(studentsWithPromotion)
+      setStudents(mergedStudents)
+    } catch (err: any) {
+      console.error('Error loading class data:', err)
+      toast.error('Failed to load class promotions')
+    } finally {
+      setLoading(false)
+      setLoadingClass(false)
     }
-
-    setLoading(false)
   }
 
-    const getAutoPromotion = (average: number): string => {
-    if (average >= 30) return 'promoted'
-    return 'repeated'
+  const handleClassChange = async (newClassId: string) => {
+    setSelectedClassId(newClassId)
+    setPromotionChanges({})
+    setSelectedStudents([])
+    await loadClassData(academicYear, newClassId)
+  }
+
+  const handleYearChange = async (newYear: string) => {
+    if (!newYear || newYear === academicYear) return
+    setAcademicYear(newYear)
+    setPromotionChanges({})
+    setSelectedStudents([])
+    setSelectedPending([])
+    await loadClassData(newYear, selectedClassId)
+
+    if (activeTab === 'pending') {
+      await loadPendingDecisions(newYear)
+    }
+    await refreshPriorPendingCount(newYear)
+  }
+
+  const getAutoPromotion = (average: number): string => {
+    return average >= 30 ? 'promoted' : 'repeated'
   }
 
   const handlePromotionChange = (studentId: string, field: 'status' | 'remarks', value: string) => {
@@ -279,14 +319,13 @@ export default function PromotionsPage() {
         return
       }
 
-      // Execute promotion decisions
       for (const update of updates) {
         const { error } = await supabase.rpc('execute_admin_promotion_decision', {
-            p_student_id: update.studentId,
-            p_academic_year: academicYear,
-            p_user_id: user.id,
-            p_status: update.status,
-            p_remarks: update.remarks || ''
+          p_student_id: update.studentId,
+          p_academic_year: academicYear,
+          p_user_id: user.id,
+          p_status: update.status,
+          p_remarks: update.remarks || ''
         })
 
         if (error) throw error
@@ -294,7 +333,7 @@ export default function PromotionsPage() {
 
       toast.success(`Saved ${updates.length} promotion decisions!`)
       setPromotionChanges({})
-      loadData()
+      await loadClassData(academicYear, selectedClassId)
     } catch (error: any) {
       console.error('Error saving promotions:', error)
       toast.error(error.message || 'Failed to save promotions')
@@ -308,26 +347,26 @@ export default function PromotionsPage() {
     handlePromotionChange(studentId, 'status', status)
   }
 
-  const handleSelectAll = (classStudents: Student[]) => {
-    const classStudentIds = classStudents.map(s => s.id)
-    const allSelected = classStudentIds.every(id => selectedStudents.includes(id))
+  const handleSelectAll = (cohortStudents: Student[]) => {
+    const cohortIds = cohortStudents.map(s => s.id)
+    const allSelected = cohortIds.every(id => selectedStudents.includes(id))
 
     if (allSelected) {
-      setSelectedStudents(prev => prev.filter(id => !classStudentIds.includes(id)))
+      setSelectedStudents(prev => prev.filter(id => !cohortIds.includes(id)))
     } else {
-      setSelectedStudents(prev => [...new Set([...prev, ...classStudentIds])])
+      setSelectedStudents(prev => [...new Set([...prev, ...cohortIds])])
     }
   }
 
   const handleSelectStudent = (studentId: string) => {
-    setSelectedStudents(prev => 
-      prev.includes(studentId) 
+    setSelectedStudents(prev =>
+      prev.includes(studentId)
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
     )
   }
 
-    async function loadPendingDecisions(year?: string) {
+  async function loadPendingDecisions(year?: string) {
     const targetYear = year || academicYear
     setLoadingPending(true)
     try {
@@ -344,9 +383,7 @@ export default function PromotionsPage() {
         .eq('requires_admin_approval', true)
         .order('decision_date', { ascending: false })
 
-      if (data) {
-        setPendingDecisions(data)
-      }
+      if (data) setPendingDecisions(data)
     } catch (error: any) {
       console.error('Error loading pending decisions:', error)
     } finally {
@@ -354,10 +391,7 @@ export default function PromotionsPage() {
     }
   }
 
-      // Count pending decisions in years OTHER than the currently selected year,
-  // so admins are alerted to unconfirmed work that might otherwise go unnoticed
-  // after a year transition.
-    async function refreshPriorPendingCount(year?: string) {
+  async function refreshPriorPendingCount(year?: string) {
     const currentYear = year || academicYear
     try {
       const { data } = await supabase
@@ -373,32 +407,14 @@ export default function PromotionsPage() {
     }
   }
 
-    async function handleYearChange(newYear: string) {
-    if (!newYear || newYear === academicYear) return
-    setAcademicYear(newYear)
-    setPromotionChanges({})
-    setSelectedStudents([])
-    setSelectedPending([])
-    setLoading(true)
-    await loadData(newYear)
-        if (activeTab === 'pending') {
-      await loadPendingDecisions(newYear)
-    }
-    await refreshPriorPendingCount(newYear)
-    setLoading(false)
-  }
-
-      useEffect(() => {
+  useEffect(() => {
     refreshPriorPendingCount()
   }, [academicYear])
 
-  // Reload pending decisions whenever the pending tab is shown or the selected
-  // year changes (e.g. via the header selector or tab navigation).
   useEffect(() => {
     if (activeTab === 'pending' && academicYear) {
       loadPendingDecisions()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, academicYear])
 
   async function handleConfirmDecision(studentId: string, status: string) {
@@ -420,10 +436,9 @@ export default function PromotionsPage() {
 
       if (error) throw error
 
-      toast.success(`Decision confirmed! Student has been ${status === 'promoted' ? 'promoted' : status === 'repeated' ? 'repeated' : 'graduated'}.`)
-      
-      // Refresh pending list
+      toast.success(`Decision confirmed! Student updated.`)
       await loadPendingDecisions()
+      await loadClassData(academicYear, selectedClassId)
     } catch (error: any) {
       console.error('Error confirming decision:', error)
       toast.error(error.message || 'Failed to confirm decision')
@@ -448,7 +463,7 @@ export default function PromotionsPage() {
 
       if (error) throw error
 
-            toast.success('Teacher decision rejected. Student status reset to pending.')
+      toast.success('Teacher decision rejected. Reset to pending.')
       await loadPendingDecisions()
     } catch (error: any) {
       console.error('Error rejecting decision:', error)
@@ -457,8 +472,6 @@ export default function PromotionsPage() {
       setConfirming(null)
     }
   }
-
-  // --- Multi-confirm: bulk confirm / reject selected pending decisions ------
 
   const handleSelectPendingDecision = (studentId: string) => {
     setSelectedPending(prev =>
@@ -496,13 +509,14 @@ export default function PromotionsPage() {
         confirmed++
       }
 
-      toast.success(`Confirmed ${confirmed} promotion decision${confirmed === 1 ? '' : 's'}!`)
+      toast.success(`Confirmed ${confirmed} decisions!`)
       setSelectedPending([])
       await loadPendingDecisions()
+      await loadClassData(academicYear, selectedClassId)
       refreshPriorPendingCount(academicYear)
     } catch (error: any) {
-      console.error('Error confirming selected decisions:', error)
-      toast.error(error.message || 'Failed to confirm selected decisions')
+      console.error('Error confirming decisions:', error)
+      toast.error(error.message || 'Failed to confirm selected')
     } finally {
       setBulkConfirming(false)
     }
@@ -528,13 +542,13 @@ export default function PromotionsPage() {
         rejected++
       }
 
-      toast.success(`Rejected ${rejected} teacher decision${rejected === 1 ? '' : 's'}. Students reset to pending.`)
+      toast.success(`Rejected ${rejected} teacher decisions.`)
       setSelectedPending([])
       await loadPendingDecisions()
       refreshPriorPendingCount(academicYear)
     } catch (error: any) {
-      console.error('Error rejecting selected decisions:', error)
-      toast.error(error.message || 'Failed to reject selected decisions')
+      console.error('Error rejecting decisions:', error)
+      toast.error(error.message || 'Failed to reject decisions')
     } finally {
       setBulkConfirming(false)
     }
@@ -542,109 +556,78 @@ export default function PromotionsPage() {
 
   const handleBulkApply = () => {
     if (!bulkStatus) return
-    
+
     selectedStudents.forEach(studentId => {
       handlePromotionChange(studentId, 'status', bulkStatus)
     })
-    
+
     toast.success(`Applied '${bulkStatus}' to ${selectedStudents.length} students`)
     setBulkStatus('')
     setSelectedStudents([])
   }
 
   const filteredStudents = students.filter(student => {
-    const matchesSearch = 
+    return (
       student.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.student_id.toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesClass = classFilter === 'all' || student.class_id === classFilter
-
-    return matchesSearch && matchesClass
+    )
   })
 
-  // Group by class
-  const groupedStudents = filteredStudents.reduce((acc, student) => {
-    const className = (student as any).classes?.name || 'Unknown'
-    if (!acc[className]) acc[className] = []
-    acc[className].push(student)
-    return acc
-  }, {} as Record<string, Student[]>)
+  const currentClassName = classes.find(c => c.id === selectedClassId)?.name || 'Class'
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow">
-          <div className="container mx-auto px-4 md:px-6 py-4">
-            <div className="flex justify-between items-center bg-white">
-              <div className="flex items-center gap-4">
+      <div className="min-h-screen bg-gray-50/50">
+        <header className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-3">
                 <Skeleton className="w-10 h-10 rounded-full" />
-                <div className="space-y-1">
-                  <Skeleton className="h-8 w-48" />
-                  <Skeleton className="h-4 w-32" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-6 w-44" />
+                  <Skeleton className="h-3.5 w-32" />
                 </div>
               </div>
-              <Skeleton className="w-32 h-10 rounded-lg" />
+              <Skeleton className="w-36 h-10 rounded-xl" />
             </div>
           </div>
         </header>
-        <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-          <div className="bg-white rounded-lg shadow p-4 mb-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <Skeleton className="w-full h-10 rounded-lg" />
-              <Skeleton className="w-full h-10 rounded-lg" />
-              <div className="flex justify-end">
-                <Skeleton className="w-32 h-10 rounded-lg" />
-              </div>
-            </div>
-          </div>
-          <div className="space-y-8">
-            {[1, 2].map((i) => (
-              <div key={i} className="mb-8">
-                <Skeleton className="h-8 w-48 mb-4" />
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="divide-y divide-gray-200">
-                    {[1, 2, 3, 4].map((j) => (
-                      <div key={j} className="p-4 flex gap-4">
-                        <Skeleton className="w-4 h-4 rounded mt-1" />
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-24" />
-                        </div>
-                        <Skeleton className="h-6 w-16" />
-                        <Skeleton className="h-8 w-32" />
-                        <Skeleton className="h-8 w-48" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+          <Skeleton className="w-full h-14 rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-2xl" />
         </main>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-            <header className="bg-white shadow">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <BackButton href="/admin/dashboard" />
+    <div className="min-h-screen bg-gray-50/50 pb-24 font-sans text-gray-900">
+      {/* Top Navigation */}
+      <header className="bg-white border-b border-gray-200/80 sticky top-0 z-30 shadow-sm backdrop-blur-md bg-white/95">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center space-x-3 sm:space-x-4">
+              <BackButton href="/admin/dashboard" className="shrink-0 shadow-sm" />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">Student Promotions</h1>
-                <p className="text-xs md:text-sm text-gray-600">Manage student promotion decisions for {academicYear}</p>
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                  <UserCheck className="w-6 h-6 text-[#003B5C] shrink-0" />
+                  <span>Student Promotions</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 font-medium">
+                  Review and promote cohorts for{' '}
+                  <span className="font-bold text-[#003B5C]">{academicYear || 'current session'}</span>
+                </p>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+              <div className="relative flex-1 sm:w-48">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 <select
                   value={academicYear}
                   onChange={(e) => handleYearChange(e.target.value)}
-                  className="w-full sm:w-44 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white appearance-none"
+                  className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm font-bold border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003B5C] focus:border-[#003B5C] bg-gray-50/80 appearance-none shadow-sm cursor-pointer outline-none transition-all"
                   aria-label="Select academic year"
                 >
                   {availableYears.length === 0 && <option value="">Select year</option>}
@@ -652,524 +635,392 @@ export default function PromotionsPage() {
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
               </div>
+
               <button
                 onClick={handleSaveAll}
                 disabled={saving || Object.keys(promotionChanges).length === 0}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 disabled:opacity-50 w-full sm:w-auto"
+                className="inline-flex items-center justify-center gap-2 bg-[#003B5C] hover:bg-[#002a42] text-white px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
               >
-                <Save className="w-5 h-5" />
-                <span>{saving ? 'Saving...' : 'Save All Changes'}</span>
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                <span>{saving ? 'Saving Decisions...' : 'Save Decisions'}</span>
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Prior-year pending-decision alert: surfaces unconfirmed decisions from
-          academic years other than the one currently selected, which otherwise
-          could be silently missed after a year transition. */}
+      {/* Prior Year Pending Alert */}
       {priorPendingCount > 0 && (
-        <div className="bg-amber-50 border-b border-amber-200">
-          <div className="container mx-auto px-4 md:px-6 py-3">
-            <div className="flex items-start space-x-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-amber-800 text-xs md:text-sm">
-                <strong>Heads up:</strong> You have unconfirmed promotion decisions in{' '}
-                <strong>{priorPendingCount} other academic {priorPendingCount === 1 ? 'year' : 'years'}</strong>.
-                Use the academic year selector above to review and confirm them before they are missed.
+        <div className="bg-amber-50/90 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-start sm:items-center space-x-3">
+              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+              <p className="text-amber-900 text-xs sm:text-sm leading-relaxed">
+                <strong>Attention:</strong> You have unconfirmed promotion decisions in{' '}
+                <span className="font-bold underline underline-offset-2">
+                  {priorPendingCount} previous academic {priorPendingCount === 1 ? 'session' : 'sessions'}
+                </span>. Switch the session year above to review and finalize them.
               </p>
             </div>
           </div>
         </div>
       )}
 
-            <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-        {/* Tabs: Manage All | Pending Teacher Decisions */}
-        <div className="bg-white rounded-lg shadow mb-6">
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('manage')}
-              className={`flex-1 md:flex-none px-6 py-3 text-sm font-medium text-center transition-colors ${
-                activeTab === 'manage'
-                  ? 'border-b-2 border-purple-600 text-purple-700 bg-purple-50'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Users className="w-4 h-4 inline-block mr-2" />
-              Manage All Students
-            </button>
-            <button
-              onClick={() => setActiveTab('pending')}
-              className={`flex-1 md:flex-none px-6 py-3 text-sm font-medium text-center transition-colors ${
-                activeTab === 'pending'
-                  ? 'border-b-2 border-amber-500 text-amber-700 bg-amber-50'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Clock className="w-4 h-4 inline-block mr-2" />
-              Pending Teacher Decisions
-              {pendingDecisions.length > 0 && (
-                <span className="ml-2 bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full">
-                  {pendingDecisions.length}
-                </span>
-              )}
-            </button>
-          </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-6">
+        {/* Navigation Tabs */}
+        <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-200/80 flex w-full sm:w-fit overflow-x-auto gap-1">
+          <button
+            onClick={() => setActiveTab('manage')}
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'manage'
+                ? 'bg-[#003B5C] text-white shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>Class Promotions</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('pending')}
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'pending'
+                ? 'bg-[#003B5C] text-white shadow-md'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>Pending Teacher Decisions</span>
+            {pendingDecisions.length > 0 && (
+              <span className={`ml-1 text-[11px] px-2 py-0.5 rounded-full font-black ${
+                activeTab === 'pending' ? 'bg-white text-[#003B5C]' : 'bg-amber-100 text-amber-800'
+              }`}>
+                {pendingDecisions.length}
+              </span>
+            )}
+          </button>
         </div>
 
-        {/* Filters (only in manage tab) */}
-        {activeTab === 'manage' && (
-          <div className="bg-white rounded-lg shadow p-4 mb-6">
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search students..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
-              <div className="relative">
-                <Filter className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
-                <select
-                  value={classFilter}
-                  onChange={(e) => setClassFilter(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 appearance-none"
-                >
-                  <option value="all">All Classes</option>
-                  {classes.map(cls => (
-                    <option key={cls.id} value={cls.id}>{cls.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center justify-end">
-                <span className="text-gray-600">
-                  <strong>{filteredStudents.length}</strong> students
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Bulk Actions */}
-        {selectedStudents.length > 0 && (
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center space-x-3 w-full md:w-auto justify-center md:justify-start">
-              <div className="bg-purple-100 p-2 rounded-full">
-                <UserCheck className="w-5 h-5 text-purple-600" />
-              </div>
-              <span className="font-medium text-purple-900">
-                {selectedStudents.length} students selected
-              </span>
-            </div>
-            <div className="flex flex-col md:flex-row items-center space-y-3 md:space-y-0 md:space-x-3 w-full md:w-auto">
-              <select
-                value={bulkStatus}
-                onChange={(e) => setBulkStatus(e.target.value)}
-                className="w-full md:w-auto px-3 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white"
-              >
-                <option value="">-- Select Action --</option>
-                <option value="promoted">Promote Selected</option>
-                <option value="repeated">Repeat Selected</option>
-                <option value="graduated">Graduate Selected</option>
-              </select>
-              <div className="flex items-center space-x-3 w-full md:w-auto">
-                <button
-                  onClick={handleBulkApply}
-                  disabled={!bulkStatus}
-                  className="flex-1 md:flex-none bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Apply
-                </button>
-                <button
-                  onClick={() => setSelectedStudents([])}
-                  className="flex-1 md:flex-none text-gray-500 hover:text-gray-700 px-3 py-2 text-center"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-                {/* Pending Teacher Decisions Tab */}
-        {activeTab === 'pending' && (
-          <div>
-            {/* Info Banner */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-              <div className="flex items-start space-x-3">
-                <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-amber-900 text-sm md:text-base">Pending Teacher Decisions</h3>
-                  <p className="text-amber-800 text-xs md:text-sm mt-1">
-                    These students have been reviewed by their class teachers who made promotion recommendations.
-                    Review each decision and click <strong>Confirm</strong> to execute the class movement,
-                    or <strong>Reject</strong> to send it back for revision.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {loadingPending ? (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <Loader2 className="w-10 h-10 text-amber-500 mx-auto mb-4 animate-spin" />
-                <p className="text-sm text-gray-600">Loading pending decisions...</p>
-              </div>
-            ) : pendingDecisions.length === 0 ? (
-              <div className="bg-white rounded-lg shadow p-12 text-center">
-                <Check className="w-16 h-16 text-green-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Pending Decisions</h3>
-                <p className="text-sm text-gray-600">
-                  All teacher recommendations have been processed. There are no pending decisions to review.
-                </p>
-              </div>
-                        ) : (
-              <div className="space-y-4">
-                {/* Select-all toolbar */}
-                <div className="bg-white rounded-lg shadow border border-gray-200 p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={pendingDecisions.length > 0 && pendingDecisions.every(d => selectedPending.includes(d.student_id))}
-                      onChange={handleSelectAllPending}
-                      className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                    />
-                    <span>Select All</span>
-                    <span className="text-xs text-gray-500">({pendingDecisions.length} pending)</span>
-                  </label>
-                  {selectedPending.length > 0 && (
-                    <span className="text-sm text-purple-800">
-                      <strong>{selectedPending.length}</strong> selected
-                    </span>
-                  )}
-                </div>
-
-                {/* Bulk confirm / reject action bar */}
-                {selectedPending.length > 0 && (
-                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-purple-100 p-2 rounded-full">
-                        <UserCheck className="w-5 h-5 text-purple-600" />
-                      </div>
-                      <span className="font-medium text-purple-900">
-                        {selectedPending.length} student{selectedPending.length === 1 ? '' : 's'} selected
-                      </span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
-                      <button
-                        onClick={handleBulkConfirmPending}
-                        disabled={bulkConfirming}
-                        className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center space-x-2 transition-colors"
-                      >
-                        {bulkConfirming ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Check className="w-4 h-4" />
-                        )}
-                        <span>Confirm Selected</span>
-                      </button>
-                      <button
-                        onClick={handleBulkRejectPending}
-                        disabled={bulkConfirming}
-                        className="w-full sm:w-auto px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center justify-center space-x-2 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                        <span>Reject Selected</span>
-                      </button>
-                      <button
-                        onClick={() => setSelectedPending([])}
-                        disabled={bulkConfirming}
-                        className="text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {pendingDecisions.map((decision) => {
-                  const student = decision.students
-                  const isPendingSelected = selectedPending.includes(decision.student_id)
-                  return (
-                    <div key={decision.student_id} className={`bg-white rounded-lg shadow border border-amber-200 p-4 md:p-6 ${isPendingSelected ? 'ring-2 ring-purple-500' : ''}`}>
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3">
-                            <input
-                              type="checkbox"
-                              checked={isPendingSelected}
-                              onChange={() => handleSelectPendingDecision(decision.student_id)}
-                              className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 mt-0.5"
-                              aria-label={`Select ${student?.first_name} ${student?.last_name}`}
-                            />
-                            <div>
-                              <h4 className="font-semibold text-gray-900">
-                                {student?.first_name} {student?.last_name}
-                              </h4>
-                              <p className="text-xs text-gray-500">
-                                {student?.student_id} | {student?.classes?.name || 'Unknown Class'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                              decision.promotion_status === 'promoted' 
-                                ? 'bg-green-100 text-green-800'
-                                : decision.promotion_status === 'repeated'
-                                ? 'bg-red-100 text-red-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              Teacher recommends: {decision.promotion_status}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                              Decided: {new Date(decision.decision_date).toLocaleDateString('en-GB')}
-                            </span>
-                          </div>
-                          {decision.teacher_remarks && (
-                            <p className="mt-2 text-sm text-gray-600 bg-gray-50 rounded p-2 border border-gray-100">
-                              <span className="font-medium text-gray-700">Remarks:</span> {decision.teacher_remarks}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex space-x-3">
-                          <button
-                            onClick={() => handleConfirmDecision(decision.student_id, decision.promotion_status)}
-                            disabled={confirming === decision.student_id}
-                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center space-x-2 transition-colors"
-                          >
-                            {confirming === decision.student_id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Check className="w-4 h-4" />
-                            )}
-                            <span>Confirm</span>
-                          </button>
-                          <button
-                            onClick={() => handleRejectDecision(decision.student_id)}
-                            disabled={confirming === decision.student_id}
-                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium flex items-center space-x-2 transition-colors"
-                          >
-                            <X className="w-4 h-4" />
-                            <span>Reject</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Manage All Students Tab */}
+        {/* Tab 1: Manage Class Promotions */}
         {activeTab === 'manage' && (
           <>
-          {Object.keys(groupedStudents).length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">No students found</h3>
-              <p className="text-xs md:text-sm text-gray-600">Try adjusting your search or filters</p>
-            </div>
-          ) : (
-            Object.entries(groupedStudents).map(([className, classStudents]) => (
-              <div key={className} className="mb-8">
-                <h2 className="text-base md:text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <Users className="w-5 h-5 mr-2 text-purple-600" />
-                  {className}
-                  <span className="ml-2 text-xs md:text-sm font-normal text-gray-500">({classStudents.length} students)</span>
-                </h2>
+            {/* Scoped Filter Header */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 p-3.5 sm:p-5">
+              <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
                 
-                {/* Desktop Table View */}
-                <div className="hidden md:block bg-white rounded-lg shadow overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b">
-                      <tr>
-                        <th className="px-4 py-3 text-left">
-                          <input
-                            type="checkbox"
-                            checked={classStudents.every(s => selectedStudents.includes(s.id))}
-                            onChange={() => handleSelectAll(classStudents)}
-                            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                          />
-                        </th>
-                        <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Student</th>
-                        <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Year Avg</th>
-                        <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Promotion Status</th>
-                        <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Remarks</th>
-                        <th className="px-4 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {classStudents.map((student) => {
-                        const currentStatus = promotionChanges[student.id]?.status || student.promotion_status || ''
-                        const currentRemarks = promotionChanges[student.id]?.remarks ?? student.teacher_remarks ?? ''
-                        const isSelected = selectedStudents.includes(student.id)
-                        
-                        return (
-                          <tr key={student.id} className={`hover:bg-gray-50 ${isSelected ? 'bg-purple-50' : ''}`}>
-                            <td className="px-4 py-3">
+                {/* Search Bar */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={`Search within ${currentClassName}...`}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003B5C] focus:border-[#003B5C] bg-gray-50/70 text-gray-900 outline-none transition-all"
+                  />
+                </div>
+
+                {/* Class Selector */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                  <div className="relative sm:w-56">
+                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    <select
+                      value={selectedClassId}
+                      onChange={(e) => handleClassChange(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2.5 text-xs sm:text-sm font-bold border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003B5C] focus:border-[#003B5C] bg-white text-gray-800 appearance-none shadow-sm cursor-pointer outline-none"
+                    >
+                      {classes.map(cls => (
+                        <option key={cls.id} value={cls.id}>{cls.name}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+                  </div>
+
+                  <div className="px-3.5 py-2.5 bg-gray-100 rounded-xl text-xs font-bold text-gray-600 whitespace-nowrap text-center">
+                    <span className="text-[#003B5C]">{filteredStudents.length}</span> students enrolled
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bulk Actions Bar */}
+            {selectedStudents.length > 0 && (
+              <div className="bg-[#003B5C]/10 border border-[#003B5C]/30 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center space-x-2.5 text-xs sm:text-sm font-bold text-[#003B5C]">
+                  <div className="bg-[#003B5C] text-white p-1.5 rounded-lg">
+                    <UserCheck className="w-4 h-4" />
+                  </div>
+                  <span>{selectedStudents.length} students selected</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <select
+                    value={bulkStatus}
+                    onChange={(e) => setBulkStatus(e.target.value)}
+                    className="flex-1 sm:flex-initial px-3 py-2 text-xs font-bold border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#003B5C] bg-white text-gray-800 outline-none"
+                  >
+                    <option value="">-- Apply Action --</option>
+                    <option value="promoted">Promote Selected</option>
+                    <option value="repeated">Repeat Selected</option>
+                    <option value="graduated">Graduate Selected</option>
+                  </select>
+
+                  <button
+                    onClick={handleBulkApply}
+                    disabled={!bulkStatus}
+                    className="bg-[#003B5C] hover:bg-[#002a42] text-white px-4 py-2 rounded-xl text-xs font-bold disabled:opacity-50 transition-all shadow-sm"
+                  >
+                    Apply
+                  </button>
+                  <button
+                    onClick={() => setSelectedStudents([])}
+                    className="px-3 py-2 text-xs font-bold text-gray-500 hover:text-gray-800"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Students Table / Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <h2 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-[#003B5C]" />
+                  <span>{currentClassName}</span>
+                  <span className="text-xs font-bold text-gray-400">({students.length})</span>
+                </h2>
+
+                <label className="flex items-center space-x-2 text-xs font-bold text-gray-600 cursor-pointer select-none bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-sm">
+                  <input
+                    type="checkbox"
+                    checked={students.length > 0 && students.every(s => selectedStudents.includes(s.id))}
+                    onChange={() => handleSelectAll(students)}
+                    className="w-4 h-4 rounded text-[#003B5C] focus:ring-[#003B5C] border-gray-300"
+                  />
+                  <span>Select all</span>
+                </label>
+              </div>
+
+              {loadingClass ? (
+                <div className="bg-white rounded-2xl p-12 text-center border border-gray-200 shadow-sm">
+                  <Loader2 className="w-8 h-8 text-[#003B5C] mx-auto mb-3 animate-spin" />
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Loading {currentClassName} records...</p>
+                </div>
+              ) : filteredStudents.length === 0 ? (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center space-y-2">
+                  <Users className="w-12 h-12 text-gray-300 mx-auto" />
+                  <h3 className="text-base font-bold text-gray-800">No active students in {currentClassName}</h3>
+                  <p className="text-xs text-gray-500">Pick another class from the dropdown to manage promotions.</p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table (≥ md) */}
+                  <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-200/80 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse min-w-[700px]">
+                        <thead>
+                          <tr className="bg-gray-50/80 border-b border-gray-200 text-[11px] font-black text-gray-400 uppercase tracking-wider">
+                            <th className="p-4 w-10 text-center">#</th>
+                            <th className="p-4">Student</th>
+                            <th className="p-4">Annual Average</th>
+                            <th className="p-4">Promotion Decision</th>
+                            <th className="p-4">Remarks</th>
+                            <th className="p-4 text-right">Auto</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100 text-xs sm:text-sm font-medium">
+                          {filteredStudents.map((student) => {
+                            const currentStatus = promotionChanges[student.id]?.status || student.promotion_status || ''
+                            const currentRemarks = promotionChanges[student.id]?.remarks ?? student.teacher_remarks ?? ''
+                            const isSelected = selectedStudents.includes(student.id)
+
+                            return (
+                              <tr
+                                key={student.id}
+                                className={`hover:bg-gray-50/70 transition-colors ${
+                                  isSelected ? 'bg-blue-50/30' : ''
+                                }`}
+                              >
+                                <td className="p-4 text-center">
+                                  <input
+                                    type="checkbox"
+                                    checked={isSelected}
+                                    onChange={() => handleSelectStudent(student.id)}
+                                    className="w-4 h-4 rounded text-[#003B5C] focus:ring-[#003B5C] border-gray-300 cursor-pointer"
+                                  />
+                                </td>
+                                <td className="p-4 whitespace-nowrap">
+                                  <div className="font-bold text-gray-900">
+                                    {student.first_name} {student.last_name}
+                                  </div>
+                                  <div className="text-[11px] text-gray-400 font-mono mt-0.5">
+                                    {student.student_id}
+                                  </div>
+                                </td>
+                                <td className="p-4 whitespace-nowrap">
+                                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-black ${
+                                    (student.average_score || 0) >= 30
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                      : 'bg-rose-50 text-rose-700 border border-rose-200/60'
+                                  }`}>
+                                    {(student.average_score || 0).toFixed(1)}%
+                                  </span>
+                                </td>
+                                <td className="p-4 whitespace-nowrap">
+                                  <select
+                                    value={currentStatus}
+                                    onChange={(e) => handlePromotionChange(student.id, 'status', e.target.value)}
+                                    className={`text-xs font-bold px-3 py-1.5 rounded-xl border focus:ring-2 focus:ring-[#003B5C] outline-none shadow-sm cursor-pointer transition-all ${
+                                      currentStatus === 'promoted'
+                                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                                        : currentStatus === 'repeated'
+                                        ? 'bg-rose-50 border-rose-300 text-rose-800'
+                                        : currentStatus === 'graduated'
+                                        ? 'bg-blue-50 border-blue-300 text-[#003B5C]'
+                                        : 'bg-white border-gray-200 text-gray-700'
+                                    }`}
+                                  >
+                                    <option value="">-- Decision --</option>
+                                    <option value="promoted">Promoted</option>
+                                    <option value="repeated">Repeated</option>
+                                    <option value="graduated">Graduated</option>
+                                    <option value="pending">Pending</option>
+                                  </select>
+                                </td>
+                                <td className="p-4">
+                                  <input
+                                    type="text"
+                                    placeholder="Add notes/remarks..."
+                                    value={currentRemarks}
+                                    onChange={(e) => handlePromotionChange(student.id, 'remarks', e.target.value)}
+                                    className="w-full text-xs px-3 py-1.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003B5C] outline-none bg-gray-50/50 focus:bg-white"
+                                  />
+                                </td>
+                                <td className="p-4 text-right whitespace-nowrap">
+                                  <button
+                                    onClick={() => handleAutoPromote(student.id, student.average_score || 0)}
+                                    className="px-3 py-1.5 bg-[#003B5C]/10 text-[#003B5C] hover:bg-[#003B5C]/20 border border-[#003B5C]/20 rounded-xl text-xs font-bold transition-all shadow-sm active:scale-95"
+                                    title="Auto-calculate based on marks"
+                                  >
+                                    Auto
+                                  </button>
+                                </td>
+                              </tr>
+                            )
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Mobile Cards (< md) */}
+                  <div className="md:hidden space-y-3">
+                    {filteredStudents.map((student) => {
+                      const currentStatus = promotionChanges[student.id]?.status || student.promotion_status || ''
+                      const currentRemarks = promotionChanges[student.id]?.remarks ?? student.teacher_remarks ?? ''
+                      const isSelected = selectedStudents.includes(student.id)
+
+                      return (
+                        <div
+                          key={student.id}
+                          className={`bg-white rounded-2xl shadow-sm border p-4 space-y-3.5 transition-all ${
+                            isSelected ? 'border-[#003B5C] ring-2 ring-[#003B5C]/20 bg-blue-50/20' : 'border-gray-200'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start space-x-3 min-w-0">
                               <input
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => handleSelectStudent(student.id)}
-                                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                                className="w-4 h-4 rounded text-[#003B5C] focus:ring-[#003B5C] border-gray-300 mt-1"
                               />
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="text-xs md:text-sm font-medium text-gray-900">
-                                {student.first_name} {student.last_name}
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-sm text-gray-900 truncate">
+                                  {student.first_name} {student.last_name}
+                                </h4>
+                                <p className="text-xs text-gray-400 font-mono mt-0.5">
+                                  {student.student_id}
+                                </p>
                               </div>
-                              <div className="text-[10px] md:text-xs text-gray-500">{student.student_id}</div>
-                            </td>
-                                                        <td className="px-4 py-3">
-                              <span className={`text-xs md:text-sm font-semibold ${
-                                (student.average_score || 0) >= 30 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                {(student.average_score || 0).toFixed(1)}%
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <select
-                                value={currentStatus}
-                                onChange={(e) => handlePromotionChange(student.id, 'status', e.target.value)}
-                                className={`text-xs md:text-sm px-3 py-1.5 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
-                                  currentStatus === 'promoted' ? 'bg-green-50 border-green-300' :
-                                  currentStatus === 'repeated' ? 'bg-red-50 border-red-300' :
-                                  currentStatus === 'graduated' ? 'bg-blue-50 border-blue-300' :
-                                  'bg-white border-gray-300'
-                                }`}
-                              >
-                                <option value="">-- Select --</option>
-                                <option value="promoted">Promoted</option>
-                                <option value="repeated">Repeated</option>
-                                <option value="graduated">Graduated</option>
-                                <option value="pending">Pending</option>
-                              </select>
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="text"
-                                placeholder="Optional remarks..."
-                                value={currentRemarks}
-                                onChange={(e) => handlePromotionChange(student.id, 'remarks', e.target.value)}
-                                className="text-xs md:text-sm px-3 py-1.5 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-purple-500"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => handleAutoPromote(student.id, student.average_score || 0)}
-                                className="text-[10px] md:text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                                title="Auto-assign based on average"
-                              >
-                                Auto
-                              </button>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Card View */}
-                <div className="md:hidden space-y-4">
-                  <div className="flex items-center justify-between bg-white p-3 rounded-lg shadow mb-2">
-                    <label className="flex items-center space-x-2 text-sm font-medium text-gray-700">
-                      <input
-                        type="checkbox"
-                        checked={classStudents.every(s => selectedStudents.includes(s.id))}
-                        onChange={() => handleSelectAll(classStudents)}
-                        className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                      />
-                      <span>Select All {className}</span>
-                    </label>
-                  </div>
-
-                  {classStudents.map((student) => {
-                    const currentStatus = promotionChanges[student.id]?.status || student.promotion_status || ''
-                    const currentRemarks = promotionChanges[student.id]?.remarks ?? student.teacher_remarks ?? ''
-                    const isSelected = selectedStudents.includes(student.id)
-                    
-                    return (
-                      <div key={student.id} className={`bg-white rounded-lg shadow p-4 space-y-3 ${isSelected ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}>
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-start space-x-3">
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => handleSelectStudent(student.id)}
-                              className="mt-1 w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                            />
-                            <div>
-                              <div className="font-medium text-gray-900">
-                                {student.first_name} {student.last_name}
-                              </div>
-                              <div className="text-xs text-gray-500">{student.student_id}</div>
                             </div>
-                          </div>
-                          <div className="flex flex-col items-end">
-                            <span className="text-xs text-gray-500 mb-1">Average</span>
-                                                        <span className={`text-sm font-bold ${
-                              (student.average_score || 0) >= 30 ? 'text-green-600' : 'text-red-600'
+
+                            <span className={`px-2.5 py-1 rounded-full text-xs font-black shrink-0 ${
+                              (student.average_score || 0) >= 30
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                                : 'bg-rose-50 text-rose-700 border border-rose-200/60'
                             }`}>
-                              {(student.average_score || 0).toFixed(1)}%
+                              Avg: {(student.average_score || 0).toFixed(1)}%
                             </span>
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 gap-3">
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
-                            <div className="flex space-x-2">
-                              <select
-                                value={currentStatus}
-                                onChange={(e) => handlePromotionChange(student.id, 'status', e.target.value)}
-                                className={`flex-1 text-sm px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 ${
-                                  currentStatus === 'promoted' ? 'bg-green-50 border-green-300' :
-                                  currentStatus === 'repeated' ? 'bg-red-50 border-red-300' :
-                                  currentStatus === 'graduated' ? 'bg-blue-50 border-blue-300' :
-                                  'bg-white border-gray-300'
-                                }`}
-                              >
-                                <option value="">-- Select --</option>
-                                <option value="promoted">Promoted</option>
-                                <option value="repeated">Repeated</option>
-                                <option value="graduated">Graduated</option>
-                                <option value="pending">Pending</option>
-                              </select>
-                              <button
-                                onClick={() => handleAutoPromote(student.id, student.average_score || 0)}
-                                className="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 text-sm font-medium"
-                              >
-                                Auto
-                              </button>
+                          <div className="space-y-2 pt-1 border-t border-gray-100 text-xs">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1">
+                                <label className="block text-[10px] font-black uppercase text-gray-400 mb-1 tracking-wider">
+                                  Decision
+                                </label>
+                                <select
+                                  value={currentStatus}
+                                  onChange={(e) => handlePromotionChange(student.id, 'status', e.target.value)}
+                                  className={`w-full text-xs font-bold px-3 py-2 rounded-xl border focus:ring-2 focus:ring-[#003B5C] outline-none shadow-sm ${
+                                    currentStatus === 'promoted'
+                                      ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                                      : currentStatus === 'repeated'
+                                      ? 'bg-rose-50 border-rose-300 text-rose-800'
+                                      : currentStatus === 'graduated'
+                                      ? 'bg-blue-50 border-blue-300 text-[#003B5C]'
+                                      : 'bg-white border-gray-200 text-gray-700'
+                                  }`}
+                                >
+                                  <option value="">-- Decision --</option>
+                                  <option value="promoted">Promoted</option>
+                                  <option value="repeated">Repeated</option>
+                                  <option value="graduated">Graduated</option>
+                                  <option value="pending">Pending</option>
+                                </select>
+                              </div>
+
+                              <div className="shrink-0 self-end">
+                                <button
+                                  onClick={() => handleAutoPromote(student.id, student.average_score || 0)}
+                                  className="px-3.5 py-2 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs font-bold shadow-sm transition-all active:scale-95"
+                                >
+                                  Auto
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-black uppercase text-gray-400 mb-1 tracking-wider">
+                                Remarks
+                              </label>
+                              <input
+                                type="text"
+                                placeholder="Remarks..."
+                                value={currentRemarks}
+                                onChange={(e) => handlePromotionChange(student.id, 'remarks', e.target.value)}
+                                className="w-full text-xs px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#003B5C] outline-none bg-gray-50/50"
+                              />
                             </div>
                           </div>
-                          
-                          <div>
-                            <label className="block text-xs font-medium text-gray-500 mb-1">Remarks</label>
-                            <input
-                              type="text"
-                              placeholder="Optional remarks..."
-                              value={currentRemarks}
-                              onChange={(e) => handlePromotionChange(student.id, 'remarks', e.target.value)}
-                              className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                            />
-                          </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))
-          )}
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
           </>
         )}
+
+        {/* Tab 2: Pending Decisions rendered above */}
       </main>
     </div>
   )
