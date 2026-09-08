@@ -1,11 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { GraduationCap, ArrowLeft, Save, Search, AlertCircle, Edit, Trash2 } from 'lucide-react'
+import { 
+  GraduationCap, ArrowLeft, Save, Search, AlertCircle, 
+  Edit2, Trash2, Plus, Users, ChevronDown, CheckCircle2, 
+  Clock, FileText, Check, X, Loader2, Award, Filter
+} from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
@@ -14,6 +18,7 @@ export default function EnterScores() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = getSupabaseBrowserClient()
+
   const [teacher, setTeacher] = useState<any>(null)
   const [assignments, setAssignments] = useState<any[]>([])
   const [selectedClass, setSelectedClass] = useState('')
@@ -28,14 +33,14 @@ export default function EnterScores() {
   const [isDirty, setIsDirty] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   
-  // New state for creating assessment
+  // Create Assessment Modal
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newAssessmentName, setNewAssessmentName] = useState('')
   const [newMaxScore, setNewMaxScore] = useState('100')
   const [newAssessmentType, setNewAssessmentType] = useState('class_work')
   const [creatingAssessment, setCreatingAssessment] = useState(false)
 
-  // Edit Assessment State
+  // Edit Assessment Modal
   const [showEditModal, setShowEditModal] = useState(false)
   const [editAssessmentName, setEditAssessmentName] = useState('')
   const [editMaxScore, setEditMaxScore] = useState('100')
@@ -67,7 +72,6 @@ export default function EnterScores() {
         if (assignmentsData) {
           setAssignments(assignmentsData)
           
-          // Pre-select values from query params if available
           const classParam = searchParams.get('classId')
           const subjectParam = searchParams.get('subjectId')
           
@@ -82,194 +86,23 @@ export default function EnterScores() {
     loadData()
   }, [router, searchParams])
 
-  // Add a new useEffect to handle assessment selection logic
   useEffect(() => {
-     if (assessments.length > 0) {
-        const assessmentParam = searchParams.get('assessmentId')
-        if (assessmentParam && assessments.some(a => a.id === assessmentParam)) {
-            setSelectedAssessment(assessmentParam)
-        }
-     }
+    if (assessments.length > 0) {
+      const assessmentParam = searchParams.get('assessmentId')
+      if (assessmentParam && assessments.some(a => a.id === assessmentParam)) {
+        setSelectedAssessment(assessmentParam)
+      }
+    }
   }, [assessments, searchParams])
-
-  const handleCreateAssessment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedClass || !selectedSubject) {
-        toast.error('Please select a class and subject first')
-        return
-    }
-    if (!newAssessmentName.trim()) {
-        toast.error('Assessment name is required')
-        return
-    }
-
-            setCreatingAssessment(true)
-    try {
-        // Get current term and academic year first
-        const { data: currentTerm } = await supabase
-            .from('academic_terms')
-            .select('id, academic_year')
-            .eq('is_current', true)
-            .maybeSingle()
-        const academicYear = currentTerm?.academic_year || new Date().getFullYear().toString()
-        const termId = currentTerm?.id
-        if (!termId) throw new Error('Current term not found')
-
-        // Get class_subject_id - MUST filter by academic_year to match the unique constraint
-        let { data: classSubject } = await supabase
-          .from('class_subjects')
-          .select('id')
-          .eq('class_id', selectedClass)
-          .eq('subject_id', selectedSubject)
-          .eq('academic_year', academicYear)
-          .maybeSingle()
-
-        // If class_subject doesn't exist, try to create it automatically
-        if (!classSubject) {
-            console.log('Class subject not found, attempting to create one...')
-            const { data: newCS, error: createError } = await supabase
-                .from('class_subjects')
-                .insert({
-                    class_id: selectedClass,
-                    subject_id: selectedSubject,
-                    academic_year: academicYear,
-                    teacher_id: teacher?.id
-                })
-                .select('id')
-                .single()
-
-            if (createError) {
-                // Handle race condition: another request created this row first
-                if (createError.code === '23505') {
-                    const { data: existingCS } = await supabase
-                        .from('class_subjects')
-                        .select('id')
-                        .eq('class_id', selectedClass)
-                        .eq('subject_id', selectedSubject)
-                        .eq('academic_year', academicYear)
-                        .single()
-
-                    if (existingCS) {
-                        classSubject = existingCS
-                    } else {
-                        console.error("Failed to auto-create class_subject:", createError)
-                        throw new Error('Class subject link missing and could not be created.')
-                    }
-                } else {
-                    console.error("Failed to auto-create class_subject:", createError)
-                    throw new Error('Class subject link missing and could not be created.')
-                }
-            } else {
-                classSubject = newCS
-            }
-        }
-
-        const { data, error } = await supabase
-            .from('assessments')
-            .insert({
-                class_subject_id: classSubject.id,
-                term_id: termId,
-                title: newAssessmentName,
-                assessment_type: newAssessmentType,
-                max_score: parseFloat(newMaxScore),
-                assessment_date: new Date().toISOString().split('T')[0],
-                created_by: teacher?.id // Add created_by
-            })
-            .select()
-            .single()
-
-        if (error) throw error
-
-        toast.success('Assessment created successfully')
-        setAssessments([data, ...assessments])
-        setSelectedAssessment(data.id)
-        setShowCreateModal(false)
-        setNewAssessmentName('')
-        setNewMaxScore('100')
-    } catch (error: any) {
-        console.error('Error creating assessment:', error)
-        toast.error('Failed to create assessment: ' + error.message)
-    } finally {
-        setCreatingAssessment(false)
-    }
-  }
-
-  const openEditModal = () => {
-    const assessment = assessments.find(a => a.id === selectedAssessment)
-    if (!assessment) return
-
-    setEditAssessmentName(assessment.title || assessment.assessment_name)
-    setEditMaxScore(assessment.max_score.toString())
-    setEditAssessmentType(assessment.assessment_type || 'class_work')
-    setShowEditModal(true)
-  }
-
-  const handleUpdateAssessment = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedAssessment) return
-
-    setUpdatingAssessment(true)
-    try {
-        const { error } = await supabase
-            .from('assessments')
-            .update({
-                title: editAssessmentName,
-                assessment_type: editAssessmentType,
-                max_score: parseFloat(editMaxScore)
-            })
-            .eq('id', selectedAssessment)
-
-        if (error) throw error
-
-        toast.success('Assessment updated successfully')
-        
-        // Update local state
-        setAssessments(assessments.map(a => 
-            a.id === selectedAssessment
-                ? { ...a, title: editAssessmentName, assessment_name: editAssessmentName, assessment_type: editAssessmentType, max_score: parseFloat(editMaxScore) }
-                : a
-        ))
-        setShowEditModal(false)
-    } catch (error: any) {
-        console.error('Error updating assessment:', error)
-        toast.error('Failed to update assessment: ' + error.message)
-    } finally {
-        setUpdatingAssessment(false)
-    }
-  }
-
-  const handleDeleteAssessment = async () => {
-    if (!selectedAssessment) return
-    const assessment = assessments.find(a => a.id === selectedAssessment)
-    if (!assessment) return
-
-    if (!confirm(`Are you sure you want to delete "${assessment.title || assessment.assessment_name}"? This will remove all student scores associated with this assessment.`)) return
-
-    setDeletingId(selectedAssessment)
-    try {
-        const { error } = await supabase
-            .from('assessments')
-            .delete()
-            .eq('id', selectedAssessment)
-
-        if (error) throw error
-
-        toast.success('Assessment deleted successfully')
-        setAssessments(assessments.filter(a => a.id !== selectedAssessment))
-        setSelectedAssessment('') // Reset selection
-        setScores({}) // Clear visible scores
-    } catch (error: any) {
-        console.error('Error deleting assessment:', error)
-        toast.error('Failed to delete assessment: ' + error.message)
-    } finally {
-        setDeletingId(null)
-    }
-  }
 
   useEffect(() => {
     if (selectedClass && selectedSubject) {
       loadStudents()
       loadAssessments()
+    } else {
+      setStudents([])
+      setAssessments([])
+      setSelectedAssessment('')
     }
   }, [selectedClass, selectedSubject, teacher])
 
@@ -296,7 +129,6 @@ export default function EnterScores() {
           })
         }
 
-        // Check for unsaved draft
         try {
           const draftKey = `draft_scores_${selectedAssessment}`
           const draft = sessionStorage.getItem(draftKey)
@@ -304,7 +136,7 @@ export default function EnterScores() {
             const parsedDraft = JSON.parse(draft)
             if (Object.keys(parsedDraft).length > 0) {
               loadedScores = { ...loadedScores, ...parsedDraft }
-              toast('Recovered unsaved draft. Please save when done.', { icon: '📝' })
+              toast('Recovered unsaved draft.', { icon: '📝' })
               setTimeout(() => setIsDirty(true), 500)
             }
           }
@@ -320,9 +152,9 @@ export default function EnterScores() {
     }
 
     loadExistingScores()
-  }, [selectedAssessment])
+  }, [selectedAssessment, supabase])
 
-  // Draft Recovery & Auto-save effect
+  // Draft Auto-save
   useEffect(() => {
     if (!selectedAssessment || !isDirty) return
     const timer = setTimeout(() => {
@@ -332,7 +164,7 @@ export default function EnterScores() {
     return () => clearTimeout(timer)
   }, [scores, selectedAssessment, isDirty])
 
-  // Handle beforeunload warning
+  // Beforeunload Warning
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
@@ -345,7 +177,7 @@ export default function EnterScores() {
   }, [isDirty])
 
   const loadStudents = async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('students')
       .select(`
         id,
@@ -360,7 +192,7 @@ export default function EnterScores() {
       `)
       .eq('class_id', selectedClass)
       .eq('status', 'active')
-      .order('first_name', { ascending: true })
+      .order('last_name', { ascending: true })
 
     if (data) {
       setStudents(data)
@@ -368,7 +200,6 @@ export default function EnterScores() {
   }
 
   const loadAssessments = async () => {
-    // Get class_subject_id first
     const { data: classSubject } = await supabase
       .from('class_subjects')
       .select('id')
@@ -386,43 +217,206 @@ export default function EnterScores() {
       .select('*')
       .eq('class_subject_id', classSubject.id)
 
-    // Filter by creator if available to ensure teachers only see their own assessments
-    // (or assessments created before this field was added)
     if (teacher?.id) {
       query = query.or(`created_by.eq.${teacher.id},created_by.is.null`)
     }
 
-    const { data, error } = await query.order('assessment_date', { ascending: false })
+    const { data } = await query.order('assessment_date', { ascending: false })
 
     if (data) {
       setAssessments(data)
     }
   }
 
+  const handleCreateAssessment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedClass || !selectedSubject) {
+      toast.error('Please select a class and subject first')
+      return
+    }
+    if (!newAssessmentName.trim()) {
+      toast.error('Assessment name is required')
+      return
+    }
+
+    setCreatingAssessment(true)
+    try {
+      const { data: currentTerm } = await supabase
+        .from('academic_terms')
+        .select('id, academic_year')
+        .eq('is_current', true)
+        .maybeSingle()
+      const academicYear = currentTerm?.academic_year || new Date().getFullYear().toString()
+      const termId = currentTerm?.id
+      if (!termId) throw new Error('Current term not found')
+
+      let { data: classSubject } = await supabase
+        .from('class_subjects')
+        .select('id')
+        .eq('class_id', selectedClass)
+        .eq('subject_id', selectedSubject)
+        .eq('academic_year', academicYear)
+        .maybeSingle()
+
+      if (!classSubject) {
+        const { data: newCS, error: createError } = await supabase
+          .from('class_subjects')
+          .insert({
+            class_id: selectedClass,
+            subject_id: selectedSubject,
+            academic_year: academicYear,
+            teacher_id: teacher?.id
+          })
+          .select('id')
+          .single()
+
+        if (createError) {
+          if (createError.code === '23505') {
+            const { data: existingCS } = await supabase
+              .from('class_subjects')
+              .select('id')
+              .eq('class_id', selectedClass)
+              .eq('subject_id', selectedSubject)
+              .eq('academic_year', academicYear)
+              .single()
+
+            if (existingCS) {
+              classSubject = existingCS
+            } else {
+              throw new Error('Class subject link missing and could not be created.')
+            }
+          } else {
+            throw new Error('Class subject link missing and could not be created.')
+          }
+        } else {
+          classSubject = newCS
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('assessments')
+        .insert({
+          class_subject_id: classSubject.id,
+          term_id: termId,
+          title: newAssessmentName,
+          assessment_type: newAssessmentType,
+          max_score: parseFloat(newMaxScore),
+          assessment_date: new Date().toISOString().split('T')[0],
+          created_by: teacher?.id
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      toast.success('Assessment created successfully')
+      setAssessments([data, ...assessments])
+      setSelectedAssessment(data.id)
+      setShowCreateModal(false)
+      setNewAssessmentName('')
+      setNewMaxScore('100')
+    } catch (error: any) {
+      console.error('Error creating assessment:', error)
+      toast.error('Failed to create assessment: ' + error.message)
+    } finally {
+      setCreatingAssessment(false)
+    }
+  }
+
+  const openEditModal = () => {
+    const assessment = assessments.find(a => a.id === selectedAssessment)
+    if (!assessment) return
+
+    setEditAssessmentName(assessment.title || assessment.assessment_name || '')
+    setEditMaxScore((assessment.max_score || 100).toString())
+    setEditAssessmentType(assessment.assessment_type || 'class_work')
+    setShowEditModal(true)
+  }
+
+  const handleUpdateAssessment = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedAssessment) return
+
+    setUpdatingAssessment(true)
+    try {
+      const { error } = await supabase
+        .from('assessments')
+        .update({
+          title: editAssessmentName,
+          assessment_type: editAssessmentType,
+          max_score: parseFloat(editMaxScore)
+        })
+        .eq('id', selectedAssessment)
+
+      if (error) throw error
+
+      toast.success('Assessment updated successfully')
+      setAssessments(assessments.map(a => 
+        a.id === selectedAssessment
+          ? { 
+              ...a, 
+              title: editAssessmentName, 
+              assessment_name: editAssessmentName, 
+              assessment_type: editAssessmentType, 
+              max_score: parseFloat(editMaxScore) 
+            }
+          : a
+      ))
+      setShowEditModal(false)
+    } catch (error: any) {
+      console.error('Error updating assessment:', error)
+      toast.error('Failed to update assessment: ' + error.message)
+    } finally {
+      setUpdatingAssessment(false)
+    }
+  }
+
+  const handleDeleteAssessment = async () => {
+    if (!selectedAssessment) return
+    const assessment = assessments.find(a => a.id === selectedAssessment)
+    if (!assessment) return
+
+    if (!confirm(`Delete "${assessment.title || assessment.assessment_name}"? All associated scores will be permanently removed.`)) return
+
+    setDeletingId(selectedAssessment)
+    try {
+      const { error } = await supabase
+        .from('assessments')
+        .delete()
+        .eq('id', selectedAssessment)
+
+      if (error) throw error
+
+      toast.success('Assessment deleted')
+      setAssessments(assessments.filter(a => a.id !== selectedAssessment))
+      setSelectedAssessment('')
+      setScores({})
+    } catch (error: any) {
+      console.error('Error deleting assessment:', error)
+      toast.error('Failed to delete assessment: ' + error.message)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const handleScoreChange = (studentId: string, value: string) => {
     if (isReadOnly) return
     const numValue = parseFloat(value)
-    
-    // Find current assessment max score
     const currentAssessment = assessments.find(a => a.id === selectedAssessment)
-    const maxScore = currentAssessment?.max_score || 10
+    const maxScore = currentAssessment?.max_score || 100
 
     setIsDirty(true)
     
     if (!isNaN(numValue)) {
       if (numValue > maxScore) {
-        toast.error(`Score cannot be greater than ${maxScore}`)
+        toast.error(`Score cannot exceed max score of ${maxScore}`)
         return
       }
-      // Fix: Handle 0 explicitly by checking for empty string instead of truthy
-      if (value === '') {
-          // If empty string, remove key
-          const newScores = { ...scores }
-          delete newScores[studentId]
-          setScores(newScores)
-      } else {
-         setScores({ ...scores, [studentId]: numValue })
+      if (numValue < 0) {
+        toast.error('Score cannot be negative')
+        return
       }
+      setScores(prev => ({ ...prev, [studentId]: numValue }))
     } else if (value === '') {
       const newScores = { ...scores }
       delete newScores[studentId]
@@ -448,10 +442,9 @@ export default function EnterScores() {
     }
 
     setSaving(true)
-    const toastId = toast.loading('Saving scores...')
+    const toastId = toast.loading('Saving assessment scores...')
 
     try {
-      // 1. Save individual assessment scores
       const scoreEntries = Object.entries(scores).map(([studentId, score]) => ({
         assessment_id: selectedAssessment,
         student_id: studentId,
@@ -465,12 +458,9 @@ export default function EnterScores() {
           onConflict: 'assessment_id,student_id',
         })
 
-      if (error) {
-        throw error
-      }
+      if (error) throw error
 
-      // 2. Recalculate Class Scores for affected students
-      // Get term_id from the selected assessment
+      // Recalculate Class Scores
       const { data: assessmentData } = await supabase
         .from('assessments')
         .select('term_id')
@@ -480,7 +470,6 @@ export default function EnterScores() {
       const termId = assessmentData?.term_id
 
       if (termId) {
-        // Get class_subject_id first
         const { data: classSubject } = await supabase
           .from('class_subjects')
           .select('id')
@@ -489,7 +478,6 @@ export default function EnterScores() {
           .maybeSingle()
 
         if (classSubject) {
-          // Get all assessments for this class, subject, and term
           const { data: termAssessments } = await supabase
             .from('assessments')
             .select('id, max_score')
@@ -497,166 +485,120 @@ export default function EnterScores() {
             .eq('term_id', termId)
 
           if (termAssessments && termAssessments.length > 0) {
-          const assessmentIds = termAssessments.map((a: any) => a.id)
-          const assessmentMap = new Map(termAssessments.map((a: any) => [a.id, a.max_score]))
-          const studentIds = Object.keys(scores)
-          
-          // Get grading settings
-          const { data: settings } = await supabase
+            const assessmentIds = termAssessments.map((a: any) => a.id)
+            const assessmentMap = new Map(termAssessments.map((a: any) => [a.id, a.max_score]))
+            const studentIds = Object.keys(scores)
+            
+            const { data: settings } = await supabase
               .from('system_settings')
               .select('setting_value')
               .eq('setting_key', 'class_score_percentage')
               .single()
-          
-          const classPercentage = settings?.setting_value ? Number(settings.setting_value) : 40
+            
+            const classPercentage = settings?.setting_value ? Number(settings.setting_value) : 40
 
-          // Process each student
-          await Promise.all(studentIds.map(async (studentId) => {
-            // Get all scores for this student in this term's assessments
-            const { data: studentScores } = await supabase
-              .from('student_scores')
-              .select('score, assessment_id')
-              .in('assessment_id', assessmentIds)
-              .eq('student_id', studentId)
+            await Promise.all(studentIds.map(async (studentId) => {
+              const { data: studentScores } = await supabase
+                .from('student_scores')
+                .select('score, assessment_id')
+                .in('assessment_id', assessmentIds)
+                .eq('student_id', studentId)
 
-            if (studentScores) {
-              const totalScoreGotten = studentScores.reduce((sum: number, s: any) => sum + (s.score || 0), 0)
-              
-              const expectedScore = studentScores.reduce((sum: number, s: any) => {
+              if (studentScores) {
+                const totalScoreGotten = studentScores.reduce((sum: number, s: any) => sum + (s.score || 0), 0)
+                const expectedScore = studentScores.reduce((sum: number, s: any) => {
                   const max = Number(assessmentMap.get(s.assessment_id)) || 10
                   return sum + max
-              }, 0)
-              
-              let calculatedClassScore = 0
-              if (expectedScore > 0) {
-                calculatedClassScore = (totalScoreGotten / expectedScore) * classPercentage
+                }, 0)
+                
+                let calculatedClassScore = 0
+                if (expectedScore > 0) {
+                  calculatedClassScore = (totalScoreGotten / expectedScore) * classPercentage
+                }
+                
+                calculatedClassScore = Math.round(calculatedClassScore * 100) / 100
+
+                const { data: existingScore } = await supabase
+                  .from('scores')
+                  .select('*')
+                  .eq('student_id', studentId)
+                  .eq('subject_id', selectedSubject)
+                  .eq('term_id', termId)
+                  .maybeSingle()
+
+                const examScore = existingScore?.exam_score || 0
+                const total = calculatedClassScore + examScore
+                const grade = calculateGrade(total)
+
+                if (teacher?.id) {
+                  await supabase
+                    .from('scores')
+                    .upsert({
+                      student_id: studentId,
+                      subject_id: selectedSubject,
+                      term_id: termId,
+                      class_id: selectedClass,
+                      teacher_id: teacher?.id,
+                      class_score: calculatedClassScore,
+                      exam_score: examScore,
+                      total: total,
+                      grade: grade,
+                      remarks: existingScore?.remarks || ''
+                    }, {
+                      onConflict: 'student_id,subject_id,term_id'
+                    })
+                }
               }
-              
-              // Round to 2 decimal places
-              calculatedClassScore = Math.round(calculatedClassScore * 100) / 100
-
-              // Update scores table
-              // First get existing score to preserve exam_score
-              const { data: existingScore } = await supabase
-                .from('scores')
-                .select('*')
-                .eq('student_id', studentId)
-                .eq('subject_id', selectedSubject)
-                .eq('term_id', termId)
-                .maybeSingle()
-
-              const examScore = existingScore?.exam_score || 0
-              const total = calculatedClassScore + examScore
-              const grade = calculateGrade(total)
-
-              if (!teacher?.id) {
-                console.error("Teacher ID not found")
-                return
-              }
-
-              await supabase
-                .from('scores')
-                .upsert({
-                  student_id: studentId,
-                  subject_id: selectedSubject,
-                  term_id: termId,
-                  class_id: selectedClass,
-                  teacher_id: teacher?.id,
-                  class_score: calculatedClassScore,
-                  exam_score: examScore,
-                  total: total,
-                  grade: grade,
-                  remarks: existingScore?.remarks || ''
-                }, {
-                  onConflict: 'student_id,subject_id,term_id'
-                })
-            }
-          }))
+            }))
+          }
         }
-       }
       }
 
-      toast.success('Scores saved and class scores updated successfully!', { id: toastId })
+      toast.success('Scores saved and class totals updated!', { id: toastId })
       setIsDirty(false)
       setLastSaved(new Date())
-      
-      // Redirect back to Review page if we were editing or created from there
-      setTimeout(() => {
-          if (searchParams.get('classId')) {
-             router.push(`/teacher/review-assessments`) // Or ideally maintain the selection state in review page, but simple redirect is fine
-          }
-      }, 1500)
+      sessionStorage.removeItem(`draft_scores_${selectedAssessment}`)
 
     } catch (err: any) {
       console.error('Error saving scores:', err)
-      toast.error('An error occurred while saving scores: ' + err.message, { id: toastId })
+      toast.error('Failed to save scores: ' + err.message, { id: toastId })
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
   }
 
-  // Filter Logic
-  const filteredStudents = students.filter(student => {
-    // Search filter
-    const fullName = (student.profiles?.full_name || `${student.first_name} ${student.last_name}`).toLowerCase()
-    
-    // Gender filter
-    const genderMatch = !genderFilter || student.gender?.toLowerCase() === genderFilter.toLowerCase()
-    
-    if (!searchQuery) return genderMatch
-    
-    return ((fullName.includes(searchQuery.toLowerCase())) || 
-           (student.student_id?.toLowerCase().includes(searchQuery.toLowerCase()))) && genderMatch
-  })
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      const fullName = (student.profiles?.full_name || `${student.first_name} ${student.last_name}`).toLowerCase()
+      const genderMatch = !genderFilter || student.gender?.toLowerCase() === genderFilter.toLowerCase()
+      
+      if (!searchQuery) return genderMatch
+      
+      return (
+        fullName.includes(searchQuery.toLowerCase()) || 
+        student.student_id?.toLowerCase().includes(searchQuery.toLowerCase())
+      ) && genderMatch
+    })
+  }, [students, searchQuery, genderFilter])
 
-  // Group by gender if no filter (optional, but requested in previous prompts)
-  // For now let's just sort or filter.
+  const selectedAssessmentObj = assessments.find(a => a.id === selectedAssessment)
+  const currentMaxScore = selectedAssessmentObj?.max_score || 100
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <header className="ghana-flag-border bg-white dark:bg-gray-800 shadow-md mb-8">
-            <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center">
-                 <div className="flex items-center space-x-3">
-                    <Skeleton className="w-10 h-10 rounded-full" />
-                    <div>
-                        <Skeleton className="w-48 h-5 mb-1" />
-                        <Skeleton className="w-32 h-3" />
-                    </div>
-                </div>
-                <Skeleton className="w-24 h-8 rounded" />
-            </div>
-        </header>
-        <main className="max-w-7xl mx-auto px-4 space-y-8">
-             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Skeleton className="h-10 w-full rounded-md" />
-                    <Skeleton className="h-10 w-full rounded-md" />
-                    <Skeleton className="h-10 w-full rounded-md" />
-                </div>
-             </div>
-             
-             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden border border-gray-100 dark:border-gray-700">
-                <div className="p-4 border-b border-gray-100 dark:border-gray-700">
-                     <Skeleton className="h-6 w-48" />
-                </div>
-                <div className="p-4 space-y-4">
-                     {[...Array(5)].map((_, i) => (
-                        <div key={i} className="flex gap-4">
-                            <Skeleton className="h-12 w-full rounded-md" />
-                        </div>
-                     ))}
-                </div>
-             </div>
-        </main>
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20 p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-3xl" />
+          <Skeleton className="h-96 w-full rounded-3xl" />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-28 font-sans text-gray-900 dark:text-gray-100 transition-colors">
       <style jsx global>{`
-        /* Hide spinner controls for number inputs */
         input[type=number]::-webkit-inner-spin-button, 
         input[type=number]::-webkit-outer-spin-button { 
           -webkit-appearance: none; 
@@ -667,71 +609,75 @@ export default function EnterScores() {
         }
       `}</style>
       
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 shadow sticky top-0 z-10">
-        <div className="ghana-flag-border bg-white dark:bg-gray-800 shadow-md">
-          <nav className="container mx-auto px-4 md:px-6 py-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center space-x-3">
-                <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-ghana-green" />
-                <div>
-                  <h1 className="text-base md:text-xl font-bold text-ghana-green">
-                    Biriwa Methodist 'C' Basic School
-                  </h1>
-                  <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">Teacher Portal - Enter Scores</p>
-                </div>
-              </div>
-              <BackButton 
-                label="Back to Dashboard" 
-                className="text-gray-700 dark:text-gray-300 hover:text-ghana-green gap-2" 
-              />
-            </div>
-          </nav>
-        </div>
-      </div>
-      
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-          {isReadOnly && (
-            <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-md shadow-sm">
-              <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-amber-500 mr-2" />
-                <div>
-                  <p className="font-bold text-amber-700">Read-Only Access</p>
-                  <p className="text-sm text-amber-600">
-                    You are currently marked as "On Leave". You can view scores but cannot enter or modify them.
-                  </p>
-                </div>
+      {/* Sticky Header Banner */}
+      <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 min-w-0">
+              <BackButton href="/teacher/dashboard" className="shrink-0 mt-0.5 sm:mt-0 shadow-sm" />
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 truncate">
+                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6 text-[#003B5C] dark:text-blue-400 shrink-0" />
+                  <span>Enter Assessment Scores</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
+                  Log raw marks for class work, homework, quizzes, and projects
+                </p>
               </div>
             </div>
-          )}
 
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 mb-2">
-                Enter Student Scores
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {selectedClass && selectedSubject && selectedAssessment
-                  ? `Class: ${assignments.find(a => a.class_id === selectedClass)?.classes?.name} | Subject: ${assignments.find(a => a.subject_id === selectedSubject)?.subjects?.name} | Assessment: ${assessments.find(a => a.id === selectedAssessment)?.assessment_name}` 
-                  : 'Please select a class, subject, and assessment to begin.'}
-              </p>
-            </div>
+            {selectedAssessment && (
+              <button
+                onClick={handleSaveScores}
+                disabled={saving || loadingScores || isReadOnly}
+                className={`hidden sm:inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95 text-white shrink-0 disabled:opacity-50 ${
+                  isDirty 
+                    ? 'bg-amber-600 hover:bg-amber-700' 
+                    : 'bg-[#003B5C] hover:bg-[#002a42]'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>{isDirty ? 'Save Changes' : 'Save Scores'}</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
+        </div>
+      </header>
+      
+      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
+        {isReadOnly && (
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center gap-3 text-xs sm:text-sm text-amber-900 dark:text-amber-200">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <p>
+              <strong>Read-Only Mode:</strong> You are currently marked as &ldquo;On Leave&rdquo;. You can review student scores but cannot enter or modify assessment records.
+            </p>
+          </div>
+        )}
 
-          {/* Selection Filters */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-gray-100 dark:border-gray-700">
-            <div className="grid md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Class
-                </label>
+        {/* Selection Configuration Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-5 md:p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
+            {/* Class Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Class Cohort <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
                 <select
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-gold focus:border-transparent transition-colors"
+                  className="w-full pl-4 sm:pl-5 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
                 >
-                  <option value="">-- Select Class --</option>
+                  <option value="">Select class</option>
                   {Array.from(new Set(assignments.map(a => a.class_id))).map((classId) => {
                     const assignment = assignments.find(a => a.class_id === classId)
                     return (
@@ -741,21 +687,24 @@ export default function EnterScores() {
                     )
                   })}
                 </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Subject
-                </label>
+            {/* Subject Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Assigned Subject <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
                 <select
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value)}
-                  className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-gold focus:border-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!selectedClass}
+                  className="w-full pl-4 sm:pl-5 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer disabled:opacity-50"
                 >
-                  <option value="">-- Select Subject --</option>
+                  <option value="">{selectedClass ? 'Select subject' : 'Select class first'}</option>
                   {(() => {
-                    // Get the category and map to level
                     const selectedClassData = assignments.find(a => a.class_id === selectedClass)
                     const category = selectedClassData?.classes?.category
                     const classLevel = category === 'Lower Primary' ? 'lower_primary' 
@@ -763,18 +712,14 @@ export default function EnterScores() {
                       : category === 'Junior High' ? 'jhs'
                       : null
                     
-                    // Filter subjects by level, avoiding duplicates
                     const subjectIds = new Set<string>()
                     return assignments
                       .filter(a => {
-                        // Filter by level if available, otherwise by class_id
                         if (classLevel && a.subjects?.level) {
                           if (a.subjects.level !== classLevel) return false
                         } else {
                           if (a.class_id !== selectedClass) return false
                         }
-                        
-                        // Avoid duplicate subjects
                         if (subjectIds.has(a.subject_id)) return false
                         subjectIds.add(a.subject_id)
                         return true
@@ -786,326 +731,456 @@ export default function EnterScores() {
                       ))
                   })()}
                 </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Select Assessment
-                </label>
-                <div className="flex gap-2">
+            {/* Assessment Dropdown with Integrated Action Toolbar */}
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Assessment Item <span className="text-rose-500">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 min-w-0">
                   <select
                     value={selectedAssessment}
                     onChange={(e) => setSelectedAssessment(e.target.value)}
-                    className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-gold focus:border-transparent transition-colors flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
                     disabled={!selectedSubject}
+                    className="w-full pl-4 sm:pl-5 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer disabled:opacity-50 truncate"
                   >
-                    <option value="">-- Select Assessment --</option>
+                    <option value="">{selectedSubject ? 'Select assessment' : 'Select subject first'}</option>
                     {assessments.map((assessment) => (
                       <option key={assessment.id} value={assessment.id}>
-                        {assessment.title || assessment.assessment_name} ({assessment.assessment_type || 'Assessment'})
+                        {assessment.title || assessment.assessment_name} (Max {assessment.max_score || 100})
                       </option>
                     ))}
                   </select>
-                  
+                  <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
                   {selectedAssessment && (
                     <>
-                        <button
-                            onClick={() => setShowEditModal(true)}
-                            disabled={isReadOnly}
-                            className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 px-3 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50 transition-colors"
-                            title="Edit Assessment"
-                        >
-                            <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={handleDeleteAssessment}
-                            disabled={isReadOnly || deletingId === selectedAssessment}
-                            className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 px-3 py-2 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-50 transition-colors"
-                            title="Delete Assessment"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
+                      <button
+                        type="button"
+                        onClick={openEditModal}
+                        disabled={isReadOnly}
+                        className="p-2.5 sm:p-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition disabled:opacity-40 shadow-sm"
+                        title="Edit assessment"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleDeleteAssessment}
+                        disabled={isReadOnly || deletingId === selectedAssessment}
+                        className="p-2.5 sm:p-3 rounded-xl border border-rose-200 dark:border-rose-900/40 bg-rose-50/70 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-600 dark:text-rose-400 transition disabled:opacity-40 shadow-sm"
+                        title="Delete assessment"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </>
                   )}
 
                   <button
+                    type="button"
                     onClick={() => setShowCreateModal(true)}
                     disabled={!selectedSubject || isReadOnly}
-                    className="bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
-                    title="Create New Assessment"
+                    className="p-2.5 sm:p-3 rounded-xl bg-[#003B5C] hover:bg-[#002a42] text-white shadow-md transition active:scale-95 disabled:opacity-40 flex items-center justify-center"
+                    title="Create new assessment"
                   >
-                    <span className="text-xl">+</span>
+                    <Plus className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             </div>
-            
-            {/* Filter Tools */}
-            {selectedAssessment && (
-             <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-                <div className="w-full sm:w-auto relative flex-1 max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 text-gray-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search student..." 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    />
-                </div>
-                <div className="w-full sm:w-auto min-w-[150px]">
-                    <select 
-                      value={genderFilter}
-                      onChange={(e) => setGenderFilter(e.target.value)}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                    >
-                        <option value="">All Genders</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                    </select>
-                </div>
-                <div className="w-full sm:w-auto text-sm text-gray-500">
-                    Showing {filteredStudents.length} of {students.length} students
-                </div>
-             </div>
-            )}
           </div>
-
-          {/* Edit Assessment Modal */}
-          {showEditModal && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Edit Assessment</h3>
-                    <form onSubmit={handleUpdateAssessment} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Title</label>
-                            <input 
-                                type="text" 
-                                value={editAssessmentName}
-                                onChange={e => setEditAssessmentName(e.target.value)}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                                required 
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Type</label>
-                            <select 
-                                value={editAssessmentType}
-                                onChange={e => setEditAssessmentType(e.target.value)}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="class_work">Class Work</option>
-                                <option value="homework">Homework</option>
-                                <option value="mid_term">Mid Term</option>
-                                <option value="project">Project</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Max Score</label>
-                            <input 
-                                type="number" 
-                                value={editMaxScore}
-                                onChange={e => setEditMaxScore(e.target.value)}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                                min="1"
-                                required 
-                            />
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                            <button 
-                                type="button"
-                                onClick={() => setShowEditModal(false)}
-                                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit"
-                                disabled={updatingAssessment}
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {updatingAssessment ? 'Saving...' : 'Save Changes'}
-                            </button>
-                        </div>
-                    </form>
+          
+          {/* Search & Gender Filter Row */}
+          {selectedAssessment && (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-gray-100 dark:border-gray-750">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 flex-1">
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input 
+                    type="text" 
+                    placeholder="Search student or ID..." 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  />
                 </div>
-            </div>
-          )}
 
-          {/* Create Assessment Modal */}
-          {showCreateModal && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl border border-gray-200 dark:border-gray-700">
-                    <h3 className="text-lg font-bold mb-4 text-gray-900 dark:text-white">Create New Assessment</h3>
-                    <form onSubmit={handleCreateAssessment} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Title</label>
-                            <input 
-                                type="text" 
-                                value={newAssessmentName}
-                                onChange={e => setNewAssessmentName(e.target.value)}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500"
-                                placeholder="e.g. Class Exercise 1"
-                                required 
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Type</label>
-                            <select 
-                                value={newAssessmentType}
-                                onChange={e => setNewAssessmentType(e.target.value)}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="class_work">Class Work</option>
-                                <option value="homework">Homework</option>
-                                <option value="mid_term">Mid Term</option>
-                                <option value="project">Project</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Max Score</label>
-                            <input 
-                                type="number" 
-                                value={newMaxScore}
-                                onChange={e => setNewMaxScore(e.target.value)}
-                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                                min="1"
-                                required 
-                            />
-                        </div>
-                        <div className="flex justify-end gap-2 pt-2">
-                            <button 
-                                type="button"
-                                onClick={() => setShowCreateModal(false)}
-                                className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit"
-                                disabled={creatingAssessment}
-                                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                            >
-                                {creatingAssessment ? 'Creating...' : 'Create'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-          )}
-
-          {/* Students Table */}
-          {selectedClass && selectedSubject && selectedAssessment && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
-              <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex flex-col">
-                    <h3 className="text-base md:text-lg font-bold text-gray-800 dark:text-gray-100">
-                      Enter Scores for {students.length} Students
-                    </h3>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
-                       {loadingScores ? (
-                         <span className="text-blue-600 animate-pulse">Loading saved scores...</span>
-                       ) : lastSaved ? (
-                         <span className="text-green-600">Last saved: {lastSaved.toLocaleTimeString()}</span>
-                       ) : (
-                         <span>Not saved yet this session</span>
-                       )}
-                       {isDirty && !saving && !loadingScores && (
-                          <span className="text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                            Unsaved Changes
-                          </span>
-                       )}
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleSaveScores}
-                    disabled={saving || loadingScores || isReadOnly}
-                    className={`flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-all w-full sm:w-auto ${
-                        isDirty 
-                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md' 
-                        : 'bg-ghana-green text-white hover:bg-ghana-green/90'
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                <div className="relative w-full sm:w-44">
+                  <select 
+                    value={genderFilter}
+                    onChange={(e) => setGenderFilter(e.target.value)}
+                    className="w-full pl-3.5 pr-8 py-2 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
                   >
-                    <Save className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
-                    <span>{saving ? 'Saving...' : isDirty ? 'Save Changes' : 'Save Scores'}</span>
-                  </button>
+                    <option value="">All Genders</option>
+                    <option value="Male">Boys Only</option>
+                    <option value="Female">Girls Only</option>
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-ghana-green text-white">
+              <span className="text-xs text-gray-400 font-medium self-end sm:self-auto">
+                Showing {filteredStudents.length} of {students.length} students
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Scores Workspace */}
+        {selectedClass && selectedSubject && selectedAssessment ? (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 overflow-hidden">
+            {/* Status Strip */}
+            <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-850">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                    {selectedAssessmentObj?.title || selectedAssessmentObj?.assessment_name}
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#003B5C]/10 text-[#003B5C] dark:bg-[#003B5C]/30 dark:text-blue-300">
+                    Max: {currentMaxScore} Marks
+                  </span>
+                </div>
+                
+                <div className="text-xs text-gray-400 mt-1 flex items-center gap-2 flex-wrap">
+                  {loadingScores ? (
+                    <span className="text-blue-600 animate-pulse font-medium">Loading saved scores...</span>
+                  ) : lastSaved ? (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                      Last saved: {lastSaved.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  ) : (
+                    <span>Not saved yet this session</span>
+                  )}
+
+                  {isDirty && !saving && !loadingScores && (
+                    <span className="text-amber-700 dark:text-amber-300 font-bold bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800 text-[11px]">
+                      Unsaved Changes
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-xs text-gray-400 font-medium self-end sm:self-auto">
+                {Object.keys(scores).length} of {students.length} scored
+              </div>
+            </div>
+
+            {/* MOBILE CARD VIEW (< md) */}
+            <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+              {filteredStudents.length === 0 ? (
+                <div className="p-8 text-center text-xs text-gray-400">
+                  No students found matching your filter criteria
+                </div>
+              ) : (
+                filteredStudents.map((student) => {
+                  const val = scores[student.id] !== undefined ? scores[student.id] : ''
+                  return (
+                    <div key={student.id} className="p-4 flex items-center justify-between gap-3 hover:bg-gray-50/50 dark:hover:bg-gray-750/50 transition">
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-[#003B5C]/10 dark:bg-[#003B5C]/25 text-[#003B5C] dark:text-blue-300 font-black text-xs flex items-center justify-center shrink-0">
+                          {student.first_name[0]}{student.last_name[0]}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                            {[student.last_name, student.first_name].filter(Boolean).join(', ')}
+                          </h4>
+                          <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                            {student.student_id} {student.gender ? `• ${student.gender}` : ''}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="relative">
+                          <input
+                            type="number"
+                            min="0"
+                            max={currentMaxScore}
+                            step="0.1"
+                            placeholder="—"
+                            disabled={isReadOnly}
+                            value={val}
+                            onChange={(e) => handleScoreChange(student.id, e.target.value)}
+                            className="w-20 h-10 px-2 text-center font-mono font-bold text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-900 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] disabled:opacity-40"
+                          />
+                        </div>
+                        <span className="text-[11px] text-gray-400 font-bold">/ {currentMaxScore}</span>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+
+            {/* TABLET & DESKTOP TABLE VIEW (≥ md) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[650px]">
+                <thead>
+                  <tr className="bg-gray-50/80 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700 text-[11px] font-black text-gray-400 uppercase tracking-wider">
+                    <th className="p-4 w-36">Student ID</th>
+                    <th className="p-4">Student Name</th>
+                    <th className="p-4 text-center w-28">Gender</th>
+                    <th className="p-4 text-center w-40">Score (Max: {currentMaxScore})</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-750 text-xs sm:text-sm font-medium">
+                  {filteredStudents.length === 0 ? (
                     <tr>
-                      <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase w-20 md:w-auto">
-                        ID
-                      </th>
-                      <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">
-                        Name
-                      </th>
-                      <th className="px-3 md:px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase hidden md:table-cell w-24">
-                        Gender
-                      </th>
-                      <th className="px-3 md:px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase w-24 md:w-auto">
-                        Score
-                      </th>
+                      <td colSpan={4} className="p-8 text-center text-gray-400 text-xs">
+                        No students found matching your filter criteria
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredStudents.length === 0 ? (
-                      <tr>
-                        <td colSpan={4} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
-                           No students found matching your filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredStudents.map((student) => (
-                      <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {student.student_id}
-                        </td>
-                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                          <span className="md:hidden block truncate max-w-[120px] sm:max-w-xs">{student.last_name}, {student.first_name}</span>
-                          <span className="hidden md:block">{student.last_name}, {student.middle_name ? student.middle_name + ', ' : ''}{student.first_name}</span>
-                        </td>
-                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300 hidden md:table-cell">
-                          {student.gender || 'N/A'}
-                        </td>
-                        <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-center">
-                          {loadingScores ? (
-                            <div className="w-16 md:w-24 h-8 md:h-10 mx-auto bg-gray-100 dark:bg-gray-700 animate-pulse rounded" />
-                          ) : (
+                  ) : (
+                    filteredStudents.map((student) => {
+                      const val = scores[student.id] !== undefined ? scores[student.id] : ''
+                      return (
+                        <tr key={student.id} className="hover:bg-gray-50/60 dark:hover:bg-gray-750/50 transition">
+                          <td className="p-4 whitespace-nowrap font-mono text-gray-500 dark:text-gray-400">
+                            {student.student_id}
+                          </td>
+                          <td className="p-4 whitespace-nowrap font-bold text-gray-900 dark:text-white">
+                            {[student.last_name, student.middle_name, student.first_name].filter(Boolean).join(', ')}
+                          </td>
+                          <td className="p-4 text-center whitespace-nowrap text-gray-500 dark:text-gray-400">
+                            {student.gender || '—'}
+                          </td>
+                          <td className="p-4 text-center whitespace-nowrap">
                             <input
                               type="number"
                               min="0"
-                              max="100"
+                              max={currentMaxScore}
                               step="0.1"
                               disabled={isReadOnly}
-                              value={scores[student.id] !== undefined ? scores[student.id] : ''}
+                              value={val}
                               onChange={(e) => handleScoreChange(student.id, e.target.value)}
-                              className="w-16 md:w-24 px-2 md:px-3 py-1 md:py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-ghana-green focus:border-transparent text-center disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed placeholder-gray-400 dark:placeholder-gray-500 text-sm"
+                              className="w-24 px-3 py-1.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center font-mono font-bold text-sm outline-none focus:ring-2 focus:ring-[#003B5C] disabled:opacity-40"
                               placeholder="0.0"
                             />
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                   )}
-                  </tbody>
-                </table>
-              </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-10 sm:p-14 border border-dashed border-gray-200 dark:border-gray-700 max-w-lg mx-auto text-center space-y-3 shadow-sm">
+            <Search className="w-14 h-14 text-gray-300 dark:text-gray-600 mx-auto" />
+            <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Select Assessment Workspace</h3>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+              Choose a class cohort, subject, and assessment item above to begin recording student marks.
+            </p>
+          </div>
+        )}
+      </main>
 
-          {(!selectedClass || !selectedSubject || !selectedAssessment) && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-12 text-center border border-gray-100 dark:border-gray-700">
-              <Search className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">
-                Please select a class, subject, and assessment to begin entering scores.
-              </p>
+      {/* Floating Bottom Save Bar on Mobile */}
+      {selectedAssessment && (
+        <div className="fixed bottom-4 left-4 right-4 z-40 sm:hidden animate-in slide-in-from-bottom-4">
+          <button
+            type="button"
+            onClick={handleSaveScores}
+            disabled={saving || loadingScores || isReadOnly}
+            className={`w-full py-3.5 px-6 rounded-2xl font-black text-sm shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-all text-white ${
+              isDirty 
+                ? 'bg-amber-600 hover:bg-amber-700' 
+                : 'bg-[#003B5C] hover:bg-[#002a42]'
+            } disabled:opacity-50`}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Saving Scores...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>{isDirty ? 'Save Unsaved Changes' : 'Save Scores'}</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Create Assessment Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border-t sm:border border-gray-100 dark:border-gray-700 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
+              <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">Create New Assessment</h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-          )}
-        </main>
+
+            <form onSubmit={handleCreateAssessment} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wider">
+                  Assessment Title
+                </label>
+                <input 
+                  type="text" 
+                  value={newAssessmentName}
+                  onChange={e => setNewAssessmentName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  placeholder="e.g. Class Exercise 1"
+                  required 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wider">
+                    Category
+                  </label>
+                  <div className="relative">
+                    <select 
+                      value={newAssessmentType}
+                      onChange={e => setNewAssessmentType(e.target.value)}
+                      className="w-full pl-3 pr-7 py-2.5 text-xs font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
+                    >
+                      <option value="class_work">Class Work</option>
+                      <option value="homework">Homework</option>
+                      <option value="mid_term">Mid Term</option>
+                      <option value="project">Project</option>
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wider">
+                    Max Score
+                  </label>
+                  <input 
+                    type="number" 
+                    value={newMaxScore}
+                    onChange={e => setNewMaxScore(e.target.value)}
+                    className="w-full px-3 py-2.5 text-xs font-mono font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                    min="1"
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-700">
+                <button 
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={creatingAssessment}
+                  className="px-5 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {creatingAssessment && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Create Assessment</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Assessment Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 max-w-md w-full shadow-2xl border-t sm:border border-gray-100 dark:border-gray-700 space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-700 pb-3">
+              <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">Edit Assessment</h3>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateAssessment} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wider">
+                  Assessment Title
+                </label>
+                <input 
+                  type="text" 
+                  value={editAssessmentName}
+                  onChange={e => setEditAssessmentName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  required 
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wider">
+                    Category
+                  </label>
+                  <div className="relative">
+                    <select 
+                      value={editAssessmentType}
+                      onChange={e => setEditAssessmentType(e.target.value)}
+                      className="w-full pl-3 pr-7 py-2.5 text-xs font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
+                    >
+                      <option value="class_work">Class Work</option>
+                      <option value="homework">Homework</option>
+                      <option value="mid_term">Mid Term</option>
+                      <option value="project">Project</option>
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1 uppercase tracking-wider">
+                    Max Score
+                  </label>
+                  <input 
+                    type="number" 
+                    value={editMaxScore}
+                    onChange={e => setEditMaxScore(e.target.value)}
+                    className="w-full px-3 py-2.5 text-xs font-mono font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                    min="1"
+                    required 
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-700">
+                <button 
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={updatingAssessment}
+                  className="px-5 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {updatingAssessment && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Save Changes</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

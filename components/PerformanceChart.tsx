@@ -1,4 +1,3 @@
-
 'use client'
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -32,10 +31,15 @@ export default function PerformanceChart({
     return (
       <div className={`${className || "bg-white rounded-lg border border-gray-200 p-6"}`}>
         <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4 mb-4">
-          <h3 className="text-xl font-bold flex items-center gap-2"><span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>{title}</h3>
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>
+            {title}
+          </h3>
         </div>
-        <div className="flex items-center justify-center min-h-[250px] text-gray-500 pb-6">
-          <p>Performance trends will appear after 2 or more terms</p>
+        <div className="flex items-center justify-center min-h-[250px] text-gray-500 px-6 sm:px-10 py-8 text-center">
+          <p className="max-w-md leading-relaxed">
+            Performance trends will appear after 2 or more terms
+          </p>
         </div>
       </div>
     )
@@ -44,7 +48,10 @@ export default function PerformanceChart({
   return (
     <div className={`${className || "bg-white rounded-lg border border-gray-200"}`}>
       <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4 mb-4">
-         <h3 className="text-xl font-bold flex items-center gap-2"><span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>{title}</h3>
+        <h3 className="text-xl font-bold flex items-center gap-2">
+          <span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>
+          {title}
+        </h3>
       </div>
       <div className="px-6 pb-6">
         <ResponsiveContainer width="100%" height={300}>

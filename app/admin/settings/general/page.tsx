@@ -3,7 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Globe, BookOpen, TrendingUp, ArrowRight, Edit2, X } from 'lucide-react'
+import { 
+  ArrowLeft, Save, Globe, BookOpen, TrendingUp, ArrowRight, 
+  Edit2, X, ChevronDown, Calendar, Clock, AlertCircle, 
+  CheckCircle2, ShieldCheck, Sliders, Bell, Sparkles, Loader2
+} from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -18,7 +22,7 @@ export default function GeneralSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string>('')
-    const [upperPrimaryModel, setUpperPrimaryModel] = useState('class_teacher')
+  const [upperPrimaryModel, setUpperPrimaryModel] = useState('class_teacher')
   const [currentTermId, setCurrentTermId] = useState<string>('')
   const [showRenameModal, setShowRenameModal] = useState(false)
   const [renameData, setRenameData] = useState({ name: '', academic_year: '' })
@@ -49,20 +53,23 @@ export default function GeneralSettings() {
         return
       }
 
-      // Load settings from academic_settings table (for dates and flags)
+      // Load settings from academic_settings table
       const { data: academicSettings } = await supabase
         .from('academic_settings')
         .select('*')
         .single()
 
-      // Load system_settings for other configs
+      if (academicSettings?.id) {
+        setSettingsId(academicSettings.id)
+      }
+
+      // Load system_settings
       const { data: systemSettingsData } = await supabase
         .from('system_settings')
         .select('*') as { data: any[] | null }
 
       const systemSettingsMap = new Map(systemSettingsData?.map((s: any) => [s.setting_key, s.setting_value]) || [])
 
-      // Check if we have a current term ID in system settings (source of truth for other portals)
       const activeTermId = systemSettingsMap.get('current_term')
       if (activeTermId) setCurrentTermId(activeTermId)
       let currentTermName = academicSettings?.current_term || ''
@@ -101,16 +108,14 @@ export default function GeneralSettings() {
       }
       
       setUpperPrimaryModel(systemSettingsMap.get('upper_primary_teaching_model') || 'class_teacher')
-
       setLoading(false)
     }
     loadSettings()
-  }, [router])
+  }, [router, supabase])
 
-    const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validate the academic year format (canonical: YYYY/YY, e.g. 2026/27).
     if (!isValidAcademicYear(formData.current_academic_year)) {
       setYearError('Academic year must be in YYYY/YY format (e.g. 2026/27).')
       toast.error('Academic year must be in YYYY/YY format (e.g. 2026/27).')
@@ -120,8 +125,6 @@ export default function GeneralSettings() {
     setSaving(true)
 
     try {
-      const user = await getCurrentUser()
-      
       // 1. Update academic_settings table
       const { error: academicError } = await supabase
         .from('academic_settings')
@@ -131,19 +134,17 @@ export default function GeneralSettings() {
           term_start_date: formData.term_start_date || null,
           term_end_date: formData.term_end_date || null,
           next_term_starts: formData.next_term_starts || null,
-          // Simplify: Reopening date is same as term start, Vacation start is same as term end
           school_reopening_date: formData.term_start_date || null,
           vacation_start_date: formData.term_end_date || null,
           allow_online_admission: formData.allow_online_admission,
           allow_result_viewing: formData.allow_result_viewing,
           updated_at: new Date().toISOString(),
         })
-        .neq('id', '00000000-0000-0000-0000-000000000000') // Update all rows (should be only one)
+        .neq('id', '00000000-0000-0000-0000-000000000000')
 
       if (academicError) throw new Error('Failed to update academic settings: ' + academicError.message)
 
       // 1.5 Sync system_settings (current_term ID)
-      // Find the term ID for the selected name and year
       const { data: existingTerm } = await supabase
         .from('academic_terms')
         .select('id')
@@ -153,9 +154,8 @@ export default function GeneralSettings() {
 
       let termId = existingTerm?.id
 
-      // If term doesn't exist, create it
       if (!termId && formData.current_term && formData.current_academic_year) {
-                const { data: newTerm, error: createTermError } = await supabase
+        const { data: newTerm, error: createTermError } = await supabase
           .from('academic_terms')
           .insert({
             name: formData.current_term,
@@ -176,7 +176,6 @@ export default function GeneralSettings() {
         }
       }
 
-      // Update system_settings with the term ID
       if (termId) {
         const { error: sysError } = await supabase
           .from('system_settings')
@@ -188,12 +187,10 @@ export default function GeneralSettings() {
           }, { onConflict: 'setting_key' })
 
         if (sysError) {
-          console.error('System settings update error:', sysError)
           throw new Error('Failed to sync current term to system settings.')
         }
 
-        // Sync current_academic_year to system_settings as well
-        const { error: yearError } = await supabase
+        await supabase
           .from('system_settings')
           .upsert({
             setting_key: 'current_academic_year',
@@ -202,35 +199,26 @@ export default function GeneralSettings() {
             updated_at: new Date().toISOString(),
           }, { onConflict: 'setting_key' })
 
-        if (yearError) {
-          console.error('System settings year update error:', yearError)
-          // Not throwing here to avoid blocking the whole save if just this fails, but good to log
-        }
-          
-        // Also ensure is_current flag and dates are set correctly in academic_terms
         await supabase
           .from('academic_terms')
           .update({ is_current: false })
           .neq('id', termId)
           
-                await supabase
+        await supabase
           .from('academic_terms')
           .update({ 
             is_current: true,
             start_date: formData.term_start_date || null,
             end_date: formData.term_end_date || null,
-            // Keep this term's per-term dates in sync with the simple settings.
-            // Reopening = when this term starts; Vacation = when this term ends.
             vacation_date: formData.term_end_date || null,
             reopening_date: formData.term_start_date || null
           })
           .eq('id', termId)
       } else {
-        console.warn('Could not find or create term ID for sync.')
         throw new Error('Could not find or create the specified academic term.')
       }
 
-      // 2. Update system_settings for teaching model
+      // 2. Teaching model
       const { error: modelError } = await supabase
         .from('system_settings')
         .upsert({
@@ -242,7 +230,7 @@ export default function GeneralSettings() {
 
       if (modelError) throw new Error('Failed to update teaching model: ' + modelError.message)
 
-      // 3. Update system_settings for allow_cumulative_download
+      // 3. Cumulative download
       const { error: cumulativeError } = await supabase
         .from('system_settings')
         .upsert({
@@ -252,9 +240,9 @@ export default function GeneralSettings() {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'setting_key' })
 
-            if (cumulativeError) throw new Error('Failed to update cumulative download setting: ' + cumulativeError.message)
+      if (cumulativeError) throw new Error('Failed to update cumulative download setting: ' + cumulativeError.message)
 
-      // 3.5 Update allow_teacher_class_score_entry
+      // 4. Class score entry
       const { error: classScoreEntryError } = await supabase
         .from('system_settings')
         .upsert({
@@ -267,7 +255,7 @@ export default function GeneralSettings() {
 
       if (classScoreEntryError) throw new Error('Failed to update class score entry setting: ' + classScoreEntryError.message)
 
-      // 4. Update class_score_percentage
+      // 5. Class score percentage
       const { error: classScoreError } = await supabase
         .from('system_settings')
         .upsert({
@@ -280,7 +268,7 @@ export default function GeneralSettings() {
 
       if (classScoreError) throw new Error('Failed to update class score percentage: ' + classScoreError.message)
 
-      // 5. Update exam_score_percentage
+      // 6. Exam score percentage
       const { error: examScoreError } = await supabase
         .from('system_settings')
         .upsert({
@@ -291,20 +279,20 @@ export default function GeneralSettings() {
           updated_at: new Date().toISOString(),
         }, { onConflict: 'setting_key' })
 
-        if (examScoreError) throw new Error('Failed to update exam score percentage: ' + examScoreError.message)
+      if (examScoreError) throw new Error('Failed to update exam score percentage: ' + examScoreError.message)
 
-        // 6. Update progress_alert_threshold
-        const { error: thresholdError } = await supabase
-          .from('system_settings')
-          .upsert({
-            setting_key: 'progress_alert_threshold',
-            setting_value: String(formData.progress_alert_threshold),
-            setting_type: 'number',
-            description: 'Term progress percentage to trigger alerts',
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'setting_key' })
+      // 7. Progress alert threshold
+      const { error: thresholdError } = await supabase
+        .from('system_settings')
+        .upsert({
+          setting_key: 'progress_alert_threshold',
+          setting_value: String(formData.progress_alert_threshold),
+          setting_type: 'number',
+          description: 'Term progress percentage to trigger alerts',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'setting_key' })
 
-        if (thresholdError) throw new Error('Failed to update progress alert threshold: ' + thresholdError.message)
+      if (thresholdError) throw new Error('Failed to update progress alert threshold: ' + thresholdError.message)
 
       toast.success('General settings updated successfully!')
     } catch (error: any) {
@@ -315,11 +303,10 @@ export default function GeneralSettings() {
     }
   }
 
-    const handleRenameSubmit = async (e: React.FormEvent) => {
+  const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!currentTermId) return
 
-    // Validate the academic year format in the rename modal too.
     if (!isValidAcademicYear(renameData.academic_year)) {
       setRenameYearError('Academic year must be in YYYY/YY format (e.g. 2026/27).')
       toast.error('Academic year must be in YYYY/YY format (e.g. 2026/27).')
@@ -329,7 +316,6 @@ export default function GeneralSettings() {
 
     setSaving(true)
     try {
-      // 1. Update academic_terms directly
       const { error: termError } = await supabase
         .from('academic_terms')
         .update({
@@ -340,7 +326,6 @@ export default function GeneralSettings() {
 
       if (termError) throw new Error('Failed to update term: ' + termError.message)
 
-      // 2. Update cached values in academic_settings and system_settings to match
       if (settingsId) {
         await supabase
           .from('academic_settings')
@@ -374,72 +359,81 @@ export default function GeneralSettings() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center space-x-4">
-              <Skeleton className="h-6 w-6 rounded-full" />
-              <div className="flex items-center space-x-3">
-                <Skeleton className="h-8 w-8 rounded-full" />
-                <div>
-                  <Skeleton className="h-6 w-48 mb-1" />
-                  <Skeleton className="h-4 w-64" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="container mx-auto px-6 py-8">
-          <div className="max-w-4xl mx-auto space-y-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-white rounded-lg shadow p-6 space-y-4">
-                <Skeleton className="h-6 w-48" />
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </main>
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20 p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-64 w-full rounded-3xl" />
+          <Skeleton className="h-64 w-full rounded-3xl" />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center space-x-4">
-            <BackButton href="/admin/settings" />
-            <div className="flex items-center space-x-3">
-              <Globe className="w-8 h-8 text-ghana-green" />
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">General Settings</h1>
-                <p className="text-xs md:text-sm text-gray-600">Configure academic year and system preferences</p>
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-28 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+      {/* Sticky Top Header */}
+      <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center space-x-2.5 sm:space-x-4 min-w-0">
+              <BackButton href="/admin/settings" className="shrink-0 shadow-sm" />
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 truncate">
+                  <Globe className="w-5 h-5 sm:w-6 sm:h-6 text-[#003B5C] dark:text-blue-400 shrink-0" />
+                  <span>General System Settings</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
+                  Configure session calendars, teaching structures, and system policies
+                </p>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={saving}
+              className="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 shrink-0"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Save All Changes</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6">
-          {/* Academic Year Settings */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base md:text-lg font-bold text-gray-800">Academic Year & Term</h2>
+      <main className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-7">
+        <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-7">
+
+          {/* Section 1: Academic Year & Term Configuration */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 md:p-7 space-y-4 sm:space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-700/80 pb-3 sm:pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#003B5C]/10 dark:bg-[#003B5C]/25 text-[#003B5C] dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">
+                  1
+                </div>
+                <div>
+                  <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                    Active Academic Year & Session
+                  </h2>
+                  <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
+                    Controls global session context for grade recording and reports
+                  </p>
+                </div>
+              </div>
+
               {currentTermId && (
                 <button
                   type="button"
-                                    onClick={() => {
+                  onClick={() => {
                     setRenameData({
                       name: formData.current_term,
                       academic_year: formData.current_academic_year
@@ -447,16 +441,19 @@ export default function GeneralSettings() {
                     setRenameYearError('')
                     setShowRenameModal(true)
                   }}
-                  className="flex items-center text-xs text-blue-600 hover:text-blue-800 px-3 py-1 bg-blue-50 rounded-md border border-blue-200"
+                  className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-[#003B5C] dark:text-blue-300 bg-[#003B5C]/10 hover:bg-[#003B5C]/20 border border-[#003B5C]/20 transition active:scale-95"
                 >
-                  <Edit2 className="w-3 h-3 mr-1" />
-                  Fix Typo / Rename Active Term
+                  <Edit2 className="w-3.5 h-3.5" />
+                  <span>Rename Active Term</span>
                 </button>
               )}
             </div>
-            <div className="grid md:grid-cols-2 gap-6">
-                            <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Current Academic Year *</label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Current Academic Year <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   required
@@ -465,405 +462,520 @@ export default function GeneralSettings() {
                     setFormData({...formData, current_academic_year: e.target.value})
                     if (isValidAcademicYear(e.target.value)) setYearError('')
                   }}
-                  className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue ${yearError ? 'border-red-500' : ''}`}
+                  className={`w-full px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-bold border rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] transition ${
+                    yearError ? 'border-rose-500 dark:border-rose-500' : 'border-gray-200 dark:border-gray-700'
+                  }`}
                   placeholder="2026/27"
                 />
                 {yearError ? (
-                  <p className="mt-1 text-xs text-red-600">{yearError}</p>
+                  <p className="mt-1.5 text-xs text-rose-600 dark:text-rose-400 font-medium">{yearError}</p>
                 ) : (
-                  <p className="mt-1 text-xs text-gray-500">Format: YYYY/YY (e.g. 2026/27)</p>
+                  <p className="mt-1.5 text-[11px] text-gray-400 font-medium">Standard GES Format: YYYY/YY (e.g. 2026/27)</p>
                 )}
               </div>
-                            <div>
-                <label className="block text-xs md:text-sm font-medium text-gray-700 mb-2">Current Term *</label>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Current Term <span className="text-rose-500">*</span>
+                </label>
                 <div className="relative">
                   <select
                     required
                     value={formData.current_term}
                     onChange={(e) => setFormData({...formData, current_term: e.target.value})}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue bg-white"
+                    className="w-full pl-3.5 sm:pl-4 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
                   >
-                    <option value="" disabled>Select a term</option>
+                    <option value="" disabled>Select active term</option>
                     <option value="Term 1">Term 1</option>
                     <option value="Term 2">Term 2</option>
                     <option value="Term 3">Term 3</option>
                   </select>
+                  <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
-                <p className="mt-1 text-xs text-gray-500">
-                  Select from Term 1, Term 2, or Term 3.
-                </p>
+                <p className="mt-1.5 text-[11px] text-gray-400 font-medium">Select active term session</p>
               </div>
             </div>
           </div>
 
-                    {/* Term Dates */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Term Dates</h2>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-blue-800">
-                Dates are stored in the system as <strong>dd/mm/yyyy</strong> format. Pick a date below and it will be shown on report cards as e.g. <strong>08/Nov/2026</strong>.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
+          {/* Section 2: Term Dates */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 md:p-7 space-y-4 sm:space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-gray-100 dark:border-gray-700/80 pb-3 sm:pb-4">
+              <div className="w-8 h-8 rounded-xl bg-[#003B5C]/10 dark:bg-[#003B5C]/25 text-[#003B5C] dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">
+                2
+              </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Term Start Date (Reopening)</label>
+                <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                  Term Milestones & Vacation Calendar
+                </h2>
+                <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
+                  Populates report cards, student portal dashboards, and SMS alerts
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-blue-50/80 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 rounded-xl p-3 sm:p-4 text-xs text-blue-900 dark:text-blue-200 flex items-start gap-2.5">
+              <Calendar className="w-4 h-4 text-[#003B5C] dark:text-blue-400 shrink-0 mt-0.5" />
+              <span>
+                Dates convert automatically on student report cards (e.g. <strong className="font-bold">08/Nov/2026</strong>).
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5">
+              {/* Term Start Date */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Term Start / Reopening Date
+                </label>
                 <input
                   type="date"
                   value={formData.term_start_date}
                   onChange={(e) => setFormData({...formData, term_start_date: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  Display format: <span className="font-mono font-semibold text-gray-700">{formatDateDDMMYYYY(formData.term_start_date)}</span>
-                  {formData.term_start_date && (
-                    <span className="ml-2 text-gray-400">→ {formatDateDDMMMYYYY(formData.term_start_date)} (on report card)</span>
-                  )}
-                </p>
-                <p className="text-[10px] md:text-xs text-gray-400">
-                  Also sets the School Reopening Date
+                <p className="mt-1.5 text-[11px] text-gray-400">
+                  Formatted: <span className="font-mono font-bold text-gray-700 dark:text-gray-300">{formatDateDDMMYYYY(formData.term_start_date)}</span>
                 </p>
               </div>
+
+              {/* Term End Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Term End Date (Vacation)</label>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Term End / Vacation Date
+                </label>
                 <input
                   type="date"
                   value={formData.term_end_date}
                   onChange={(e) => setFormData({...formData, term_end_date: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  Display format: <span className="font-mono font-semibold text-gray-700">{formatDateDDMMYYYY(formData.term_end_date)}</span>
-                  {formData.term_end_date && (
-                    <span className="ml-2 text-gray-400">→ {formatDateDDMMMYYYY(formData.term_end_date)} (on report card)</span>
-                  )}
-                </p>
-                <p className="text-[10px] md:text-xs text-gray-400">
-                  Also sets the Vacation Start Date
+                <p className="mt-1.5 text-[11px] text-gray-400">
+                  Formatted: <span className="font-mono font-bold text-gray-700 dark:text-gray-300">{formatDateDDMMYYYY(formData.term_end_date)}</span>
                 </p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Next Term Starts</label>
+
+              {/* Next Term Starts */}
+              <div className="sm:col-span-2 lg:col-span-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Next Term Reopening Date
+                </label>
                 <input
                   type="date"
                   value={formData.next_term_starts}
                   onChange={(e) => setFormData({...formData, next_term_starts: e.target.value})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
+                  className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-semibold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  Display format: <span className="font-mono font-semibold text-gray-700">{formatDateDDMMYYYY(formData.next_term_starts)}</span>
+                <p className="mt-1.5 text-[11px] text-gray-400">
+                  Formatted: <span className="font-mono font-bold text-gray-700 dark:text-gray-300">{formatDateDDMMYYYY(formData.next_term_starts)}</span>
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Teaching Model Configuration */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Teaching Model Configuration</h2>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> This setting determines how Upper Primary (P4-P6) classes are organized.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upper Primary (P4-P6) Teaching Model
-              </label>
-
-              {/* Class Teacher Model */}
-              <div className={`border rounded-lg p-4 transition-all cursor-pointer ${
-                upperPrimaryModel === 'class_teacher' 
-                  ? 'border-ghana-green bg-green-50' 
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}
-              onClick={() => setUpperPrimaryModel('class_teacher')}>
-                <label className="flex items-start space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="teaching_model"
-                    value="class_teacher"
-                    checked={upperPrimaryModel === 'class_teacher'}
-                    onChange={(e) => setUpperPrimaryModel(e.target.value)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">Class Teacher Model</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      One teacher assigned to teach <strong>all subjects</strong> in the class. Similar to Lower Primary model.
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2 space-y-1">
-                      <div>✅ Teacher has full access to all subjects</div>
-                      <div>✅ Teacher marks attendance</div>
-                      <div>✅ Ideal when teacher availability is limited</div>
-                    </div>
-                  </div>
-                </label>
+          {/* Section 3: Teaching Model Configuration */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 md:p-7 space-y-4 sm:space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-gray-100 dark:border-gray-700/80 pb-3 sm:pb-4">
+              <div className="w-8 h-8 rounded-xl bg-[#003B5C]/10 dark:bg-[#003B5C]/25 text-[#003B5C] dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">
+                3
               </div>
-
-              {/* Subject Teacher Model */}
-              <div className={`border rounded-lg p-4 transition-all cursor-pointer ${
-                upperPrimaryModel === 'subject_teacher' 
-                  ? 'border-ghana-green bg-green-50' 
-                  : 'border-gray-200 hover:bg-gray-50'
-              }`}
-              onClick={() => setUpperPrimaryModel('subject_teacher')}>
-                <label className="flex items-start space-x-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="teaching_model"
-                    value="subject_teacher"
-                    checked={upperPrimaryModel === 'subject_teacher'}
-                    onChange={(e) => setUpperPrimaryModel(e.target.value)}
-                    className="mt-1"
-                  />
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">Subject Teacher Model</div>
-                    <div className="text-sm text-gray-600 mt-1">
-                      Multiple teachers assigned to teach <strong>specific subjects</strong> in the class. Similar to JHS model.
-                    </div>
-                    <div className="text-xs text-gray-500 mt-2 space-y-1">
-                      <div>✅ Class teacher views all subjects, edits only assigned</div>
-                      <div>✅ Subject teachers only see their subjects</div>
-                      <div>✅ Class teacher marks attendance</div>
-                      <div>✅ Ideal for subject specialization</div>
-                    </div>
-                  </div>
-                </label>
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                  Upper Primary (P4-P6) Teaching Model
+                </h2>
+                <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
+                  Configures subject assignment and score entry boundaries for Basic 4 through 6
+                </p>
               </div>
             </div>
 
-            {/* Reference Info */}
-            <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-2">Teaching Models by Level:</h3>
-              <div className="text-sm text-gray-700 space-y-1">
-                <div>• <strong>Lower Primary (P1-P3):</strong> Always Class Teacher Model</div>
-                <div>• <strong>Upper Primary (P4-P6):</strong> <span className="font-semibold text-ghana-green">Configurable (setting above)</span></div>
-                <div>• <strong>JHS (JHS 1-3):</strong> Always Subject Teacher Model</div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4">
+              {/* Option A: Class Teacher */}
+              <div 
+                onClick={() => setUpperPrimaryModel('class_teacher')}
+                className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                  upperPrimaryModel === 'class_teacher'
+                    ? 'border-[#003B5C] bg-[#003B5C]/5 dark:bg-[#003B5C]/15 shadow-sm'
+                    : 'border-gray-200/80 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
+                    upperPrimaryModel === 'class_teacher' ? 'border-[#003B5C] bg-[#003B5C]' : 'border-gray-300'
+                  }`}>
+                    {upperPrimaryModel === 'class_teacher' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">
+                      Class Teacher Model
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                      One main teacher manages and scores <strong>all subjects</strong> in the assigned classroom.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-gray-100 dark:border-gray-750 text-[11px] text-gray-500 dark:text-gray-400 space-y-1">
+                  <p className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>Full grade entry across all class subjects</span>
+                  </p>
+                  <p className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>Single point of attendance and broadsheet tracking</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Option B: Subject Teacher */}
+              <div 
+                onClick={() => setUpperPrimaryModel('subject_teacher')}
+                className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
+                  upperPrimaryModel === 'subject_teacher'
+                    ? 'border-[#003B5C] bg-[#003B5C]/5 dark:bg-[#003B5C]/15 shadow-sm'
+                    : 'border-gray-200/80 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
+                    upperPrimaryModel === 'subject_teacher' ? 'border-[#003B5C] bg-[#003B5C]' : 'border-gray-300'
+                  }`}>
+                    {upperPrimaryModel === 'subject_teacher' && <div className="w-2 h-2 rounded-full bg-white" />}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">
+                      Subject Teacher Model
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                      Teachers are assigned to specific subjects (similar to JHS model).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-gray-100 dark:border-gray-750 text-[11px] text-gray-500 dark:text-gray-400 space-y-1">
+                  <p className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>Subject teachers only access assigned subjects</span>
+                  </p>
+                  <p className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                    <span>Class teachers retain overview & attendance authority</span>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Grading Configuration */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Grading Configuration</h2>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Important:</strong> These percentages must add up to 100%. They determine how final grades are calculated.
-              </p>
-            </div>
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Class Score Percentage (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  required
-                  value={formData.class_score_percentage}
-                  onChange={(e) => setFormData({...formData, class_score_percentage: Number(e.target.value)})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                />
+          {/* Section 4: Grading Weightage Configuration */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 md:p-7 space-y-4 sm:space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-gray-100 dark:border-gray-700/80 pb-3 sm:pb-4">
+              <div className="w-8 h-8 rounded-xl bg-[#003B5C]/10 dark:bg-[#003B5C]/25 text-[#003B5C] dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">
+                4
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Exam Score Percentage (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  required
-                  value={formData.exam_score_percentage}
-                  onChange={(e) => setFormData({...formData, exam_score_percentage: Number(e.target.value)})}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                />
+                <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                  Assessment Weightage Ratio
+                </h2>
+                <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
+                  Combined score must equal 100% (Standard GES: 40% Continuous Assessment / 60% Exam)
+                </p>
               </div>
             </div>
-            {formData.class_score_percentage + formData.exam_score_percentage !== 100 && (
-              <p className="text-red-600 text-sm mt-2">
-                ⚠️ Total percentage must be 100% (Currently: {formData.class_score_percentage + formData.exam_score_percentage}%)
-              </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-5">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Class Assessment Ratio (%) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                    value={formData.class_score_percentage}
+                    onChange={(e) => setFormData({...formData, class_score_percentage: Number(e.target.value)})}
+                    className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-bold font-mono border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-xs text-gray-400">%</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Terminal Exam Ratio (%) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    required
+                    value={formData.exam_score_percentage}
+                    onChange={(e) => setFormData({...formData, exam_score_percentage: Number(e.target.value)})}
+                    className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-bold font-mono border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-xs text-gray-400">%</span>
+                </div>
+              </div>
+            </div>
+
+            {formData.class_score_percentage + formData.exam_score_percentage !== 100 ? (
+              <div className="bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/40 rounded-xl p-3 text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>
+                  Total percentage must equal 100%. (Currently: {formData.class_score_percentage + formData.exam_score_percentage}%)
+                </span>
+              </div>
+            ) : (
+              <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/40 rounded-xl p-3 text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>Ratios balanced correctly: {formData.class_score_percentage}% Class Score + {formData.exam_score_percentage}% Exam Score = 100%</span>
+              </div>
             )}
           </div>
 
-          {/* System Preferences */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">System Preferences</h2>
-            <div className="space-y-4">
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                <div>
-                  <p className="font-medium text-gray-800">Allow Online Admission</p>
-                  <p className="text-sm text-gray-600">Enable online admission form on website</p>
+          {/* Section 5: System Policies & Student Preferences */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 md:p-7 space-y-4 sm:space-y-5">
+            <div className="flex items-center gap-2.5 border-b border-gray-100 dark:border-gray-700/80 pb-3 sm:pb-4">
+              <div className="w-8 h-8 rounded-xl bg-[#003B5C]/10 dark:bg-[#003B5C]/25 text-[#003B5C] dark:text-blue-300 flex items-center justify-center font-bold text-xs shrink-0">
+                5
+              </div>
+              <div>
+                <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                  System Policies & Security Controls
+                </h2>
+                <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
+                  Portal visibility toggles and threshold alert settings
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {/* Online Admission */}
+              <label className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border border-gray-200/80 dark:border-gray-700 hover:bg-gray-50/60 dark:hover:bg-gray-750/50 transition cursor-pointer gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Allow Online Admission</p>
+                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">Enable applicant registration on public portal</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={formData.allow_online_admission}
                   onChange={(e) => setFormData({...formData, allow_online_admission: e.target.checked})}
-                  className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
+                  className="w-5 h-5 rounded text-[#003B5C] focus:ring-[#003B5C] border-gray-300 dark:border-gray-600 shrink-0 cursor-pointer"
                 />
               </label>
-              
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                <div>
-                  <p className="font-medium text-gray-800">Allow Result Viewing</p>
-                  <p className="text-sm text-gray-600">Students can view their results online</p>
+
+              {/* Result Viewing */}
+              <label className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border border-gray-200/80 dark:border-gray-700 hover:bg-gray-50/60 dark:hover:bg-gray-750/50 transition cursor-pointer gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Allow Student Result Viewing</p>
+                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">Enables parent/student terminal report checks</p>
                 </div>
                 <input
                   type="checkbox"
                   checked={formData.allow_result_viewing}
                   onChange={(e) => setFormData({...formData, allow_result_viewing: e.target.checked})}
-                  className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
+                  className="w-5 h-5 rounded text-[#003B5C] focus:ring-[#003B5C] border-gray-300 dark:border-gray-600 shrink-0 cursor-pointer"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                <div>
-                  <p className="font-medium text-gray-800">Allow Cumulative Record Download</p>
-                  <p className="text-sm text-gray-600">Students can download their full academic history</p>
+              {/* Cumulative Download */}
+              <label className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border border-gray-200/80 dark:border-gray-700 hover:bg-gray-50/60 dark:hover:bg-gray-750/50 transition cursor-pointer gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Cumulative Transcript Downloads</p>
+                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">Permits learners to download cumulative multi-term academic history</p>
                 </div>
                 <input
                   type="checkbox"
-                                    checked={formData.allow_cumulative_download}
+                  checked={formData.allow_cumulative_download}
                   onChange={(e) => setFormData({...formData, allow_cumulative_download: e.target.checked})}
-                  className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
+                  className="w-5 h-5 rounded text-[#003B5C] focus:ring-[#003B5C] border-gray-300 dark:border-gray-600 shrink-0 cursor-pointer"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100">
-                <div>
-                  <p className="font-medium text-gray-800">Allow Teacher Class Score Entry</p>
-                  <p className="text-sm text-gray-600">Allow teachers to manually enter class scores on the Exam Scores page. When disabled, the class score field is read-only and auto-calculated from assessments.</p>
+              {/* Teacher Class Score Entry */}
+              <label className="flex items-center justify-between p-3.5 sm:p-4 rounded-2xl border border-gray-200/80 dark:border-gray-700 hover:bg-gray-50/60 dark:hover:bg-gray-750/50 transition cursor-pointer gap-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Manual Class Score Entry for Teachers</p>
+                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    When disabled, teachers can only input exams; class score scales automatically from recorded tasks.
+                  </p>
                 </div>
                 <input
                   type="checkbox"
                   checked={formData.allow_teacher_class_score_entry}
                   onChange={(e) => setFormData({...formData, allow_teacher_class_score_entry: e.target.checked})}
-                  className="w-5 h-5 text-methodist-blue rounded focus:ring-2 focus:ring-methodist-blue"
+                  className="w-5 h-5 rounded text-[#003B5C] focus:ring-[#003B5C] border-gray-300 dark:border-gray-600 shrink-0 cursor-pointer"
                 />
               </label>
 
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <p className="font-medium text-gray-800">Term Progress Alert Threshold (%)</p>
-                    <p className="text-sm text-gray-600">Notify admins and teachers when term progress reaches this percentage</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={formData.progress_alert_threshold}
-                      onChange={(e) => setFormData({...formData, progress_alert_threshold: parseInt(e.target.value) || 90})}
-                      className="w-20 px-3 py-1.5 border border-gray-300 rounded focus:ring-2 focus:ring-methodist-blue"
-                    />
-                    <span className="text-gray-500 font-medium">%</span>
-                  </div>
+              {/* Progress Alert Threshold */}
+              <div className="p-3.5 sm:p-4 rounded-2xl border border-gray-200/80 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-850">
+                <div className="min-w-0">
+                  <p className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">Term Progress Alert Threshold</p>
+                  <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    Notifies portal admins when term elapsed calendar days hit this percentage
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                  <input
+                    type="number"
+                    min="1"
+                    max="100"
+                    value={formData.progress_alert_threshold}
+                    onChange={(e) => setFormData({...formData, progress_alert_threshold: parseInt(e.target.value) || 90})}
+                    className="w-20 px-3 py-1.5 text-center font-bold font-mono text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  />
+                  <span className="text-xs font-bold text-gray-400">%</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Academic Year Transition */}
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-indigo-500">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-gray-800 flex items-center space-x-2">
-                  <TrendingUp className="w-5 h-5 text-indigo-600" />
-                  <span>Academic Year Transition</span>
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Promote students to new academic year (30+ average auto-promoted)
-                </p>
-              </div>
-              <Link 
-                href="/admin/settings/year-transition"
-                className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 flex items-center space-x-2 text-sm font-medium"
-              >
-                <span>Configure</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+          {/* Section 6: Academic Year Transition Banner */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-indigo-100 dark:border-indigo-900/40 p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-indigo-500" />
+            <div className="space-y-1 min-w-0">
+              <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span>End-of-Year Class Promotion & Transition</span>
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                Promote students to new cohorts, archive previous session records, and graduate JHS 3 cohorts.
+              </p>
             </div>
+
+            <Link
+              href="/admin/settings/year-transition"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-bold transition shadow-sm shrink-0"
+            >
+              <span>Transition Wizard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
 
-          <div className="flex items-center justify-end space-x-4">
-            <Link href="/admin/settings" className="px-6 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">
+          {/* Desktop Form Save Action */}
+          <div className="hidden sm:flex items-center justify-end gap-3 pt-2">
+            <Link
+              href="/admin/settings"
+              className="px-5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+            >
               Cancel
             </Link>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 disabled:opacity-50"
+              className="px-6 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-2 disabled:opacity-50 active:scale-95"
             >
-              <Save className="w-5 h-5" />
-              <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span>{saving ? 'Saving Changes...' : 'Save All Settings'}</span>
             </button>
           </div>
         </form>
+      </main>
 
-        {showRenameModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden">
-              <div className="flex justify-between items-center p-4 border-b">
-                <h3 className="text-lg font-bold text-gray-800">Fix Typo in Active Term</h3>
-                <button type="button" onClick={() => setShowRenameModal(false)} className="text-gray-500 hover:text-gray-700">
-                  <X className="w-5 h-5" />
+      {/* Floating Bottom Bar on Mobile */}
+      <div className="fixed bottom-4 left-4 right-4 z-40 sm:hidden animate-in slide-in-from-bottom-4">
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={saving}
+          className="w-full py-3.5 px-6 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-2xl font-black text-sm shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Saving Configurations...</span>
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              <span>Save Settings</span>
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Rename Term Modal (Responsive Bottom-Sheet on Mobile, Centered on Tablet/Desktop) */}
+      {showRenameModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full shadow-2xl p-5 sm:p-6 space-y-4 border-t sm:border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-750 pb-3">
+              <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">
+                Rename Active Term Record
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowRenameModal(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+              <span>
+                Use this strictly to correct typos in the current session without creating duplicated term rows.
+              </span>
+            </div>
+
+            <form onSubmit={handleRenameSubmit} className="space-y-4 pt-1">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Academic Year
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={renameData.academic_year}
+                  onChange={(e) => {
+                    setRenameData({ ...renameData, academic_year: e.target.value })
+                    if (isValidAcademicYear(e.target.value)) setRenameYearError('')
+                  }}
+                  className={`w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold border rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] ${
+                    renameYearError ? 'border-rose-500' : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                  placeholder="2026/27"
+                />
+                {renameYearError && (
+                  <p className="mt-1 text-xs text-rose-600 font-medium">{renameYearError}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Term Designation
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={renameData.name}
+                  onChange={(e) => setRenameData({ ...renameData, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  placeholder="Term 1"
+                />
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-750">
+                <button
+                  type="button"
+                  onClick={() => setShowRenameModal(false)}
+                  className="w-full sm:w-auto px-4 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs font-bold shadow-md transition disabled:opacity-50"
+                >
+                  {saving ? 'Updating...' : 'Update Term Record'}
                 </button>
               </div>
-              <div className="p-4 bg-yellow-50 text-sm text-yellow-800 border-b border-yellow-200">
-                Only use this to fix typos in the <strong>currently active</strong> term without creating duplicates. To start a NEW term, use the main form instead.
-              </div>
-              <form onSubmit={handleRenameSubmit} className="p-4 space-y-4">
-                                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year</label>
-                  <input
-                    type="text"
-                    required
-                    value={renameData.academic_year}
-                    onChange={(e) => {
-                      setRenameData({ ...renameData, academic_year: e.target.value })
-                      if (isValidAcademicYear(e.target.value)) setRenameYearError('')
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue ${renameYearError ? 'border-red-500' : ''}`}
-                    placeholder="2026/27"
-                  />
-                  {renameYearError ? (
-                    <p className="mt-1 text-xs text-red-600">{renameYearError}</p>
-                  ) : (
-                    <p className="mt-1 text-xs text-gray-500">Format: YYYY/YY (e.g. 2026/27)</p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Term Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={renameData.name}
-                    onChange={(e) => setRenameData({ ...renameData, name: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-methodist-blue"
-                    placeholder="Term 1"
-                  />
-                </div>
-                <div className="flex justify-end space-x-3 pt-4 border-t mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowRenameModal(false)}
-                    className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex-shrink-0"
-                  >
-                    {saving ? 'Updating...' : 'Update Term Record'}
-                  </button>
-                </div>
-              </form>
-            </div>
+            </form>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   )
 }
