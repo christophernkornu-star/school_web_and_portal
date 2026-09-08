@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileText, BarChart3, Download, Users, TrendingUp, Eye, Filter, CheckSquare, Square, Printer, Wand2, Archive } from 'lucide-react'
+import { 
+  ArrowLeft, FileText, BarChart3, Download, Users, 
+  TrendingUp, Eye, Filter, CheckSquare, Square, Printer, 
+  Wand2, Archive, ChevronDown, CheckCircle2, Award
+} from 'lucide-react'
 import { getCurrentUser, getTeacherData, getTeacherAssignments } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { EmptyState } from '@/components/ui/empty-state'
 import { getAutoRemark } from '@/lib/remark-utils'
 import { isClassTeacher } from '@/lib/teacher-permissions'
 import { resolveActiveAcademicYear, filterTermsByActiveYear } from '@/lib/academic-year'
@@ -41,7 +44,7 @@ export default function ReportsPage() {
   const [view, setView] = useState<'overview' | 'students' | 'subjects'>('overview')
   const [subjectAnalysis, setSubjectAnalysis] = useState<any[]>([])
   const [generatingPDF, setGeneratingPDF] = useState(false)
-    const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null)
   const [selectedStudents, setSelectedStudents] = useState<string[]>([])
   const [bulkGenerating, setBulkGenerating] = useState(false)
   const [isAutoGenerating, setIsAutoGenerating] = useState(false)
@@ -65,19 +68,14 @@ export default function ReportsPage() {
 
         setTeacher(teacherData)
 
-        // Get teacher's class assignments
         const { data: assignmentsData } = await getTeacherAssignments(teacherData.id) as { data: any[] | null }
         if (assignmentsData) {
           setAssignments(assignmentsData)
-          // Set first class as default
           if (assignmentsData.length > 0) {
             setSelectedClass(assignmentsData[0].class_id)
           }
         }
 
-                // Load academic terms via API to bypass RLS
-        // We only surface the ACTIVE academic year's terms here; past years are
-        // reachable through the dedicated Historical Reports page.
         try {
           const year = await resolveActiveAcademicYear(supabase)
           setActiveYear(year)
@@ -93,7 +91,6 @@ export default function ReportsPage() {
               setTerms([])
             }
           } else {
-            // Fallback to direct query
             const { data: termsData } = await supabase
               .from('academic_terms')
               .select('*')
@@ -120,7 +117,7 @@ export default function ReportsPage() {
     }
 
     loadData()
-  }, [router])
+  }, [router, supabase])
 
   useEffect(() => {
     if (selectedClass && selectedTerm) {
@@ -142,7 +139,6 @@ export default function ReportsPage() {
 
   const loadClassData = async () => {
     try {
-      // Get all students in the class
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select(`
@@ -162,7 +158,6 @@ export default function ReportsPage() {
       if (studentsError) throw studentsError
       if (!studentsData) throw new Error('Failed to load students')
 
-      // Get scores for all students in this term
       const { data: scoresData } = await supabase
         .from('scores')
         .select(`
@@ -173,7 +168,6 @@ export default function ReportsPage() {
         .eq('term_id', selectedTerm)
         .in('student_id', (studentsData as any)?.map((s: any) => s.id) || [])
 
-      // Get total subjects for the class level to calculate accurate average
       const classLevel = studentsData && studentsData.length > 0 ? (studentsData[0] as any).classes?.level : null
       let totalSubjectsCount = 0
       
@@ -185,12 +179,10 @@ export default function ReportsPage() {
         totalSubjectsCount = count || 0
       }
 
-      // Calculate performance for each student
       const studentsWithScores: Student[] = (studentsData || []).map((student: any) => {
         const studentScores = scoresData?.filter((s: any) => s.student_id === student.id) || []
         const totalScore = studentScores.reduce((sum: number, s: any) => sum + (s.total || 0), 0)
         
-        // Calculate average based on ALL subjects available for the level
         const divisor = totalSubjectsCount > 0 ? totalSubjectsCount : (studentScores.length || 1)
         const averageScore = totalScore / divisor
 
@@ -208,7 +200,6 @@ export default function ReportsPage() {
         }
       })
 
-      // Sort by average score to determine positions
       const sorted = [...studentsWithScores].sort((a, b) => (b.averageScore || 0) - (a.averageScore || 0))
       sorted.forEach((student, index) => {
         student.position = index + 1
@@ -216,7 +207,6 @@ export default function ReportsPage() {
 
       setStudents(sorted)
 
-      // Calculate class performance metrics
       const classAverage = sorted.reduce((sum, s) => sum + (s.averageScore || 0), 0) / (sorted.length || 1)
       const highestScore = sorted[0]?.averageScore || 0
       const lowestScore = sorted[sorted.length - 1]?.averageScore || 0
@@ -232,7 +222,6 @@ export default function ReportsPage() {
         poorCount: sorted.filter(s => (s.averageScore || 0) < 40).length,
       })
 
-      // Subject Analysis
       const subjectGroups: Record<string, number[]> = {}
       scoresData?.forEach((score: any) => {
         const subjectData = score.subjects
@@ -268,8 +257,7 @@ export default function ReportsPage() {
     setSelectedStudentId(studentId)
     
     try {
-      // Open the student's report card page
-      const reportCardUrl = `/teacher/reports/student/${studentId}?term=${selectedTerm}`
+      const reportCardUrl = `/teacher/reports/student/${studentId}?term=${selectedTerm}&class=${selectedClass}`
       router.push(reportCardUrl)
     } catch (error: any) {
       console.error('Error generating report card:', error)
@@ -280,7 +268,6 @@ export default function ReportsPage() {
     }
   }
 
-  // Toggle student selection for bulk generation
   const toggleStudentSelection = (studentId: string) => {
     setSelectedStudents(prev => 
       prev.includes(studentId) 
@@ -289,7 +276,6 @@ export default function ReportsPage() {
     )
   }
 
-  // Select/Deselect all students
   const toggleSelectAll = () => {
     if (selectedStudents.length === students.length) {
       setSelectedStudents([])
@@ -298,7 +284,6 @@ export default function ReportsPage() {
     }
   }
 
-  // Generate report cards for selected students (bulk)
   const generateBulkReportCards = async () => {
     if (selectedStudents.length === 0) {
       toast.error('Please select at least one student')
@@ -306,10 +291,8 @@ export default function ReportsPage() {
     }
 
     setBulkGenerating(true)
-    
     try {
-      // Open a single window with all report cards for printing
-      const reportUrl = `/teacher/reports/bulk?students=${selectedStudents.join(',')}&term=${selectedTerm}`
+      const reportUrl = `/teacher/reports/bulk?students=${selectedStudents.join(',')}&term=${selectedTerm}&class=${selectedClass}`
       router.push(reportUrl)
     } catch (error: any) {
       console.error('Error generating bulk report cards:', error)
@@ -319,7 +302,6 @@ export default function ReportsPage() {
     }
   }
 
-  // Auto-generate remarks for all students based on their performance and attendance
   const generateAutoRemarksForAll = async () => {
     if (students.length === 0) {
       toast.error('No students found in this class.')
@@ -334,13 +316,11 @@ export default function ReportsPage() {
     const toastId = toast.loading('Fetching attendance and calculating remarks...')
 
     try {
-      // 1. Fetch attendance records for this term for all these students
-      const { data: attendanceData, error: attendanceError } = await supabase
-          .from('student_attendance')
-          .select('student_id, days_present')
-          .eq('term_id', selectedTerm)
+      const { data: attendanceData } = await supabase
+        .from('student_attendance')
+        .select('student_id, days_present')
+        .eq('term_id', selectedTerm)
 
-      // 2. Determine total days of the term
       const { data: termData, error: termError } = await supabase
         .from('academic_terms')
         .select('total_days')
@@ -352,8 +332,6 @@ export default function ReportsPage() {
       }
 
       const totalDays = termData?.total_days || 0
-
-      // 3. Compile the payload array
       const maxBatchSize = 100
       const remarksPayload = students.map(student => {
         const studentAttendance = attendanceData?.find((a: any) => a.student_id === student.id)
@@ -376,7 +354,6 @@ export default function ReportsPage() {
 
       toast.loading(`Saving remarks for ${students.length} students...`, { id: toastId })
 
-      // 4. Batch upsert
       for (let i = 0; i < remarksPayload.length; i += maxBatchSize) {
         const batch = remarksPayload.slice(i, i + maxBatchSize)
         const { error: saveError } = await supabase
@@ -386,7 +363,7 @@ export default function ReportsPage() {
         if (saveError) throw saveError
       }
 
-      toast.success(`Successfully regenerated and auto-saved remarks for all ${students.length} students!`, { id: toastId })
+      toast.success(`Successfully regenerated remarks for all ${students.length} students!`, { id: toastId })
     } catch (error: any) {
       console.error('Error generating auto-remarks bulk:', error)
       toast.error('Failed to generate remarks: ' + error.message, { id: toastId })
@@ -396,10 +373,10 @@ export default function ReportsPage() {
   }
 
   const getPerformanceColor = (score: number) => {
-    if (score >= 80) return 'text-green-600 bg-green-50'
-    if (score >= 60) return 'text-blue-600 bg-blue-50'
-    if (score >= 40) return 'text-yellow-600 bg-yellow-50'
-    return 'text-red-600 bg-red-50'
+    if (score >= 80) return 'text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60'
+    if (score >= 60) return 'text-blue-700 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60'
+    if (score >= 40) return 'text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/60'
+    return 'text-rose-700 bg-rose-50 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/60'
   }
 
   const getOrdinalSuffix = (num: number): string => {
@@ -413,264 +390,322 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-8 transition-colors">
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="container mx-auto px-4 py-4">
-             <div className="flex justify-between items-center mb-4">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-10 w-32 rounded-lg" />
-             </div>
-             <div className="flex gap-4">
-               <Skeleton className="h-10 w-48 rounded" />
-               <Skeleton className="h-10 w-32 rounded" />
-               <Skeleton className="h-10 w-32 rounded" />
-             </div>
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20 p-4 sm:p-6 lg:p-8 space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-3xl" />
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map(i => (
+              <Skeleton key={i} className="h-28 rounded-2xl" />
+            ))}
           </div>
-        </header>
-
-        <main className="container mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Skeleton className="h-32 rounded-lg" />
-                <Skeleton className="h-32 rounded-lg" />
-                <Skeleton className="h-32 rounded-lg" />
-            </div>
-            <Skeleton className="h-96 w-full rounded-lg" />
-        </main>
+          <Skeleton className="h-96 w-full rounded-3xl" />
+        </div>
       </div>
     )
   }
 
-  const selectedClassName = assignments.find(a => a.class_id === selectedClass)?.classes?.name || ''
-  const selectedTermData = terms.find(t => t.id === selectedTerm)
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 sticky top-0 z-30 shadow-sm transition-colors">
-        <div className="container mx-auto px-4 md:px-6 py-4 flex justify-between items-center gap-2">
-          <div className="flex items-center space-x-2 md:space-x-4">
-            <BackButton href="/teacher/dashboard" className="text-ghana-green hover:text-green-700 dark:hover:text-green-400 shrink-0" />
-            <div>
-              <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white leading-tight">Class Performance Reports</h1>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">Generate report cards and analyze class performance</p>
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-24 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+      
+      {/* Sticky Header Banner */}
+      <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 min-w-0">
+              <BackButton href="/teacher/dashboard" className="shrink-0 mt-0.5 sm:mt-0 shadow-sm" />
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 truncate">
+                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-[#003B5C] dark:text-blue-400 shrink-0" />
+                  <span>Class Performance Reports</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
+                  Generate report cards, audit student achievements, and inspect class broadsheets
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Actions Header Toolbar */}
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+              <Link 
+                href="/teacher/class-report" 
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition active:scale-95"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Broadsheet</span>
+              </Link>
+              <Link 
+                href="/teacher/reports/historical" 
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition active:scale-95"
+              >
+                <Archive className="w-4 h-4" />
+                <span>Historical Archive</span>
+              </Link>
             </div>
           </div>
-          <Link 
-            href="/teacher/assessment-sheet" 
-            className="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 shadow-sm px-4 py-2.5 rounded-xl transition-all font-semibold shrink-0 text-xs md:text-sm hidden"
-          >
-            <FileText className="w-4 h-4" />
-            <span className="hidden sm:inline">Assessment Sheet</span>
-            <span className="sm:hidden">Sheet</span>
-          </Link>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Active-year notice */}
-        <div className="flex flex-wrap items-center gap-2 bg-methodist-blue/5 border border-methodist-blue/20 text-methodist-blue rounded-xl px-4 py-3 mb-4 text-xs md:text-sm">
-          <Archive className="w-4 h-4 shrink-0" />
-          <span className="flex-1 min-w-[220px]">
-            Showing <strong>{activeYear || 'the current academic year'}</strong> only. Past academic years are available under{' '}
-            <Link href="/teacher/reports/historical" className="underline font-semibold hover:text-blue-900">
-              Historical Reports
-            </Link>.
-          </span>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 mb-6 backdrop-blur-sm transition-colors">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Filter Options</h2>
+      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
+        
+        {/* Active Session Notice Banner */}
+        <div className="bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40 rounded-2xl p-3.5 sm:p-4 text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Archive className="w-4 h-4 text-[#003B5C] dark:text-blue-400 shrink-0" />
+            <span className="truncate">
+              Showing active session for <strong>{activeYear || 'current academic year'}</strong>.
+            </span>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Class
-              </label>
-              <select
-                value={selectedClass}
-                onChange={(e) => setSelectedClass(e.target.value)}
-                className="w-full px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl focus:ring-2 focus:ring-emerald-500 shadow-sm text-sm font-medium dark:text-white transition-all cursor-pointer"
-              >
-                {Array.from(new Set(assignments.map(a => a.class_id))).map(classId => {
-                  const assignment = assignments.find(a => a.class_id === classId)
-                  return (
-                    <option key={classId} value={classId}>
-                      {assignment?.classes?.name}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Term
-              </label>
-              <select
-                value={selectedTerm}
-                onChange={(e) => setSelectedTerm(e.target.value)}
-                className="w-full px-4 py-2.5 border-0 bg-gray-50 dark:bg-gray-900/50 rounded-xl focus:ring-2 focus:ring-emerald-500 shadow-sm text-sm font-medium dark:text-white transition-all cursor-pointer"
-              >
-                {terms.map((term) => (
-                  <option key={term.id} value={term.id}>
-                    {term.name} - {term.academic_year}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* View Toggle */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            onClick={() => setView('overview')}
-            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm whitespace-nowrap outline-none ${
-              view === 'overview'
-                ? 'bg-ghana-green text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4 inline-block mr-2" />
-            Overview
-          </button>
-          <button
-            onClick={() => setView('students')}
-            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm whitespace-nowrap outline-none ${
-              view === 'students'
-                ? 'bg-ghana-green text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <Users className="w-4 h-4 inline-block mr-2" />
-            Students ({students.length})
-          </button>
-          <button
-            onClick={() => setView('subjects')}
-            className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 text-sm whitespace-nowrap outline-none ${
-              view === 'subjects'
-                ? 'bg-ghana-green text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4 inline-block mr-2" />
-            Subject Analysis
-          </button>
-                    <Link
-            href="/teacher/class-report"
-            className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg bg-gradient-to-r from-orange-500 to-orange-600 text-white hover:-translate-y-0.5 flex items-center justify-center gap-2"
-          >
-            <Printer className="w-4 h-4" />
-            Class Broadsheet
-          </Link>
-                    <Link
-            href="/teacher/reports/historical"
-            className="px-5 py-2.5 text-sm font-semibold rounded-xl transition-all shadow-md hover:shadow-lg bg-gradient-to-r from-methodist-blue to-blue-900 text-white hover:-translate-y-0.5 flex items-center justify-center gap-2"
-          >
-            <Archive className="w-4 h-4" />
-            Historical
+          <Link href="/teacher/reports/historical" className="shrink-0 text-xs font-bold text-[#003B5C] dark:text-blue-300 hover:underline">
+            Browse past years →
           </Link>
         </div>
 
-        {/* Overview */}
+        {/* Filters Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-5 md:p-6 space-y-4">
+          <div className="flex items-center gap-2 border-b border-gray-100 dark:border-gray-750 pb-3">
+            <Filter className="w-4 h-4 text-[#003B5C] dark:text-blue-400" />
+            <h2 className="font-black text-xs sm:text-sm uppercase tracking-wider text-gray-700 dark:text-gray-200">
+              Filter Cohort & Session
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+            {/* Class Selection Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Class Cohort <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedClass}
+                  onChange={(e) => setSelectedClass(e.target.value)}
+                  className="w-full pl-4 sm:pl-5 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
+                >
+                  <option value="">Select class</option>
+                  {Array.from(new Set(assignments.map(a => a.class_id))).map(classId => {
+                    const assignment = assignments.find(a => a.class_id === classId)
+                    return (
+                      <option key={classId} value={classId}>
+                        {assignment?.classes?.name}
+                      </option>
+                    )
+                  })}
+                </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* Term Selection Dropdown */}
+            <div>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                Term Session <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedTerm}
+                  onChange={(e) => setSelectedTerm(e.target.value)}
+                  className="w-full pl-4 sm:pl-5 pr-10 py-2.5 sm:py-3 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
+                >
+                  {terms.length === 0 ? (
+                    <option value="">No terms found in session</option>
+                  ) : (
+                    terms.map((term) => (
+                      <option key={term.id} value={term.id}>
+                        {term.name} ({term.academic_year})
+                      </option>
+                    ))
+                  )}
+                </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Segmented View Toggle Switcher */}
+        <div className="w-full overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="bg-gray-200/70 dark:bg-gray-800/90 p-1.5 rounded-2xl inline-flex items-center gap-1.5 min-w-full sm:min-w-0 shadow-inner">
+            <button
+              type="button"
+              onClick={() => setView('overview')}
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                view === 'overview'
+                  ? 'bg-white dark:bg-gray-700 text-[#003B5C] dark:text-blue-300 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <BarChart3 className="w-4 h-4 shrink-0" />
+              <span>Performance Overview</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setView('students')}
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                view === 'students'
+                  ? 'bg-white dark:bg-gray-700 text-[#003B5C] dark:text-blue-300 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Users className="w-4 h-4 shrink-0" />
+              <span>Student Roster ({students.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setView('subjects')}
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                view === 'subjects'
+                  ? 'bg-white dark:bg-gray-700 text-[#003B5C] dark:text-blue-300 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 shrink-0" />
+              <span>Subject Breakdown</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab 1: Overview View */}
         {view === 'overview' && classPerformance && (
-          <div className="space-y-6">
-            <div className="grid md:grid-cols-4 gap-4">
-              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+          <div className="space-y-5 sm:space-y-6">
+            {/* Primary KPI Metrics */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Class Average</p>
-                    <p className="text-2xl md:text-3xl font-black tracking-tight text-blue-700 dark:text-blue-400 mt-2">
-                      {classPerformance.classAverage}%
-                    </p>
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Class Average</span>
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-[#003B5C] dark:text-blue-400 rounded-xl">
+                    <BarChart3 className="w-4 h-4" />
                   </div>
-                  <BarChart3 className="w-6 h-6 md:w-8 md:h-8 text-blue-600 dark:text-blue-400 opacity-50" />
                 </div>
+                <div className="my-2">
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#003B5C] dark:text-blue-400">
+                    {classPerformance.classAverage}%
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 font-medium">Cohort academic average</p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total Students</p>
-                    <p className="text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white mt-2">
-                      {classPerformance.totalStudents}
-                    </p>
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Total Enrolled</span>
+                  <div className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-xl">
+                    <Users className="w-4 h-4" />
                   </div>
-                  <Users className="w-6 h-6 md:w-8 md:h-8 text-gray-400 dark:text-gray-500 opacity-50" />
                 </div>
+                <div className="my-2">
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-gray-900 dark:text-white">
+                    {classPerformance.totalStudents}
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 font-medium">Active learners on register</p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Highest Score</p>
-                    <p className="text-2xl md:text-3xl font-black tracking-tight text-emerald-600 dark:text-emerald-400 mt-2">
-                      {classPerformance.highestScore}%
-                    </p>
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Highest Score</span>
+                  <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
+                    <TrendingUp className="w-4 h-4" />
                   </div>
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-emerald-400 dark:text-emerald-500 opacity-50" />
                 </div>
+                <div className="my-2">
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                    {classPerformance.highestScore}%
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 font-medium">Top student average</p>
               </div>
 
-              <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Lowest Score</p>
-                    <p className="text-2xl md:text-3xl font-black tracking-tight text-rose-600 dark:text-rose-400 mt-2">
-                      {classPerformance.lowestScore}%
-                    </p>
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Lowest Score</span>
+                  <div className="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-xl">
+                    <TrendingUp className="w-4 h-4 transform rotate-180" />
                   </div>
-                  <TrendingUp className="w-6 h-6 md:w-8 md:h-8 text-red-400 dark:text-red-500 opacity-50 transform rotate-180" />
+                </div>
+                <div className="my-2">
+                  <p className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-rose-600 dark:text-rose-400">
+                    {classPerformance.lowestScore}%
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 font-medium">Floor student average</p>
+              </div>
+            </div>
+
+            {/* Performance Distribution Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 space-y-4">
+              <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                Performance Stratification Matrix
+              </h3>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/40 rounded-2xl p-3.5 sm:p-4 text-center">
+                  <p className="text-xl sm:text-2xl font-black text-emerald-700 dark:text-emerald-400">
+                    {classPerformance.excellentCount}
+                  </p>
+                  <p className="text-[11px] sm:text-xs font-bold text-emerald-800 dark:text-emerald-300 mt-0.5">
+                    Excellent (≥80%)
+                  </p>
+                </div>
+
+                <div className="bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/80 dark:border-blue-900/40 rounded-2xl p-3.5 sm:p-4 text-center">
+                  <p className="text-xl sm:text-2xl font-black text-blue-700 dark:text-blue-400">
+                    {classPerformance.goodCount}
+                  </p>
+                  <p className="text-[11px] sm:text-xs font-bold text-blue-800 dark:text-blue-300 mt-0.5">
+                    Good (60-79%)
+                  </p>
+                </div>
+
+                <div className="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-900/40 rounded-2xl p-3.5 sm:p-4 text-center">
+                  <p className="text-xl sm:text-2xl font-black text-amber-700 dark:text-amber-400">
+                    {classPerformance.averageCount}
+                  </p>
+                  <p className="text-[11px] sm:text-xs font-bold text-amber-800 dark:text-amber-300 mt-0.5">
+                    Average (40-59%)
+                  </p>
+                </div>
+
+                <div className="bg-rose-50/70 dark:bg-rose-950/20 border border-rose-200/80 dark:border-rose-900/40 rounded-2xl p-3.5 sm:p-4 text-center">
+                  <p className="text-xl sm:text-2xl font-black text-rose-700 dark:text-rose-400">
+                    {classPerformance.poorCount}
+                  </p>
+                  <p className="text-[11px] sm:text-xs font-bold text-rose-800 dark:text-rose-300 mt-0.5">
+                    Needs Help (&lt;40%)
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Performance Distribution */}
-            <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white mb-4">Performance Distribution</h3>
-              <div className="grid md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">{classPerformance.excellentCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Excellent (≥80%)</p>
-                </div>
-                <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{classPerformance.goodCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Good (60-79%)</p>
-                </div>
-                <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{classPerformance.averageCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Average (40-59%)</p>
-                </div>
-                <div className="text-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                  <p className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400">{classPerformance.poorCount}</p>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Needs Help (&lt;40%)</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Students Needing Help */}
+            {/* Students Needing Immediate Attention */}
             {classPerformance.poorCount > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 dark:border-red-700 p-6 rounded-lg">
-                <h3 className="text-base md:text-lg font-semibold text-red-800 dark:text-red-200 mb-2">⚠️ Students Needing Immediate Attention</h3>
-                <p className="text-red-700 dark:text-red-300 mb-4 text-sm md:text-base">
-                  {classPerformance.poorCount} student{classPerformance.poorCount > 1 ? 's' : ''} performing below 40%. Consider extra support or remedial classes.
-                </p>
-                <div className="space-y-2">
+              <div className="bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/50 rounded-2xl sm:rounded-3xl p-4 sm:p-6 space-y-4">
+                <div className="flex items-center gap-2 text-rose-800 dark:text-rose-300">
+                  <Award className="w-5 h-5 shrink-0" />
+                  <h3 className="text-sm sm:text-base font-black">
+                    Learners Requiring Remedial Support ({classPerformance.poorCount})
+                  </h3>
+                </div>
+
+                <div className="divide-y divide-rose-200/60 dark:divide-rose-900/40 border border-rose-200/60 dark:border-rose-900/40 rounded-2xl overflow-hidden bg-white/60 dark:bg-gray-800/60">
                   {students.filter(s => (s.averageScore || 0) < 40).map(student => (
-                    <div key={student.id} className="bg-white dark:bg-gray-800 p-3 rounded flex justify-between items-center">
+                    <div key={student.id} className="p-3.5 sm:p-4 flex items-center justify-between gap-3">
                       <div>
-                        <p className="font-medium text-gray-800 dark:text-white text-sm md:text-base">
-                          {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
+                        <h4 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">
+                          {[student.last_name, student.middle_name, student.first_name].filter(Boolean).join(', ')}
+                        </h4>
+                        <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                          ID: {student.student_id} • Average: <strong className="text-rose-600 dark:text-rose-400">{student.averageScore}%</strong>
                         </p>
-                        <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Average: {student.averageScore}%</p>
                       </div>
+
                       <button
+                        type="button"
                         onClick={() => generateStudentReportCard(student.id)}
-                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs md:text-sm font-medium"
+                        className="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/40 dark:hover:bg-rose-900/70 text-rose-700 dark:text-rose-300 rounded-xl text-xs font-bold transition shrink-0"
                       >
-                        View Details
+                        Inspect
                       </button>
                     </div>
                   ))}
@@ -680,303 +715,304 @@ export default function ReportsPage() {
           </div>
         )}
 
-        {/* Students List */}
+        {/* Tab 2: Students Roster View */}
         {view === 'students' && (
-          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors backdrop-blur-sm">
-            {/* Bulk Actions Bar */}
-            <div className="bg-gray-50 dark:bg-gray-700 px-4 md:px-6 py-3 border-b dark:border-gray-600 flex flex-col md:flex-row md:items-center justify-between gap-3">
-              <div className="flex items-center gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 overflow-hidden space-y-0">
+            {/* Bulk Actions Header Toolbar */}
+            <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-750 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gray-50/50 dark:bg-gray-850">
+              <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={toggleSelectAll}
-                  className="flex items-center gap-2 text-xs md:text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+                  className="flex items-center gap-2 text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
                 >
                   {selectedStudents.length === students.length && students.length > 0 ? (
-                    <CheckSquare className="w-5 h-5 text-ghana-green" />
+                    <CheckSquare className="w-5 h-5 text-[#003B5C] dark:text-blue-400 shrink-0" />
                   ) : (
-                    <Square className="w-5 h-5" />
+                    <Square className="w-5 h-5 text-gray-400 shrink-0" />
                   )}
-                  {selectedStudents.length === students.length && students.length > 0 ? 'Deselect All' : 'Select All'}
+                  <span>{selectedStudents.length === students.length && students.length > 0 ? 'Deselect All' : 'Select All'}</span>
                 </button>
+
                 {selectedStudents.length > 0 && (
-                  <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                    {selectedStudents.length} student{selectedStudents.length > 1 ? 's' : ''} selected
+                  <span className="text-xs font-bold text-[#003B5C] dark:text-blue-300 bg-[#003B5C]/10 dark:bg-[#003B5C]/30 px-2.5 py-0.5 rounded-full">
+                    {selectedStudents.length} selected
                   </span>
                 )}
               </div>
-                <div className="flex flex-col md:flex-row gap-2 w-full md:w-auto">
-                    {isTeacherClassTeacher && students.length > 0 && (
-                    <button
-                      onClick={generateAutoRemarksForAll}
-                      disabled={isAutoGenerating || students.length === 0}
-                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-xs md:text-sm font-medium"
-                    >
-                      {isAutoGenerating ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4" />
-                          Auto-Generate Remarks for All
-                        </>
-                      )}
-                    </button>
-                  )}
-                  {selectedStudents.length > 0 && (
-                    <button
-                      onClick={generateBulkReportCards}
-                      disabled={bulkGenerating}
-                      className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 bg-ghana-green text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-xs md:text-sm font-medium"
-                    >
-                      {bulkGenerating ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          Generating...
-                        </>
-                      ) : (
-                        <>
-                          <Printer className="w-4 h-4" />
-                          Generate {selectedStudents.length} Report Card{selectedStudents.length > 1 ? 's' : ''}
-                        </>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
 
-              {/* Mobile Card View */}
-              <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
-                {students.map((student) => (
-                  <div key={student.id} className={`p-4 ${selectedStudents.includes(student.id) ? 'bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-800'}`}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <button onClick={() => toggleStudentSelection(student.id)}>
-                        {selectedStudents.includes(student.id) ? (
-                          <CheckSquare className="w-5 h-5 text-ghana-green" />
-                        ) : (
-                          <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                        )}
-                      </button>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                          {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">ID: {student.student_id}</p>
-                      </div>
-                    </div>
-                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-bold text-gray-600 dark:text-gray-300">
-                      {student.position}{getOrdinalSuffix(student.position || 0)}
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Average Score</p>
-                      <p className={`text-lg font-bold ${getPerformanceColor(student.averageScore || 0).split(' ')[0]}`}>
-                        {student.averageScore}%
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Performance</p>
-                      <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${getPerformanceColor(student.averageScore || 0)}`}>
-                        {(student.averageScore || 0) >= 80 ? 'Excellent' :
-                         (student.averageScore || 0) >= 60 ? 'Good' :
-                         (student.averageScore || 0) >= 40 ? 'Average' : 'Needs Help'}
-                      </span>
-                    </div>
-                  </div>
-
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                {isTeacherClassTeacher && students.length > 0 && (
                   <button
-                    onClick={() => generateStudentReportCard(student.id)}
-                    disabled={generatingPDF && selectedStudentId === student.id}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm"
+                    type="button"
+                    onClick={generateAutoRemarksForAll}
+                    disabled={isAutoGenerating || students.length === 0}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition disabled:opacity-50 active:scale-95"
                   >
-                    {generatingPDF && selectedStudentId === student.id ? (
+                    {isAutoGenerating ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Generating...
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Generating...</span>
                       </>
                     ) : (
                       <>
-                        <FileText className="w-4 h-4" />
-                        View Report Card
+                        <Wand2 className="w-4 h-4" />
+                        <span>Auto-Generate Remarks</span>
                       </>
                     )}
                   </button>
-                </div>
-              ))}
+                )}
+
+                {selectedStudents.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={generateBulkReportCards}
+                    disabled={bulkGenerating}
+                    className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition disabled:opacity-50 active:scale-95"
+                  >
+                    {bulkGenerating ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Preparing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Printer className="w-4 h-4" />
+                        <span>Print {selectedStudents.length} Report Cards</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
 
-            {/* Desktop Table View */}
+            {/* Mobile Card Roster (< md) */}
+            <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+              {students.map((student) => {
+                const isSelected = selectedStudents.includes(student.id)
+                return (
+                  <div key={student.id} className={`p-4 space-y-3 transition ${isSelected ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-gray-50/50 dark:hover:bg-gray-750/50'}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <button type="button" onClick={() => toggleStudentSelection(student.id)} className="shrink-0 pt-0.5">
+                          {isSelected ? (
+                            <CheckSquare className="w-5 h-5 text-[#003B5C] dark:text-blue-400" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-400" />
+                          )}
+                        </button>
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-sm text-gray-900 dark:text-white truncate">
+                            {[student.last_name, student.middle_name, student.first_name].filter(Boolean).join(', ')}
+                          </h4>
+                          <p className="text-[11px] text-gray-400 font-mono mt-0.5">
+                            ID: {student.student_id} • Pos: <strong className="text-gray-700 dark:text-gray-300">{student.position}{getOrdinalSuffix(student.position || 0)}</strong>
+                          </p>
+                        </div>
+                      </div>
+
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 ${getPerformanceColor(student.averageScore || 0)}`}>
+                        {student.averageScore}%
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => generateStudentReportCard(student.id)}
+                      disabled={generatingPDF && selectedStudentId === student.id}
+                      className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl text-xs font-bold text-[#003B5C] dark:text-blue-300 bg-[#003B5C]/10 dark:bg-[#003B5C]/20 hover:bg-[#003B5C]/20 transition"
+                    >
+                      {generatingPDF && selectedStudentId === student.id ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-[#003B5C]/30 border-t-[#003B5C] rounded-full animate-spin" />
+                          <span>Loading Report...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>View Report Card</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Tablet & Desktop Table Roster (≥ md) */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-ghana-green text-white">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead className="bg-gray-50/80 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700 text-[11px] font-black text-gray-400 uppercase tracking-wider">
                   <tr>
-                    <th className="px-4 py-3 text-center">
-                      <button onClick={toggleSelectAll}>
-                        {selectedStudents.length === students.length ? (
-                          <CheckSquare className="w-5 h-5" />
+                    <th className="p-4 w-12 text-center">
+                      <button type="button" onClick={toggleSelectAll}>
+                        {selectedStudents.length === students.length && students.length > 0 ? (
+                          <CheckSquare className="w-4 h-4 text-[#003B5C] dark:text-blue-400" />
                         ) : (
-                          <Square className="w-5 h-5" />
+                          <Square className="w-4 h-4 text-gray-400" />
                         )}
                       </button>
                     </th>
-                    <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">Position</th>
-                    <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">Student ID</th>
-                    <th className="px-6 py-3 text-left text-xs md:text-sm font-semibold uppercase">Name</th>
-                    <th className="px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase">Average</th>
-                    <th className="px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase">Performance</th>
-                    <th className="px-6 py-3 text-center text-xs md:text-sm font-semibold uppercase">Actions</th>
+                    <th className="p-4 w-24 text-center">Position</th>
+                    <th className="p-4 w-32">Student ID</th>
+                    <th className="p-4">Student Name</th>
+                    <th className="p-4 text-center w-32">Average</th>
+                    <th className="p-4 text-center w-36">Performance</th>
+                    <th className="p-4 text-right w-36">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {students.map((student) => (
-                    <tr key={student.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedStudents.includes(student.id) ? 'bg-green-50 dark:bg-green-900/20' : ''}`}>
-                      <td className="px-4 py-4 text-center">
-                        <button onClick={() => toggleStudentSelection(student.id)}>
-                          {selectedStudents.includes(student.id) ? (
-                            <CheckSquare className="w-5 h-5 text-ghana-green" />
-                          ) : (
-                            <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-xs md:text-sm font-bold text-gray-800 dark:text-white">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-750 text-xs sm:text-sm font-medium">
+                  {students.map((student) => {
+                    const isSelected = selectedStudents.includes(student.id)
+                    return (
+                      <tr key={student.id} className={`transition ${isSelected ? 'bg-blue-50/50 dark:bg-blue-950/20' : 'hover:bg-gray-50/60 dark:hover:bg-gray-750/50'}`}>
+                        <td className="p-4 text-center">
+                          <button type="button" onClick={() => toggleStudentSelection(student.id)}>
+                            {isSelected ? (
+                              <CheckSquare className="w-4 h-4 text-[#003B5C] dark:text-blue-400" />
+                            ) : (
+                              <Square className="w-4 h-4 text-gray-400" />
+                            )}
+                          </button>
+                        </td>
+
+                        <td className="p-4 text-center font-bold text-gray-900 dark:text-white">
                           {student.position}{getOrdinalSuffix(student.position || 0)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-white">
-                        {student.student_id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm text-gray-700 dark:text-gray-300">
-                        {`${student.last_name || ''} ${student.middle_name ? student.middle_name + ' ' : ''}${student.first_name || ''}`}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className={`text-base md:text-lg font-bold ${getPerformanceColor(student.averageScore || 0).split(' ')[0]}`}>
+                        </td>
+
+                        <td className="p-4 font-mono text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          {student.student_id}
+                        </td>
+
+                        <td className="p-4 font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                          {[student.last_name, student.middle_name, student.first_name].filter(Boolean).join(', ')}
+                        </td>
+
+                        <td className="p-4 text-center font-mono font-bold text-gray-900 dark:text-white whitespace-nowrap">
                           {student.averageScore}%
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className={`px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${getPerformanceColor(student.averageScore || 0)}`}>
-                          {(student.averageScore || 0) >= 80 ? 'Excellent' :
-                           (student.averageScore || 0) >= 60 ? 'Good' :
-                           (student.averageScore || 0) >= 40 ? 'Average' : 'Needs Help'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <button
-                          onClick={() => generateStudentReportCard(student.id)}
-                          disabled={generatingPDF && selectedStudentId === student.id}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-methodist-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-xs md:text-sm"
-                        >
-                          {generatingPDF && selectedStudentId === student.id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <FileText className="w-4 h-4" />
-                              Report Card
-                            </>
-                          )}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+
+                        <td className="p-4 text-center whitespace-nowrap">
+                          <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${getPerformanceColor(student.averageScore || 0)}`}>
+                            {(student.averageScore || 0) >= 80 ? 'Excellent' :
+                             (student.averageScore || 0) >= 60 ? 'Good' :
+                             (student.averageScore || 0) >= 40 ? 'Average' : 'Needs Help'}
+                          </span>
+                        </td>
+
+                        <td className="p-4 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => generateStudentReportCard(student.id)}
+                            disabled={generatingPDF && selectedStudentId === student.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#003B5C]/10 text-[#003B5C] dark:bg-[#003B5C]/30 dark:text-blue-300 hover:bg-[#003B5C]/20 rounded-xl text-xs font-bold transition"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            <span>Report Card</span>
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           </div>
         )}
 
-        {/* Subject Analysis */}
+        {/* Tab 3: Subject Analysis View */}
         {view === 'subjects' && (
-          <div className="bg-white dark:bg-gray-800/90 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors backdrop-blur-sm">
-            <div className="p-6 border-b dark:border-gray-700">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800 dark:text-white">Subject Performance Analysis</h3>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mt-1">Identify which subjects need more attention</p>
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 overflow-hidden space-y-0">
+            <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-750 bg-gray-50/50 dark:bg-gray-850">
+              <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white">
+                Subject Performance Breakdown
+              </h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Inspect averages, highest marks, and floor scores for each subject
+              </p>
             </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+            {/* Mobile Card Subject View (< md) */}
+            <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
               {subjectAnalysis.map((subject, index) => (
-                <div key={index} className="p-4 bg-white dark:bg-gray-800">
-                  <div className="flex justify-between items-start mb-3">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">{subject.subject}</h4>
-                    <span className={`text-lg font-bold ${getPerformanceColor(subject.average).split(' ')[0]}`}>
-                      {subject.average}%
+                <div key={index} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="font-bold text-sm text-gray-900 dark:text-white">
+                      {subject.subject}
+                    </h4>
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-black ${getPerformanceColor(subject.average)}`}>
+                      {subject.average}% avg
                     </span>
                   </div>
-                  
-                  <div className="mb-3">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full ${
-                          subject.average >= 80 ? 'bg-green-600' :
-                          subject.average >= 60 ? 'bg-blue-600' :
-                          subject.average >= 40 ? 'bg-yellow-600' : 'bg-red-600'
-                        }`}
-                        style={{ width: `${subject.average}%` }}
-                      ></div>
-                    </div>
+
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full ${
+                        subject.average >= 80 ? 'bg-emerald-500' :
+                        subject.average >= 60 ? 'bg-blue-600' :
+                        subject.average >= 40 ? 'bg-amber-500' : 'bg-rose-600'
+                      }`}
+                      style={{ width: `${subject.average}%` }}
+                    />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded">
-                      <span className="text-gray-600 dark:text-gray-400">Highest</span>
-                      <span className="font-bold text-green-600 dark:text-green-400">{subject.highest}%</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                    <div className="bg-gray-50 dark:bg-gray-900/40 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block">Highest</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono">{subject.highest}%</span>
                     </div>
-                    <div className="flex justify-between p-2 bg-red-50 dark:bg-red-900/20 rounded">
-                      <span className="text-gray-600 dark:text-gray-400">Lowest</span>
-                      <span className="font-bold text-red-600 dark:text-red-400">{subject.lowest}%</span>
+                    <div className="bg-gray-50 dark:bg-gray-900/40 p-2 rounded-xl border border-gray-100 dark:border-gray-800">
+                      <span className="text-[10px] uppercase font-bold text-gray-400 block">Lowest</span>
+                      <span className="font-bold text-rose-600 dark:text-rose-400 font-mono">{subject.lowest}%</span>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Desktop Table View */}
+            {/* Tablet & Desktop Subject Table (≥ md) */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800/80">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Subject</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Class Average</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Highest</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Lowest</th>
-                    <th className="px-6 py-3 text-center text-[10px] md:text-xs font-semibold uppercase text-gray-700 dark:text-gray-300">Performance</th>
+              <table className="w-full text-left border-collapse min-w-[650px]">
+                <thead>
+                  <tr className="bg-gray-50/80 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700 text-[11px] font-black text-gray-400 uppercase tracking-wider">
+                    <th className="p-4">Subject</th>
+                    <th className="p-4 text-center w-36">Class Average</th>
+                    <th className="p-4 text-center w-32">Highest</th>
+                    <th className="p-4 text-center w-32">Lowest</th>
+                    <th className="p-4 text-center w-48">Progress Indicator</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-750 text-xs sm:text-sm font-medium">
                   {subjectAnalysis.map((subject, index) => (
-                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900 dark:text-white">
+                    <tr key={index} className="hover:bg-gray-50/60 dark:hover:bg-gray-750/50 transition">
+                      <td className="p-4 font-bold text-gray-900 dark:text-white whitespace-nowrap">
                         {subject.subject}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className={`text-base md:text-lg font-bold ${getPerformanceColor(subject.average).split(' ')[0]}`}>
+
+                      <td className="p-4 text-center whitespace-nowrap">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-black ${getPerformanceColor(subject.average)}`}>
                           {subject.average}%
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-green-600 dark:text-green-400 font-semibold">
+
+                      <td className="p-4 text-center font-bold text-emerald-600 dark:text-emerald-400 font-mono whitespace-nowrap">
                         {subject.highest}%
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center text-xs md:text-sm text-red-600 dark:text-red-400 font-semibold">
+
+                      <td className="p-4 text-center font-bold text-rose-600 dark:text-rose-400 font-mono whitespace-nowrap">
                         {subject.lowest}%
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+
+                      <td className="p-4 text-center whitespace-nowrap">
+                        <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
                           <div
-                            className={`h-2 rounded-full ${
-                              subject.average >= 80 ? 'bg-green-600' :
+                            className={`h-full rounded-full ${
+                              subject.average >= 80 ? 'bg-emerald-500' :
                               subject.average >= 60 ? 'bg-blue-600' :
-                              subject.average >= 40 ? 'bg-yellow-600' : 'bg-red-600'
+                              subject.average >= 40 ? 'bg-amber-500' : 'bg-rose-600'
                             }`}
                             style={{ width: `${subject.average}%` }}
-                          ></div>
+                          />
                         </div>
                       </td>
                     </tr>
@@ -987,11 +1023,12 @@ export default function ReportsPage() {
           </div>
         )}
 
+        {/* Empty State Fallback */}
         {!selectedClass && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center transition-colors">
-            <FileText className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg md:text-xl font-semibold text-gray-700 dark:text-white mb-2">No Class Assigned</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">You haven't been assigned to any classes yet.</p>
+          <div className="bg-white dark:bg-gray-800 rounded-3xl p-12 text-center text-gray-500 text-xs sm:text-sm space-y-2 border border-gray-200/80 dark:border-gray-700">
+            <FileText className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" />
+            <p className="font-bold text-gray-800 dark:text-gray-200">No Class Assigned</p>
+            <p>You have not been assigned to any classroom cohorts for performance reporting.</p>
           </div>
         )}
       </main>

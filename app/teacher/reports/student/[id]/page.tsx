@@ -11,8 +11,6 @@ import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getAutoRemark, ATTITUDE_REMARKS, INTEREST_REMARKS, CONDUCT_REMARKS, CLASS_TEACHER_REMARKS } from '@/lib/remark-utils'
 import { useReportCardData } from '@/lib/reports/hooks'
-// If TS keeps complaining about the alias, we can use relative path, but let's stick to alias for consistency first.
-// The issue might be a caching one. I'll force a refresh by re-saving.
 import { generateReportHTML } from '@/lib/reports/generator'
 import { ReportCardTheme, ReportRemarks, Grade } from '@/lib/reports/types'
 import { isClassTeacher } from '@/lib/teacher-permissions'
@@ -33,18 +31,18 @@ function RemarkDropdown({ options, onSelect }: { options: string[], onSelect: (v
       <button 
         type="button" 
         onClick={() => setOpen(!open)}
-        className="ml-2 p-0.5 hover:bg-gray-200 rounded-md transition-colors flex items-center justify-center cursor-pointer text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="ml-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-center cursor-pointer text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-[#003B5C]"
         aria-label="Quick Select Remark"
       >
         <ChevronDown className="w-4 h-4" />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 w-72 bg-white border border-gray-200 shadow-xl rounded-md z-50 max-h-60 overflow-y-auto">
+        <div className="absolute left-0 top-full mt-1 w-72 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-xl rounded-2xl z-50 max-h-60 overflow-y-auto p-1.5">
           {options.map((opt, idx) => (
             <button
               key={idx}
               type="button"
-              className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-blue-50 focus:bg-blue-50 cursor-pointer border-b border-gray-50 last:border-0 transition-colors"
+              className="w-full text-left px-3 py-2 text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
               onClick={() => {
                 onSelect(opt);
                 setOpen(false);
@@ -60,14 +58,13 @@ function RemarkDropdown({ options, onSelect }: { options: string[], onSelect: (v
 }
 
 export default function TeacherStudentReportPage() {
-    const router = useRouter()
+  const router = useRouter()
   const supabase = getSupabaseBrowserClient()
   const params = useParams()
   const searchParams = useSearchParams()
   const studentId = params.id as string
   const termId = searchParams.get('term')
   const classParam = searchParams.get('class')
-  // If we came from the teacher historical reports page, back-link there; otherwise default
   const backHref = classParam ? '/teacher/reports/historical' : '/teacher/reports'
   
   const [downloading, setDownloading] = useState(false)
@@ -112,9 +109,6 @@ export default function TeacherStudentReportPage() {
   } = useReportCardData(
     studentId,
     termId || undefined,
-    // When not arriving from the historical reports page (i.e. normal teacher roster
-    // view of a current student), do not surface previous-class historical records for
-    // terms that were not started for the student's current class.
     { restrictCurrentClassOnly: !classParam }
   )
 
@@ -138,7 +132,7 @@ export default function TeacherStudentReportPage() {
         ? (attendance.present / attendance.total) * 100 
         : undefined
       
-      const seed = studentId // Use student ID for consistent auto-remarks
+      const seed = studentId
 
       setRemarks({
           attitude: reportData.remarks?.attitude || getAutoRemark('attitude', avgScore, attendancePercent, seed),
@@ -207,7 +201,7 @@ export default function TeacherStudentReportPage() {
 
       if (error) throw error
       toast.success('Remarks saved successfully')
-      refresh() // Reload data to confirm save
+      refresh()
     } catch (error) {
       console.error('Error saving remarks:', error)
       toast.error('Failed to save remarks')
@@ -217,7 +211,6 @@ export default function TeacherStudentReportPage() {
   const applyAutoRemarks = async () => {
     if (!reportData) return
     
-    // Calculate attendance percentage safely
     let attendancePercentage: number | undefined = undefined;
     if (reportData.attendance?.total && reportData.attendance.total > 0) {
       attendancePercentage = (reportData.attendance.present / reportData.attendance.total) * 100;
@@ -233,7 +226,6 @@ export default function TeacherStudentReportPage() {
     setRemarks(autoRemarks)
     toast.success('Generated auto remarks')
 
-    // Automatically save right away
     if (!reportData?.termId) return
     try {
       const { error } = await supabase
@@ -262,14 +254,14 @@ export default function TeacherStudentReportPage() {
     try {
       const printWindow = window.open('', '_blank')
       if (!printWindow) {
-        toast('Please allow popups to download report card', { icon: '??' })
+        toast('Please allow popups to download report card', { icon: '⚠️' })
         return
       }
 
       const html = generateReportHTML(
         student,
         reportData,
-        remarks, // Use current edited remarks
+        remarks,
         academicSettings,
         theme,
         scoreSettings.classScorePercentage,
@@ -294,51 +286,42 @@ export default function TeacherStudentReportPage() {
 
   if (loading || !teacher) {
     return (
-      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20 p-4 sm:p-6 lg:p-8 space-y-6">
         <div className="max-w-4xl mx-auto space-y-6">
-          <Skeleton className="h-10 w-24 rounded-lg" />
-          <Skeleton className="h-64 w-full rounded-lg" />
+          <Skeleton className="h-16 w-full rounded-2xl" />
+          <Skeleton className="h-32 w-full rounded-3xl" />
+          <Skeleton className="h-96 w-full rounded-3xl" />
         </div>
       </div>
     )
   }
 
-    if (error || !student || !reportData) {
+  if (error || !student || !reportData) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">Error loading report card</p>
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8 flex flex-col justify-center items-center">
+        <div className="max-w-md w-full space-y-4">
           <BackButton href={backHref} />
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl border border-gray-100 dark:border-gray-700 p-6 sm:p-8 text-center space-y-4">
+            <p className="text-rose-500 font-bold">Error loading report card</p>
+          </div>
         </div>
       </div>
     )
   }
 
-  // Term has not been started/completed for the class this student was in that term.
   if (reportData.termHasStarted === false) {
     return (
-      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex items-center mb-6">
-            <BackButton href={backHref} />
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8 text-center">
-                        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-100 flex items-center justify-center">
-              <svg className="w-7 h-7 text-amber-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <BackButton href={backHref} />
+          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-6 sm:p-10 text-center space-y-4">
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 flex items-center justify-center font-bold text-lg">
+              !
             </div>
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-2">No Record Found for This Term</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
+            <h2 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white">No Record Found for This Term</h2>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-md mx-auto">
               There is no report record available for <strong>{[student?.last_name, student?.middle_name, student?.first_name].filter(Boolean).join(' ')}</strong> for <strong>{reportData.termName} ({reportData.year})</strong>.
             </p>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">
-              No scores were recorded for this student for this term in this class, so no report card can be generated.
-              Note that this term may not have been started or completed for the class the student belonged to during that period.
-            </p>
-            <div className="mt-6">
-              <BackButton href={backHref} />
-            </div>
           </div>
         </div>
       </div>
@@ -346,83 +329,151 @@ export default function TeacherStudentReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 md:p-8 transition-colors">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex justify-between items-center bg-white/80 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-100 dark:border-gray-700/50 p-5 rounded-2xl shadow-sm">
-          <div className="flex items-center gap-4">
-            <BackButton href={backHref}>
-              <span className="flex items-center gap-2"><List className="w-4 h-4" /> Back to List</span>
-            </BackButton>
-            <div>
-                            <h1 className="text-xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">{student.profiles?.full_name}</h1>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mt-1">
-                {reportData.termName} - {reportData.year} | {reportData.termClassName || student.classes?.name || student.classes?.class_name}{student.section_name ? ` | SECTION: ${student.section_name}` : ''}
-              </p>
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-24 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+      {/* Sticky Header Banner */}
+      <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 min-w-0">
+              <BackButton href={backHref} className="shrink-0 mt-0.5 sm:mt-0 shadow-sm">
+                <span className="flex items-center gap-1.5"><List className="w-4 h-4" /> Back</span>
+              </BackButton>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white truncate">
+                  {student.profiles?.full_name}
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium truncate mt-0.5">
+                  {reportData.termName} • {reportData.year} • {reportData.termClassName || student.classes?.name || student.classes?.class_name}{student.section_name ? ` (${student.section_name})` : ''}
+                </p>
+              </div>
             </div>
+
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition active:scale-95 disabled:opacity-50 shrink-0"
+            >
+              {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              <span>Download</span>
+            </button>
           </div>
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-          >
-            {downloading ? (
-              <RefreshCw className="w-4 h-4 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4" />
-            )}
-            <span className="hidden sm:inline">Download</span>
-          </button>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
+        
+        {/* KPI Metrics Strip */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 sm:gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200/80 dark:border-gray-700 shadow-sm">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Average Score</span>
+            <p className="text-xl sm:text-2xl font-black text-[#003B5C] dark:text-blue-400 mt-1">
+              {reportData.averageScore?.toFixed(1)}%
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200/80 dark:border-gray-700 shadow-sm">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Position</span>
+            <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
+              {reportData.position ? `${reportData.position} / ${reportData.totalClassSize}` : '—'}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200/80 dark:border-gray-700 shadow-sm">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Attendance</span>
+            <p className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">
+              {reportData.attendance?.present ?? '—'} / {reportData.attendance?.total ?? '—'}
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 border border-gray-200/80 dark:border-gray-700 shadow-sm">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">JHS Aggregate</span>
+            <p className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 mt-1">
+              {reportData.aggregate !== undefined && reportData.aggregate !== null ? reportData.aggregate : '—'}
+            </p>
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Average Score</div>
-                <div className="text-2xl md:text-3xl font-black text-blue-600 dark:text-blue-400 mt-1">{reportData.averageScore?.toFixed(1)}%</div>
-            </div>
-            <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Position</div>
-                <div className="text-2xl md:text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1">
-                    {reportData.position ? `${reportData.position} / ${reportData.totalClassSize}` : '-'}
-                </div>
-            </div>
-            <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Attendance</div>
-                <div className="text-2xl font-bold text-orange-600">
-                    {reportData.attendance?.present ?? '-'} / {reportData.attendance?.total ?? '-'}
-                </div>
-            </div>
-             <div className="bg-white dark:bg-gray-800/90 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700/50 hover:shadow-md transition-all">
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">JHS Aggregate</div>
-                <div className="text-2xl font-bold text-purple-600">
-                    {reportData.aggregate !== undefined && reportData.aggregate !== null ? reportData.aggregate : '-'}
-                </div>
-            </div>
-        </div>
+        {/* Grades Table Container */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 overflow-hidden">
+          <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-750 bg-gray-50/50 dark:bg-gray-850">
+            <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+              Terminal Subject Performance Breakdown
+            </h2>
+          </div>
 
-        {/* Grades Table */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Class ({scoreSettings.classScorePercentage}%)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Exam ({scoreSettings.examScorePercentage}%)</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Grade</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Remarks</th>
+          {/* Mobile Card Grades View (< md) */}
+          <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+            {reportData.grades.map((grade: Grade, idx: number) => (
+              <div key={idx} className="p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">
+                    {grade.subject_name}
+                  </h4>
+                  <span className="px-2.5 py-0.5 rounded-md text-xs font-black bg-blue-50 text-[#003B5C] dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60">
+                    Grade {grade.grade ?? '—'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 text-xs pt-1 font-mono">
+                  <div className="bg-gray-50 dark:bg-gray-900/40 p-2 rounded-xl border border-gray-100 dark:border-gray-800 text-center">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block font-sans">Class ({scoreSettings.classScorePercentage}%)</span>
+                    <span className="font-bold text-gray-700 dark:text-gray-300">{grade.class_score != null ? Number(grade.class_score).toFixed(1) : '—'}</span>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-900/40 p-2 rounded-xl border border-gray-100 dark:border-gray-800 text-center">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block font-sans">Exam ({scoreSettings.examScorePercentage}%)</span>
+                    <span className="font-bold text-gray-700 dark:text-gray-300">{grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : '—'}</span>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-900/40 p-2 rounded-xl border border-gray-100 dark:border-gray-800 text-center">
+                    <span className="text-[10px] uppercase font-bold text-gray-400 block font-sans">Total</span>
+                    <span className="font-bold text-[#003B5C] dark:text-blue-400">{grade.total != null ? Number(grade.total).toFixed(1) : '—'}</span>
+                  </div>
+                </div>
+
+                {grade.remarks && (
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400 italic pt-1">
+                    Remark: {grade.remarks}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Tablet & Desktop Table View (≥ md) */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr className="bg-gray-50/80 dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-700 text-[11px] font-black text-gray-400 uppercase tracking-wider">
+                  <th className="p-4">Subject</th>
+                  <th className="p-4 text-center w-32">Class ({scoreSettings.classScorePercentage}%)</th>
+                  <th className="p-4 text-center w-32">Exam ({scoreSettings.examScorePercentage}%)</th>
+                  <th className="p-4 text-center w-28">Total</th>
+                  <th className="p-4 text-center w-24">Grade</th>
+                  <th className="p-4">Remarks</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-750 text-xs sm:text-sm font-medium">
                 {reportData.grades.map((grade: Grade, idx: number) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{grade.subject_name}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.class_score != null ? Number(grade.class_score).toFixed(1) : '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm text-gray-500">{grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-gray-900">{grade.total != null ? Number(grade.total).toFixed(1) : '-'}</td>
-                    <td className="px-6 py-4 text-center text-sm font-bold text-blue-600">{grade.grade ?? '-'}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500">{grade.remarks ?? '-'}</td>
+                  <tr key={idx} className="hover:bg-gray-50/60 dark:hover:bg-gray-750/50 transition">
+                    <td className="p-4 font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                      {grade.subject_name}
+                    </td>
+                    <td className="p-4 text-center font-mono text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {grade.class_score != null ? Number(grade.class_score).toFixed(1) : '—'}
+                    </td>
+                    <td className="p-4 text-center font-mono text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {grade.exam_score != null ? Number(grade.exam_score).toFixed(1) : '—'}
+                    </td>
+                    <td className="p-4 text-center font-mono font-bold text-gray-900 dark:text-white whitespace-nowrap">
+                      {grade.total != null ? Number(grade.total).toFixed(1) : '—'}
+                    </td>
+                    <td className="p-4 text-center whitespace-nowrap">
+                      <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-black bg-blue-50 text-[#003B5C] dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/60">
+                        {grade.grade ?? '—'}
+                      </span>
+                    </td>
+                    <td className="p-4 text-gray-500 dark:text-gray-400 text-xs">
+                      {grade.remarks ?? '—'}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -430,128 +481,138 @@ export default function TeacherStudentReportPage() {
           </div>
         </div>
 
-      {/* Remarks Editor */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <div className="flex items-center gap-4">
-            <h3 className="text-lg font-bold text-gray-800">Edit Remarks</h3>
-            {!isTeacherClassTeacher && (
-              <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded-md font-medium">
-                Read Only (Class Teacher Only)
-              </span>
+        {/* Remarks Editor Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 md:p-7 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-750 pb-3 sm:pb-4">
+            <div className="flex items-center gap-3">
+              <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                Teacher & Administrative Remarks
+              </h2>
+              {!isTeacherClassTeacher && (
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 rounded-full border border-amber-200/60">
+                  Read Only (Class Teacher Restricted)
+                </span>
+              )}
+            </div>
+
+            {isTeacherClassTeacher && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={applyAutoRemarks}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-xl text-xs font-bold transition"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>Auto Generate</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveRemarks}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition active:scale-95"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save Remarks</span>
+                </button>
+              </div>
             )}
           </div>
-          {isTeacherClassTeacher && (
-            <div className="flex gap-2">
-              <button
-                onClick={applyAutoRemarks}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transaction-colors"
-              >
-                <Wand2 className="w-3.5 h-3.5" />
-                Auto Generate
-              </button>
-              <button
-                onClick={handleSaveRemarks}
-                className="flex items-center gap-2 px-3 py-1.5 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transaction-colors"
-              >
-                <Save className="w-3.5 h-3.5" />
-                Save Changes
-              </button>
-            </div>
-          )}
-        </div>
 
-        <div className="space-y-6">
-          <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <div className="flex items-center mb-1">
-                <label className="block text-sm font-medium text-gray-700 mr-2">Attitude</label>
-                {isTeacherClassTeacher && (
-                  <RemarkDropdown 
-                    options={attitudeOptions} 
-                    onSelect={(val) => handleRemarkChange('attitude', val)} 
-                  />
-                )}
-              </div>
-              <textarea 
-                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                disabled={!isTeacherClassTeacher}
-                rows={3}
-                value={remarks.attitude}
-                onChange={(e) => handleRemarkChange('attitude', e.target.value)}
-              />
-            </div>
-            <div>
-              <div className="flex items-center mb-1">
-                <label className="block text-sm font-medium text-gray-700 mr-2">Interest</label>
-                {isTeacherClassTeacher && (
-                  <RemarkDropdown 
-                    options={interestOptions} 
-                    onSelect={(val) => handleRemarkChange('interest', val)} 
-                  />
-                )}
-              </div>
-              <textarea 
-                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                disabled={!isTeacherClassTeacher}
-                rows={3}
-                value={remarks.interest}
-                onChange={(e) => handleRemarkChange('interest', e.target.value)}
-              />
-            </div>
-            <div>
-              <div className="flex items-center mb-1">
-                <label className="block text-sm font-medium text-gray-700 mr-2">Conduct</label>
-                {isTeacherClassTeacher && (
-                  <RemarkDropdown 
-                    options={conductOptions} 
-                    onSelect={(val) => handleRemarkChange('conduct', val)} 
-                  />
-                )}
-              </div>
-              <textarea 
-                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                disabled={!isTeacherClassTeacher}
-                rows={3}
-                value={remarks.conduct}
-                onChange={(e) => handleRemarkChange('conduct', e.target.value)}
-              />
-            </div>
-          </div>
-          
           <div className="space-y-4">
-            <div>
-              <div className="flex items-center mb-1">
-                <label className="block text-sm font-medium text-gray-700 mr-2">Class Teacher's Remark</label>
-                {isTeacherClassTeacher && (
-                  <RemarkDropdown 
-                    options={classTeacherOptions} 
-                    onSelect={(val) => handleRemarkChange('classTeacher', val)} 
-                  />
-                )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Attitude</label>
+                  {isTeacherClassTeacher && (
+                    <RemarkDropdown 
+                      options={attitudeOptions} 
+                      onSelect={(val) => handleRemarkChange('attitude', val)} 
+                    />
+                  )}
+                </div>
+                <textarea 
+                  className="w-full p-3 text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] resize-none disabled:opacity-50"
+                  disabled={!isTeacherClassTeacher}
+                  rows={3}
+                  value={remarks.attitude}
+                  onChange={(e) => handleRemarkChange('attitude', e.target.value)}
+                />
               </div>
-              <textarea 
-                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                disabled={!isTeacherClassTeacher}
-                rows={4}
-                value={remarks.classTeacher}
-                onChange={(e) => handleRemarkChange('classTeacher', e.target.value)}
-              />
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Interest</label>
+                  {isTeacherClassTeacher && (
+                    <RemarkDropdown 
+                      options={interestOptions} 
+                      onSelect={(val) => handleRemarkChange('interest', val)} 
+                    />
+                  )}
+                </div>
+                <textarea 
+                  className="w-full p-3 text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] resize-none disabled:opacity-50"
+                  disabled={!isTeacherClassTeacher}
+                  rows={3}
+                  value={remarks.interest}
+                  onChange={(e) => handleRemarkChange('interest', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Conduct</label>
+                  {isTeacherClassTeacher && (
+                    <RemarkDropdown 
+                      options={conductOptions} 
+                      onSelect={(val) => handleRemarkChange('conduct', val)} 
+                    />
+                  )}
+                </div>
+                <textarea 
+                  className="w-full p-3 text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] resize-none disabled:opacity-50"
+                  disabled={!isTeacherClassTeacher}
+                  rows={3}
+                  value={remarks.conduct}
+                  onChange={(e) => handleRemarkChange('conduct', e.target.value)}
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">Head Teacher's Remark</label>
-              <textarea 
-                className="w-full p-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none disabled:bg-gray-100 disabled:text-gray-500 disabled:cursor-not-allowed"
-                disabled={!isTeacherClassTeacher}
-                rows={4}
-                value={remarks.headTeacher}
-                onChange={(e) => handleRemarkChange('headTeacher', e.target.value)}
-              />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-2">
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Class Teacher's Remark</label>
+                  {isTeacherClassTeacher && (
+                    <RemarkDropdown 
+                      options={classTeacherOptions} 
+                      onSelect={(val) => handleRemarkChange('classTeacher', val)} 
+                    />
+                  )}
+                </div>
+                <textarea 
+                  className="w-full p-3 text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] resize-none disabled:opacity-50"
+                  disabled={!isTeacherClassTeacher}
+                  rows={3}
+                  value={remarks.classTeacher}
+                  onChange={(e) => handleRemarkChange('classTeacher', e.target.value)}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Head Teacher's Remark</label>
+                </div>
+                <textarea 
+                  className="w-full p-3 text-xs sm:text-sm border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] resize-none disabled:opacity-50"
+                  disabled={!isTeacherClassTeacher}
+                  rows={3}
+                  value={remarks.headTeacher}
+                  onChange={(e) => handleRemarkChange('headTeacher', e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      </div>
+      </main>
     </div>
   )
 }
