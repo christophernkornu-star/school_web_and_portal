@@ -1,9 +1,13 @@
 'use client'
 
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Users, AlertCircle, CheckCircle, Filter, Grid, User } from 'lucide-react'
+import { 
+  Users, AlertCircle, CheckCircle, Filter, Grid, User,
+  Clock, Search, Save, Layers, ArrowUpDown, ChevronDown, 
+  Loader2, ArrowLeft, X, AlertTriangle, ShieldCheck
+} from 'lucide-react'
 import { getCurrentUser, getTeacherData } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { getTeacherClassAccess } from '@/lib/teacher-permissions'
@@ -33,23 +37,24 @@ interface Student {
   gender: string
 }
 
-// Small optimization component to prevent the massive grid from re-rendering on every keystroke
 function ScoreInput({ 
   initialValue, 
   max, 
   onChange,
-  readOnly = false
+  readOnly = false,
+  className = ''
 }: { 
-  initialValue: string | number; 
-  max: number; 
-  onChange: (val: string) => void;
-  readOnly?: boolean;
+  initialValue: string | number
+  max: number
+  onChange: (val: string) => void
+  readOnly?: boolean
+  className?: string
 }) {
-  const [val, setVal] = useState(initialValue);
+  const [val, setVal] = useState(initialValue)
   
   useEffect(() => {
-    setVal(initialValue);
-  }, [initialValue]);
+    setVal(initialValue)
+  }, [initialValue])
 
   return (
     <input
@@ -59,16 +64,16 @@ function ScoreInput({
       step="0.1"
       value={val}
       readOnly={readOnly}
-      title={readOnly ? 'Class score is auto-calculated from assessments' : undefined}
+      title={readOnly ? 'Class score is auto-calculated from continuous assessments' : undefined}
       onChange={(e) => setVal(e.target.value)}
       onBlur={() => onChange(val.toString())}
-      className={`w-14 md:w-16 px-1 py-1 text-center border rounded focus:ring-1 text-xs md:text-sm dark:bg-gray-700 dark:text-white ${
+      className={className || `w-14 sm:w-16 px-1.5 py-1 text-center font-mono font-bold rounded-lg border text-xs sm:text-sm outline-none transition ${
         readOnly
-          ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-          : 'border-gray-300 dark:border-gray-600 focus:ring-ghana-green focus:border-ghana-green'
+          ? 'border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/80 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+          : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-[#003B5C] focus:border-[#003B5C]'
       }`}
     />
-  );
+  )
 }
 
 export default function ExamScoresPage() {
@@ -82,7 +87,7 @@ export default function ExamScoresPage() {
   const [filteredSubjects, setFilteredSubjects] = useState<Subject[]>([])
   const [students, setStudents] = useState<Student[]>([])
   
-  const [activeTab, setActiveTab] = useState<'ungraded' | 'grid'>('grid')
+  const [activeTab, setActiveTab] = useState<'grid' | 'ungraded'>('grid')
   const [gridSearchQuery, setGridSearchQuery] = useState('')
   const [gridSortOrder, setGridSortOrder] = useState<'default' | 'male_first' | 'female_first'>('default')
   const [selectedClass, setSelectedClass] = useState('')
@@ -92,47 +97,276 @@ export default function ExamScoresPage() {
   const [currentTermName, setCurrentTermName] = useState('')
   const [terms, setTerms] = useState<any[]>([])
   
-    const [classScorePercentage, setClassScorePercentage] = useState(40)
+  const [classScorePercentage, setClassScorePercentage] = useState(40)
   const [examScorePercentage, setExamScorePercentage] = useState(60)
   const [allowClassScoreEntry, setAllowClassScoreEntry] = useState(true)
 
-  // Grid view state
   const [gridScores, setGridScores] = useState<Record<string, Record<string, { class_score: string, exam_score: string, id?: string }>>>({})
   const [gridSaving, setGridSaving] = useState(false)
   const [gridLoading, setGridLoading] = useState(false)
   const [gridChanges, setGridChanges] = useState<Set<string>>(new Set())
-  
-  // Dynamic Assessment Columns - Removed for Multi-Subject View
-  // const [assessmentColumns, setAssessmentColumns] = useState<{id: string, name: string, max: string}[]>([])
-  // const [showColumnSetupModal, setShowColumnSetupModal] = useState(false)
 
-  // Assessment Modal State
-  const [showAssessmentModal, setShowAssessmentModal] = useState(false)
-  const [currentAssessmentStudent, setCurrentAssessmentStudent] = useState<string | null>(null)
-  const [assessmentItems, setAssessmentItems] = useState<{id: string, name: string, score: string, max: string}[]>([])
-
-
-  // Manual entry state
-  const [selectedStudent, setSelectedStudent] = useState('')
-  const [manualScores, setManualScores] = useState({
-    class_score: '',
-    exam_score: '',
-    total: '',
-    grade: '',
-    remarks: ''
-  })
-  const [submitting, setSubmitting] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
-
-  
-
-  // Ungraded subjects state
   const [ungradedData, setUngradedData] = useState<any[]>([])
   const [loadingUngraded, setLoadingUngraded] = useState(false)
-
-  // Subject dropdown visibility state
   const [isSubjectDropdownOpen, setIsSubjectDropdownOpen] = useState(false)
+
+  // Unsaved changes confirmation modal
+  const [pendingAction, setPendingAction] = useState<{
+    type: 'navigate' | 'tab' | 'class'
+    target: string
+  } | null>(null)
+
+  // Sync state to refs for window and global click listeners
+  const gridChangesRef = useRef<Set<string>>(gridChanges)
+  const gridScoresRef = useRef(gridScores)
+  const selectedClassRef = useRef(selectedClass)
+  const selectedTermRef = useRef(selectedTerm)
+  const teacherRef = useRef(teacher)
+  const teacherClassesRef = useRef(teacherClasses)
+  const examScorePercentageRef = useRef(examScorePercentage)
+
+  useEffect(() => { gridChangesRef.current = gridChanges }, [gridChanges])
+  useEffect(() => { gridScoresRef.current = gridScores }, [gridScores])
+  useEffect(() => { selectedClassRef.current = selectedClass }, [selectedClass])
+  useEffect(() => { selectedTermRef.current = selectedTerm }, [selectedTerm])
+  useEffect(() => { teacherRef.current = teacher }, [teacher])
+  useEffect(() => { teacherClassesRef.current = teacherClasses }, [teacherClasses])
+  useEffect(() => { examScorePercentageRef.current = examScorePercentage }, [examScorePercentage])
+
+  function calculateGradeAndRemark(total: number, classLevel: string): { grade: string, remark: string } {
+    const className = classLevel.toLowerCase()
+    const isPrimary = (className.includes('basic') || className.includes('primary')) && 
+                      (className.includes('1') || className.includes('2') || 
+                       className.includes('3') || className.includes('4') || 
+                       className.includes('5') || className.includes('6')) &&
+                      !className.includes('jhs')
+    
+    if (isPrimary) {
+      if (total >= 80) return { grade: '1', remark: 'Highly Proficient' }
+      if (total >= 70) return { grade: '2', remark: 'Proficient' }
+      if (total >= 60) return { grade: '3', remark: 'Approaching Proficiency' }
+      if (total >= 50) return { grade: '4', remark: 'Developing' }
+      return { grade: '5', remark: 'Beginning' }
+    } else {
+      if (total >= 80) return { grade: '1', remark: 'High proficient' }
+      if (total >= 70) return { grade: '2', remark: 'Proficient' }
+      if (total >= 60) return { grade: '3', remark: 'Proficient' }
+      if (total >= 50) return { grade: '4', remark: 'Approaching proficiency' }
+      if (total >= 40) return { grade: '5', remark: 'Developing' }
+      return { grade: '6', remark: 'Emerging' }
+    }
+  }
+
+  const buildUpdatesPayload = useCallback((
+    changes: Set<string>,
+    scores: Record<string, Record<string, { class_score: string, exam_score: string, id?: string }>>,
+    currClass: string,
+    currTerm: string,
+    currTeacher: any,
+    classList: TeacherClass[],
+    examPct: number
+  ) => {
+    const updates: any[] = []
+    const className = classList.find(c => c.class_id === currClass)?.class_name || ''
+
+    Array.from(changes).forEach(studentId => {
+      const studentScores = scores[studentId]
+      if (!studentScores) return
+
+      Object.keys(studentScores).forEach(subjectId => {
+        const scoreData = studentScores[subjectId]
+        const inputClassScore = parseFloat(scoreData.class_score)
+        const storedClassScore = !isNaN(inputClassScore) ? inputClassScore : NaN
+
+        const inputExamScore = parseFloat(scoreData.exam_score)
+        const storedExamScore = !isNaN(inputExamScore) ? Math.round((inputExamScore / 100) * examPct * 100) / 100 : NaN
+        
+        if (!isNaN(storedClassScore) || !isNaN(storedExamScore) || scoreData.id) {
+          const total = (isNaN(storedClassScore) ? 0 : storedClassScore) + (isNaN(storedExamScore) ? 0 : storedExamScore)
+          const { grade, remark } = calculateGradeAndRemark(total, className)
+
+          updates.push({
+            id: scoreData.id,
+            student_id: studentId,
+            subject_id: subjectId,
+            term_id: currTerm,
+            class_id: currClass,
+            class_score: isNaN(storedClassScore) ? 0 : storedClassScore,
+            exam_score: isNaN(storedExamScore) ? 0 : storedExamScore,
+            total: total,
+            grade,
+            remarks: remark,
+            teacher_id: currTeacher?.id
+          })
+        }
+      })
+    })
+
+    return updates
+  }, [])
+
+  // Emergency auto-save on force close or hide
+  const triggerEmergencyAutoSave = useCallback(async () => {
+    if (gridChangesRef.current.size === 0 || !teacherRef.current) return
+
+    const updates = buildUpdatesPayload(
+      gridChangesRef.current,
+      gridScoresRef.current,
+      selectedClassRef.current,
+      selectedTermRef.current,
+      teacherRef.current,
+      teacherClassesRef.current,
+      examScorePercentageRef.current
+    )
+
+    if (updates.length === 0) return
+
+    const storageKey = `backup_scores_${selectedClassRef.current}_${selectedTermRef.current}`
+
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        timestamp: Date.now(),
+        updates
+      }))
+    } catch (e) {
+      console.error('LocalStorage backup error:', e)
+    }
+
+    try {
+      await supabase
+        .from('scores')
+        .upsert(
+          updates.map(({ id, ...rest }: any) => rest),
+          { onConflict: 'student_id, subject_id, term_id' }
+        )
+      localStorage.removeItem(storageKey)
+    } catch (err) {
+      console.error('Emergency background push error:', err)
+    }
+  }, [supabase, buildUpdatesPayload])
+
+  // Window unload & visibility management
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (gridChangesRef.current.size > 0) {
+        triggerEmergencyAutoSave()
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && gridChangesRef.current.size > 0) {
+        triggerEmergencyAutoSave()
+      }
+    }
+
+    const handlePageHide = () => {
+      if (gridChangesRef.current.size > 0) {
+        triggerEmergencyAutoSave()
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('pagehide', handlePageHide)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handlePageHide)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [triggerEmergencyAutoSave])
+
+  // Capture-phase listener on document to intercept clicks anywhere on the page/sidebar
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      if (gridChangesRef.current.size === 0) return
+
+      const target = e.target as HTMLElement | null
+      const anchor = target?.closest('a')
+      if (!anchor) return
+
+      // Allow explicit downloads or target="_blank"
+      if (anchor.hasAttribute('download') || anchor.target === '_blank') return
+
+      const rawHref = anchor.getAttribute('href')
+      if (!rawHref) return
+
+      // Skip in-page hashes, mailto, tel, javascript:
+      if (
+        rawHref.startsWith('#') || 
+        rawHref.startsWith('tel:') || 
+        rawHref.startsWith('mailto:') || 
+        rawHref.startsWith('javascript:')
+      ) {
+        return
+      }
+
+      let targetUrl: URL
+      try {
+        targetUrl = new URL(rawHref, window.location.href)
+      } catch {
+        return
+      }
+
+      // Check if link is an internal route
+      if (targetUrl.origin !== window.location.origin) return
+
+      const currentPath = window.location.pathname + window.location.search
+      const targetPath = targetUrl.pathname + targetUrl.search
+
+      if (currentPath === targetPath) return
+
+      // Intercept Next.js Link click in the capture phase
+      e.preventDefault()
+      e.stopPropagation()
+
+      setPendingAction({
+        type: 'navigate',
+        target: targetPath
+      })
+    }
+
+    // Capture phase intercepts before Next.js Link click handler fires
+    document.addEventListener('click', handleGlobalClick, true)
+
+    return () => {
+      document.removeEventListener('click', handleGlobalClick, true)
+    }
+  }, [])
+
+  // Restore unsaved session backups safely
+  useEffect(() => {
+    if (!selectedClass || !selectedTerm) return
+    const storageKey = `backup_scores_${selectedClass}_${selectedTerm}`
+    const backupJson = typeof window !== 'undefined' ? localStorage.getItem(storageKey) : null
+    if (!backupJson) return
+
+    async function restoreBackup() {
+      try {
+        const backup = JSON.parse(backupJson!)
+        if (backup?.updates?.length > 0) {
+          const { error: restoreError } = await supabase
+            .from('scores')
+            .upsert(
+              backup.updates.map(({ id, ...rest }: any) => rest),
+              { onConflict: 'student_id, subject_id, term_id' }
+            )
+
+          if (!restoreError) {
+            localStorage.removeItem(storageKey)
+            toast.success('Restored and saved unsaved scores from previous session!')
+            loadGridScores()
+          }
+        }
+      } catch (e) {
+        localStorage.removeItem(storageKey)
+      }
+    }
+
+    restoreBackup()
+  }, [selectedClass, selectedTerm])
 
   useEffect(() => {
     async function loadData() {
@@ -144,8 +378,6 @@ export default function ExamScoresPage() {
           return
         }
 
-        // Parallel Fetch: Settings, Teacher, Subjects, Terms, Current Term
-        // We start these requests simultaneously to avoid waterfall
         const [
           settingsRes,
           teacherRes,
@@ -160,8 +392,7 @@ export default function ExamScoresPage() {
           supabase.from('system_settings').select('setting_value').eq('setting_key', 'current_term').maybeSingle()
         ])
 
-        // 1. Process Grading Settings
-                if (settingsRes.data) {
+        if (settingsRes.data) {
           settingsRes.data.forEach((setting: any) => {
             if (setting.setting_key === 'class_score_percentage') {
               setClassScorePercentage(Number(setting.setting_value))
@@ -173,7 +404,6 @@ export default function ExamScoresPage() {
           })
         }
 
-        // 2. Process Teacher Data
         if (teacherRes.error || !teacherRes.data) {
           setError('Teacher profile not found. Please contact an administrator.')
           setLoading(false)
@@ -182,15 +412,12 @@ export default function ExamScoresPage() {
         const teacherData = teacherRes.data
         setTeacher(teacherData)
 
-        // 3. Process Subjects
         if (subjectsRes.data) {
           setSubjects(subjectsRes.data)
         }
 
-        // 4. Process Terms & Current Term
         if (termsRes.data) {
           setTerms(termsRes.data)
-          
           if (currentTermRes.data?.setting_value) {
             const matchingTerm = termsRes.data.find((t: any) => t.id === currentTermRes.data.setting_value)
             if (matchingTerm) {
@@ -200,7 +427,6 @@ export default function ExamScoresPage() {
           }
         }
 
-        // 5. Load teacher's assigned classes (Dependent on Teacher ID)
         const classAccess = await getTeacherClassAccess(teacherData.profile_id)
         if (classAccess.length === 0) {
           setError('You are not assigned to any classes. Please contact an administrator.')
@@ -208,7 +434,7 @@ export default function ExamScoresPage() {
           return
         }
 
-        setTeacherClasses(classAccess.map(c => ({
+        setTeacherClasses(classAccess.map((c: any) => ({
           class_id: c.class_id,
           class_name: c.class_name,
           level: c.level
@@ -217,15 +443,14 @@ export default function ExamScoresPage() {
         setLoading(false)
       } catch (err: any) {
         console.error('Error loading data:', err)
-        setError(err.message || 'Failed to load data. Please try again.')
+        setError(err.message || 'Failed to load initial data.')
         setLoading(false)
       }
     }
 
     loadData()
-  }, [router])
+  }, [router, supabase])
 
-  // Load students when class is selected
   useEffect(() => {
     async function loadStudents() {
       if (!selectedClass) {
@@ -245,14 +470,13 @@ export default function ExamScoresPage() {
         setStudents(data || [])
       } catch (err: any) {
         console.error('Error loading students:', err)
-        setFormErrors({ ...formErrors, class: 'Failed to load students' })
+        toast.error('Failed to load class roster')
       }
     }
 
     loadStudents()
-  }, [selectedClass])
+  }, [selectedClass, supabase])
 
-  // Load ungraded subjects when class and term are selected
   useEffect(() => {
     if (activeTab === 'ungraded' && selectedClass && selectedTerm) {
       loadUngradedSubjects()
@@ -264,7 +488,6 @@ export default function ExamScoresPage() {
 
     setLoadingUngraded(true)
     try {
-      // Get all students in the class
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select('id, student_id, first_name, last_name')
@@ -274,7 +497,6 @@ export default function ExamScoresPage() {
 
       if (studentsError) throw studentsError
 
-      // Get all subjects for this class level
       const classData = teacherClasses.find(c => c.class_id === selectedClass)
       if (!classData) return
 
@@ -296,7 +518,6 @@ export default function ExamScoresPage() {
 
       const classSubjects = subjects.filter(s => (s as any).level === category)
 
-      // Get all existing scores for this class and term
       const { data: scoresData, error: scoresError } = await supabase
         .from('scores')
         .select('student_id, subject_id')
@@ -305,7 +526,6 @@ export default function ExamScoresPage() {
 
       if (scoresError) throw scoresError
 
-      // Build ungraded report
       const ungradedReport = studentsData?.map(student => {
         const studentScores = scoresData?.filter(s => s.student_id === student.id) || []
         const gradedSubjectIds = studentScores.map(s => s.subject_id)
@@ -321,18 +541,17 @@ export default function ExamScoresPage() {
           gradedCount: gradedSubjectIds.length,
           ungradedCount: missingSubjects.length
         }
-      }).filter(item => item.ungradedCount > 0) // Only show students with missing grades
+      }).filter(item => item.ungradedCount > 0)
 
       setUngradedData(ungradedReport || [])
-    } catch (error) {
-      console.error('Error loading ungraded subjects:', error)
-      setError('Failed to load ungraded subjects')
+    } catch (err) {
+      console.error('Error loading ungraded subjects:', err)
+      toast.error('Failed to analyze missing grades')
     } finally {
       setLoadingUngraded(false)
     }
   }
 
-  // Filter subjects based on selected class level AND teacher's assigned subjects
   useEffect(() => {
     async function filterSubjects() {
       if (!selectedClass || subjects.length === 0 || !teacher) {
@@ -346,7 +565,6 @@ export default function ExamScoresPage() {
         return
       }
 
-      // Get teacher's access for this class
       const fullAccess = await getTeacherClassAccess(teacher.profile_id)
       const access = fullAccess.find(c => c.class_id === selectedClass)
       
@@ -355,7 +573,6 @@ export default function ExamScoresPage() {
         return
       }
 
-      // Determine class category based on class name
       const className = selectedClassData.class_name.toLowerCase()
       let category = ''
 
@@ -372,94 +589,37 @@ export default function ExamScoresPage() {
         category = 'jhs'
       }
 
-      // Filter subjects by level first
       let filtered = subjects.filter(s => {
         const subjectLevel = (s as any).level || ''
         return subjectLevel === category
       })
 
-      // If no level-specific subjects found, show all subjects (fallback for when levels aren't configured)
       if (filtered.length === 0) {
         filtered = [...subjects]
       }
 
-      // If teacher does not have permission to edit all subjects, filter to only assigned subjects
-      // This applies even to class teachers if they don't have 'can_edit_all_subjects' permission
       if (!access.can_edit_all_subjects) {
         const subjectsTaught = access.subjects_taught || []
-        
-        const filteredByAssignment = filtered.filter(s => {
-            return subjectsTaught.some((assigned: any) => {
-                if (typeof assigned === 'string') {
-                    return assigned.toLowerCase() === s.name.toLowerCase()
-                }
-                return String(assigned.subject_id) === String(s.id)
-            })
+        filtered = filtered.filter(s => {
+          return subjectsTaught.some((assigned: any) => {
+            if (typeof assigned === 'string') {
+              return assigned.toLowerCase() === s.name.toLowerCase()
+            }
+            return String(assigned.subject_id) === String(s.id)
+          })
         })
-        
-        filtered = filteredByAssignment
       }
 
       setFilteredSubjects(filtered)
-      // Reset selected subject if it's not in the filtered list
       if (selectedSubject && !filtered.find(s => s.id === selectedSubject)) {
         setSelectedSubject('')
       }
-
-      // Filter selectedSubjects to ensure they are still valid for the new class/filter
       setSelectedSubjects(prev => prev.filter(id => filtered.find(s => s.id === id)))
     }
 
     filterSubjects()
   }, [selectedClass, subjects, teacherClasses, selectedSubject, teacher])
 
-    // Score conversion functions
-    function convertClassScore(inputScore: number, maxScore: number = 100): number {
-      // Convert any class score to max {classScorePercentage}
-      return Math.round((inputScore / maxScore) * classScorePercentage * 10) / 10 // Round to 1 decimal
-    }
-  
-    function convertExamScore(inputScore: number): number {
-      // Convert any exam score to max {examScorePercentage}
-      return Math.round((inputScore / 100) * examScorePercentage * 10) / 10 // Round to 1 decimal
-    }  // Auto-calculate total when scores change
-  function calculateGrade(total: number): string {
-    if (total >= 80) return 'A'
-    if (total >= 70) return 'B'
-    if (total >= 60) return 'C'
-    if (total >= 50) return 'D'
-    if (total >= 40) return 'E'
-    return 'F'
-  }
-
-  function calculateGradeAndRemark(total: number, classLevel: string): { grade: string, remark: string } {
-    // Determine if Primary (Basic 1-6) or JHS (Basic 7-9)
-    const isPrimary = (classLevel.toLowerCase().includes('basic') || classLevel.toLowerCase().includes('primary')) && 
-                      (classLevel.includes('1') || classLevel.includes('2') || 
-                       classLevel.includes('3') || classLevel.includes('4') || 
-                       classLevel.includes('5') || classLevel.includes('6')) &&
-                      !classLevel.toLowerCase().includes('jhs')
-    
-    if (isPrimary) {
-      if (total >= 80) return { grade: '1', remark: 'Highly Proficient' }
-      if (total >= 70) return { grade: '2', remark: 'Proficient' }
-      if (total >= 60) return { grade: '3', remark: 'Approaching Proficiency' }
-      if (total >= 50) return { grade: '4', remark: 'Developing' }
-      return { grade: '5', remark: 'Beginning' }
-    } else {
-      if (total >= 80) return { grade: '1', remark: 'High proficient' }
-      if (total >= 70) return { grade: '2', remark: 'Proficient' }
-      if (total >= 60) return { grade: '3', remark: 'Proficient' }
-      if (total >= 50) return { grade: '4', remark: 'Approaching proficiency' }
-      if (total >= 40) return { grade: '5', remark: 'Developing' }
-      return { grade: '6', remark: 'Emerging' }
-    }
-  }
-
-
-
-
-  // Load grid scores when tab is active and filters are selected
   useEffect(() => {
     if (activeTab === 'grid' && selectedClass && selectedSubjects.length > 0 && selectedTerm) {
       loadGridScores()
@@ -483,84 +643,68 @@ export default function ExamScoresPage() {
 
       const scoresMap: Record<string, Record<string, { class_score: string, exam_score: string, id?: string }>> = {}
       
-      // Initialize
       students.forEach(student => {
         scoresMap[student.id] = {}
         selectedSubjects.forEach(subjectId => {
-            scoresMap[student.id][subjectId] = { class_score: '', exam_score: '' }
+          scoresMap[student.id][subjectId] = { class_score: '', exam_score: '' }
         })
       })
 
-      // Fill
       data?.forEach((score: any) => {
         if (scoresMap[score.student_id]) {
-            // Class score is raw (max {classScorePercentage})
-            let displayClassScore = ''
-            if (score.class_score !== null && score.class_score !== undefined) {
-                displayClassScore = score.class_score.toString()
-            }
+          let displayClassScore = ''
+          if (score.class_score !== null && score.class_score !== undefined) {
+            displayClassScore = score.class_score.toString()
+          }
 
-            // Convert exam score from {examScorePercentage}-basis to 100-basis for display
-            let displayExamScore = ''
-            if (score.exam_score !== null && score.exam_score !== undefined) {
-                // (Score / {examScorePercentage}) * 100
-                const val = (parseFloat(score.exam_score) / examScorePercentage) * 100
-                displayExamScore = Math.round(val * 100) / 100 + '' // Round to 2 decimal places
-            }
+          let displayExamScore = ''
+          if (score.exam_score !== null && score.exam_score !== undefined) {
+            const val = (parseFloat(score.exam_score) / examScorePercentage) * 100
+            displayExamScore = Math.round(val * 100) / 100 + ''
+          }
 
-            scoresMap[score.student_id][score.subject_id] = {
-                class_score: displayClassScore,
-                exam_score: displayExamScore,
-                id: score.id
-            }
+          scoresMap[score.student_id][score.subject_id] = {
+            class_score: displayClassScore,
+            exam_score: displayExamScore,
+            id: score.id
+          }
         }
       })
 
       setGridScores(scoresMap)
     } catch (err: any) {
       console.error('Error loading grid scores:', err)
-      setError('Failed to load scores for grid view')
+      toast.error('Failed to load score matrix')
     } finally {
       setGridLoading(false)
     }
   }
 
   function handleGridScoreChange(studentId: string, subjectId: string, field: 'class_score' | 'exam_score', value: string) {
-    // Block manual class score entries when the admin has disabled it
     if (field === 'class_score' && !allowClassScoreEntry) return
     
-    // Allow empty string
     if (value === '') {
-        setGridScores(prev => ({
-          ...prev,
-          [studentId]: {
-            ...prev[studentId],
-            [subjectId]: {
-                ...prev[studentId][subjectId],
-                [field]: value
-            }
+      setGridScores(prev => ({
+        ...prev,
+        [studentId]: {
+          ...prev[studentId],
+          [subjectId]: {
+            ...prev[studentId][subjectId],
+            [field]: value
           }
-        }))
-        setGridChanges(prev => new Set(prev).add(studentId))
-        return
+        }
+      }))
+      setGridChanges(prev => new Set(prev).add(studentId))
+      return
     }
 
     const numVal = parseFloat(value)
-    
-    // Check if valid number
     if (isNaN(numVal)) return 
 
-    // Check ranges
     if (field === 'class_score') {
-        if (numVal < 0 || numVal > classScorePercentage) {
-            // Invalid class score - ignore input
-            return
-        }
+      if (numVal < 0 || numVal > classScorePercentage) return
     } else if (field === 'exam_score') {
-        if (numVal < 0 || numVal > 100) {
-            // Invalid exam score - ignore input
-            return
-        }
+      if (numVal < 0 || numVal > 100) return
     }
 
     setGridScores(prev => ({
@@ -568,624 +712,559 @@ export default function ExamScoresPage() {
       [studentId]: {
         ...prev[studentId],
         [subjectId]: {
-            ...prev[studentId][subjectId],
-            [field]: value
+          ...prev[studentId][subjectId],
+          [field]: value
         }
       }
     }))
     setGridChanges(prev => new Set(prev).add(studentId))
   }
 
-
-
-  async function saveGridScores() {
-    if (gridChanges.size === 0) return
+  async function saveGridScores(): Promise<boolean> {
+    if (gridChanges.size === 0) return true
 
     setGridSaving(true)
     try {
-      // Verify permissions first
       const fullAccess = await getTeacherClassAccess(teacher.profile_id)
       const access = fullAccess.find(c => c.class_id === selectedClass)
       
       if (!access) throw new Error('You do not have access to this class')
-      
-      const isClassTeacher = Boolean(access.is_class_teacher)
-      const subjectsTaught = access.subjects_taught || []
 
-      const updates: any[] = []
-      
-      Array.from(gridChanges).forEach(studentId => {
-        const studentScores = gridScores[studentId]
-        if (!studentScores) return
-
-        Object.keys(studentScores).forEach(subjectId => {
-            // Check subject permission
-            if (!access.can_edit_all_subjects) {
-                 const subject = subjects.find(s => s.id === subjectId)
-                 const subjectName = subject?.name || ''
-                 
-                 const isAssigned = subjectsTaught.some((s: any) => {
-                    if (typeof s === 'string') return s.toLowerCase() === subjectName.toLowerCase()
-                    return String(s.subject_id) === String(subjectId)
-                 })
-                 
-                 if (!isAssigned) {
-                     console.warn(`Skipping save for unassigned subject: ${subjectName}`)
-                     return // Skip this subject
-                 }
-            }
-
-            const scoreData = studentScores[subjectId]
-            
-            // Class score is raw (max {classScorePercentage})
-            const inputClassScore = parseFloat(scoreData.class_score)
-            const storedClassScore = !isNaN(inputClassScore) ? inputClassScore : NaN
-
-            // Convert input exam score (100-basis) to stored score ({examScorePercentage}-basis)
-            const inputExamScore = parseFloat(scoreData.exam_score)
-            const storedExamScore = !isNaN(inputExamScore) ? Math.round((inputExamScore / 100) * examScorePercentage * 100) / 100 : NaN
-            
-            // Only save if at least one score is present or we are updating an existing record
-            if (!isNaN(storedClassScore) || !isNaN(storedExamScore) || scoreData.id) {
-                const total = (isNaN(storedClassScore) ? 0 : storedClassScore) + (isNaN(storedExamScore) ? 0 : storedExamScore)
-                const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
-                const { grade, remark } = calculateGradeAndRemark(total, className)
-
-                updates.push({
-                    id: scoreData.id,
-                    student_id: studentId,
-                    subject_id: subjectId,
-                    term_id: selectedTerm,
-                    class_id: selectedClass,
-                    class_score: isNaN(storedClassScore) ? 0 : storedClassScore,
-                    exam_score: isNaN(storedExamScore) ? 0 : storedExamScore,
-                    total: total,
-                    grade,
-                    remarks: remark,
-                    teacher_id: teacher.id
-                })
-            }
-        })
-      })
+      const updates = buildUpdatesPayload(
+        gridChanges,
+        gridScores,
+        selectedClass,
+        selectedTerm,
+        teacher,
+        teacherClasses,
+        examScorePercentage
+      )
 
       if (updates.length === 0) {
-          setGridSaving(false)
-          return
+        setGridSaving(false)
+        return true
       }
 
       const { error } = await supabase
         .from('scores')
         .upsert(
-          updates.map(({ id, ...rest }) => rest),
+          updates.map(({ id, ...rest }: any) => rest),
           { onConflict: 'student_id, subject_id, term_id' }
         )
       
       if (error) throw error
 
       setGridChanges(new Set())
+      localStorage.removeItem(`backup_scores_${selectedClass}_${selectedTerm}`)
       loadGridScores()
-      setSubmitSuccess(true)
-      setTimeout(() => setSubmitSuccess(false), 3000)
-
+      toast.success('Exam scores saved successfully!')
+      return true
     } catch (err: any) {
       console.error('Error saving grid scores:', err)
-      setError('Failed to save scores: ' + err.message)
+      toast.error('Failed to save scores: ' + err.message)
+      return false
     } finally {
       setGridSaving(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-          <header className="bg-white dark:bg-gray-800 shadow">
-            <div className="container mx-auto px-4 py-4">
-               <div className="flex items-center gap-4">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div className="space-y-2">
-                       <Skeleton className="h-6 w-48 rounded" />
-                       <Skeleton className="h-4 w-32 rounded" />
-                  </div>
-               </div>
-            </div>
-          </header>
-          <main className="flex-1 container mx-auto px-4 py-8">
-            <div className="space-y-6">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                       <Skeleton className="h-10 w-full" />
-                       <Skeleton className="h-10 w-full" />
-                       <Skeleton className="h-10 w-full" />
-                   </div>
-                    <Skeleton className="h-10 w-full mb-4" />
-                   <Skeleton className="h-96 w-full rounded" />
-                </div>
-            </div>
-          </main>
-      </div>
-    )
+  // Navigation interceptor
+  const handleRequestNavigation = (type: 'navigate' | 'tab' | 'class', target: string) => {
+    if (gridChanges.size > 0) {
+      setPendingAction({ type, target })
+    } else {
+      executePendingAction({ type, target })
+    }
   }
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-lg shadow-md p-8 max-w-md">
-          <div className="flex items-center space-x-3 text-red-600 mb-4">
-            <AlertCircle className="w-8 h-8" />
-            <h2 className="text-xl font-semibold">Error Loading Page</h2>
-          </div>
-          <p className="text-gray-700 mb-6">{error}</p>
-          <div className="flex space-x-4">
-            <button
-              onClick={() => window.location.reload()}
-              className="flex-1 bg-ghana-green text-white px-4 py-2 rounded hover:bg-green-700 transition"
-            >
-              Try Again
-            </button>
-            <Link
-              href="/teacher/dashboard"
-              className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300 transition text-center"
-            >
-              Go to Dashboard
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
+  const executePendingAction = (action: { type: 'navigate' | 'tab' | 'class', target: string }) => {
+    if (action.type === 'navigate') {
+      router.push(action.target)
+    } else if (action.type === 'tab') {
+      setActiveTab(action.target as any)
+    } else if (action.type === 'class') {
+      setSelectedClass(action.target)
+    }
   }
+
+  const handleModalSaveAndExit = async () => {
+    const success = await saveGridScores()
+    if (success && pendingAction) {
+      const action = pendingAction
+      setPendingAction(null)
+      executePendingAction(action)
+    }
+  }
+
+  const handleModalDiscardAndExit = () => {
+    setGridChanges(new Set())
+    localStorage.removeItem(`backup_scores_${selectedClass}_${selectedTerm}`)
+    if (pendingAction) {
+      const action = pendingAction
+      setPendingAction(null)
+      executePendingAction(action)
+    }
+  }
+
+  const sortedAndFilteredStudents = useMemo(() => {
+    return students
+      .filter(student => {
+        const query = gridSearchQuery.toLowerCase()
+        return (
+          student.first_name.toLowerCase().includes(query) ||
+          student.last_name.toLowerCase().includes(query) ||
+          student.student_id.toLowerCase().includes(query)
+        )
+      })
+      .sort((a, b) => {
+        const nameCompare = a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name)
+        if (gridSortOrder === 'default') return nameCompare
+
+        const genderA = a.gender?.toLowerCase()
+        const genderB = b.gender?.toLowerCase()
+        if (genderA === genderB) return nameCompare
+
+        if (gridSortOrder === 'male_first') return genderA === 'male' ? -1 : 1
+        if (gridSortOrder === 'female_first') return genderA === 'female' ? -1 : 1
+        return nameCompare
+      })
+  }, [students, gridSearchQuery, gridSortOrder])
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <header className="bg-white dark:bg-gray-800 shadow">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center gap-4">
-            <BackButton href="/teacher/manage-scores" />
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">Exam Scores</h1>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Manage exam scores with spreadsheet view</p>
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-24 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+      {/* Sticky Header Banner */}
+      <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 sticky top-0 z-30 shadow-sm">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 min-w-0">
+              <button
+                type="button"
+                onClick={() => handleRequestNavigation('navigate', '/teacher/manage-scores')}
+                className="p-2 -ml-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition shrink-0"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 truncate">
+                  <Grid className="w-6 h-6 text-[#003B5C] dark:text-blue-400 shrink-0" />
+                  <span>Terminal Exam Scores</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
+                  Scaled computation: Class ({classScorePercentage}%) + Exam ({examScorePercentage}%)
+                </p>
+              </div>
             </div>
+
+            {activeTab === 'grid' && selectedClass && selectedSubjects.length > 0 && selectedTerm && (
+              <button
+                onClick={saveGridScores}
+                disabled={gridSaving || gridChanges.size === 0}
+                className="hidden sm:inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+              >
+                {gridSaving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Save Changes ({gridChanges.size})</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 md:px-6 py-8">
-        <div className="max-w-4xl xl:max-w-5xl w-full mx-auto">
-          
-
-                    {/* Tab Navigation */}
-          <div className="bg-white dark:bg-gray-800 rounded-t-lg shadow border-b dark:border-gray-700 overflow-x-auto scrollbar-hide">
-            <div className="flex min-w-full md:min-w-max">
-              <button
-                onClick={() => setActiveTab('grid')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-3 md:px-6 md:py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'grid'
-                    ? 'text-ghana-green border-b-2 border-ghana-green'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                <Grid className="w-4 h-4 md:w-5 md:h-5" />
-                <span className="hidden md:inline">Spreadsheet View</span>
-                <span className="md:hidden">Grid</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('ungraded')}
-                className={`flex-1 flex items-center justify-center space-x-2 px-3 py-3 md:px-6 md:py-4 text-xs md:text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeTab === 'ungraded'
-                    ? 'text-ghana-green border-b-2 border-ghana-green'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
-              >
-                <AlertCircle className="w-4 h-4 md:w-5 md:h-5" />
-                <span>Ungraded Subjects</span>
-              </button>
-            </div>
+      <main className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-5 sm:space-y-6">
+        {/* Navigation Tabs */}
+        <div className="w-full overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="bg-gray-200/70 dark:bg-gray-800/90 p-1.5 rounded-2xl inline-flex items-center gap-1.5 min-w-full sm:min-w-0 shadow-inner">
+            <button
+              type="button"
+              onClick={() => handleRequestNavigation('tab', 'grid')}
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                activeTab === 'grid'
+                  ? 'bg-white dark:bg-gray-700 text-[#003B5C] dark:text-blue-300 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <Grid className="w-4 h-4 shrink-0" />
+              <span>Spreadsheet Matrix</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleRequestNavigation('tab', 'ungraded')}
+              className={`shrink-0 inline-flex items-center justify-center gap-2 px-4 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 whitespace-nowrap ${
+                activeTab === 'ungraded'
+                  ? 'bg-white dark:bg-gray-700 text-[#003B5C] dark:text-blue-300 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>Ungraded Analysis</span>
+            </button>
           </div>
+        </div>
 
-                    
-
-          {/* Ungraded Subjects Tab */}
-          {activeTab === 'ungraded' && (
-            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-4 md:p-6">
-              {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Tab 1: Spreadsheet Matrix View */}
+        {activeTab === 'grid' && (
+          <div className="space-y-4 sm:space-y-6">
+            {/* Filter Configuration Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-5 md:p-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-4">
+                {/* Class Cohort */}
                 <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Class *
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                    Assigned Class <span className="text-rose-500">*</span>
                   </label>
-                  <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="">Select Class</option>
-                    {teacherClasses.map(cls => (
-                      <option key={cls.class_id} value={cls.class_id}>
-                        {cls.class_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Term *
-                  </label>
-                  <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
-                    {currentTermName || 'No current term set'}
+                  <div className="relative">
+                    <select
+                      value={selectedClass}
+                      onChange={(e) => handleRequestNavigation('class', e.target.value)}
+                      className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
+                    >
+                      <option value="">Select class cohort</option>
+                      {teacherClasses.map(cls => (
+                        <option key={cls.class_id} value={cls.class_id}>{cls.class_name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
-              </div>
 
-              {/* Ungraded Report */}
-              {ungradedData.length > 0 ? (
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-700 border-b dark:border-gray-600 flex justify-between items-center">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
-                      Ungraded Subjects Report
-                    </h3>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      {ungradedData.length} students with missing grades
-                    </span>
-                  </div>
-                  <div
-                    className="overflow-x-auto w-full max-w-[calc(100vw-6rem)] md:max-w-full mx-auto"
-                    style={{ scrollbarGutter: 'stable both-edges' }}
-                  >
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th scope="col" className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Student
-                          </th>
-                          <th scope="col" className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Missing Subjects
-                          </th>
-                          <th scope="col" className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                            Progress
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {ungradedData.map((item, index) => (
-                          <tr key={item.student.id} className={index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700/50'}>
-                            <td className="px-3 md:px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center">
-                                <div className="flex-shrink-0 h-10 w-10 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                                  <User className="h-5 w-5 text-gray-500 dark:text-gray-300" />
-                                </div>
-                                <div className="ml-4">
-                                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                    {item.student.first_name} {item.student.last_name}
-                                  </div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                                    {item.student.student_id}
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-3 md:px-6 py-4">
-                              <div className="flex flex-wrap gap-2">
-                                {item.missingSubjects.map((subject: any) => (
-                                  <span 
-                                    key={subject.id}
-                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200"
-                                  >
-                                    {subject.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </td>
-                            <td className="px-3 md:px-6 py-4 whitespace-nowrap">
-                              <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5 max-w-[100px]">
-                                <div 
-                                  className="bg-blue-600 h-2.5 rounded-full" 
-                                  style={{ width: `${(item.gradedCount / item.totalSubjects) * 100}%` }}
-                                ></div>
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {item.gradedCount} of {item.totalSubjects} graded
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <AlertCircle className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Data</h3>
-                  <p className="text-gray-600 dark:text-gray-400">No ungraded subjects found for the selected criteria.</p>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Spreadsheet View Tab */}
-          {activeTab === 'grid' && (
-            <div className="bg-white dark:bg-gray-800 rounded-b-lg shadow p-4 md:p-6">
-              {/* Filters */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Class *
-                  </label>
-                  <select
-                    value={selectedClass}
-                    onChange={(e) => setSelectedClass(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  >
-                    <option value="">Select Class</option>
-                    {teacherClasses.map(cls => (
-                      <option key={cls.class_id} value={cls.class_id}>
-                        {cls.class_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
+                {/* Multi-Subject Filter Dropdown */}
                 <div className="relative">
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Subjects *
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                    Subjects To Score <span className="text-rose-500">*</span>
                   </label>
                   <button
                     type="button"
                     onClick={() => setIsSubjectDropdownOpen(!isSubjectDropdownOpen)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent text-left bg-white dark:bg-gray-700 flex justify-between items-center"
+                    className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl text-left bg-gray-50/50 dark:bg-gray-900/50 flex justify-between items-center text-xs sm:text-sm font-bold text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                   >
-                    <span className="truncate dark:text-white">
+                    <span className="truncate">
                       {selectedSubjects.length === 0 
                         ? 'Select Subjects' 
-                        : `${selectedSubjects.length} Selected`}
+                        : `${selectedSubjects.length} Subject${selectedSubjects.length !== 1 ? 's' : ''} Selected`}
                     </span>
-                    <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                    <Layers className="w-4 h-4 text-gray-400 shrink-0" />
                   </button>
                   
                   {isSubjectDropdownOpen && (
-                    <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      <div className="p-2 border-b dark:border-gray-600 sticky top-0 bg-white dark:bg-gray-700">
+                    <div className="absolute z-50 mt-1.5 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl max-h-64 overflow-y-auto p-1.5 animate-in fade-in duration-150">
+                      <div className="p-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-800/80 rounded-xl mb-1">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase">Available Subjects</span>
                         <button
-                            onClick={() => {
-                                if (selectedSubjects.length === filteredSubjects.length) {
-                                    setSelectedSubjects([])
-                                } else {
-                                    setSelectedSubjects(filteredSubjects.map(s => s.id))
-                                }
-                            }}
-                            className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 font-medium"
+                          type="button"
+                          onClick={() => {
+                            if (selectedSubjects.length === filteredSubjects.length) {
+                              setSelectedSubjects([])
+                            } else {
+                              setSelectedSubjects(filteredSubjects.map(s => s.id))
+                            }
+                          }}
+                          className="text-xs text-[#003B5C] dark:text-blue-400 hover:underline font-bold"
                         >
-                            {selectedSubjects.length === filteredSubjects.length ? 'Deselect All' : 'Select All'}
+                          {selectedSubjects.length === filteredSubjects.length ? 'Deselect All' : 'Select All'}
                         </button>
                       </div>
-                      {filteredSubjects.map(subject => (
-                        <label key={subject.id} className="flex items-center px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={selectedSubjects.includes(subject.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedSubjects([...selectedSubjects, subject.id])
-                              } else {
-                                setSelectedSubjects(selectedSubjects.filter(id => id !== subject.id))
-                              }
-                            }}
-                            className="mr-3 h-4 w-4 text-ghana-green focus:ring-ghana-green border-gray-300 dark:border-gray-500 rounded dark:bg-gray-600"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-200">{subject.name}</span>
-                        </label>
-                      ))}
+                      <div className="space-y-0.5">
+                        {filteredSubjects.map(subject => (
+                          <label 
+                            key={subject.id} 
+                            className="flex items-center px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer text-xs font-semibold text-gray-700 dark:text-gray-200"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSubjects.includes(subject.id)}
+                              onChange={() => {
+                                setSelectedSubjects(prev =>
+                                  prev.includes(subject.id)
+                                    ? prev.filter(id => id !== subject.id)
+                                    : [...prev, subject.id]
+                                )
+                              }}
+                              className="mr-2.5 h-4 w-4 text-[#003B5C] rounded border-gray-300 focus:ring-[#003B5C]"
+                            />
+                            <span className="truncate">{subject.name}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
                   )}
-                  {/* Overlay to close dropdown */}
                   {isSubjectDropdownOpen && (
-                    <div 
-                        className="fixed inset-0 z-40" 
-                        onClick={() => setIsSubjectDropdownOpen(false)}
-                    ></div>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsSubjectDropdownOpen(false)} />
                   )}
                 </div>
 
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Term *
+                {/* Term Indicator */}
+                <div className="sm:col-span-2 md:col-span-1">
+                  <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                    Academic Term
                   </label>
-                  <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium">
-                    {currentTermName || 'No current term set'}
+                  <div className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-100/70 dark:bg-gray-900/60 text-gray-700 dark:text-gray-300 font-bold text-xs sm:text-sm flex items-center gap-2 truncate">
+                    <Clock className="w-4 h-4 text-[#003B5C] dark:text-blue-400 shrink-0" />
+                    <span className="truncate">{currentTermName || 'No active term set'}</span>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Grid Table */}
-                            {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
-                <div>
-                  {!allowClassScoreEntry && (
-                    <div className="mb-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 rounded-lg p-3 text-xs md:text-sm">
-                      <div className="flex items-start space-x-2">
-                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <span>
-                          Class score entry is <strong>disabled</strong>. The class score is auto-calculated from recorded assessments and cannot be edited manually. You can still enter the <strong>Exam Score</strong>.
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex flex-col md:flex-row items-center justify-between mb-4 gap-4">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap">
-                      Enter Scores ({students.length} Students)
+            {/* Score Entry View */}
+            {selectedClass && selectedSubjects.length > 0 && selectedTerm ? (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 overflow-hidden space-y-0">
+                {!allowClassScoreEntry && (
+                  <div className="p-3.5 bg-amber-50/80 dark:bg-amber-950/30 border-b border-amber-200/80 dark:border-amber-800 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-200">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Notice:</strong> Class score manual entry is locked. Class scores are auto-computed from recorded assessments. You can enter or update the <strong>Exam Score (100%)</strong> below.
+                    </span>
+                  </div>
+                )}
+
+                {/* Filter & Sort Controls */}
+                <div className="p-3.5 sm:p-5 border-b border-gray-100 dark:border-gray-700 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5 bg-gray-50/50 dark:bg-gray-850">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
+                      Exam Entry Matrix
                     </h3>
-                    
-                    <div className="flex-1 w-full md:max-w-md flex gap-2">
-                       <div className="relative flex-1">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                        <input
-                          type="text"
-                          placeholder="Search students..."
-                          value={gridSearchQuery}
-                          onChange={(e) => setGridSearchQuery(e.target.value)}
-                          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white sm:text-sm"
-                        />
-                      </div>
+                    <span className="text-xs font-bold text-gray-400">
+                      ({sortedAndFilteredStudents.length} Students)
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto">
+                    <div className="relative flex-1 sm:w-56">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search student..."
+                        value={gridSearchQuery}
+                        onChange={(e) => setGridSearchQuery(e.target.value)}
+                        className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
                       <select
                         value={gridSortOrder}
                         onChange={(e) => setGridSortOrder(e.target.value as any)}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-ghana-green focus:border-transparent dark:bg-gray-700 dark:text-white sm:text-sm"
+                        className="w-full sm:w-auto pl-8 pr-7 py-2 text-xs font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
                       >
-                        <option value="default">Default Sort</option>
-                        <option value="male_first">Males First</option>
-                        <option value="female_first">Females First</option>
+                        <option value="default">Default Sort (A-Z)</option>
+                        <option value="male_first">Boys First</option>
+                        <option value="female_first">Girls First</option>
                       </select>
-                    </div>
-
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={saveGridScores}
-                        disabled={gridSaving || gridChanges.size === 0}
-                        className="bg-ghana-green text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 transition"
-                      >
-                        {gridSaving ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white dark:border-gray-800"></div>
-                            <span>Saving...</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-5 h-5" />
-                            <span>Save Changes ({gridChanges.size})</span>
-                          </>
-                        )}
-                      </button>
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
                   </div>
+                </div>
 
-                  {gridLoading ? (
-                    <div className="text-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ghana-green mx-auto mb-4"></div>
-                      <p className="text-gray-600 dark:text-gray-400">Loading scores...</p>
+                {gridLoading ? (
+                  <div className="py-16 text-center space-y-3">
+                    <div className="w-8 h-8 border-2 border-[#003B5C] border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Loading grade matrix...</p>
+                  </div>
+                ) : sortedAndFilteredStudents.length === 0 ? (
+                  <div className="py-14 text-center text-xs text-gray-400">
+                    No students match the current filter criteria
+                  </div>
+                ) : (
+                  <>
+                    {/* MOBILE CARD VIEW (< md) */}
+                    <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+                      {sortedAndFilteredStudents.map(student => (
+                        <div key={student.id} className="p-4 space-y-3.5 hover:bg-gray-50/50 dark:hover:bg-gray-750/50 transition">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-bold text-sm text-gray-900 dark:text-white">
+                                {student.last_name}, {student.first_name} {student.middle_name || ''}
+                              </h4>
+                              <p className="text-[11px] text-gray-400 font-mono mt-0.5">{student.student_id}</p>
+                            </div>
+                            {student.gender && (
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                student.gender.toLowerCase() === 'male'
+                                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300'
+                                  : 'bg-pink-50 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300'
+                              }`}>
+                                {student.gender}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="space-y-2.5">
+                            {selectedSubjects.map(subjectId => {
+                              const subject = filteredSubjects.find(s => s.id === subjectId)
+                              const scores = gridScores[student.id]?.[subjectId] || { class_score: '', exam_score: '' }
+                              const classScore = parseFloat(scores.class_score) || 0
+                              const examScore = parseFloat(scores.exam_score) || 0
+                              const total = classScore + (examScore * (examScorePercentage / 100))
+                              const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
+                              const { grade } = calculateGradeAndRemark(total, className)
+                              const hasData = scores.class_score || scores.exam_score
+
+                              return (
+                                <div key={subjectId} className="bg-gray-50/80 dark:bg-gray-900/40 p-3 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-2">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-black text-xs text-[#003B5C] dark:text-blue-300 truncate">
+                                      {subject?.name}
+                                    </span>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                      <span className="font-mono text-xs font-bold text-gray-700 dark:text-gray-200">
+                                        {hasData ? `${total.toFixed(1)}%` : '—'}
+                                      </span>
+                                      <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
+                                        !hasData
+                                          ? 'bg-gray-200/80 dark:bg-gray-700 text-gray-400'
+                                          : total >= 50
+                                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60'
+                                          : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/60'
+                                      }`}>
+                                        {hasData ? grade : '—'}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2 pt-1">
+                                    <div>
+                                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                        Class ({classScorePercentage}%){!allowClassScoreEntry ? ' (Locked)' : ''}
+                                      </label>
+                                      <ScoreInput
+                                        initialValue={scores.class_score}
+                                        max={classScorePercentage}
+                                        readOnly={!allowClassScoreEntry}
+                                        onChange={(val) => handleGridScoreChange(student.id, subjectId, 'class_score', val)}
+                                        className="w-full h-9 px-2 text-center font-mono font-bold rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] text-xs"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                                        Exam (100%)
+                                      </label>
+                                      <ScoreInput
+                                        initialValue={scores.exam_score}
+                                        max={100}
+                                        onChange={(val) => handleGridScoreChange(student.id, subjectId, 'exam_score', val)}
+                                        className="w-full h-9 px-2 text-center font-mono font-bold rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] text-xs"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ) : students.length === 0 ? (
-                    <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                      <Users className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                      <p className="text-gray-600 dark:text-gray-400">No students found in this class.</p>
-                    </div>
-                  ) : (
-                    <div
-                      className="border dark:border-gray-700 rounded-lg max-h-[70vh] w-full max-w-[calc(100vw-6rem)] md:max-w-full overflow-auto relative min-w-0 mx-auto"
-                      style={{ scrollbarGutter: 'stable both-edges' }}
-                    >
-                      <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 border-collapse">
-                        <thead className="bg-gray-50 dark:bg-gray-700 sticky top-0 z-30 shadow-sm">
+
+                    {/* TABLET & DESKTOP TABLE VIEW (≥ md) */}
+                    <div className="hidden md:block overflow-x-auto relative">
+                      <table className="w-full text-left border-collapse min-w-[760px]">
+                        <thead className="bg-gray-50/80 dark:bg-gray-900/60 sticky top-0 z-30 shadow-sm border-b border-gray-200 dark:border-gray-700">
                           <tr>
-                            <th rowSpan={2} className="px-1 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50 dark:bg-gray-700 z-40 border-r dark:border-r-gray-600 border-b dark:border-b-gray-600 w-[80px] min-w-[80px] max-w-[80px] md:w-auto md:min-w-[200px] md:max-w-none shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                            <th 
+                              rowSpan={2} 
+                              className="p-3.5 sm:p-4 text-left text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider sticky left-0 bg-gray-50/95 dark:bg-gray-900/95 z-40 border-r border-gray-200 dark:border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] w-48 sm:w-64"
+                            >
                               Student
                             </th>
                             {selectedSubjects.map(subjectId => {
-                                const subject = filteredSubjects.find(s => s.id === subjectId)
-                                return (
-                                    <th key={subjectId} colSpan={4} className="px-2 md:px-6 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wider border-b dark:border-b-gray-600 border-r dark:border-r-gray-600 bg-gray-100 dark:bg-gray-600 min-w-[260px]">
-                                        <div className="truncate max-w-[260px] mx-auto">{subject?.name || 'Unknown Subject'}</div>
-                                    </th>
-                                )
+                              const subject = filteredSubjects.find(s => s.id === subjectId)
+                              return (
+                                <th 
+                                  key={subjectId} 
+                                  colSpan={4} 
+                                  className="p-3 text-center text-xs font-black text-gray-800 dark:text-gray-100 uppercase border-r border-gray-200 dark:border-gray-700 border-b border-gray-200 dark:border-gray-700 min-w-[260px] bg-gray-100/50 dark:bg-gray-800"
+                                >
+                                  <div className="truncate max-w-[240px] mx-auto">{subject?.name || 'Subject'}</div>
+                                </th>
+                              )
                             })}
                           </tr>
                           <tr>
                             {selectedSubjects.map(subjectId => (
-                                <Fragment key={subjectId}>
-                                    <th key={`${subjectId}-class`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Class ({classScorePercentage}%){!allowClassScoreEntry ? ' *' : ''}</th>
-                                    <th key={`${subjectId}-exam`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Exam (100%)</th>
-                                    <th key={`${subjectId}-total`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] bg-gray-50 dark:bg-gray-700">Total</th>
-                                    <th key={`${subjectId}-grade`} className="px-1 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-b dark:border-b-gray-600 min-w-[65px] border-r dark:border-r-gray-600 bg-gray-50 dark:bg-gray-700">Grade</th>
-                                </Fragment>
+                              <Fragment key={subjectId}>
+                                <th className="p-2 text-center text-[10px] font-bold text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/60 min-w-[65px]">
+                                  Class ({classScorePercentage}%)
+                                </th>
+                                <th className="p-2 text-center text-[10px] font-bold text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/60 min-w-[65px]">
+                                  Exam (100%)
+                                </th>
+                                <th className="p-2 text-center text-[10px] font-bold text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/60 min-w-[60px]">
+                                  Total
+                                </th>
+                                <th className="p-2 text-center text-[10px] font-bold text-gray-500 uppercase border-b border-gray-200 dark:border-gray-700 border-r border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/60 min-w-[60px]">
+                                  Grade
+                                </th>
+                              </Fragment>
                             ))}
                           </tr>
                         </thead>
-                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                          {students.filter(student => {
-                            const query = gridSearchQuery.toLowerCase()
-                            return (
-                              student.first_name.toLowerCase().includes(query) ||
-                              student.last_name.toLowerCase().includes(query) ||
-                              student.student_id.toLowerCase().includes(query)
-                            )
-                          }).sort((a, b) => {
-                            // Secondary sort by name (Last Name then First Name)
-                            const nameCompare = a.last_name.localeCompare(b.last_name) || a.first_name.localeCompare(b.first_name)
-
-                            if (gridSortOrder === 'default') {
-                              // If default, we can respect the original fetch order (which is first_name) 
-                              // or enforce last_name sort. Users usually prefer last_name in lists.
-                              // Let's stick to the explicit name compare for consistency.
-                              return nameCompare
-                            }
-
-                            const genderA = a.gender?.toLowerCase()
-                            const genderB = b.gender?.toLowerCase()
-
-                            // If genders are the same, use name comparison
-                            if (genderA === genderB) return nameCompare
-
-                            if (gridSortOrder === 'male_first') {
-                              return genderA === 'male' ? -1 : 1
-                            }
-                            
-                            if (gridSortOrder === 'female_first') {
-                              return genderA === 'female' ? -1 : 1
-                            }
-                            
-                            return nameCompare
-                          }).map((student) => {
+                        <tbody className="divide-y divide-gray-100 dark:divide-gray-750 text-xs sm:text-sm font-medium">
+                          {sortedAndFilteredStudents.map((student) => {
                             const hasChanges = gridChanges.has(student.id)
                             return (
-                              <tr key={student.id} className={hasChanges ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}>
-                                <td className="px-1 md:px-6 py-4 sticky left-0 bg-white dark:bg-gray-800 z-20 border-r dark:border-r-gray-600 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] w-[80px] min-w-[80px] max-w-[80px] md:w-auto md:min-w-[200px] md:max-w-none">
-                                  <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-gray-100 whitespace-normal break-words leading-tight">
-                                    {student.last_name}, {student.first_name} {student.middle_name}
+                              <tr 
+                                key={student.id} 
+                                className={`transition ${hasChanges ? 'bg-blue-50/40 dark:bg-blue-950/20' : 'hover:bg-gray-50/60 dark:hover:bg-gray-750/50'}`}
+                              >
+                                <td className="p-3 sm:p-4 sticky left-0 bg-white dark:bg-gray-800 z-20 border-r border-gray-200 dark:border-gray-700 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">
+                                  <div className="font-bold text-gray-900 dark:text-white truncate max-w-[180px] sm:max-w-[220px]">
+                                    {student.last_name}, {student.first_name} {student.middle_name || ''}
                                   </div>
-                                  <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 truncate mt-1">
-                                    {student.student_id}
-                                  </div>
+                                  <div className="text-[11px] text-gray-400 font-mono mt-0.5">{student.student_id}</div>
                                 </td>
-                                {selectedSubjects.map(subjectId => {
-                                    const scores = gridScores[student.id]?.[subjectId] || { class_score: '', exam_score: '' }
-                                    const classScore = parseFloat(scores.class_score) || 0
-                                    const examScore = parseFloat(scores.exam_score) || 0
-                                    // Calculate total: Class + (Exam * (examScorePercentage / 100))
-                                    const total = classScore + (examScore * (examScorePercentage / 100))
-                                    const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
-                                    const { grade } = calculateGradeAndRemark(total, className)
-                                    const hasData = scores.class_score || scores.exam_score
 
-                                    return (
-                                        <Fragment key={subjectId}>
-                                                                                        <td key={`${subjectId}-class`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
-                                                <ScoreInput
-                                                    initialValue={scores.class_score}
-                                                    max={40}
-                                                    readOnly={!allowClassScoreEntry}
-                                                    onChange={(val) => handleGridScoreChange(student.id, subjectId, 'class_score', val)}
-                                                />
-                                            </td>
-                                            <td key={`${subjectId}-exam`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[70px]">
-                                                <ScoreInput
-                                                    initialValue={scores.exam_score}
-                                                    max={100}
-                                                    onChange={(val) => handleGridScoreChange(student.id, subjectId, 'exam_score', val)}
-                                                />
-                                            </td>
-                                            <td key={`${subjectId}-total`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center min-w-[60px]">
-                                                <span className={`text-xs md:text-sm font-medium ${total > 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}`}>
-                                                    {hasData ? total.toFixed(1) : '-'}
-                                                </span>
-                                            </td>
-                                            <td key={`${subjectId}-grade`} className="px-1 md:px-2 py-4 whitespace-nowrap text-center border-r dark:border-r-gray-600 min-w-[60px]">
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] md:text-xs font-medium ${
-                                                    !hasData ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400' :
-                                                    total >= 50 ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-                                                }`}>
-                                                    {hasData ? grade : '-'}
-                                                </span>
-                                            </td>
-                                        </Fragment>
-                                    )
+                                {selectedSubjects.map(subjectId => {
+                                  const scores = gridScores[student.id]?.[subjectId] || { class_score: '', exam_score: '' }
+                                  const classScore = parseFloat(scores.class_score) || 0
+                                  const examScore = parseFloat(scores.exam_score) || 0
+                                  const total = classScore + (examScore * (examScorePercentage / 100))
+                                  const className = teacherClasses.find(c => c.class_id === selectedClass)?.class_name || ''
+                                  const { grade } = calculateGradeAndRemark(total, className)
+                                  const hasData = scores.class_score || scores.exam_score
+
+                                  return (
+                                    <Fragment key={subjectId}>
+                                      <td className="p-2 text-center whitespace-nowrap">
+                                        <ScoreInput
+                                          initialValue={scores.class_score}
+                                          max={classScorePercentage}
+                                          readOnly={!allowClassScoreEntry}
+                                          onChange={(val) => handleGridScoreChange(student.id, subjectId, 'class_score', val)}
+                                        />
+                                      </td>
+                                      <td className="p-2 text-center whitespace-nowrap">
+                                        <ScoreInput
+                                          initialValue={scores.exam_score}
+                                          max={100}
+                                          onChange={(val) => handleGridScoreChange(student.id, subjectId, 'exam_score', val)}
+                                        />
+                                      </td>
+                                      <td className="p-2 text-center whitespace-nowrap">
+                                        <span className={`font-mono font-bold ${total > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-400'}`}>
+                                          {hasData ? total.toFixed(1) : '—'}
+                                        </span>
+                                      </td>
+                                      <td className="p-2 text-center whitespace-nowrap border-r border-gray-200 dark:border-gray-700">
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                                          !hasData 
+                                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-400' 
+                                            : total >= 50 
+                                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60' 
+                                            : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200/60'
+                                        }`}>
+                                          {hasData ? grade : '—'}
+                                        </span>
+                                      </td>
+                                    </Fragment>
+                                  )
                                 })}
                               </tr>
                             )
@@ -1193,19 +1272,202 @@ export default function ExamScoresPage() {
                         </tbody>
                       </table>
                     </div>
-                  )}
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-14 sm:py-20 bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 space-y-3">
+                <Grid className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto" />
+                <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">Configure Score Matrix</h3>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto px-4 leading-relaxed">
+                  Select a classroom cohort and pick at least one subject to generate the terminal exam score sheet.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 2: Ungraded Subjects Analysis */}
+        {activeTab === 'ungraded' && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Class Cohort <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedClass}
+                    onChange={(e) => handleRequestNavigation('class', e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-bold border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/50 dark:bg-gray-900/50 text-gray-800 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] appearance-none cursor-pointer"
+                  >
+                    <option value="">Select class cohort</option>
+                    {teacherClasses.map(cls => (
+                      <option key={cls.class_id} value={cls.class_id}>{cls.class_name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
-              ) : (
-                <div className="text-center py-12 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                  <Filter className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Select Filters</h3>
-                  <p className="text-gray-600 dark:text-gray-400">Please select a class, at least one subject, and term to view the score grid.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5 uppercase tracking-wider">
+                  Active Term
+                </label>
+                <div className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-100/70 dark:bg-gray-900/60 text-gray-700 dark:text-gray-300 font-bold text-xs sm:text-sm flex items-center gap-2 truncate">
+                  <Clock className="w-4 h-4 text-[#003B5C] dark:text-blue-400 shrink-0" />
+                  <span className="truncate">{currentTermName || 'No current term set'}</span>
                 </div>
-              )}
+              </div>
             </div>
-          )}
-        </div>
+
+            {loadingUngraded ? (
+              <div className="py-16 text-center space-y-3">
+                <div className="w-8 h-8 border-2 border-[#003B5C] border-t-transparent rounded-full animate-spin mx-auto" />
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Auditing class grades...</p>
+              </div>
+            ) : ungradedData.length > 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between pb-1 border-b border-gray-100 dark:border-gray-700">
+                  <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
+                    Learners With Incomplete Assessments
+                  </h4>
+                  <span className="text-xs font-bold text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-0.5 rounded-full">
+                    {ungradedData.length} pending
+                  </span>
+                </div>
+
+                <div className="divide-y divide-gray-100 dark:divide-gray-750 border border-gray-200/80 dark:border-gray-700 rounded-2xl overflow-hidden">
+                  {ungradedData.map((item) => (
+                    <div key={item.student.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-gray-800">
+                      <div className="space-y-1">
+                        <div className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white">
+                          {item.student.first_name} {item.student.last_name}
+                        </div>
+                        <div className="text-[11px] text-gray-400 font-mono">{item.student.student_id}</div>
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {item.missingSubjects.map((subject: any) => (
+                            <span 
+                              key={subject.id} 
+                              className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                            >
+                              {subject.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="sm:text-right shrink-0">
+                        <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                          {item.gradedCount} of {item.totalSubjects} graded
+                        </span>
+                        <div className="w-full sm:w-28 bg-gray-100 dark:bg-gray-700 rounded-full h-2 mt-1.5 overflow-hidden">
+                          <div 
+                            className="bg-[#003B5C] dark:bg-blue-400 h-full rounded-full"
+                            style={{ width: `${(item.gradedCount / item.totalSubjects) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : selectedClass ? (
+              <div className="text-center py-12 space-y-2">
+                <CheckCircle className="w-10 h-10 text-emerald-500 mx-auto" />
+                <h4 className="text-sm font-bold text-gray-800 dark:text-gray-200">All Subjects Graded!</h4>
+                <p className="text-xs text-gray-400">Every active learner in this class has recorded scores for all subjects.</p>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-xs text-gray-400">
+                Please select a classroom cohort above to inspect ungraded subjects.
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* Floating Bottom Save Action for Mobile */}
+      {activeTab === 'grid' && gridChanges.size > 0 && (
+        <div className="fixed bottom-4 left-4 right-4 z-40 sm:hidden animate-in slide-in-from-bottom-4">
+          <button
+            type="button"
+            onClick={saveGridScores}
+            disabled={gridSaving}
+            className="w-full py-3.5 px-6 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-2xl font-black text-sm shadow-2xl flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            {gridSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Saving scores...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Save {gridChanges.size} Changed Student{gridChanges.size > 1 ? 's' : ''}</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Unsaved Changes Confirmation Modal */}
+      {pendingAction && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-3xl max-w-md w-full shadow-2xl p-5 sm:p-6 space-y-4 border-t sm:border border-gray-100 dark:border-gray-700">
+            <div className="flex items-center space-x-3 text-amber-600 dark:text-amber-400">
+              <div className="p-2.5 bg-amber-50 dark:bg-amber-950/40 rounded-xl shrink-0">
+                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">Unsaved Score Changes</h3>
+                <p className="text-xs text-amber-600 font-bold uppercase tracking-wider">Pending updates detected</p>
+              </div>
+            </div>
+
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              You have modified scores for <strong className="text-gray-900 dark:text-white">{gridChanges.size} student(s)</strong> that have not been saved yet. What would you like to do before leaving?
+            </p>
+
+            <div className="flex flex-col gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+              <button
+                type="button"
+                onClick={handleModalSaveAndExit}
+                disabled={gridSaving}
+                className="w-full py-2.5 px-4 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm"
+              >
+                {gridSaving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>Save Changes & Continue</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleModalDiscardAndExit}
+                className="w-full py-2.5 px-4 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-700 dark:text-rose-300 rounded-xl text-xs sm:text-sm font-bold transition text-center"
+              >
+                Discard Unsaved Edits
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPendingAction(null)}
+                className="w-full py-2.5 px-4 border border-gray-200 dark:border-gray-700 rounded-xl text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-750 transition text-center"
+              >
+                Stay on Page
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

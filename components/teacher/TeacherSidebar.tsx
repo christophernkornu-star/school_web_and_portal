@@ -46,7 +46,6 @@ const sidebarItems = [
     items: [
       { href: '/teacher/mock', label: 'Mock Exams', icon: FileSpreadsheet },
       { href: '/teacher/assessments', label: 'Online Assessments', icon: PenTool },
-      { href: '/teacher/upload-scores/class', label: 'Class Assessment', icon: ClipboardList },
       { href: '/teacher/manage-scores', label: 'Manage Scores', icon: FileText },
     ]
   },

@@ -3,15 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, User, Trash2, AlertCircle, Palette, Shuffle } from 'lucide-react'
+import { ArrowLeft, Save, User, Trash2, AlertCircle, Palette, Shuffle, X, Loader2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import BackButton from '@/components/ui/back-button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { SectionBadge } from '@/components/sections/SectionBadge'
-
-
 import { StudentForm, StudentFormData } from '@/components/forms/StudentForm'
 
 export default function EditStudentPage() {
@@ -20,7 +18,7 @@ export default function EditStudentPage() {
   const params = useParams()
   const studentId = params.id as string
 
-    const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -45,10 +43,10 @@ export default function EditStudentPage() {
     // Load classes
     const { data: classesData } = await supabase
       .from('classes')
-      .select('id, name') // Matches expected format
+      .select('id, name')
       .order('level')
 
-        if (classesData) setClasses(classesData)
+    if (classesData) setClasses(classesData)
 
     // Load sections
     const { data: sectionsData } = await supabase
@@ -89,11 +87,10 @@ export default function EditStudentPage() {
     setLoading(false)
   }
 
-    const handleUpdate = async (formData: StudentFormData) => {
+  const handleUpdate = async (formData: StudentFormData) => {
     setSaving(true)
 
     try {
-      // Update student record
       const { error: studentError } = await supabase
         .from('students')
         .update({
@@ -146,16 +143,6 @@ export default function EditStudentPage() {
   const handleDelete = async () => {
     setDeleting(true)
     try {
-      // 1. Delete associated profile (triggers cascade usually, but manual is safer)
-      if (student.profile_id) {
-          // Check if RPC exists or delete directly
-          // For now direct delete if RLS permits, else use RPC
-          const { error: profileError } = await supabase.auth.admin.deleteUser(student.profile_id)
-          // Client side can't use admin auth. We need an API or rely on DB cascade
-          // Assuming DB cascade on students DELETE or using API
-      } 
-      
-      // Direct delete on public table (RLS permitting)
       const { error } = await supabase
         .from('students')
         .delete()
@@ -167,8 +154,7 @@ export default function EditStudentPage() {
       router.push('/admin/students')
     } catch (error: any) {
       console.error('Error deleting student:', error)
-      // Fallback: DB constraints might block delete if marks exist
-      toast.error('Failed to delete student. They might have related records.')
+      toast.error('Failed to delete student. They might have associated records.')
     } finally {
       setDeleting(false)
       setShowDeleteModal(false)
@@ -176,164 +162,202 @@ export default function EditStudentPage() {
   }
 
   if (loading) {
-     return (
-        <div className="p-8 max-w-4xl mx-auto space-y-6">
-            <Skeleton className="h-8 w-1/3" />
-            <div className="grid grid-cols-2 gap-6">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-            </div>
+    return (
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 p-4 sm:p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-10 w-48 sm:w-64 rounded-xl" />
+            <Skeleton className="h-10 w-28 sm:w-36 rounded-xl" />
+          </div>
+          <Skeleton className="h-28 w-full rounded-2xl sm:rounded-3xl" />
+          <Skeleton className="h-96 w-full rounded-2xl sm:rounded-3xl" />
         </div>
-     )
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 p-6 md:p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-                <BackButton href="/admin/students" />
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Edit Student</h1>
-                    <p className="text-gray-500">Update student details and status</p>
-                </div>
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20 font-sans text-gray-900 dark:text-gray-100">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+        
+        {/* Responsive Header Banner */}
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+          <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+            <BackButton href="/admin/students" className="shrink-0 mt-0.5 sm:mt-0 shadow-sm" />
+            <div>
+              <h1 className="text-lg sm:text-2xl font-black tracking-tight text-gray-900 dark:text-white">
+                Edit Student Profile
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium">
+                {student?.first_name} {student?.last_name} ({student?.student_id})
+              </p>
             </div>
-            <button
-                onClick={() => setShowDeleteModal(true)}
-                className="flex items-center space-x-2 px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-            >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete Student</span>
-            </button>
+          </div>
+
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 text-rose-600 bg-rose-50 hover:bg-rose-100 dark:bg-rose-900/20 dark:text-rose-300 dark:hover:bg-rose-900/40 rounded-xl text-xs sm:text-sm font-bold border border-rose-200/60 dark:border-rose-800 transition-all active:scale-95 self-start sm:self-auto"
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            <span>Delete Student</span>
+          </button>
         </div>
 
         {/* Section Info Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                <Palette className="w-5 h-5 text-purple-600" />
+        <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-gray-700 p-4 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="p-2.5 sm:p-3 bg-[#003B5C]/10 dark:bg-[#003B5C]/30 text-[#003B5C] dark:text-blue-300 rounded-xl sm:rounded-2xl shrink-0">
+                <Palette className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">School Section</h3>
-                {studentSection ? (
-                  <SectionBadge section={studentSection} size="lg" className="mt-1" />
-                ) : (
-                  <p className="text-sm text-gray-400 italic mt-1">Not assigned yet</p>
-                )}
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-400 dark:text-gray-400">
+                  School Section / House
+                </h3>
+                <div className="mt-1">
+                  {studentSection ? (
+                    <SectionBadge section={studentSection} size="lg" />
+                  ) : (
+                    <p className="text-xs sm:text-sm text-gray-400 italic">Not assigned to any house yet</p>
+                  )}
+                </div>
               </div>
             </div>
+
             <button
               onClick={() => setShowSectionModal(true)}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm font-bold text-[#003B5C] dark:text-blue-300 bg-[#003B5C]/10 dark:bg-[#003B5C]/20 border border-[#003B5C]/20 dark:border-blue-800 rounded-xl hover:bg-[#003B5C]/20 dark:hover:bg-[#003B5C]/30 transition-all active:scale-95 shadow-sm"
             >
-              <Shuffle className="w-4 h-4" />
-              Change Section
+              <Shuffle className="w-4 h-4 shrink-0" />
+              <span>Change Section</span>
             </button>
           </div>
         </div>
 
-        <StudentForm
+        {/* Student Form */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-gray-700 p-4 sm:p-6 lg:p-8 shadow-sm">
+          <StudentForm
             initialData={student}
             classes={classes}
             isAdmin={true}
             onSubmit={handleUpdate}
             isSubmitting={saving}
-        />
+          />
+        </div>
       </div>
 
-            {/* Delete Modal */}
+      {/* Delete Confirmation Modal (Bottom Sheet on Mobile, Centered on Tablet+) */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-                <div className="flex items-center space-x-3 text-red-600 mb-4">
-                    <AlertCircle className="w-6 h-6" />
-                    <h3 className="text-lg font-bold">Delete Student?</h3>
-                </div>
-                <p className="text-gray-600 mb-6">
-                    Are you sure you want to delete <strong>{student.first_name} {student.last_name}</strong>? 
-                    This action cannot be undone and will remove all their academic records.
-                </p>
-                <div className="flex justify-end space-x-3">
-                    <button 
-                        onClick={() => setShowDeleteModal(false)}
-                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg"
-                        disabled={deleting}
-                    >
-                        Cancel
-                    </button>
-                    <button 
-                        onClick={handleDelete}
-                        disabled={deleting}
-                        className="px-4 py-2 text-white bg-red-600 hover:bg-red-700 rounded-lg flex items-center space-x-2"
-                    >
-                        {deleting ? 'Deleting...' : 'Delete Permanently'}
-                    </button>
-                </div>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center space-x-3 text-rose-600 mb-3.5">
+              <div className="p-2.5 bg-rose-50 dark:bg-rose-900/30 rounded-xl shrink-0">
+                <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">Delete Student?</h3>
+                <p className="text-xs text-rose-500 font-bold uppercase tracking-wider">Permanent Action</p>
+              </div>
             </div>
+
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+              Are you sure you want to delete <strong className="text-gray-900 dark:text-white">{student?.first_name} {student?.last_name}</strong>? 
+              This action cannot be undone and will delete all associated attendance, assessment marks, and student history.
+            </p>
+
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2.5 pt-2 border-t border-gray-100 dark:border-gray-700">
+              <button 
+                onClick={() => setShowDeleteModal(false)}
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl flex items-center justify-center gap-1.5 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-            {/* Section Reassign Modal */}
+      {/* Section Reassign Modal (Bottom Sheet on Mobile, Centered on Tablet+) */}
       {showSectionModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl p-6 my-8">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-gray-800 rounded-t-3xl sm:rounded-2xl max-w-md w-full shadow-2xl p-5 sm:p-6 max-h-[90vh] flex flex-col overflow-y-auto">
+            
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                  <Shuffle className="w-5 h-5 text-purple-600" />
+                <div className="p-2.5 bg-[#003B5C]/10 dark:bg-[#003B5C]/30 rounded-xl shrink-0 text-[#003B5C] dark:text-blue-300">
+                  <Shuffle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Change Section</h3>
-                  <p className="text-sm text-gray-500">
-                    {student.first_name} {student.last_name}
+                  <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white">Change Section</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[220px]">
+                    {student?.first_name} {student?.last_name}
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setShowSectionModal(false)}
-                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               >
-                <ArrowLeft className="w-5 h-5 text-gray-500" />
+                <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-xs font-black uppercase text-gray-400 dark:text-gray-400 tracking-wider">
                 Select New Section
               </label>
-              <div className="flex flex-col gap-2">
+              
+              <div className="flex flex-col gap-2 max-h-60 overflow-y-auto pr-1">
                 {sections.map((sec: any) => (
                   <button
                     key={sec.id}
                     onClick={() => handleReassignSection(sec.id)}
                     disabled={reassigning}
                     className={`
-                      w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
-                      transition-all border
+                      w-full flex items-center gap-3 px-3.5 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold
+                      transition-all border text-left
                       ${studentSection?.id === sec.id
-                        ? 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-900/20 dark:border-purple-800'
-                        : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-purple-200 hover:bg-purple-50/50'
+                        ? 'bg-[#003B5C]/10 border-[#003B5C]/30 text-[#003B5C] dark:bg-[#003B5C]/30 dark:border-blue-700 dark:text-blue-200'
+                        : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-800 dark:text-gray-200 hover:border-[#003B5C]/40 hover:bg-gray-50 dark:hover:bg-gray-600'
                       }
                     `}
                   >
                     <span
-                      className="w-4 h-4 rounded-full shadow-sm flex-shrink-0"
+                      className="w-4 h-4 rounded-full shadow-sm shrink-0"
                       style={{ backgroundColor: sec.colour }}
                     />
-                    <span className="flex-1 text-left">{sec.name}</span>
+                    <span className="flex-1 truncate">{sec.name}</span>
                     {studentSection?.id === sec.id && (
-                      <span className="text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] uppercase tracking-wider bg-[#003B5C] text-white px-2 py-0.5 rounded-full font-black">
                         Current
                       </span>
                     )}
                   </button>
                 ))}
               </div>
+
               {reassigning && (
-                <p className="text-xs text-purple-600 flex items-center gap-2 mt-2">
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600"></div>
-                  Updating...
+                <p className="text-xs text-[#003B5C] dark:text-blue-400 flex items-center gap-2 mt-2 font-semibold">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Updating assignment...
                 </p>
               )}
             </div>
@@ -342,9 +366,7 @@ export default function EditStudentPage() {
               <button
                 onClick={() => setShowSectionModal(false)}
                 disabled={reassigning}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
-                         bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 
-                         rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors"
               >
                 Close
               </button>
