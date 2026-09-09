@@ -126,7 +126,7 @@ export default function SiteHeader() {
                 <ArrowRight className="w-3.5 h-3.5 text-amber-300" />
               </Link>
 
-              {/* Mobile / Tablet Menu Trigger (Only element visible on mobile right side) */}
+              {/* Mobile / Tablet Menu Trigger */}
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(true)}
@@ -143,7 +143,7 @@ export default function SiteHeader() {
 
       {/* Mobile/Tablet Slide-over Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] xl:hidden animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[150] xl:hidden animate-in fade-in duration-200">
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
@@ -152,12 +152,12 @@ export default function SiteHeader() {
           />
 
           {/* Drawer Panel */}
-          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col justify-between border-l border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-right duration-250">
+          <div className="fixed top-0 right-0 h-[100dvh] max-w-xs w-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col justify-between border-l border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-right duration-250 z-[160]">
             
             {/* Drawer Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
+            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-[#003B5C] text-white flex items-center justify-center font-bold shadow-xs">
+                <div className="w-8 h-8 rounded-xl bg-[#003B5C] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
                   <Image
                     src="/school_crest.png"
                     alt="Crest"
@@ -179,7 +179,7 @@ export default function SiteHeader() {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors shrink-0"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5" />
@@ -207,14 +207,14 @@ export default function SiteHeader() {
                         : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#003B5C] dark:hover:text-blue-400'
                     }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-slate-400 dark:text-slate-500'}`} />
-                      <span>{link.label}</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-amber-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                      <span className="truncate">{link.label}</span>
                     </div>
                     {isActive ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                     ) : (
-                      <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600" />
+                      <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
                     )}
                   </Link>
                 )
@@ -222,7 +222,7 @@ export default function SiteHeader() {
             </div>
 
             {/* Bottom Drawer Actions */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 space-y-3 shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <div className="px-1 text-center">
                 <span className="inline-block text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
                   &ldquo;Discipline with Hardwork&rdquo;
@@ -234,8 +234,9 @@ export default function SiteHeader() {
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-md transition active:scale-95"
               >
-                <GraduationCap className="w-4 h-4 text-amber-400" />
-                <span>Sign in to Academic Portal</span>
+                <GraduationCap className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Portal</span>
+                <ArrowRight className="w-3.5 h-3.5 text-amber-300 ml-0.5 shrink-0" />
               </Link>
             </div>
 
