@@ -14,7 +14,9 @@ import {
   EyeOff, 
   Loader2, 
   ArrowLeft,
-  GraduationCap
+  GraduationCap,
+  ChevronRight,
+  ShieldCheck
 } from 'lucide-react'
 import { signInWithUsername } from '@/lib/auth'
 import { PortalFooter } from '@/components/PortalFooter'
@@ -81,82 +83,147 @@ export default function LoginPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col justify-between font-sans text-slate-900 dark:text-slate-100 transition-colors">
+    <div className="min-h-[100dvh] bg-slate-50/50 dark:bg-slate-900 flex flex-col justify-between font-sans text-slate-900 dark:text-slate-100 transition-colors selection:bg-[#003B5C] selection:text-white">
+      
       {/* Top Header */}
-      <header className="sticky top-0 z-50 w-full bg-white dark:bg-slate-900 shadow-md border-b border-slate-200/80 dark:border-slate-800">
-        {/* Ghana Flag Accent Line */}
-        <div className="h-1 bg-gradient-to-r from-red-600 via-amber-400 to-emerald-600 w-full" />
-        
-        {/* Main Navigation Bar */}
+      <header className="sticky top-0 z-50 w-full shadow-md select-none">
+        {/* Ghana Flag Accent Stripe */}
+        <div className="h-1 w-full bg-gradient-to-r from-red-600 via-amber-400 to-emerald-600" />
+
+        {/* Main Gold Brand Banner */}
         <div className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-[#003B5C] border-b-2 border-amber-600/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3.5">
+          <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3">
             <div className="flex items-center justify-between gap-3">
+              
               {/* Brand & Crest */}
               <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group min-w-0">
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full p-1.5 shadow-md ring-2 ring-[#003B5C]/20 group-hover:ring-[#003B5C]/40 transition-all flex items-center justify-center">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full p-1 sm:p-1.5 shadow-md ring-2 ring-[#003B5C]/20 group-hover:ring-[#003B5C]/40 transition-all flex items-center justify-center">
                     <Image
                       src="/school_crest.png"
                       alt="Biriwa Methodist 'C' Crest"
                       width={44}
                       height={44}
-                      className="object-contain"
+                      className="w-full h-full object-contain"
                       priority
                     />
                   </div>
                 </div>
 
                 <div className="min-w-0">
-                  <h1 className="text-sm sm:text-lg md:text-xl font-black text-[#003B5C] tracking-tight leading-tight truncate">
+                  <h1 className="text-sm sm:text-base md:text-lg lg:text-xl font-black text-[#003B5C] tracking-tight leading-tight truncate">
                     Biriwa Methodist &apos;C&apos;
                   </h1>
-                  <p className="text-[10px] sm:text-xs font-bold text-[#003B5C]/80 uppercase tracking-wider truncate">
-                    Basic School Portal
-                  </p>
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <p className="text-[10px] sm:text-xs font-bold text-[#003B5C]/85 uppercase tracking-wider truncate">
+                      Basic School Portal
+                    </p>
+                    <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-[#003B5C]/40" />
+                    <p className="hidden sm:inline-block text-[10px] sm:text-xs font-semibold text-[#003B5C]/80 italic truncate">
+                      &ldquo;Discipline with Hardwork&rdquo;
+                    </p>
+                  </div>
                 </div>
               </Link>
 
               {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center space-x-6 text-sm font-bold text-[#003B5C]">
+              <nav className="hidden lg:flex items-center space-x-1 xl:space-x-2">
                 {navLinks.map((link) => (
                   <Link 
                     key={link.href}
                     href={link.href} 
-                    className="hover:text-white transition-colors duration-200 py-1"
+                    className="px-3 py-1.5 rounded-xl text-xs xl:text-sm font-bold text-[#003B5C] hover:bg-[#003B5C]/10 hover:text-[#002a42] transition-colors"
                   >
                     {link.label}
                   </Link>
                 ))}
               </nav>
 
-              {/* Mobile / Tablet Hamburger Toggle */}
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="lg:hidden p-2 rounded-xl text-[#003B5C] hover:text-white hover:bg-[#003B5C]/10 transition-colors"
-                aria-label="Toggle navigation menu"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
+              {/* Mobile / Tablet Menu Trigger */}
+              <div className="lg:hidden flex items-center shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2 rounded-xl text-[#003B5C] hover:bg-[#003B5C]/10 transition-colors active:scale-95"
+                  aria-label="Toggle navigation menu"
+                >
+                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+              </div>
+
             </div>
           </div>
         </div>
 
-        {/* Mobile Slide-Down Menu */}
+        {/* Mobile Slide-Over Navigation Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl animate-in slide-in-from-top-2 duration-200">
-            <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-3 space-y-1">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
+          <div className="fixed inset-0 z-[150] lg:hidden animate-in fade-in duration-200">
+            <div 
+              className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity"
+              onClick={() => setMobileMenuOpen(false)}
+              aria-hidden="true"
+            />
+
+            <div className="fixed top-0 right-0 h-[100dvh] max-w-xs w-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col justify-between border-l border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-right duration-250 z-[160]">
+              <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#003B5C] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                    <Image
+                      src="/school_crest.png"
+                      alt="Crest"
+                      width={24}
+                      height={24}
+                      className="object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-xs font-black text-slate-900 dark:text-white tracking-tight leading-tight truncate">
+                      Biriwa Methodist &apos;C&apos;
+                    </h2>
+                    <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+                      Portal Navigation
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3.5 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#003B5C] dark:hover:text-blue-400 transition-colors"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition-colors shrink-0"
+                  aria-label="Close menu"
                 >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="flex-1 px-3 py-4 space-y-1 overflow-y-auto overscroll-contain">
+                <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-1 select-none">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 shrink-0" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                    Public Pages
+                  </span>
+                  <span className="h-px flex-1 bg-slate-100 dark:bg-slate-800/80" />
+                </div>
+
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#003B5C] dark:hover:text-blue-400 transition-colors"
+                  >
+                    <span>{link.label}</span>
+                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 shrink-0" />
+                  </Link>
+                ))}
+              </div>
+
+              <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))] text-center">
+                <span className="inline-block text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                  &ldquo;Discipline with Hardwork&rdquo;
+                </span>
+              </div>
+            </div>
           </div>
         )}
       </header>
@@ -166,9 +233,9 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-6">
           
           {/* Form Container Card */}
-          <div className="bg-white dark:bg-slate-800/95 rounded-3xl shadow-xl sm:shadow-2xl border border-slate-200/80 dark:border-slate-700 p-6 sm:p-8 md:p-9 space-y-6 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800/95 rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 sm:p-8 md:p-9 space-y-6 backdrop-blur-sm">
             
-            {/* Header / Crest Branding */}
+            {/* Header / Brand Icon */}
             <div className="text-center space-y-2">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#003B5C]/10 dark:bg-blue-500/20 text-[#003B5C] dark:text-blue-300 font-bold mb-1 shadow-inner">
                 <GraduationCap className="w-6 h-6" />
@@ -203,7 +270,7 @@ export default function LoginPage() {
                   htmlFor="username" 
                   className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
                 >
-                  Username / ID
+                  Username / ID <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -218,7 +285,7 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="e.g. TEA-1002 or STU-2025"
-                    className="w-full pl-10 pr-4 py-3 text-base sm:text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#003B5C] dark:focus:ring-blue-500 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 sm:py-3 text-base sm:text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#003B5C] dark:focus:ring-blue-500 transition-all"
                   />
                 </div>
               </div>
@@ -229,7 +296,7 @@ export default function LoginPage() {
                   htmlFor="password" 
                   className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider"
                 >
-                  Password
+                  Password <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -244,7 +311,7 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-11 py-3 text-base sm:text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#003B5C] dark:focus:ring-blue-500 transition-all"
+                    className="w-full pl-10 pr-11 py-2.5 sm:py-3 text-base sm:text-sm font-medium border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#003B5C] dark:focus:ring-blue-500 transition-all"
                   />
                   <button
                     type="button"
@@ -278,7 +345,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 px-4 bg-[#003B5C] hover:bg-[#002a42] text-white font-bold text-sm rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 sm:py-3.5 px-4 bg-[#003B5C] hover:bg-[#002a42] text-white font-bold text-xs sm:text-sm rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -286,7 +353,10 @@ export default function LoginPage() {
                     <span>Authenticating...</span>
                   </>
                 ) : (
-                  <span>Sign In to Portal</span>
+                  <>
+                    <ShieldCheck className="w-4 h-4 text-amber-400" />
+                    <span>Sign In to Portal</span>
+                  </>
                 )}
               </button>
             </form>

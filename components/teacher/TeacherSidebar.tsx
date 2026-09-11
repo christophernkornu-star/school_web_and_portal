@@ -133,9 +133,13 @@ export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
         <div className="flex-1 py-3 px-2.5 space-y-5 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {sidebarItems.map((group) => (
             <div key={group.group} className="space-y-1">
-              {/* Category Group Header */}
-              <div className="px-2.5 pb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
-                {group.group}
+              {/* Category Group Header with Indicator Dot & Hairline Divider */}
+              <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-1 select-none">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 shrink-0" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">
+                  {group.group}
+                </span>
+                <span className="h-px flex-1 bg-slate-100 dark:bg-slate-800/80" />
               </div>
 
               {/* Menu Links */}
