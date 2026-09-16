@@ -3,14 +3,30 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GraduationCap, BookOpen, BarChart3, Calendar, LogOut, User, FileText, Megaphone, Bell, Award, DollarSign } from 'lucide-react'
+import Image from 'next/image'
+import { 
+  BookOpen, 
+  BarChart3, 
+  Calendar, 
+  LogOut, 
+  User, 
+  FileText, 
+  Bell, 
+  Award, 
+  DollarSign,
+  ArrowRight,
+  CheckCircle2,
+  AlertCircle,
+  Lock,
+  TrendingUp,
+  ClipboardList,
+  ChevronDown
+} from 'lucide-react'
 import { signOut } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import type { Student, Profile } from '@/lib/supabase'
 import { useStudent } from '@/components/providers/StudentContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PortalFooter } from '@/components/PortalFooter'
-import { getOrdinalSuffix } from '@/lib/academic-utils'
 
 interface Announcement {
   id: string
@@ -24,23 +40,24 @@ interface Announcement {
 
 export default function StudentDashboard() {
   const router = useRouter()
-  // Ensure we consistently use dashboardData from context
-  const { user, profile, student, loading: contextLoading, dashboardData, fetchDashboardData } = useStudent()
+  const { user, student, loading: contextLoading, dashboardData, fetchDashboardData } = useStudent()
   
-  // Initialize state with cached data if available
-  const [loading, setLoading] = useState(!dashboardData) // Load if no cache
+  const [loading, setLoading] = useState(!dashboardData)
   const [error, setError] = useState<string | null>(null)
-    const [allowCumulativeDownload, setAllowCumulativeDownload] = useState(dashboardData?.allowCumulativeDownload || false)
+  const [allowCumulativeDownload, setAllowCumulativeDownload] = useState(dashboardData?.allowCumulativeDownload || false)
   const [announcements, setAnnouncements] = useState<Announcement[]>(dashboardData?.announcements || [])
   const [stats, setStats] = useState(dashboardData?.stats || {
-    currentTerm: 'N/A',
+    currentTerm: 'Active Term',
     attendance: 'No Data',
     averageScore: 0,
     classPosition: 'N/A'
   })
   const [studentSection, setStudentSection] = useState<any>(null)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+
   const supabase = getSupabaseBrowserClient()
-  
+
   useEffect(() => {
     if (contextLoading) return
 
@@ -50,111 +67,108 @@ export default function StudentDashboard() {
     }
 
     if (!student) {
-      setError('No student record found for your account. Please contact the administrator.')
+      setError('No student record found for your account. Please contact the school administration.')
       setLoading(false)
       return
     }
 
-    // Use cached data if available
     if (dashboardData) {
       setAllowCumulativeDownload(dashboardData.allowCumulativeDownload)
       setAnnouncements(dashboardData.announcements)
       setStats(dashboardData.stats)
       setLoading(false)
 
-      // Background refresh if needed (e.g., > 1 min old)
       if (Date.now() - dashboardData.lastFetched > 60 * 1000) {
         fetchDashboardData()
       }
-        } else {
-      // First fetch
+    } else {
       fetchDashboardData().then(() => setLoading(false))
     }
 
-    // Load student section
     if (student?.id) {
       supabase
         .from('student_sections')
         .select('section_id, sections(id, name, colour, emblem_url)')
         .eq('student_id', student.id)
-                .maybeSingle()
+        .maybeSingle()
         .then((response: { data: any }) => {
           if (response?.data?.sections) setStudentSection(response.data.sections)
         })
     }
-  }, [user, student, contextLoading, dashboardData, fetchDashboardData, router])
+  }, [user, student, contextLoading, dashboardData, fetchDashboardData, router, supabase])
 
-  // Removed old parallel fetching logic since it's now in Context
-
+  // Click outside to close profile dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleLogout = async () => {
     await signOut()
     router.push('/login?portal=student')
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
-        {/* Header Skeleton */}
-        <div className="bg-gradient-to-r from-methodist-light to-methodist-dark text-white pb-32">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-               <div className="flex items-center gap-4">
-                  <Skeleton className="w-16 h-16 rounded-full bg-white/20" />
-                  <div>
-                    <Skeleton className="h-6 w-48 bg-white/20 mb-2" />
-                    <Skeleton className="h-4 w-32 bg-white/20" />
-                  </div>
-               </div>
-               <Skeleton className="h-10 w-24 rounded-lg bg-white/20" />
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Grid Skeleton */}
-        <div className="container mx-auto px-4 -mt-16">
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-               {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 p-8 border border-gray-100/50 dark:border-gray-800/50">
-                      <div className="flex justify-between items-start mb-4">
-                         <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                           <Skeleton className="w-6 h-6" />
-                         </div>
-                      </div>
-                      <Skeleton className="h-8 w-24 mb-1" />
-                      <Skeleton className="h-4 w-32" />
-                  </div>
-               ))}
-           </div>
-           
-           {/* Content Skeleton */}
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                  <Skeleton className="h-64 w-full rounded-lg" />
-                  <Skeleton className="h-48 w-full rounded-lg" />
-              </div>
-              <div className="space-y-6">
-                 <Skeleton className="h-48 w-full rounded-lg" />
-                 <Skeleton className="h-48 w-full rounded-lg" />
-              </div>
-           </div>
-        </div>
-      </div>
-    )
+  function formatTimeAgo(dateString: string): string {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+    
+    if (diffInSeconds < 60) return 'Just now'
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+    
+    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
   }
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case 'urgent': 
+        return 'text-rose-700 bg-rose-50 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/40'
+      case 'high': 
+        return 'text-amber-700 bg-amber-50 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/40'
+      default: 
+        return 'text-[#003B5C] bg-blue-50 border-blue-200/80 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/40'
+    }
+  }
+
+  const studentName = student?.first_name 
+    ? `${student.first_name} ${student.last_name || ''}`.trim()
+    : 'Student'
+
+  const studentInitials = student?.first_name && student?.last_name
+    ? `${student.first_name[0]}${student.last_name[0]}`.toUpperCase()
+    : student?.first_name
+    ? student.first_name.slice(0, 2).toUpperCase()
+    : 'ST'
+
+  const isBasic9 = student?.classes?.name && (
+    student.classes.name.toLowerCase().includes('basic 9') || 
+    student.classes.name.toLowerCase().includes('jhs 3')
+  )
+
+  if (loading) return <StudentDashboardSkeleton />
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex font-sans items-center justify-center p-4">
-        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 overflow-hidden border border-gray-100/50 dark:border-gray-800/50     -lg p-8 max-w-md w-full text-center">
-          <div className="bg-red-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <LogOut className="w-8 h-8 text-red-600" />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 max-w-md w-full text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-inner ring-8 ring-rose-500/10">
+            <AlertCircle className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Access Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="space-y-1">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Portal Notice</h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{error}</p>
+          </div>
           <button
+            type="button"
             onClick={handleLogout}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/25 px-8 py-3 rounded-xl hover:-translate-y-0.5 transition-all font-bold tracking-wide transition-colors w-full"
+            className="w-full py-2.5 px-4 bg-[#003B5C] hover:bg-[#002a42] text-white font-bold text-xs sm:text-sm rounded-xl transition active:scale-95 shadow-sm"
           >
             Sign Out
           </button>
@@ -163,339 +177,517 @@ export default function StudentDashboard() {
     )
   }
 
-  // Helper for ordinal suffix moved to utils
-  
-  function formatTimeAgo(dateString: string): string {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-    
-    if (diffInSeconds < 60) return 'Just now'
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`
-    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)} weeks ago`
-    
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-  }
-
-
-
-  const isBasic9 = student?.classes?.name && (
-    student.classes.name.toLowerCase().includes('basic 9') || 
-    student.classes.name.toLowerCase().includes('jhs 3')
-  )
-
   return (
-    <div className="h-screen bg-slate-50 dark:bg-slate-950 flex font-sans flex-col overflow-hidden">
-      {/* Header */}
-      <header className="sticky top-0 z-50 relative overflow-hidden flex-none">
-        {/* Ghana Flag Border */}
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-ghana-red via-ghana-gold to-ghana-green"></div>
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+      
+      {/* Header with Circular School Logo */}
+      <header className="sticky top-0 z-40 w-full select-none shadow-md flex-none">
+        {/* Top Dark Red Stripe */}
+        <div className="h-2 w-full bg-[#BA1B1D]" />
         
-        {/* Main Header */}
-        <div className="bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-yellow-700">
-          <nav className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center space-x-3">
-                <GraduationCap className="w-8 h-8 md:w-10 md:h-10 text-methodist-blue" />
-                <div>
-                  <h1 className="text-xl md:text-2xl font-black text-methodist-blue tracking-tight">
-                      Biriwa Methodist 'C' Basic School
-                    </h1>
-                  <p className="text-[10px] md:text-xs text-methodist-blue font-bold tracking-wider uppercase">Student Portal</p>
+        {/* Thin Orange Divider Line */}
+        <div className="h-[2px] w-full bg-[#EA580C]" />
+
+        {/* Methodist-Yellow Bar (#EAA812) */}
+        <div className="bg-[#EAA812] text-[#003B5C] border-b border-[#C7870A]">
+          <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-2 sm:py-2.5">
+            <div className="flex items-center justify-between gap-2.5 sm:gap-4">
+              
+              {/* Left: Round School Crest & Name */}
+              <Link href="/student/dashboard" className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1 group">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border-2 border-amber-600/50 p-1 shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform overflow-hidden">
+                  <Image
+                    src="/school_crest.png"
+                    alt="Biriwa Methodist 'C' Logo"
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-contain"
+                    priority
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-base sm:text-xl md:text-2xl font-black text-[#003B5C] tracking-tight truncate leading-tight">
+                    Biriwa Methodist &apos;C&apos;
+                  </h1>
+
+                  <div className="flex items-center gap-1.5 text-[10px] sm:text-xs font-black text-[#003B5C] uppercase tracking-wider mt-0.5 truncate">
+                    <span>BASIC SCHOOL</span>
+                    <span className="text-[#003B5C]/60">•</span>
+                    <span className="italic font-semibold capitalize tracking-normal text-[#003B5C]/90">
+                      &ldquo;Discipline with Hardwork&rdquo;
+                    </span>
+                  </div>
                 </div>
               </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center space-x-2 bg-ghana-red text-white px-3 py-2 md:px-4 md:py-2 rounded-lg hover:bg-red-700 transition-colors shadow-md font-semibold text-xs md:text-sm"
-              >
-                <LogOut className="w-4 h-4 md:w-5 md:h-5" />
-                <span>Logout</span>
-              </button>
-          </div>
-        </nav>
-      </div>
-      
-      {/* Bottom Accent Line */}
-      <div className="h-1 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"></div>
-    </header>
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto w-full">
-        <div className="container mx-auto px-6 py-8">
-        {/* Welcome Section */}
-        <div className="bg-gradient-to-br from-blue-950 to-indigo-950 text-white rounded-[2.5rem] p-8 md:p-12 mb-8 shadow-2xl relative overflow-hidden border border-blue-900/30">
-          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-methodist-gold opacity-10 rounded-full blur-3xl"></div>
-          
-                    <div className="relative z-10 w-full">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <h2 className="text-xl md:text-3xl lg:text-4xl font-bold mb-3 tracking-tight leading-tight">
-                            Welcome back, {student ? `${student.first_name} ${student.last_name}` : 'Student'}!
-                          </h2>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 bg-blue-800/50 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-blue-700/50 tracking-wide">
-                              ID: {student?.student_id || '...'}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 bg-blue-800/50 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-blue-700/50 tracking-wide">
-                              Class: {student?.classes?.name || '...'}
-                            </span>
-                            {studentSection && (
-                              <span className="inline-flex items-center gap-1.5 bg-blue-800/50 px-3 py-1.5 rounded-full text-xs font-semibold backdrop-blur-sm border border-blue-700/50 tracking-wide">
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: studentSection.colour || '#8B5CF6' }} />
-                                {studentSection.name || 'Section'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                                        </div>
+              {/* Right: Learner Profile & Menu */}
+              <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                <div className="relative" ref={profileRef}>
+                  <button
+                    type="button"
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="flex items-center gap-2 p-1 sm:p-1.5 rounded-xl hover:bg-[#003B5C]/10 transition-colors active:scale-95"
+                    aria-label="Student profile menu"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#003B5C] text-amber-300 flex items-center justify-center font-bold text-xs shadow-xs ring-1 ring-white/30 shrink-0">
+                      {studentInitials}
                     </div>
 
-        {/* Withheld Banner */}
-        {student?.results_withheld && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-8 rounded-r-lg shadow-sm">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <FileText className="h-5 w-5 text-red-500" />
+                    <div className="hidden lg:block text-left min-w-0 max-w-[130px]">
+                      <p className="text-xs font-black text-[#003B5C] truncate leading-tight">
+                        {studentName}
+                      </p>
+                      <p className="text-[10px] font-bold text-[#003B5C]/80 uppercase tracking-wider truncate">
+                        ID: {student?.student_id || 'Learner'}
+                      </p>
+                    </div>
+
+                    <ChevronDown className="w-3.5 h-3.5 text-[#003B5C]/70 hidden sm:block" />
+                  </button>
+
+                  {/* Profile Dropdown */}
+                  {profileDropdownOpen && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-40 bg-transparent sm:hidden" 
+                        onClick={() => setProfileDropdownOpen(false)} 
+                      />
+                      <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                        <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {studentName}
+                          </p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                            ID: {student?.student_id || '---'} • {student?.classes?.name || 'Class'}
+                          </p>
+                        </div>
+
+                        <div className="py-1">
+                          <Link
+                            href="/student/profile"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                          >
+                            <User className="w-4 h-4 text-slate-400" />
+                            <span>My Profile</span>
+                          </Link>
+                          <Link
+                            href="/student/report-card"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                          >
+                            <BookOpen className="w-4 h-4 text-slate-400" />
+                            <span>Terminal Report Card</span>
+                          </Link>
+                        </div>
+
+                        <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-bold text-red-800">Results Withheld</h3>
-                <div className="mt-1 text-sm text-red-700">
-                  <p>
-                    Your results have been withheld by the administration. 
-                    {student.withheld_reason ? ` Reason: ${student.withheld_reason}` : ' Please contact the school office for more information.'}
-                  </p>
+
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Workspace */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-8 space-y-5 sm:space-y-6 lg:space-y-8">
+        
+        {/* Welcome Hero Banner */}
+        <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl bg-gradient-to-r from-[#003B5C] via-[#002a42] to-slate-900 text-white p-4 sm:p-7 md:p-8 lg:p-9 border border-white/10">
+          <div className="absolute top-0 right-0 -mt-12 -mr-12 h-48 w-48 sm:h-64 sm:w-64 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -mb-12 -ml-12 h-48 w-48 sm:h-64 sm:w-64 rounded-full bg-amber-500/20 blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
+            <div className="space-y-2.5 sm:space-y-3.5 max-w-2xl min-w-0">
+              <div className="space-y-1 sm:space-y-1.5">
+                <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
+                  Welcome back, {student?.first_name}!
+                </h2>
+                <p className="text-blue-200/90 text-xs sm:text-sm md:text-base flex items-center gap-2 font-medium flex-wrap">
+                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                  Ready to check your attendance, exam grades, and broadsheet positions?
+                </p>
+              </div>
+
+              {/* Status Badges */}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-mono font-semibold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xs">
+                  <span>ID: {student?.student_id || '---'}</span>
+                </span>
+
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xs">
+                  <BookOpen className="w-3.5 h-3.5 text-blue-300 shrink-0" />
+                  <span>{student?.classes?.name || 'Class Cohort'}</span>
+                </span>
+
+                {studentSection && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xs">
+                    <span 
+                      className="w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-white/50" 
+                      style={{ backgroundColor: studentSection.colour || '#F2A900' }} 
+                    />
+                    <span>{studentSection.name}</span>
+                  </span>
+                )}
+
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold bg-amber-400/20 border border-amber-400/30 text-amber-300 shadow-2xs">
+                  <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{stats.currentTerm}</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Attendance Callout */}
+            <div className="w-full md:w-auto shrink-0 pt-1 md:pt-0">
+              <div className="bg-white/10 backdrop-blur-xl p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-white/15 shadow-inner flex md:flex-col justify-between items-center md:items-start gap-2">
+                <span className="text-[10px] sm:text-xs text-blue-200/90 font-bold uppercase tracking-wider">
+                  Term Attendance
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl sm:text-2xl md:text-3xl font-black text-amber-400 font-mono tracking-tight">
+                    {stats.attendance}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-emerald-300 font-bold flex items-center">
+                    <TrendingUp className="w-3 h-3 mr-0.5 shrink-0" /> Roll Call
+                  </span>
                 </div>
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Results Withheld Warning */}
+        {student?.results_withheld && (
+          <section className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-900/50 rounded-2xl p-4 sm:p-5 flex items-start gap-3 text-xs text-rose-900 dark:text-rose-200 shadow-2xs">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div className="space-y-1 leading-relaxed">
+              <h3 className="font-bold text-xs sm:text-sm text-rose-800 dark:text-rose-300">
+                Terminal Examination Results Withheld
+              </h3>
+              <p className="text-[11px] sm:text-xs opacity-90">
+                Your terminal scores are currently withheld by the administration.
+                {student.withheld_reason ? ` Reason: ${student.withheld_reason}.` : ' Please settle outstanding school obligations or consult the administration office for clearance.'}
+              </p>
+            </div>
+          </section>
         )}
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="bg-blue-50 p-2.5 rounded-lg group-hover:bg-blue-100 transition-colors">
-                <Calendar className="w-5 h-5 text-blue-700 dark:text-blue-400" />
+        {/* Simple & Clean KPI Grid */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-between">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+                Academic Session
+              </span>
+              <div className="text-base sm:text-xl font-black text-slate-900 dark:text-white truncate">
+                {stats.currentTerm}
               </div>
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Term</span>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Current term</p>
             </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.currentTerm}</p>
-              <p className="text-xs text-gray-500 mt-1">Current Academic Term</p>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center shrink-0">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
 
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="bg-green-50 p-2.5 rounded-lg group-hover:bg-green-100 transition-colors">
-                <BarChart3 className="w-5 h-5 text-ghana-green" />
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-between">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+                Days Present
+              </span>
+              <div className="text-base sm:text-xl font-black font-mono text-emerald-600 dark:text-emerald-400 truncate">
+                {stats.attendance}
               </div>
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Attendance</span>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Presence tally</p>
             </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-gray-800">{stats.attendance}</p>
-              <p className="text-xs text-gray-500 mt-1">Days Present / Total</p>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
 
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="bg-purple-50 p-2.5 rounded-lg group-hover:bg-purple-100 transition-colors">
-                <BookOpen className="w-5 h-5 text-purple-600" />
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-between">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+                Average Mark
+              </span>
+              <div className="text-base sm:text-xl font-black font-mono text-[#003B5C] dark:text-blue-400 truncate">
+                {student?.results_withheld ? '---' : stats.averageScore > 0 ? `${stats.averageScore}%` : 'Pending'}
               </div>
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Avg. Score</span>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Active subjects</p>
             </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-gray-800">
-                {student?.results_withheld ? '---' : (stats.averageScore > 0 ? `${stats.averageScore}%` : 'No Data')}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Across all subjects</p>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center shrink-0">
+              <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
 
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group">
-            <div className="flex justify-between items-start mb-2">
-              <div className="bg-yellow-50 p-2.5 rounded-lg group-hover:bg-yellow-100 transition-colors">
-                <FileText className="w-5 h-5 text-yellow-600" />
-              </div>
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Position</span>
-            </div>
-            <div>
-              <p className="text-xl md:text-2xl font-bold text-gray-800">
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-between">
+            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+                Class Position
+              </span>
+              <div className="text-base sm:text-xl font-black font-mono text-amber-600 dark:text-amber-400 truncate">
                 {student?.results_withheld ? '---' : stats.classPosition}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">Class Ranking</p>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Cohort rank</p>
+            </div>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center shrink-0">
+              <Award className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Quick Actions */}
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-          <span className="w-1 h-6 bg-methodist-blue rounded-full mr-2"></span>
-          Quick Actions
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <Link href="/student/report-card" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-green-200 transition-all duration-300 flex items-start space-x-4">
-            <div className="bg-green-50 p-3 rounded-xl group-hover:bg-green-100 transition-colors">
-              <BookOpen className="w-6 h-6 text-ghana-green" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 group-hover:text-ghana-green transition-colors">Results</h3>
-              <p className="text-sm text-gray-500 mt-1 leading-tight">Check your exam scores and grades</p>
-            </div>
-          </Link>
+        {/* Core Services Section */}
+        <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-[#003B5C] border-b border-[#002a42] flex items-center justify-between">
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+              <span>Academic Services &amp; Records</span>
+            </h2>
+            <span className="text-[11px] sm:text-xs text-blue-200/80 font-medium hidden sm:inline">
+              Student Portals
+            </span>
+          </div>
 
-          {isBasic9 && (
-          <Link href="/student/mock-results" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-pink-200 transition-all duration-300 flex items-start space-x-4">
-            <div className="bg-pink-50 p-3 rounded-xl group-hover:bg-pink-100 transition-colors">
-              <Award className="w-6 h-6 text-pink-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 group-hover:text-pink-600 transition-colors">Mock Results</h3>
-              <p className="text-sm text-gray-500 mt-1 leading-tight">View BECE mock performance</p>
-            </div>
-          </Link>
-          )}
+          <div className="p-3.5 sm:p-5 md:p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
+              
+              <StudentActionCard 
+                href="/student/report-card"
+                title="Terminal Report"
+                description="View grades, Stanine & remarks"
+                icon={BookOpen}
+                disabled={Boolean(student?.results_withheld)}
+              />
 
-                    <Link href="/student/attendance" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-purple-200 transition-all duration-300 flex items-start space-x-4">
-            <div className="bg-purple-50 p-3 rounded-xl group-hover:bg-purple-100 transition-colors">
-              <Calendar className="w-6 h-6 text-purple-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 group-hover:text-purple-600 transition-colors">Attendance</h3>
-              <p className="text-sm text-gray-500 mt-1 leading-tight">View attendance records</p>
-            </div>
-          </Link>
+              {isBasic9 && (
+                <StudentActionCard 
+                  href="/student/mock-results"
+                  title="Mock Results"
+                  description="BECE trial marks & rankings"
+                  icon={Award}
+                />
+              )}
 
-          <Link href="/student/fees" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-emerald-200 transition-all duration-300 flex items-start space-x-4">
-            <div className="bg-emerald-50 p-3 rounded-xl group-hover:bg-emerald-100 transition-colors">
-              <DollarSign className="w-6 h-6 text-emerald-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 group-hover:text-emerald-600 transition-colors">Fees</h3>
-              <p className="text-sm text-gray-500 mt-1 leading-tight">Check fee status and payments</p>
-            </div>
-          </Link>
+              <StudentActionCard 
+                href="/student/assessments"
+                title="Online Quizzes"
+                description="Homework & class tests"
+                icon={ClipboardList}
+              />
 
-          <Link href="/student/performance" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-yellow-200 transition-all duration-300 flex items-start space-x-4">
-            <div className="bg-yellow-50 p-3 rounded-xl group-hover:bg-yellow-100 transition-colors">
-              <BarChart3 className="w-6 h-6 text-yellow-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 group-hover:text-yellow-600 transition-colors">Performance</h3>
-              <p className="text-sm text-gray-500 mt-1 leading-tight">Track your academic progress</p>
-            </div>
-          </Link>
+              <StudentActionCard 
+                href="/student/performance"
+                title="Progress Chart"
+                description="Subject performance trends"
+                icon={TrendingUp}
+              />
 
-          <Link href="/student/assessments" className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col justify-between hover: -md transition-all duration-300 group hover:border-blue-400 cursor-pointer">
-            <div className="flex justify-between items-start mb-2">
-              <div className="bg-blue-50 p-2.5 rounded-lg group-hover:bg-blue-100 transition-colors text-blue-600">
-                 <FileText className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Assessments</span>
-            </div>
-             <div>
-              <p className="text-lg font-bold text-gray-800 group-hover:text-blue-600">Take Quiz</p>
-              <p className="text-xs text-gray-500 mt-1">Assignments & Exams</p>
-            </div>
-          </Link>
+              <StudentActionCard 
+                href="/student/attendance"
+                title="Roll Call Record"
+                description="Presence register history"
+                icon={Calendar}
+              />
 
-          {allowCumulativeDownload ? (
-            <Link href="/student/cumulative" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-orange-200 transition-all duration-300 flex items-start space-x-4">
-              <div className="bg-orange-50 p-3 rounded-xl group-hover:bg-orange-100 transition-colors">
-                <FileText className="w-6 h-6 text-orange-600" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-800 group-hover:text-orange-600 transition-colors">Cumulative Record</h3>
-                <p className="text-sm text-gray-500 mt-1 leading-tight">View full academic history</p>
-              </div>
-            </Link>
-          ) : (
-            <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 flex items-start space-x-4 opacity-75 cursor-not-allowed relative overflow-hidden">
-              <div className="bg-gray-200 p-3 rounded-xl">
-                <FileText className="w-6 h-6 text-gray-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-gray-500 flex items-center gap-2">
-                  Cumulative Record
-                  <span className="text-[10px] bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full uppercase tracking-wide font-semibold">Locked</span>
-                </h3>
-                <p className="text-sm text-gray-500 mt-1 leading-tight">Available when released by admin</p>
-              </div>
-            </div>
-          )}
+              <StudentActionCard 
+                href="/student/fees"
+                title="School Fees"
+                description="Account balance & receipts"
+                icon={DollarSign}
+              />
 
-          <Link href="/student/profile" className="group bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-indigo-200 transition-all duration-300 flex items-start space-x-4">
-            <div className="bg-indigo-50 p-3 rounded-xl group-hover:bg-indigo-100 transition-colors">
-              <User className="w-6 h-6 text-indigo-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">My Profile</h3>
-              <p className="text-sm text-gray-500 mt-1 leading-tight">Update your information</p>
-            </div>
-          </Link>
-        </div>
-
-        {/* Recent Announcements */}
-        <div className="mt-10">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-            <span className="w-1 h-6 bg-methodist-gold rounded-full mr-2"></span>
-            Recent Announcements
-          </h3>
-          <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800  rounded-xl  -sm border border-gray-100 overflow-hidden">
-            {announcements.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Bell className="w-8 h-8 text-gray-300" />
+              {allowCumulativeDownload ? (
+                <StudentActionCard 
+                  href="/student/cumulative"
+                  title="Cumulative Record"
+                  description="Multi-term broadsheet file"
+                  icon={FileText}
+                />
+              ) : (
+                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/70 dark:bg-slate-800/40 opacity-70 flex flex-col justify-between min-h-[95px] sm:min-h-[110px]">
+                  <div>
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center mb-2.5 sm:mb-3 shrink-0">
+                      <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+                    <h3 className="font-bold text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-1">
+                      Cumulative Record
+                    </h3>
+                    <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+                      Released upon clearance
+                    </p>
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pt-2 mt-1">
+                    Locked by Admin
+                  </span>
                 </div>
-                <p className="text-base font-medium text-gray-600">No announcements at this time</p>
-                <p className="text-sm text-gray-400 mt-1">Check back later for updates from your school</p>
+              )}
+
+              <StudentActionCard 
+                href="/student/profile"
+                title="My Profile"
+                description="Personal bio & guardian info"
+                icon={User}
+              />
+
+            </div>
+          </div>
+        </section>
+
+        {/* Notice Board Section */}
+        <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-[#003B5C] border-b border-[#002a42] flex items-center justify-between">
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <Bell className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>School Notice Board</span>
+            </h3>
+            <span className="text-[11px] sm:text-xs text-blue-200/80 font-medium">
+              Official Directives
+            </span>
+          </div>
+
+          <div className="p-4 sm:p-6">
+            {announcements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-slate-400 text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                  <Bell className="w-6 h-6 opacity-30" />
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
+                  No Active Announcements
+                </p>
+                <p className="text-[11px] text-slate-400 max-w-sm">
+                  School bulletins and term updates will appear here once published by administration.
+                </p>
               </div>
             ) : (
-              <div className="space-y-3 p-3">
+              <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                 {announcements.map((announcement) => (
-                  <div 
-                    key={announcement.id} 
-                    className="p-4 md:p-5 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md hover:border-blue-100 dark:hover:border-blue-900 transition-all duration-300 group"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        {announcement.priority === 'urgent' && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
-                            Urgent
+                  <div key={announcement.id} className="py-3.5 sm:py-4 first:pt-0 last:pb-0 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${getPriorityBadge(announcement.priority)}`}>
+                          {announcement.priority || 'Notice'}
+                        </span>
+                        {announcement.category && (
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                            {announcement.category}
                           </span>
                         )}
-                        {announcement.priority === 'high' && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
-                            Important
-                          </span>
-                        )}
-                        {announcement.category === 'academic' && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                            Academic
-                          </span>
-                        )}
-                        <h4 className="font-bold text-methodist-blue text-[15px] group-hover:text-blue-700 transition-colors">{announcement.title}</h4>
                       </div>
-                      <span className="text-xs font-semibold text-methodist-yellow bg-methodist-blue/5 px-3 py-1 rounded-full whitespace-nowrap ml-4">
+                      <span className="text-[10px] sm:text-[11px] font-semibold text-slate-400 font-mono shrink-0">
                         {formatTimeAgo(announcement.created_at)}
                       </span>
                     </div>
-                    <p className="text-[14px] text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap mt-2">{announcement.content}</p>
+
+                    <h4 className="text-xs sm:text-sm md:text-base font-bold text-slate-900 dark:text-white leading-snug break-words">
+                      {announcement.title}
+                    </h4>
+
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
+                      {announcement.content}
+                    </p>
                   </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
-        </div>
+        </section>
+
       </main>
-      <div className="flex-none">
-        <PortalFooter />
+
+      {/* Shared Portal Footer */}
+      <PortalFooter />
+    </div>
+  )
+}
+
+interface StudentActionCardProps {
+  href: string
+  title: string
+  description: string
+  icon: any
+  disabled?: boolean
+}
+
+function StudentActionCard({ 
+  href, 
+  title, 
+  description, 
+  icon: Icon,
+  disabled
+}: StudentActionCardProps) {
+  if (disabled) {
+    return (
+      <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-800/40 opacity-60 flex flex-col justify-between min-h-[95px] sm:min-h-[110px] cursor-not-allowed">
+        <div>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center mb-2.5 sm:mb-3 shrink-0">
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <h3 className="font-bold text-xs sm:text-sm text-slate-500 dark:text-slate-400 line-clamp-1">
+            {title}
+          </h3>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5 line-clamp-1">
+            {description}
+          </p>
+        </div>
+        <span className="text-[10px] font-bold text-rose-500 uppercase tracking-wider pt-2 mt-1">
+          Withheld
+        </span>
+      </div>
+    )
+  }
+
+  return (
+    <Link href={href} className="block group h-full">
+      <div className="h-full p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/90 shadow-2xs hover:shadow-sm hover:border-[#003B5C]/30 dark:hover:border-blue-500/30 transition-all duration-200 flex flex-col justify-between active:scale-[0.98] min-h-[95px] sm:min-h-[110px]">
+        <div>
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center mb-2.5 sm:mb-3 group-hover:scale-105 transition-transform duration-200 shrink-0">
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+          <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white group-hover:text-[#003B5C] dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+            {title}
+          </h3>
+          <p className="text-[10px] sm:text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 line-clamp-1">
+            {description}
+          </p>
+        </div>
+        
+        <div className="pt-2 mt-1 flex items-center text-[10px] sm:text-xs font-bold text-[#003B5C] dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+          <span>Open</span>
+          <ArrowRight className="w-3 h-3 ml-1 group-hover:translate-x-0.5 transition-transform" />
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+function StudentDashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 flex flex-col font-sans">
+      <div className="h-2 w-full bg-[#BA1B1D]" />
+      <div className="h-[2px] w-full bg-[#EA580C]" />
+      <div className="h-16 bg-[#EAA812] border-b border-[#C7870A]" />
+      <div className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+        <Skeleton className="h-44 sm:h-52 w-full rounded-2xl sm:rounded-3xl" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map(i => (
+            <Skeleton key={i} className="h-24 sm:h-28 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full rounded-2xl sm:rounded-3xl" />
+        <Skeleton className="h-48 w-full rounded-2xl sm:rounded-3xl" />
       </div>
     </div>
   )

@@ -16,17 +16,12 @@ import {
   Calendar,
   Clock,
   ArrowRight,
-  TrendingUp,
-  AlertCircle,
-  Sparkles,
   ChevronRight
 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatDistanceToNow, differenceInDays } from 'date-fns'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { StudentStatsModal } from '@/components/admin/StudentStatsModal'        
 import { TeacherStatsModal } from '@/components/admin/TeacherStatsModal'        
 
@@ -140,18 +135,18 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 pb-20 font-sans text-slate-900 dark:text-slate-100 transition-colors">
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 pt-4 sm:pt-6">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 pb-16 sm:pb-20 font-sans text-slate-900 dark:text-slate-100 transition-colors">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 space-y-5 sm:space-y-6 lg:space-y-8 pt-3.5 sm:pt-6">
 
         {/* Hero Welcome Banner */}
-        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl bg-gradient-to-r from-[#003B5C] via-[#002a42] to-slate-900 text-white p-5 sm:p-7 md:p-8 lg:p-9 border border-white/10">
-          <div className="absolute top-0 right-0 -mt-12 -mr-12 h-56 w-56 sm:h-64 sm:w-64 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 -mb-12 -ml-12 h-56 w-56 sm:h-64 sm:w-64 rounded-full bg-amber-500/20 blur-3xl pointer-events-none" />
+        <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl shadow-xl bg-gradient-to-r from-[#003B5C] via-[#002a42] to-slate-900 text-white p-4 sm:p-7 md:p-8 lg:p-9 border border-white/10">
+          <div className="absolute top-0 right-0 -mt-12 -mr-12 h-48 w-48 sm:h-64 sm:w-64 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -mb-12 -ml-12 h-48 w-48 sm:h-64 sm:w-64 rounded-full bg-amber-500/20 blur-3xl pointer-events-none" />
           
-          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-3 sm:space-y-4 max-w-2xl min-w-0">
-              <div className="space-y-1">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-tight break-words">
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-6">
+            <div className="space-y-2.5 sm:space-y-4 max-w-2xl min-w-0">
+              <div className="space-y-1 sm:space-y-1.5">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-tight leading-tight">
                   {greeting}, Administrator
                 </h1>
                 <p className="text-blue-200/90 text-xs sm:text-sm md:text-base flex items-center gap-2 font-medium flex-wrap">
@@ -160,43 +155,44 @@ export default function AdminDashboard() {
                 </p>
               </div>
               
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 pt-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-semibold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xs">
                   <Calendar className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                   <span>{currentTime.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                 </span>
                 
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100">
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-semibold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xs">
                   <Clock className="w-3.5 h-3.5 text-blue-300 shrink-0" />
                   <span>{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
                 </span>
                 
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-400/20 border border-amber-400/30 text-amber-300">
-                  <span>{currentTerm ? currentTerm.name || currentTerm.term_name || 'Active Session' : 'Active Session'}</span>
+                <span className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-xl text-[11px] sm:text-xs font-bold bg-amber-400/20 border border-amber-400/30 text-amber-300 shadow-2xs">
+                  <span className="truncate max-w-[140px] sm:max-w-none">{currentTerm ? currentTerm.name || currentTerm.term_name || 'Active Session' : 'Active Session'}</span>
                 </span>
               </div>
             </div>
 
             {/* Quick Action Button */}
-            <div className="w-full md:w-auto shrink-0">
+            <div className="w-full md:w-auto shrink-0 pt-2 md:pt-0">
               <Link 
                 href="/admin/enrollments" 
-                className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl px-5 py-3.5 rounded-2xl border border-white/15 shadow-inner transition-all active:scale-95 group"
+                className="w-full md:w-auto inline-flex items-center justify-center gap-3 bg-white/10 hover:bg-white/20 backdrop-blur-xl px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl border border-white/15 shadow-inner transition-all active:scale-[0.98] group"
               >
-                <div className="bg-white text-[#003B5C] rounded-xl p-2 group-hover:scale-105 transition-transform shadow-sm">
+                <div className="bg-white text-[#003B5C] rounded-lg sm:rounded-xl p-1.5 sm:p-2 group-hover:scale-105 transition-transform shadow-xs shrink-0">
                   <Plus className="h-4 w-4" />
                 </div>
-                <div className="text-left">
-                  <p className="text-[11px] text-blue-200 uppercase tracking-wider font-bold">Admissions</p>
-                  <p className="text-sm font-bold text-white leading-tight">Enroll New Learner</p>
+                <div className="text-left min-w-0">
+                  <p className="text-[10px] sm:text-[11px] text-blue-200 uppercase tracking-wider font-bold">Admissions</p>
+                  <p className="text-xs sm:text-sm font-bold text-white leading-tight truncate">Enroll New Learner</p>
                 </div>
+                <ArrowRight className="w-4 h-4 text-blue-200 ml-auto md:ml-2 group-hover:translate-x-0.5 transition-transform shrink-0" />
               </Link>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* Primary KPI Stats Grid (2-cols on mobile for high density, 4-cols on lg) */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Primary KPI Stats Grid */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           <div onClick={() => setShowStatsModal(true)} className="h-full">
             <StatsCard 
               title="Total Learners" 
@@ -204,7 +200,6 @@ export default function AdminDashboard() {
               icon={Users} 
               badge="+2.5% vs term" 
               description="Active on register" 
-              color="blue" 
             />
           </div>
 
@@ -215,7 +210,6 @@ export default function AdminDashboard() {
               icon={GraduationCap} 
               badge="Full Attendance" 
               description="Active instructors" 
-              color="emerald" 
             />
           </div>
 
@@ -226,7 +220,6 @@ export default function AdminDashboard() {
               icon={Building2} 
               badge="KG to Basic 9" 
               description="Active classrooms" 
-              color="purple" 
             />
           </Link>
 
@@ -237,78 +230,69 @@ export default function AdminDashboard() {
               icon={FileText} 
               badge="Pending Review" 
               description="Processed admissions" 
-              color="amber" 
             />
           </Link>
-        </div>
+        </section>
         
         {/* Interactive Modals */}
         <StudentStatsModal isOpen={showStatsModal} onClose={() => setShowStatsModal(false)} />
         <TeacherStatsModal isOpen={showTeacherModal} onClose={() => setShowTeacherModal(false)} />
 
         {/* Main Dashboard Layout Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
           
-          {/* Main Left Column (2/3 width on desktop) */}
-          <div className="lg:col-span-2 space-y-6 sm:space-y-8 min-w-0">
+          {/* Main Left Column */}
+          <div className="lg:col-span-2 space-y-5 sm:space-y-6 lg:space-y-8 min-w-0">
             
             {/* Quick Actions Panel */}
-            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
               <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
-                <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                  <span className="w-1.5 h-4 bg-amber-400 rounded-full" />
+                <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
                   <span>Administrative Operations</span>
                 </h2>
-                <span className="text-xs text-slate-400 font-medium hidden sm:inline">Frequent Tasks</span>
+                <span className="text-[11px] sm:text-xs text-slate-400 font-medium hidden sm:inline">Frequent Actions</span>
               </div>
               
               <div className="p-3.5 sm:p-5 md:p-6">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
                   <QuickActionLink 
                     title="Add Teacher" 
                     href="/admin/teachers/add" 
                     icon={GraduationCap}
-                    iconColor="text-emerald-600 dark:text-emerald-400"
-                    iconBg="bg-emerald-50 dark:bg-emerald-950/40"
                   />
                   <QuickActionLink 
                     title="Enroll Learner" 
                     href="/admin/enrollments" 
                     icon={Users}
-                    iconColor="text-[#003B5C] dark:text-blue-400"
-                    iconBg="bg-blue-50 dark:bg-blue-950/40"
                   />
                   <QuickActionLink 
                     title="Class Groups" 
                     href="/admin/classes" 
                     icon={Building2}
-                    iconColor="text-purple-600 dark:text-purple-400"
-                    iconBg="bg-purple-50 dark:bg-purple-950/40"
                   />
                   <QuickActionLink 
                     title="Post Notice" 
                     href="/admin/news" 
                     icon={FileText}
-                    iconColor="text-amber-600 dark:text-amber-400"
-                    iconBg="bg-amber-50 dark:bg-amber-950/40"
                   />
                 </div>
               </div>
             </section>
 
             {/* Recent Admissions Activity */}
-            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
               <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
                 <div>
                   <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="w-1.5 h-4 bg-[#003B5C] dark:bg-blue-400 rounded-full" />
-                    <span>Recent Student Registrations</span>
+                    <span className="w-1.5 h-4 bg-[#003B5C] dark:bg-blue-400 rounded-full shrink-0" />
+                    <span>Recent Learner Admissions</span>
                   </h2>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Most recent learner admissions</p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Most recent registrations logged on system</p>
                 </div>
                 <Link 
                   href="/admin/students" 
-                  className="text-xs font-bold text-[#003B5C] dark:text-blue-400 hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-[#003B5C] dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0 ml-2"
                 >
                   <span>View All</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -316,25 +300,25 @@ export default function AdminDashboard() {
               </div>
 
               <div className="p-4 sm:p-6">
-                <div className="divide-y divide-slate-100 dark:divide-slate-750">
+                <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {recentActivities.length > 0 ? (
                     recentActivities.map((student: any) => (
-                      <div key={student.id} className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-[#003B5C] dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0">
+                      <div key={student.id} className="py-3 sm:py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                             {student.first_name?.[0]}{student.last_name?.[0]}
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate leading-snug">
                               {student.first_name} {student.last_name}
                             </p>
-                            <p className="text-[11px] text-slate-400 truncate">
-                              Enrolled into <span className="font-semibold text-slate-600 dark:text-slate-300">{student.classes?.name || 'Unassigned'}</span>
+                            <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                              Class: <span className="font-semibold text-slate-600 dark:text-slate-300">{student.classes?.name || 'Unassigned'}</span>
                             </p>
                           </div>
                         </div>
 
-                        <span className="text-[10px] sm:text-[11px] text-slate-400 font-mono shrink-0 whitespace-nowrap">
+                        <span className="text-[10px] sm:text-[11px] text-slate-400 font-mono shrink-0 whitespace-nowrap pl-2">
                           {formatDistanceToNow(new Date(student.created_at), { addSuffix: true })}
                         </span>
                       </div>
@@ -349,17 +333,17 @@ export default function AdminDashboard() {
             </section>
           </div>
 
-          {/* Right Column (1/3 width on desktop) */}
-          <div className="space-y-6 sm:space-y-8 min-w-0">
+          {/* Right Column */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-5 sm:gap-6 lg:gap-8 min-w-0">
             
             {/* Academic Session Progress Card */}
-            <div className="bg-gradient-to-br from-[#003B5C] to-slate-900 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-md border border-white/10 relative overflow-hidden space-y-4">
+            <div className="md:col-span-2 lg:col-span-1 bg-gradient-to-br from-[#003B5C] to-slate-900 text-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-md border border-white/10 relative overflow-hidden space-y-4">
               <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                 <Activity className="w-24 h-24" />
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-blue-200/80">Academic Session Timeline</span>
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-200/80">Session Timeline</span>
                 <h3 className="text-base sm:text-lg font-black tracking-tight text-white">
                   {currentTerm ? currentTerm.name : 'Active Term'}
                 </h3>
@@ -380,9 +364,9 @@ export default function AdminDashboard() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center text-[11px] text-blue-200/80 font-mono pt-1">
-                    <span>Started: {new Date(currentTerm.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
-                    <span>Ends: {new Date(currentTerm.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                  <div className="flex justify-between items-center text-[10px] sm:text-[11px] text-blue-200/80 font-mono pt-1">
+                    <span>From: {new Date(currentTerm.start_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                    <span>To: {new Date(currentTerm.end_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                   </div>
                 </div>
               ) : (
@@ -391,7 +375,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Upcoming School Events */}
-            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden flex flex-col justify-between">
               <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
                 <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <CalendarDays className="w-4 h-4 text-amber-500 shrink-0" />
@@ -402,25 +386,25 @@ export default function AdminDashboard() {
                 </Link>
               </div>
 
-              <div className="p-4 sm:p-5">
+              <div className="p-4 sm:p-5 flex-1">
                 {upcomingEvents.length > 0 ? (
-                  <div className="divide-y divide-slate-100 dark:divide-slate-750">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-700/60">
                     {upcomingEvents.map((event: any) => {
                       const eventDate = new Date(event.event_date)
                       const month = eventDate.toLocaleString('default', { month: 'short' }).toUpperCase()
                       const day = eventDate.getDate()
                       
                       return (
-                        <div key={event.id} className="py-3 first:pt-0 last:pb-0 flex items-center gap-3">
-                          <div className="w-11 h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-xl flex flex-col items-center justify-center shrink-0">
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">{month}</span>
-                            <span className="text-sm font-black text-slate-900 dark:text-white leading-none">{day}</span>
+                        <div key={event.id} className="py-2.5 sm:py-3 first:pt-0 last:pb-0 flex items-center gap-3">
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-xl flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                            <span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">{month}</span>
+                            <span className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight">{day}</span>
                           </div>
                           <div className="min-w-0 flex-1">
                             <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
                               {event.title}
                             </h4>
-                            <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                            <p className="text-[10px] sm:text-[11px] text-slate-400 truncate mt-0.5">
                               {event.location || event.event_type || 'Main Campus'}
                             </p>
                           </div>
@@ -437,27 +421,27 @@ export default function AdminDashboard() {
             </section>
 
             {/* School Sections Matrix */}
-            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-sm border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
+            <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden flex flex-col justify-between">
               <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
                 <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
                   <Palette className="w-4 h-4 text-[#003B5C] dark:text-blue-400 shrink-0" />
-                  <span>House / Sections</span>
+                  <span>Houses &amp; Sections</span>
                 </h3>
                 <Link href="/admin/sections" className="text-xs font-bold text-[#003B5C] dark:text-blue-400 hover:underline">
                   Manage
                 </Link>
               </div>
 
-              <div className="p-4 sm:p-5">
+              <div className="p-4 sm:p-5 flex-1">
                 {sectionsWithCounts.length === 0 ? (
                   <div className="text-center py-6 text-slate-400 text-xs">
-                    <p className="font-semibold">No sections configured</p>
-                    <Link href="/admin/sections" className="text-blue-600 hover:underline mt-1 inline-block">
-                      Configure school houses
+                    <p className="font-semibold">No houses configured</p>
+                    <Link href="/admin/sections" className="text-blue-600 hover:underline mt-1 inline-block font-medium">
+                      Configure houses &amp; groups
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-2.5">
+                  <div className="space-y-2 sm:space-y-2.5">
                     {sectionsWithCounts.map((section: any) => {
                       const sectionStudentCount = section.student_count || 0
                       const pct = totalSectionAssignments > 0 
@@ -468,15 +452,15 @@ export default function AdminDashboard() {
                         <Link
                           key={section.id}
                           href="/admin/sections"
-                          className="flex items-center justify-between p-2.5 sm:p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition active:scale-[0.99] group"
+                          className="flex items-center justify-between p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-50 dark:hover:bg-slate-800 transition active:scale-[0.99] group"
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <span
-                              className="w-3.5 h-3.5 rounded-full shadow-xs shrink-0 ring-2 ring-white dark:ring-slate-900"
+                              className="w-3.5 h-3.5 rounded-full shadow-2xs shrink-0 ring-2 ring-white dark:ring-slate-900"
                               style={{ backgroundColor: section.colour || '#8B5CF6' }}
                             />
                             <div className="min-w-0">
-                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block">
+                              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate block leading-tight">
                                 {section.name}
                               </span>
                               <span className="text-[10px] text-slate-400 font-medium">
@@ -485,7 +469,7 @@ export default function AdminDashboard() {
                             </div>
                           </div>
 
-                          <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all shrink-0" />
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-600 dark:group-hover:text-slate-300 group-hover:translate-x-0.5 transition-all shrink-0" />
                         </Link>
                       )
                     })}
@@ -504,56 +488,31 @@ export default function AdminDashboard() {
 interface StatsCardProps {
   title: string
   value: number
-  icon: any
+  icon: React.ElementType
   badge?: string
   description: string
-  color: 'blue' | 'emerald' | 'purple' | 'amber'
 }
 
-function StatsCard({ title, value, icon: Icon, badge, description, color }: StatsCardProps) {
-  const colorStyles = {
-    blue: {
-      bg: "bg-blue-50 dark:bg-blue-950/40",
-      text: "text-[#003B5C] dark:text-blue-400",
-      border: "hover:border-[#003B5C]/40"
-    },
-    emerald: {
-      bg: "bg-emerald-50 dark:bg-emerald-950/40",
-      text: "text-emerald-600 dark:text-emerald-400",
-      border: "hover:border-emerald-500/40"
-    },
-    purple: {
-      bg: "bg-purple-50 dark:bg-purple-950/40",
-      text: "text-purple-600 dark:text-purple-400",
-      border: "hover:border-purple-500/40"
-    },
-    amber: {
-      bg: "bg-amber-50 dark:bg-amber-950/40",
-      text: "text-amber-600 dark:text-amber-400",
-      border: "hover:border-amber-500/40"
-    }
-  }[color]
-
+function StatsCard({ title, value, icon: Icon, badge, description }: StatsCardProps) {
   return (
-    <div className={`h-full bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs hover:shadow-md transition-all duration-200 flex flex-col justify-between cursor-pointer active:scale-[0.98] ${colorStyles.border}`}>
+    <div className="h-full bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 md:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs hover:shadow-md hover:border-[#003B5C]/40 dark:hover:border-blue-500/40 transition-all duration-200 flex flex-col justify-between cursor-pointer active:scale-[0.98]">
       <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
         <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 truncate">
           {title}
         </span>
-        <div className={`p-2 rounded-xl ${colorStyles.bg} ${colorStyles.text} shrink-0`}>
+        <div className="p-2 sm:p-2.5 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 shrink-0">
           <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
       </div>
 
-      <div className="space-y-1">
-        {/* KPI Callout Metric */}
-        <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono tracking-tight text-slate-900 dark:text-white">
+      <div className="space-y-0.5 sm:space-y-1">
+        <div className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black font-mono tracking-tight text-slate-900 dark:text-white leading-tight">
           {value}
         </div>
-        <p className="text-[11px] text-slate-400 truncate flex items-center justify-between">
-          <span>{description}</span>
-          {badge && <span className="font-semibold text-emerald-600 dark:text-emerald-400 ml-1 hidden sm:inline">{badge}</span>}
-        </p>
+        <div className="text-[10px] sm:text-[11px] text-slate-400 truncate flex items-center justify-between">
+          <span className="truncate">{description}</span>
+          {badge && <span className="font-semibold text-amber-600 dark:text-amber-400 ml-1 hidden sm:inline shrink-0">{badge}</span>}
+        </div>
       </div>
     </div>
   )
@@ -562,16 +521,14 @@ function StatsCard({ title, value, icon: Icon, badge, description, color }: Stat
 interface QuickActionLinkProps {
   title: string
   href: string
-  icon: any
-  iconColor: string
-  iconBg: string
+  icon: React.ElementType
 }
 
-function QuickActionLink({ title, href, icon: Icon, iconColor, iconBg }: QuickActionLinkProps) {
+function QuickActionLink({ title, href, icon: Icon }: QuickActionLinkProps) {
   return (
     <Link href={href} className="block group h-full">
-      <div className="h-full p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-slate-750 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800 shadow-2xs hover:shadow-sm hover:border-[#003B5C]/30 transition-all duration-200 flex flex-col items-center justify-center text-center active:scale-[0.98]">
-        <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${iconBg} ${iconColor} flex items-center justify-center mb-2 group-hover:scale-105 transition-transform shrink-0`}>
+      <div className="h-full p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-900/40 hover:bg-white dark:hover:bg-slate-800 shadow-2xs hover:shadow-sm hover:border-[#003B5C]/30 transition-all duration-200 flex flex-col items-center justify-center text-center active:scale-[0.98] min-h-[90px] sm:min-h-[105px]">
+        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center mb-2 group-hover:scale-105 transition-transform shrink-0">
           <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
         <h3 className="font-bold text-[11px] sm:text-xs text-slate-800 dark:text-slate-200 group-hover:text-[#003B5C] dark:group-hover:text-blue-400 transition-colors line-clamp-1">
@@ -584,21 +541,21 @@ function QuickActionLink({ title, href, icon: Icon, iconColor, iconBg }: QuickAc
 
 function DashboardSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <Skeleton className="h-44 w-full rounded-3xl" />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 space-y-6">
+      <Skeleton className="h-36 sm:h-44 w-full rounded-2xl sm:rounded-3xl" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[1, 2, 3, 4].map(i => (
-          <Skeleton key={i} className="h-28 rounded-2xl sm:rounded-3xl" />
+          <Skeleton key={i} className="h-24 sm:h-28 rounded-2xl sm:rounded-3xl" />
         ))}
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Skeleton className="h-36 rounded-3xl" />
-          <Skeleton className="h-72 rounded-3xl" />
+          <Skeleton className="h-36 rounded-2xl sm:rounded-3xl" />
+          <Skeleton className="h-72 rounded-2xl sm:rounded-3xl" />
         </div>
         <div className="space-y-6">
-          <Skeleton className="h-44 rounded-3xl" />
-          <Skeleton className="h-56 rounded-3xl" />
+          <Skeleton className="h-44 rounded-2xl sm:rounded-3xl" />
+          <Skeleton className="h-56 rounded-2xl sm:rounded-3xl" />
         </div>
       </div>
     </div>

@@ -11,9 +11,11 @@ import {
   Search, 
   LogOut, 
   User, 
-  ChevronDown,
   FileText,
-  AlertCircle
+  AlertCircle,
+  ShieldCheck,
+  ChevronRight,
+  X
 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { differenceInDays } from 'date-fns'
@@ -28,14 +30,23 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
   const supabase = getSupabaseBrowserClient()
 
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const [pendingAdmissions, setPendingAdmissions] = useState(0)
   const [unreadComplaints, setUnreadComplaints] = useState(0)
-  const [termAlert, setTermAlert] = useState<{ progress: number, active: boolean, threshold: number, id?: string, totalDaysEntered?: boolean }>({ progress: 0, active: false, threshold: 90 })
+  const [termAlert, setTermAlert] = useState<{ 
+    progress: number
+    active: boolean
+    threshold: number
+    id?: string
+    totalDaysEntered?: boolean 
+  }>({ progress: 0, active: false, threshold: 90 })
   const [dismissedAtt, setDismissedAtt] = useState(false)
   const [dismissedRem, setDismissedRem] = useState(false)
-  const notificationRef = useRef<HTMLDivElement>(null)
 
-  // Initialize from sessionStorage to prevent badge flickering on navigation
+  const notificationRef = useRef<HTMLDivElement>(null)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  // Initialize from sessionStorage to prevent badge flickering on route changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const cachedAdms = sessionStorage.getItem('admin_notif_admissions')
@@ -112,18 +123,18 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
         }
 
         if (progress >= threshold && 'Notification' in window && Notification.permission === 'granted') {
-           // Basic duplicate prevention string
-           const storedKey = `admin_term_alert_${termRes.data.id}`
-           if (!sessionStorage.getItem(storedKey)) {
-             const notificationBody = termRes.data.total_days > 0
-                  ? `The term is ${progress}% complete. Please remind teachers to enter student remarks for the term.`
-                  : `The term is ${progress}% complete. Please enter total attendances and student remarks for the term.`;
-               new Notification('Action Required: Term Wrapping Up', {
-                 body: notificationBody,
-                 icon: '/school_crest.png'
-               })
-             sessionStorage.setItem(storedKey, 'notified')
-           }
+          const storedKey = `admin_term_alert_${termRes.data.id}`
+          if (!sessionStorage.getItem(storedKey)) {
+            const notificationBody = termRes.data.total_days > 0
+              ? `The term is ${progress}% complete. Please remind teachers to enter student remarks for the term.`
+              : `The term is ${progress}% complete. Please enter total attendances and student remarks for the term.`
+            
+            new Notification('Action Required: Term Wrapping Up', {
+              body: notificationBody,
+              icon: '/school_crest.png'
+            })
+            sessionStorage.setItem(storedKey, 'notified')
+          }
         } else if (progress >= threshold && 'Notification' in window && Notification.permission !== 'denied') {
           Notification.requestPermission()
         }
@@ -136,18 +147,19 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
     return () => clearInterval(interval)
   }, [user, supabase])
 
-  // Close dropdown when clicking outside
+  // Click outside listener for dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setNotificationsOpen(false)
       }
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false)
+      }
     }
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [notificationRef])
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const handleAttClick = () => {
     if (termAlert.id) {
@@ -165,171 +177,321 @@ export function AdminHeader({ setIsOpen }: AdminHeaderProps) {
     setNotificationsOpen(false)
   }
 
-  const totalNotifications = pendingAdmissions + unreadComplaints + (termAlert.active && !termAlert.totalDaysEntered && !dismissedAtt ? 1 : 0) + (termAlert.active && !dismissedRem ? 1 : 0)
+  const handleSignOut = async () => {
+    await signOut()
+    router.push('/login?portal=admin')
+  }
+
+  const adminName = profile?.full_name || 'Administrator'
+  const adminInitials = adminName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .substring(0, 2)
+    .toUpperCase() || 'AD'
+
+  const totalNotifications = 
+    pendingAdmissions + 
+    unreadComplaints + 
+    (termAlert.active && !termAlert.totalDaysEntered && !dismissedAtt ? 1 : 0) + 
+    (termAlert.active && !dismissedRem ? 1 : 0)
 
   return (
-    <header className="relative z-[100] h-16 bg-gradient-to-r from-methodist-gold via-yellow-500 to-yellow-600 border-b-4 border-yellow-700 shadow-md w-full flex-none">
-      <div className="h-full px-4 flex items-center justify-between gap-4">
-        {/* Left: Mobile Toggle & Brand/Breadcrumb */}
-        <div className="flex items-center gap-2 sm:gap-4 flex-1">
-          <button
-            onClick={() => setIsOpen(true)}
-            className="lg:hidden p-1.5 sm:p-2 hover:bg-white/20 text-blue-900 rounded-lg transition-colors shrink-0"
-          >
-            <Menu className="h-5 w-5 sm:h-6 sm:w-6" />
-          </button>
-          
-          <div className="flex flex-col overflow-hidden">
-             <span className="text-sm sm:text-xl font-black text-gray-900 dark:text-white tracking-tight leading-none whitespace-nowrap truncate">
-               Biriwa Methodist 'C' Basic School
-             </span>
-             <span className="text-[10px] sm:text-sm font-bold text-methodist-blue dark:text-indigo-400 tracking-wider mt-0.5">
-               ADMIN PORTAL
-             </span>
-          </div>
-        </div>
+    <header className="sticky top-0 z-40 w-full select-none shadow-md flex-none">
+      {/* Ghana Flag Accent Line */}
+      <div className="h-1 w-full bg-gradient-to-r from-red-600 via-amber-400 to-emerald-600" />
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 md:gap-4">
-          {/* Search Trigger (Desktop only) */}
-          <button className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm text-gray-500 bg-methodist-blue/10 hover:bg-methodist-blue/20 dark:bg-gray-800/50 border border-transparent dark:border-gray-700 rounded-xl transition-colors w-48 lg:w-64 dark:hover:bg-gray-800">
-             <Search className="h-4 w-4" />
-             <span className="font-medium">Search... (Ctrl+K)</span>
-          </button>
+      {/* Main Bar */}
+      <div className="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-[#003B5C] border-b-2 border-amber-600/30">
+        <div className="px-3.5 sm:px-6 lg:px-8 py-2.5 sm:py-3">
+          <div className="flex items-center justify-between gap-2.5 sm:gap-4">
+            
+            {/* Left: Mobile Toggle & Institutional Title */}
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                className="lg:hidden p-2 rounded-xl text-[#003B5C] hover:bg-[#003B5C]/10 active:scale-95 transition-all shrink-0"
+                aria-label="Open sidebar menu"
+              >
+                <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
 
-          {/* Notifications */}
-          <div className="relative" ref={notificationRef}>
-            <button 
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
-              className="relative p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors focus:outline-none"
-            >
-              <Bell className="h-6 w-6" />
-              {totalNotifications > 0 && (
-                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white border-2 border-white dark:border-gray-900 shadow-sm">
-                  {totalNotifications > 9 ? '9+' : totalNotifications}
-                </span>
-              )}
-            </button>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-xs sm:text-base md:text-lg font-black text-[#003B5C] tracking-tight truncate leading-tight">
+                    <span className="sm:hidden">Biriwa Methodist &apos;C&apos;</span>
+                    <span className="hidden sm:inline">Biriwa Methodist &apos;C&apos; Basic School</span>
+                  </h1>
+                </div>
 
-            {/* Notification Dropdown */}
-            {notificationsOpen && (
-              <div className="absolute right-0 mt-2 w-80 bg-white/90 backdrop-blur-xl dark:bg-gray-800 rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/40 dark:border-gray-700 py-2 animate-in fade-in zoom-in-95 duration-200">
-                 <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">Notifications</h3>
-                    {totalNotifications > 0 && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-medium">
-                        {totalNotifications} New
-                      </span>
-                    )}
-                 </div>
-                 
-                 <div className="max-h-[300px] overflow-y-auto">
-                    {totalNotifications === 0 ? (
-                      <div className="py-8 text-center text-gray-500">
-                        <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
-
-                        <p className="text-sm">No new notifications</p>
-                      </div>
-                    ) : (
-                      <div className="py-1">
-                        {pendingAdmissions > 0 && (
-                          <Link 
-                            href="/admin/admissions" 
-                            onClick={() => setNotificationsOpen(false)}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-methodist-blue/10 dark:hover:bg-gray-700/50 transition-colors"
-                          >
-                             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-700 dark:text-blue-300">
-                                <FileText className="h-4 w-4" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-bold text-[#0A2540] dark:text-gray-100">New Admission Applications</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                   <span className="font-semibold text-blue-700">{pendingAdmissions}</span> students waiting for approval.
-                                </p>
-                             </div>
-                          </Link>
-                        )}
-
-                        {unreadComplaints > 0 && (
-                          <Link
-                            href="/admin/complaints"
-                            onClick={() => setNotificationsOpen(false)}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-methodist-blue/10 dark:hover:bg-gray-700/50 transition-colors"
-                          >
-                             <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-full text-red-700 dark:text-red-300">
-                                <AlertCircle className="h-4 w-4" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-bold text-[#0A2540] dark:text-gray-100">New Complaints</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                   <span className="font-semibold text-red-700">{unreadComplaints}</span> issues reported.
-                                </p>
-                             </div>
-                          </Link>
-                        )}
-                        
-                          {termAlert.active && !termAlert.totalDaysEntered && !dismissedAtt && (
-                          <Link
-                            href="/admin/settings/attendance"
-                            onClick={handleAttClick}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-methodist-blue/10 dark:hover:bg-gray-700/50 transition-colors"
-                          >
-                             <div className="p-2 bg-yellow-100 dark:bg-amber-900/30 rounded-full text-yellow-600 dark:text-amber-300">
-                                <AlertCircle className="h-4 w-4" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">End of Term Action Required</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  Term is <span className="font-semibold text-yellow-600">{termAlert.progress}%</span> complete. Please enter total attendances.
-                                </p>
-                             </div>
-                          </Link>
-                        )}
-
-                        {termAlert.active && !dismissedRem && (
-                          <Link
-                            href="/admin/reports"
-                            onClick={handleRemClick}
-                            className="flex items-start gap-3 px-4 py-3 hover:bg-methodist-blue/10 dark:hover:bg-gray-700/50 transition-colors"
-                          >
-                             <div className="p-2 bg-yellow-100 dark:bg-amber-900/30 rounded-full text-yellow-600 dark:text-amber-300">
-                                <AlertCircle className="h-4 w-4" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-bold text-gray-900 dark:text-gray-100">End of Term Action Required</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                  Term is <span className="font-semibold text-yellow-600">{termAlert.progress}%</span> complete. Please enter student remarks.
-                                </p>
-                             </div>
-                          </Link>
-                        )}
-                      </div>
-                    )}
-                 </div>
-                 
-                 <div className="px-4 py-2 border-t border-gray-100 dark:border-gray-700 text-center">
-                    <Link href="/admin/announcements" onClick={() => setNotificationsOpen(false)} className="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wide">
-                       View All Announcements
-                    </Link>
-                 </div>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-[#003B5C]/90 truncate">
+                    Admin Portal
+                  </span>
+                  <span className="hidden md:inline-block w-1 h-1 rounded-full bg-[#003B5C]/40" />
+                  <span className="hidden md:inline-block text-[10px] sm:text-xs font-semibold text-[#003B5C]/80 italic truncate">
+                    &ldquo;Discipline with Hardwork&rdquo;
+                  </span>
+                </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="h-8 w-[1px] bg-blue-900/10 mx-1"></div>
+            {/* Right: Actions (Search, Notifications, Profile) */}
+            <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+              
+              {/* Quick Search Shortcut (Desktop/Tablet) */}
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/25 hover:bg-white/35 border border-white/20 text-[#003B5C] text-xs font-semibold cursor-pointer transition-colors shadow-2xs">
+                <Search className="w-3.5 h-3.5 opacity-75" />
+                <span className="truncate">Search system...</span>
+                <kbd className="hidden lg:inline-block ml-1 px-1.5 py-0.5 text-[10px] font-mono font-bold bg-[#003B5C]/10 rounded border border-[#003B5C]/20">
+                  Ctrl+K
+                </kbd>
+              </div>
 
-          {/* User Profile */}
-          <div className="flex items-center gap-3 pl-1">
-             <div className="hidden md:block text-right">
-                <p className="text-sm font-bold text-blue-900 leading-none">
-                  {profile?.full_name || 'Administrator'}
-                </p>
-                <p className="text-xs text-blue-900/70 mt-1 font-medium">Admin</p>
-             </div>
+              {/* Notifications Center */}
+              <div className="relative" ref={notificationRef}>
+                <button
+                  type="button"
+                  onClick={() => setNotificationsOpen(!notificationsOpen)}
+                  className="relative p-2 rounded-xl text-[#003B5C] hover:bg-[#003B5C]/10 active:scale-95 transition-all"
+                  aria-label="View system notifications"
+                >
+                  <Bell className="w-5 h-5 sm:w-5 sm:h-5" />
+                  {totalNotifications > 0 && (
+                    <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-black font-mono text-white shadow-sm ring-2 ring-amber-500">
+                      {totalNotifications > 9 ? '9+' : totalNotifications}
+                    </span>
+                  )}
+                </button>
+
+                {/* Dropdown Menu (Viewport-Safe for Mobile) */}
+                {notificationsOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40 bg-slate-950/20 sm:hidden" 
+                      onClick={() => setNotificationsOpen(false)} 
+                    />
+                    <div className="fixed inset-x-3 top-16 sm:inset-x-auto sm:absolute sm:right-0 sm:top-auto sm:mt-2 sm:w-88 md:w-96 z-50 bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+                      
+                      {/* Dropdown Header */}
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-950/40">
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
+                            Notifications
+                          </h3>
+                        </div>
+                        {totalNotifications > 0 ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300">
+                            {totalNotifications} Action{totalNotifications === 1 ? '' : 's'}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 font-bold uppercase">
+                            Up to date
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Dropdown Notification List */}
+                      <div className="max-h-[60vh] sm:max-h-[360px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/80 overscroll-contain">
+                        {totalNotifications === 0 ? (
+                          <div className="py-8 px-4 text-center space-y-2">
+                            <div className="w-10 h-10 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400">
+                              <Bell className="w-5 h-5 opacity-40" />
+                            </div>
+                            <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                              No urgent administrative notices
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="py-1">
+                            {/* Pending Admissions Alert */}
+                            {pendingAdmissions > 0 && (
+                              <Link
+                                href="/admin/admissions"
+                                onClick={() => setNotificationsOpen(false)}
+                                className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                              >
+                                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-[#003B5C] dark:text-blue-400 shrink-0">
+                                  <FileText className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                      New Admission Applications
+                                    </p>
+                                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                                  </div>
+                                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    <strong className="text-[#003B5C] dark:text-blue-400">{pendingAdmissions}</strong> applicant{pendingAdmissions === 1 ? '' : 's'} awaiting review and enrolment.
+                                  </p>
+                                </div>
+                              </Link>
+                            )}
+
+                            {/* Unread Grievances Alert */}
+                            {unreadComplaints > 0 && (
+                              <Link
+                                href="/admin/complaints"
+                                onClick={() => setNotificationsOpen(false)}
+                                className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                              >
+                                <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 shrink-0">
+                                  <AlertCircle className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                      Unread Feedback &amp; Grievances
+                                    </p>
+                                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                                  </div>
+                                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    <strong className="text-rose-600 dark:text-rose-400">{unreadComplaints}</strong> new ticket{unreadComplaints === 1 ? '' : 's'} submitted to the helpdesk.
+                                  </p>
+                                </div>
+                              </Link>
+                            )}
+
+                            {/* Term Wrapping Up - Attendances */}
+                            {termAlert.active && !termAlert.totalDaysEntered && !dismissedAtt && (
+                              <Link
+                                href="/admin/settings/attendance"
+                                onClick={handleAttClick}
+                                className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                              >
+                                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 shrink-0">
+                                  <AlertCircle className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                      End-of-Term Attendance Entry
+                                    </p>
+                                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                                  </div>
+                                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Term is <strong className="text-amber-600">{termAlert.progress}%</strong> complete. Please confirm the total school days.
+                                  </p>
+                                </div>
+                              </Link>
+                            )}
+
+                            {/* Term Wrapping Up - Remarks */}
+                            {termAlert.active && !dismissedRem && (
+                              <Link
+                                href="/admin/reports"
+                                onClick={handleRemClick}
+                                className="flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors"
+                              >
+                                <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 shrink-0">
+                                  <AlertCircle className="w-4 h-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                                      Teacher Terminal Remarks
+                                    </p>
+                                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 shrink-0" />
+                                  </div>
+                                  <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                    Term is <strong className="text-amber-600">{termAlert.progress}%</strong> complete. Remind teachers to enter report remarks.
+                                  </p>
+                                </div>
+                              </Link>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Dropdown Footer */}
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-950/50 border-t border-slate-100 dark:border-slate-800 text-center">
+                        <Link
+                          href="/admin/announcements"
+                          onClick={() => setNotificationsOpen(false)}
+                          className="text-[11px] font-bold text-[#003B5C] dark:text-blue-400 hover:underline uppercase tracking-wider block py-1"
+                        >
+                          View Bulletin &amp; Announcements
+                        </Link>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="h-6 w-px bg-[#003B5C]/20 mx-0.5" />
+
+              {/* Administrator Identity & Quick Sign-Out */}
+              <div className="relative" ref={profileRef}>
+                <button
+                  type="button"
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex items-center gap-2 p-1 sm:p-1.5 rounded-xl hover:bg-[#003B5C]/10 transition-colors active:scale-95"
+                  aria-label="Admin account menu"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-[#003B5C] text-white flex items-center justify-center font-bold text-xs shadow-sm ring-1 ring-white/30 shrink-0">
+                    {adminInitials}
+                  </div>
+
+                  <div className="hidden lg:block text-left min-w-0 max-w-[130px]">
+                    <p className="text-xs font-black text-[#003B5C] truncate leading-tight">
+                      {adminName}
+                    </p>
+                    <p className="text-[10px] font-bold text-[#003B5C]/80 uppercase tracking-wider">
+                      Administrator
+                    </p>
+                  </div>
+                </button>
+
+                {/* Profile Modal / Dropdown */}
+                {profileDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40 bg-transparent sm:hidden" 
+                      onClick={() => setProfileDropdownOpen(false)} 
+                    />
+                    <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200/80 dark:border-slate-800 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                      <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {adminName}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                          Super Admin Role
+                        </p>
+                      </div>
+
+                      <div className="py-1">
+                        <Link
+                          href="/admin/settings"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        >
+                          <ShieldCheck className="w-4 h-4 text-slate-400" />
+                          <span>Console Settings</span>
+                        </Link>
+                      </div>
+
+                      <div className="pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          type="button"
+                          onClick={handleSignOut}
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-left"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+            </div>
+
           </div>
         </div>
       </div>
     </header>
   )
 }
-

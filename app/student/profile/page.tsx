@@ -3,9 +3,28 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
-import { ArrowLeft, User, Mail, Phone, MapPin, Calendar, GraduationCap, Save, Eye, EyeOff } from 'lucide-react'
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Calendar, 
+  GraduationCap, 
+  Save, 
+  Eye, 
+  EyeOff, 
+  Lock, 
+  ShieldCheck, 
+  AlertCircle, 
+  Edit3, 
+  X, 
+  CheckCircle2, 
+  KeyRound,
+  Shield
+} from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
+import { PortalFooter } from '@/components/PortalFooter'
 import { toast } from 'react-hot-toast'
 
 interface StudentProfile {
@@ -36,6 +55,7 @@ interface StudentProfile {
 export default function ProfilePage() {
   const router = useRouter()
   const supabase = getSupabaseBrowserClient()
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
@@ -43,18 +63,16 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
   const [canEditProfile, setCanEditProfile] = useState(false)
   
-  // Editable fields
+  // Editable contact & guardian fields
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [guardianName, setGuardianName] = useState('')
   const [guardianPhone, setGuardianPhone] = useState('')
   const [guardianEmail, setGuardianEmail] = useState('')
   
-  // Password change
-  const [currentPassword, setCurrentPassword] = useState('')
+  // Password change state
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [passwordError, setPasswordError] = useState('')
@@ -68,14 +86,13 @@ export default function ProfilePage() {
     try {
       setLoading(true)
 
-      // Get current user
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        router.push('/login')
+        router.push('/login?portal=student')
         return
       }
 
-      // Get student profile with all details
+      // Fetch student profile with class and auth info
       const studentResult = await supabase
         .from('students')
         .select(`
@@ -93,14 +110,14 @@ export default function ProfilePage() {
         .eq('profile_id', user.id)
         .maybeSingle()
 
-      // Check system settings for profile editing permission
+      // Check security setting for student self-edit permission
       const { data: settingsData } = await supabase
         .from('security_settings')
         .select('allow_student_profile_edit')
         .maybeSingle()
       
       if (settingsData) {
-        setCanEditProfile(settingsData.allow_student_profile_edit)
+        setCanEditProfile(Boolean(settingsData.allow_student_profile_edit))
       }
 
       const student = studentResult.data as any
@@ -112,14 +129,13 @@ export default function ProfilePage() {
       }
 
       if (!student) {
-        console.error('No student record found for this user')
         router.push('/login?portal=student')
         return
       }
 
       setProfile(student)
       
-      // Set editable fields
+      // Pre-fill editable state
       setPhone(student.phone || '')
       setAddress(student.address || '')
       setGuardianName(student.guardian_name || '')
@@ -127,6 +143,7 @@ export default function ProfilePage() {
       setGuardianEmail(student.guardian_email || '')
     } catch (error) {
       console.error('Error loading profile:', error)
+      toast.error('Failed to load profile details')
     } finally {
       setLoading(false)
     }
@@ -141,27 +158,22 @@ export default function ProfilePage() {
       const { error } = await supabase
         .from('students')
         .update({
-          phone,
-          address,
-          guardian_name: guardianName,
-          guardian_phone: guardianPhone,
-          guardian_email: guardianEmail
+          phone: phone.trim() || null,
+          address: address.trim() || null,
+          guardian_name: guardianName.trim() || null,
+          guardian_phone: guardianPhone.trim() || null,
+          guardian_email: guardianEmail.trim() || null
         })
         .eq('id', profile.id)
 
-      if (error) {
-        console.error('Error updating profile:', error)
-        toast.error('Failed to update profile. Please try again.')
-        return
-      }
+      if (error) throw error
 
-      // Reload profile
       await loadProfile()
       setEditMode(false)
-      toast.success('Profile updated successfully!')
-    } catch (error) {
-      console.error('Error saving profile:', error)
-      toast.error('An error occurred. Please try again.')
+      toast.success('Contact information updated successfully!')
+    } catch (error: any) {
+      console.error('Error updating profile:', error)
+      toast.error(error.message || 'Failed to update profile. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -171,58 +183,53 @@ export default function ProfilePage() {
     setPasswordError('')
     setPasswordSuccess('')
 
-    // Validation
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError('All password fields are required')
+    if (!newPassword || !confirmPassword) {
+      setPasswordError('Please fill out both password fields.')
       return
     }
 
     if (newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters')
+      setPasswordError('Password must be at least 6 characters long.')
       return
     }
 
     if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match')
+      setPasswordError('Passwords do not match. Please re-enter.')
       return
     }
 
     try {
       setChangingPassword(true)
 
-      // Update password
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       })
 
-      if (error) {
-        setPasswordError(error.message)
-        return
-      }
+      if (error) throw error
 
-      setPasswordSuccess('Password changed successfully!')
-      setCurrentPassword('')
+      setPasswordSuccess('Password updated successfully!')
       setNewPassword('')
       setConfirmPassword('')
       
-      // Auto-hide success message after 3 seconds
-      setTimeout(() => setPasswordSuccess(''), 3000)
+      setTimeout(() => setPasswordSuccess(''), 4000)
     } catch (error: any) {
-      setPasswordError(error.message || 'Failed to change password')
+      setPasswordError(error.message || 'Failed to update password')
     } finally {
       setChangingPassword(false)
     }
   }
 
   function formatDate(dateString: string): string {
+    if (!dateString) return 'Not recorded'
     return new Date(dateString).toLocaleDateString('en-GB', {
       day: 'numeric',
-      month: 'long',
+      month: 'short',
       year: 'numeric'
     })
   }
 
-  function calculateAge(dateString: string): number {
+  function calculateAge(dateString: string): number | null {
+    if (!dateString) return null
     const today = new Date()
     const birthDate = new Date(dateString)
     let age = today.getFullYear() - birthDate.getFullYear()
@@ -231,388 +238,491 @@ export default function ProfilePage() {
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--
     }
-    
     return age
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors">
-          <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /90 dark:bg-gray-900/90 backdrop-blur-md  -sm border-b border-gray-200 dark:border-gray-800">
-            <div className="container mx-auto px-4 py-4">
-               <div className="flex items-center gap-4">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <Skeleton className="h-8 w-40 rounded" />
-               </div>
-            </div>
-          </header>
-          <main className="flex-1 container mx-auto px-4 py-8">
-             <div className="max-w-4xl mx-auto space-y-8">
-                 <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-3xl shadow-xl  -gray-200/30 p-8 border border-gray-100/50 dark:border-gray-800/50">
-                    <div className="flex flex-col md:flex-row gap-6 items-center md:items-start mb-6">
-                         <Skeleton className="h-24 w-24 rounded-full" />
-                         <div className="space-y-4 flex-1 w-full">
-                            <Skeleton className="h-8 w-3/4" />
-                            <Skeleton className="h-4 w-1/2" />
-                         </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                    </div>
-                 </div>
-             </div>
-          </main>
-      </div>
-    )
+    return <ProfileSkeleton />
   }
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm rounded-[3rem] p-16 text-center border-2 border-dashed border-gray-200 dark:border-gray-800">
-            <User className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 mb-2">Profile Not Found</h3>
-            <p className="text-gray-600">Unable to load your profile information.</p>
+      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 flex flex-col font-sans">
+        <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+          <div className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5">
+            <div className="flex items-center gap-3">
+              <BackButton href="/student/dashboard" />
+              <h1 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                Student Profile
+              </h1>
+            </div>
           </div>
-        </div>
+        </header>
+
+        <main className="flex-1 max-w-md mx-auto w-full px-4 py-16 flex items-center justify-center">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 text-center border border-slate-200/80 dark:border-slate-700 shadow-xs space-y-3 w-full">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-700/50 text-slate-400 flex items-center justify-center mx-auto">
+              <User className="w-7 h-7" />
+            </div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">Profile Not Found</h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Unable to locate student credentials linked to your current session.
+            </p>
+          </div>
+        </main>
+        <PortalFooter />
       </div>
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.push('/student/dashboard')}
-            className="flex items-center gap-2 text-blue-700 dark:text-blue-400 hover:text-blue-700 mb-4"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </button>
-          <h1 className="text-xl md:text-3xl font-bold text-blue-700 dark:text-blue-400">My Profile</h1>
-          <p className="text-gray-600 mt-2">View and manage your personal information</p>
-        </div>
+  const studentFullName = `${profile.first_name || ''} ${profile.middle_name ? profile.middle_name + ' ' : ''}${profile.last_name || ''}`.trim()
+  const studentInitials = `${profile.first_name?.[0] || ''}${profile.last_name?.[0] || ''}`.toUpperCase() || 'ST'
+  const age = calculateAge(profile.date_of_birth)
 
-        {/* Profile Card */}
-        <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm shadow-sm border-b border-gray-100 dark:border-gray-800 /80 dark:bg-gray-900/80 backdrop-blur-md rounded-[2.5rem] shadow-2xl  -gray-200/40 mb-8 border border-gray-100/50 overflow-hidden">
-          {/* Header Section */}
-          <div className="bg-gradient-to-r from-methodist-blue to-blue-600 text-white p-6 md:p-8 rounded-t-lg">
-            <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 text-center md:text-left">
-              <div className="w-20 h-20 md:w-24 md:h-24 bg-white/20 rounded-full flex items-center justify-center">
-                <User className="w-10 h-10 md:w-12 md:h-12" />
-              </div>
-              <div>
-                <h2 className="text-lg md:text-2xl font-bold">
-                  {profile.last_name} {profile.first_name} {profile.middle_name || ''}
-                </h2>
-                <p className="text-blue-100 mt-1">Student ID: {profile.student_id}</p>
-                <p className="text-blue-100">
-                  {profile.classes.name}
+  return (
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+      
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+          <div className="flex items-center justify-between gap-3">
+            
+            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+              <BackButton href="/student/dashboard" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+                  <h1 className="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                    Student Bio &amp; Profile
+                  </h1>
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  Institutional record, guardian contacts, and account security
                 </p>
               </div>
             </div>
+
+            <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 text-[#003B5C] dark:text-blue-300 text-xs font-bold shrink-0 font-mono">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>Verified Identity</span>
+            </div>
+
           </div>
+        </div>
+      </header>
 
-          {/* Basic Information */}
-          <div className="p-4 md:p-8 border-b border-gray-200">
-            <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-4">Basic Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="flex items-start gap-3">
-                <User className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-xs md:text-sm text-gray-600">Full Name</p>
-                  <p className="font-medium text-sm md:text-base text-gray-900">
-                    {profile.last_name} {profile.first_name} {profile.middle_name || ''}
-                  </p>
-                </div>
+      {/* Main Workspace */}
+      <main className="flex-1 max-w-5xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
+        
+        {/* Student Identity Hero Card */}
+        <section className="relative overflow-hidden rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-xl bg-gradient-to-r from-[#003B5C] via-[#002a42] to-slate-900 text-white p-4 sm:p-6 md:p-8 border border-white/10">
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 h-44 w-44 sm:h-56 sm:w-56 rounded-full bg-blue-500/20 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-44 w-44 sm:h-56 sm:w-56 rounded-full bg-amber-500/20 blur-3xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 text-center sm:text-left">
+            
+            {/* Avatar Pill */}
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-white/10 backdrop-blur-md border border-white/20 text-amber-300 flex items-center justify-center font-black text-xl sm:text-2xl shadow-inner shrink-0">
+              {studentInitials}
+            </div>
+
+            {/* Main Identity Information */}
+            <div className="space-y-2 min-w-0 flex-1">
+              <div>
+                <h2 className="text-lg sm:text-2xl md:text-3xl font-black tracking-tight leading-snug">
+                  {studentFullName}
+                </h2>
+                <p className="text-xs sm:text-sm text-blue-200/90 font-mono mt-0.5">
+                  ID: {profile.student_id}
+                </p>
               </div>
 
-              <div className="flex items-start gap-3">
-                <Calendar className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-600">Date of Birth</p>
-                  <p className="font-medium text-gray-900">
-                    {formatDate(profile.date_of_birth)} ({calculateAge(profile.date_of_birth)} years)
-                  </p>
-                </div>
-              </div>
+              {/* Badges Strip */}
+              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2 pt-1">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-bold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xs">
+                  <GraduationCap className="w-3.5 h-3.5 text-blue-300 shrink-0" />
+                  <span>{profile.classes?.name || 'Cohort'}</span>
+                </span>
 
-              <div className="flex items-start gap-3">
-                <User className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-600">Gender</p>
-                  <p className="font-medium text-gray-900">{profile.gender}</p>
-                </div>
-              </div>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-bold bg-white/10 backdrop-blur-md border border-white/15 text-slate-100 shadow-2xs">
+                  <User className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+                  <span>{profile.gender}</span>
+                </span>
 
-              <div className="flex items-start gap-3">
-                <GraduationCap className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-600">Admission Date</p>
-                  <p className="font-medium text-gray-900">{formatDate(profile.admission_date)}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-medium text-gray-900 break-all">{profile.profiles.email}</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <User className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div>
-                  <p className="text-sm text-gray-600">Username</p>
-                  <p className="font-medium text-gray-900">{profile.profiles.username}</p>
-                </div>
+                {age !== null && (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] sm:text-xs font-bold bg-amber-400/20 border border-amber-400/30 text-amber-300 shadow-2xs">
+                    <span>{age} Years Old</span>
+                  </span>
+                )}
               </div>
             </div>
+
+          </div>
+        </section>
+
+        {/* Section 1: Official Academic & Bio Credentials */}
+        <section className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-[#003B5C] border-b border-[#002a42] flex items-center justify-between">
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+              <span>Official Institutional Bio</span>
+            </h3>
+            <span className="text-[10px] sm:text-xs font-mono text-blue-200/80">
+              Read Only
+            </span>
           </div>
 
-          {/* Contact Information */}
-          <div className="p-4 md:p-8 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800">Contact Information</h3>
-              {!editMode && canEditProfile && (
-                <button
-                  onClick={() => setEditMode(true)
-                  }
-                  className="text-sm text-blue-700 dark:text-blue-400 hover:text-blue-700 font-medium"
-                >
-                  Edit Details
-                </button>
-              )}
+          <div className="p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5 sm:gap-5">
+              
+              <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">
+                  Full Name
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  {studentFullName}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">
+                  Date of Birth
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  {formatDate(profile.date_of_birth)}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">
+                  Gender
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  {profile.gender}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">
+                  Admission Date
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                  {formatDate(profile.admission_date)}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">
+                  Username
+                </span>
+                <p className="text-xs sm:text-sm font-bold font-mono text-slate-900 dark:text-white truncate">
+                  {profile.profiles?.username || '---'}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">
+                  Portal Login Email
+                </span>
+                <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate" title={profile.profiles?.email}>
+                  {profile.profiles?.email || '---'}
+                </p>
+              </div>
+
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="flex items-start gap-3">
-                <Phone className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div className="w-full">
-                  <p className="text-xs md:text-sm text-gray-600">Phone Number</p>
+          </div>
+        </section>
+
+        {/* Section 2: Contact & Guardian Details (Editable) */}
+        <section className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-[#003B5C] border-b border-[#002a42] flex items-center justify-between">
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+              <span>Contact &amp; Guardian Records</span>
+            </h3>
+
+            {!editMode && canEditProfile && (
+              <button
+                type="button"
+                onClick={() => setEditMode(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-bold transition active:scale-95"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-amber-300" />
+                <span>Edit Contacts</span>
+              </button>
+            )}
+          </div>
+
+          <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
+            
+            {/* Student Contacts Sub-grid */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Learner Residence &amp; Mobile
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
+                <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Student Phone Number
+                  </label>
                   {editMode ? (
                     <input
                       type="tel"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-methodist-blue text-sm"
-                      placeholder="Enter phone number"
+                      placeholder="+233 XX XXX XXXX"
+                      className="w-full px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                     />
                   ) : (
-                    <p className="font-medium text-sm md:text-base text-gray-900">{profile.phone || 'Not provided'}</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                      {profile.phone || <span className="text-slate-400 font-normal italic">None registered</span>}
+                    </p>
                   )}
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div className="w-full">
-                  <p className="text-xs md:text-sm text-gray-600">Address</p>
+                <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Residential Address
+                  </label>
                   {editMode ? (
                     <textarea
+                      rows={2}
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
-                      rows={2}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-methodist-blue text-sm"
-                      placeholder="Enter address"
+                      placeholder="Street address, Town, Landmark"
+                      className="w-full px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] resize-none"
                     />
                   ) : (
-                    <p className="font-medium text-sm md:text-base text-gray-900">{profile.address || 'Not provided'}</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                      {profile.address || <span className="text-slate-400 font-normal italic">None registered</span>}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Guardian Information */}
-          <div className="p-4 md:p-8 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base md:text-lg font-semibold text-gray-800">Guardian Information</h3>
-              {!editMode && canEditProfile && (
-                <button
-                  onClick={() => setEditMode(true)}
-                  className="text-sm text-blue-700 dark:text-blue-400 hover:text-blue-700 font-medium"
-                >
-                  Edit Details
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="flex items-start gap-3">
-                <User className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div className="w-full">
-                  <p className="text-xs md:text-sm text-gray-600">Guardian Name</p>
+            {/* Guardian Contacts Sub-grid */}
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Parent / Guardian Primary Emergency Information
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+                <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Guardian Name
+                  </label>
                   {editMode ? (
                     <input
                       type="text"
                       value={guardianName}
                       onChange={(e) => setGuardianName(e.target.value)}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-methodist-blue text-sm"
-                      placeholder="Enter guardian name"
+                      placeholder="e.g. Mr. Kwame Mensah"
+                      className="w-full px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                     />
                   ) : (
-                    <p className="font-medium text-sm md:text-base text-gray-900">{profile.guardian_name || 'Not provided'}</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                      {profile.guardian_name || <span className="text-slate-400 font-normal italic">None registered</span>}
+                    </p>
                   )}
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <Phone className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div className="w-full">
-                  <p className="text-xs md:text-sm text-gray-600">Guardian Phone</p>
+                <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Guardian Phone
+                  </label>
                   {editMode ? (
                     <input
                       type="tel"
                       value={guardianPhone}
                       onChange={(e) => setGuardianPhone(e.target.value)}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-methodist-blue text-sm"
-                      placeholder="Enter guardian phone"
+                      placeholder="+233 XX XXX XXXX"
+                      className="w-full px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                     />
                   ) : (
-                    <p className="font-medium text-sm md:text-base text-gray-900">{profile.guardian_phone || 'Not provided'}</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                      {profile.guardian_phone || <span className="text-slate-400 font-normal italic">None registered</span>}
+                    </p>
                   )}
                 </div>
-              </div>
 
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
-                <div className="w-full">
-                  <p className="text-xs md:text-sm text-gray-600">Guardian Email</p>
+                <div className="p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/70 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                    Guardian Email
+                  </label>
                   {editMode ? (
                     <input
                       type="email"
                       value={guardianEmail}
                       onChange={(e) => setGuardianEmail(e.target.value)}
-                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-methodist-blue text-sm"
-                      placeholder="Enter guardian email"
+                      placeholder="parent@example.com"
+                      className="w-full px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
                     />
                   ) : (
-                    <p className="font-medium text-sm md:text-base text-gray-900">{profile.guardian_email || 'Not provided'}</p>
+                    <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                      {profile.guardian_email || <span className="text-slate-400 font-normal italic">None registered</span>}
+                    </p>
                   )}
                 </div>
               </div>
             </div>
 
+            {/* Action Bar when Editing */}
             {editMode && (
-              <div className="mt-6 flex justify-end gap-3">
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-end gap-2.5">
                 <button
+                  type="button"
                   onClick={() => {
                     setEditMode(false)
-                    // Reset fields
                     setPhone(profile.phone || '')
                     setAddress(profile.address || '')
                     setGuardianName(profile.guardian_name || '')
                     setGuardianPhone(profile.guardian_phone || '')
                     setGuardianEmail(profile.guardian_email || '')
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-sm"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition text-center"
                   disabled={saving}
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleSaveProfile}
                   disabled={saving}
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all font-bold tracking-wide rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 disabled:opacity-50"
                 >
-                  {saving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>Save Changes</span>
-                    </>
-                  )}
+                  <Save className="w-4 h-4 text-amber-400" />
+                  <span>{saving ? 'Saving...' : 'Save Profile Changes'}</span>
                 </button>
               </div>
             )}
+
+          </div>
+        </section>
+
+        {/* Section 3: Account Security & Password Update */}
+        <section className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+          <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-[#003B5C] border-b border-[#002a42] flex items-center justify-between">
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Security &amp; Password Management</span>
+            </h3>
+            <span className="text-[10px] sm:text-xs font-mono text-blue-200/80">
+              Self-Service
+            </span>
           </div>
 
-          {/* Account Settings */}
-          <div className="p-4 md:p-8 bg-gray-50 rounded-b-lg">
-            <h3 className="text-base md:text-lg font-semibold text-gray-800 mb-4">Account Settings</h3>
-            
-            <div className="bg-slate-50/50 dark:bg-gray-800/50 p-6 md:p-8 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm">
-              <h4 className="font-medium text-gray-900 mb-4">Change Password</h4>
-              
-              {passwordSuccess && (
-                <div className="mb-4 p-3 bg-green-50 text-green-700 rounded-md text-sm">
-                  {passwordSuccess}
-                </div>
-              )}
-              
-              {passwordError && (
-                <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-                  {passwordError}
-                </div>
-              )}
+          <div className="p-4 sm:p-6 space-y-4">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Ensure your learner portal password is kept confidential to protect your examination scores and results.
+            </p>
 
-              <div className="space-y-4 max-w-md">
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                    New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showNewPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-methodist-blue text-sm"
-                      placeholder="Enter new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+            {/* Notifications */}
+            {passwordSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{passwordSuccess}</span>
+              </div>
+            )}
 
-                <div>
-                  <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
-                    Confirm New Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-methodist-blue text-sm"
-                      placeholder="Confirm new password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+            {passwordError && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{passwordError}</span>
+              </div>
+            )}
 
-                <button
-                  onClick={handleChangePassword}
-                  disabled={changingPassword || !newPassword || !confirmPassword}
-                  className="w-full md:w-auto px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  {changingPassword ? 'Updating...' : 'Update Password'}
-                </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 max-w-2xl">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                  New Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="w-full pl-3.5 pr-10 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repeat new password"
+                    className="w-full pl-3.5 pr-10 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
             </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={handleChangePassword}
+                disabled={changingPassword || !newPassword || !confirmPassword}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 disabled:opacity-50"
+              >
+                <Lock className="w-4 h-4 text-amber-400" />
+                <span>{changingPassword ? 'Updating Password...' : 'Update Password'}</span>
+              </button>
+            </div>
+
           </div>
+        </section>
+
+      </main>
+
+      <PortalFooter />
+    </div>
+  )
+}
+
+function ProfileSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 flex flex-col font-sans">
+      <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-8 h-8 rounded-xl" />
+            <Skeleton className="h-6 w-36 rounded-md" />
+          </div>
+          <Skeleton className="h-8 w-28 rounded-xl hidden sm:block" />
         </div>
-      </div>
+      </header>
+
+      <main className="max-w-5xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+        <Skeleton className="h-44 sm:h-48 w-full rounded-2xl sm:rounded-3xl" />
+        <Skeleton className="h-64 w-full rounded-2xl sm:rounded-3xl" />
+        <Skeleton className="h-64 w-full rounded-2xl sm:rounded-3xl" />
+      </main>
+
+      <PortalFooter />
     </div>
   )
 }

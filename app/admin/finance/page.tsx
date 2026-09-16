@@ -1,110 +1,149 @@
 'use client'
 
-import BackButton from '@/components/ui/back-button'
 import Link from 'next/link'
-import { Settings, DollarSign, PieChart, ArrowRight, LineChart, Wallet, CreditCard, Activity } from 'lucide-react'
+import { 
+  Settings, 
+  Wallet, 
+  CreditCard, 
+  PieChart, 
+  ArrowRight, 
+  ShieldCheck, 
+  Info,
+  Receipt,
+  FileSpreadsheet
+} from 'lucide-react'
+import BackButton from '@/components/ui/back-button'
+
+interface FinanceModule {
+  title: string
+  description: string
+  href: string
+  icon: React.ElementType
+  badge: string
+  actionLabel: string
+}
+
+const financeModules: FinanceModule[] = [
+  {
+    title: 'Fee Structure & Tariffs',
+    description: 'Establish tuition schedules, PTA levies, feeding fees, and examination charges partitioned across kindergarten, primary, and JHS cohorts.',
+    href: '/admin/finance/setup',
+    icon: Settings,
+    badge: 'Tariff Setup',
+    actionLabel: 'Configure Fee Schedule'
+  },
+  {
+    title: 'Payment Collection & Cashier',
+    description: 'Record student cash and mobile money deposits, monitor debtor balances, issue serialized receipts, and manage payment ledgers.',
+    href: '/admin/finance/collection',
+    icon: CreditCard,
+    badge: 'Cashier Desk',
+    actionLabel: 'Process Fee Payments'
+  },
+  {
+    title: 'Financial Statements & Audits',
+    description: 'Inspect termly revenue analytics, cumulative arrears broadsheets, debtor aging schedules, and export ledger broadsheets.',
+    href: '/admin/reports/financial',
+    icon: PieChart,
+    badge: 'Audits & Ledger',
+    actionLabel: 'View Financial Reports'
+  }
+]
 
 export default function FinanceDashboard() {
   return (
-    <div className="bg-gray-50/50 min-h-screen pb-20 font-sans">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+      
+      {/* Top Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <BackButton href="/admin/dashboard" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+                  <h1 className="text-base sm:text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                    Financial Records &amp; Accounts
+                  </h1>
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  Institutional fee structures, student payment registers, and revenue reconciliation
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#003B5C]/10 dark:bg-blue-950/50 border border-[#003B5C]/20 dark:border-blue-900/50 text-[#003B5C] dark:text-blue-300 text-xs font-bold shrink-0">
+              <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>Accounts Clearance</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Workspace */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-5 sm:space-y-6">
         
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 md:p-8 rounded-3xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-emerald-50/60 to-transparent pointer-events-none"></div>
-          
-          <div className="flex items-center gap-4 relative z-10">
-            <BackButton href="/admin" className="shadow-sm" />
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                <Wallet className="w-8 h-8 text-emerald-600" />
-                Finance Management
-              </h1>
-              <p className="text-sm sm:text-base text-gray-500 font-medium mt-1">
-                Oversee school fees, manage payments, and generate revenue reports
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 text-sm font-bold text-emerald-700 bg-emerald-50/80 px-4 py-2 rounded-xl border border-emerald-100/50 shadow-sm relative z-10">
-            <Activity className="w-4 h-4 text-emerald-500" />
-            Finance Module
+        {/* Accounting Protocol Guideline */}
+        <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 rounded-2xl p-4 sm:p-5 flex items-start gap-3 text-xs text-blue-900 dark:text-blue-200 shadow-2xs">
+          <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#003B5C] dark:text-blue-400 shrink-0 mt-0.5" />
+          <div className="space-y-1 leading-relaxed">
+            <h2 className="font-bold text-xs sm:text-sm text-[#003B5C] dark:text-blue-300">
+              Accounting &amp; Collection Protocol
+            </h2>
+            <p className="text-[11px] sm:text-xs opacity-90">
+              Ensure academic term fees are defined under <strong>Fee Structure &amp; Tariffs</strong> before recording transactions. All logged payments update student ledger balances and sync directly with report card clearance checks.
+            </p>
           </div>
         </div>
 
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 max-w-6xl">
-          
-          {/* Fee Setup Card */}
-          <Link href="/admin/finance/setup" className="group h-full">
-            <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-8 h-full relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-indigo-200">
-              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-indigo-50 blur-[40px] opacity-60 group-hover:bg-indigo-100 transition-colors"></div>
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-indigo-600 group-hover:text-white transition-all shadow-sm">
-                  <Settings className="w-7 h-7" />
-                </div>
-                
-                <h3 className="text-xl font-black text-gray-900 mb-2">Fee configuration</h3>
-                <p className="text-sm text-gray-500 font-medium leading-relaxed mb-8 flex-1">
-                  Define fee types such as Tuition, PTA, and other charges. Set specific amounts per academic term and class level.
-                </p>
-                
-                <div className="flex items-center gap-2 text-sm font-bold text-indigo-600 group-hover:text-indigo-700 mt-auto">
-                  Configure Settings
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-          </Link>
+        {/* Finance Core Modules Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-5 lg:gap-6">
+          {financeModules.map((item) => {
+            const Icon = item.icon
 
-          {/* Fee Collection Card */}
-          <Link href="/admin/finance/collection" className="group h-full">
-            <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-8 h-full relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-emerald-200">
-              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-emerald-50 blur-[40px] opacity-60 group-hover:bg-emerald-100 transition-colors"></div>
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
-                  <DollarSign className="w-7 h-7" />
-                </div>
-                
-                <h3 className="text-xl font-black text-gray-900 mb-2">Payment Collection</h3>
-                <p className="text-sm text-gray-500 font-medium leading-relaxed mb-8 flex-1">
-                  Record incoming transactions, monitor outstanding student balances, issue receipts, and track complete payment history.
-                </p>
-                
-                <div className="flex items-center gap-2 text-sm font-bold text-emerald-600 group-hover:text-emerald-700 mt-auto">
-                  Process Payments
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-          </Link>
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="group bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-5 sm:p-6 lg:p-7 shadow-xs hover:shadow-md hover:border-[#003B5C]/30 dark:hover:border-blue-500/30 transition-all duration-200 flex flex-col justify-between active:scale-[0.98]"
+              >
+                <div className="space-y-4">
+                  {/* Icon & Category Badge */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="w-12 h-12 rounded-2xl bg-[#003B5C]/10 dark:bg-blue-500/20 text-[#003B5C] dark:text-blue-300 border border-[#003B5C]/15 dark:border-blue-400/20 flex items-center justify-center shadow-2xs group-hover:scale-105 transition-transform shrink-0">
+                      <Icon className="w-6 h-6" />
+                    </div>
 
-          {/* Reports Card */}
-          <Link href="/admin/reports/financial" className="group h-full">
-            <div className="bg-white rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 p-8 h-full relative overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-amber-200">
-              <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-amber-50 blur-[40px] opacity-60 group-hover:bg-amber-100 transition-colors"></div>
-              
-              <div className="relative z-10 flex flex-col h-full">
-                <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm">
-                  <PieChart className="w-7 h-7" />
-                </div>
-                
-                <h3 className="text-xl font-black text-gray-900 mb-2">Revenue Analytics</h3>
-                <p className="text-sm text-gray-500 font-medium leading-relaxed mb-8 flex-1">
-                  Generate detailed financial statements. View daily collection graphs, revenue forecasts, and outstanding debt summaries.
-                </p>
-                
-                <div className="flex items-center gap-2 text-sm font-bold text-amber-600 group-hover:text-amber-700 mt-auto">
-                  View Analytics
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-            </div>
-          </Link>
+                    <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-mono font-bold uppercase tracking-wider border border-slate-200/80 dark:border-slate-700">
+                      {item.badge}
+                    </span>
+                  </div>
 
+                  {/* Title & Description */}
+                  <div className="space-y-1.5">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-[#003B5C] dark:group-hover:text-blue-400 transition-colors">
+                      {item.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-3">
+                      {item.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Bottom Action Footer */}
+                <div className="pt-4 mt-5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-bold text-[#003B5C] dark:text-blue-400">
+                  <span>{item.actionLabel}</span>
+                  <div className="w-6 h-6 rounded-full bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-[#003B5C] dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all">
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
         </div>
-      </div>
+
+      </main>
     </div>
   )
 }
