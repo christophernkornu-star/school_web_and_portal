@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from '@/lib/auth'
 import { cn } from '@/lib/utils'
@@ -8,7 +9,6 @@ import { useTeacher } from '@/components/providers/TeacherContext'
 import { 
   LayoutDashboard, 
   Users, 
-  GraduationCap, 
   Settings, 
   BarChart3, 
   ScrollText,
@@ -103,14 +103,21 @@ export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Top Brand Header */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50 gap-2">
+        {/* Top Brand Header with School Crest */}
+        <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50 gap-2">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="w-9 h-9 rounded-xl bg-[#003B5C] text-white flex items-center justify-center font-bold shadow-sm ring-1 ring-white/20 shrink-0">
-              <GraduationCap className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 rounded-full bg-white border border-amber-600/40 p-1 shadow-xs flex items-center justify-center shrink-0 overflow-hidden">
+              <Image
+                src="/school_crest.png"
+                alt="Biriwa Methodist 'C' Crest"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-xs font-black text-slate-900 dark:text-white tracking-tight leading-snug whitespace-nowrap">
+              <h2 className="text-xs font-black text-slate-900 dark:text-white tracking-tight leading-snug truncate">
                 Biriwa Methodist &apos;C&apos;
               </h2>
               <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
@@ -174,7 +181,6 @@ export function TeacherSidebar({ isOpen, setIsOpen }: TeacherSidebarProps) {
                         <span className="truncate">{item.label}</span>
                       </div>
 
-                      {/* Right Element: Indicator dot for active, subtle chevron for inactive */}
                       {isActive ? (
                         <div className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
                       ) : (

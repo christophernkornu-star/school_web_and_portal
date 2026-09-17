@@ -1,12 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import BackButton from '@/components/ui/back-button'
-import { CheckCircle2, XCircle, Save, MessageSquareText } from 'lucide-react'
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Save, 
+  MessageSquareText, 
+  Award, 
+  Clock, 
+  AlertCircle,
+  GraduationCap,
+  Sparkles,
+  RotateCcw,
+  BookOpen,
+  Loader2
+} from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PortalFooter } from '@/components/PortalFooter'
 
 interface OptionRow {
   id: string
@@ -64,7 +78,7 @@ export default function GradeAttemptPage() {
 
         const { data: attemptData, error: attemptError } = await supabase
           .from('student_quiz_attempts')
-          .select('*, students(first_name, last_name, middle_name)')
+          .select('*, students(first_name, last_name, middle_name, student_id)')
           .eq('id', attemptId)
           .single()
         if (attemptError) throw attemptError
@@ -106,7 +120,7 @@ export default function GradeAttemptPage() {
     }
 
     if (quizId && attemptId) loadData()
-  }, [quizId, attemptId])
+  }, [quizId, attemptId, supabase])
 
   const handlePointsChange = (questionId: string, value: string, maxPoints: number) => {
     const num = parseInt(value)
@@ -119,15 +133,19 @@ export default function GradeAttemptPage() {
     setManualPoints(prev => ({ ...prev, [questionId]: clamped }))
   }
 
-  // Running total across auto-graded MCQ/TF answers + the editable short-answer points
-  const runningTotal = questions.reduce((sum, q) => {
-    if (q.question_type === 'short_answer') {
-      return sum + (manualPoints[q.id] ?? 0)
-    }
-    return sum + (answers[q.id]?.points_awarded ?? 0)
-  }, 0)
+  // Running total across auto-graded MCQ/TF answers + editable short-answer points
+  const runningTotal = useMemo(() => {
+    return questions.reduce((sum, q) => {
+      if (q.question_type === 'short_answer') {
+        return sum + (manualPoints[q.id] ?? 0)
+      }
+      return sum + (answers[q.id]?.points_awarded ?? 0)
+    }, 0)
+  }, [questions, manualPoints, answers])
 
-  const shortAnswerQuestions = questions.filter(q => q.question_type === 'short_answer')
+  const shortAnswerQuestions = useMemo(() => {
+    return questions.filter(q => q.question_type === 'short_answer')
+  }, [questions])
 
   const handleSave = async () => {
     setSaving(true)
@@ -136,7 +154,7 @@ export default function GradeAttemptPage() {
       for (const q of shortAnswerQuestions) {
         const awarded = manualPoints[q.id] ?? 0
         const existingAnswer = answers[q.id]
-        if (!existingAnswer) continue // student never answered this one
+        if (!existingAnswer) continue
 
         const { error } = await supabase
           .from('student_quiz_answers')
@@ -149,7 +167,7 @@ export default function GradeAttemptPage() {
         if (error) throw error
       }
 
-      // 2. Recompute the attempt's total score and mark it graded
+      // 2. Recompute attempt score and mark graded
       const { error: attemptUpdateError } = await supabase
         .from('student_quiz_attempts')
         .update({
@@ -160,13 +178,13 @@ export default function GradeAttemptPage() {
 
       if (attemptUpdateError) throw attemptUpdateError
 
-      // 3. Push the finished score into the gradebook
+      // 3. Push score to gradebook
       const { error: syncError } = await supabase.rpc('sync_scores_to_gradebook', {
         p_quiz_id: quizId
       })
       if (syncError) throw syncError
 
-      toast.success('Grades saved and pushed to gradebook!')
+      toast.success('Grades saved and published to gradebook!')
       router.push(`/teacher/assessments/${quizId}`)
 
     } catch (error: any) {
@@ -178,154 +196,259 @@ export default function GradeAttemptPage() {
   }
 
   if (loading) {
+    return <GradeAttemptSkeleton />
+  }
+
+  if (!quiz || !attempt) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
-        <div className="max-w-3xl mx-auto space-y-4">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-          <Skeleton className="h-32 w-full rounded-xl" />
-          <Skeleton className="h-32 w-full rounded-xl" />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 max-w-md w-full text-center border border-slate-200 dark:border-slate-800 shadow-xs space-y-3">
+          <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Attempt Not Found</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            The requested student attempt could not be located.
+          </p>
+          <BackButton href={`/teacher/assessments/${quizId}`} />
         </div>
       </div>
     )
   }
 
-  if (!quiz || !attempt) {
-    return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Attempt not found</div>
-  }
-
   const student = attempt.students
-  const studentName = `${student?.first_name || ''} ${student?.last_name || ''} ${student?.middle_name || ''}`.trim()
+  const studentName = `${student?.first_name || ''} ${student?.middle_name ? student.middle_name + ' ' : ''}${student?.last_name || ''}`.trim() || 'Student'
+  const isAttemptGraded = attempt.status === 'graded'
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-32 transition-colors duration-200">
-      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center space-x-4 min-w-0">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+      
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="max-w-4xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+          <div className="flex items-center justify-between gap-3">
+            
+            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
               <BackButton href={`/teacher/assessments/${quizId}`} />
-              <div className="min-w-0 overflow-hidden">
-                <h1 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 truncate leading-tight">{studentName}</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{quiz.title} • {quiz.classes?.name} • {quiz.subjects?.name}</p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+                  <h1 className="text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white tracking-tight truncate">
+                    Grading: {studentName}
+                  </h1>
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  {quiz.title} • {quiz.classes?.name} • {quiz.subjects?.name}
+                </p>
               </div>
             </div>
-            <span className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-              attempt.status === 'graded'
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+
+            <span className={`px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black uppercase tracking-wider border shrink-0 ${
+              isAttemptGraded
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50'
+                : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
             }`}>
-              {attempt.status === 'graded' ? 'Graded' : 'Needs Grading'}
+              {isAttemptGraded ? 'Graded' : 'Needs Grading'}
             </span>
+
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8 max-w-3xl space-y-4">
+      {/* Main Workspace */}
+      <main className="flex-1 max-w-4xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6 pb-32 sm:pb-36">
+        
+        {/* Notice for fully auto-graded assessments */}
         {shortAnswerQuestions.length === 0 && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm text-blue-800 dark:text-blue-300">
-            This quiz has no short-answer questions — everything below was auto-graded already.
+          <div className="bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 rounded-2xl p-3.5 sm:p-4 text-xs sm:text-sm text-blue-900 dark:text-blue-200 flex items-start gap-3 shadow-2xs">
+            <GraduationCap className="w-5 h-5 text-[#003B5C] dark:text-blue-400 shrink-0 mt-0.5" />
+            <p className="leading-relaxed">
+              This quiz has no short-answer questions. All multiple-choice and true/false items were auto-evaluated by the system. You may inspect the student&apos;s answers below before pushing scores to the gradebook.
+            </p>
           </div>
         )}
 
-        {questions.map((q, index) => {
-          const answer = answers[q.id]
+        {/* Question Cards Container */}
+        <div className="space-y-3.5 sm:space-y-4">
+          {questions.map((q, index) => {
+            const answer = answers[q.id]
 
-          if (q.question_type === 'short_answer') {
-            const awarded = manualPoints[q.id] ?? 0
-            return (
-              <div key={q.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex items-start gap-3">
-                    <span className="font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm flex-shrink-0">Q{index + 1}</span>
-                    <p className="text-gray-900 dark:text-gray-100 font-medium">{q.question_text}</p>
+            // 1. Short Answer Question (Manual Grading UI)
+            if (q.question_type === 'short_answer') {
+              const awarded = manualPoints[q.id] ?? 0
+
+              return (
+                <div 
+                  key={q.id} 
+                  className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 md:p-6 shadow-xs space-y-3.5 sm:space-y-4 hover:border-[#003B5C]/30 dark:hover:border-blue-500/30 transition-all"
+                >
+                  {/* Top Bar: Question Number, Prompt Text & Max Points */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                      <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-xl shrink-0 mt-0.5">
+                        Q{index + 1}
+                      </span>
+                      <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                        {q.question_text}
+                      </h2>
+                    </div>
+                    <span className="text-[10px] sm:text-xs font-mono font-bold text-slate-400 shrink-0 whitespace-nowrap bg-slate-50 dark:bg-slate-900/50 px-2 py-0.5 rounded-lg border border-slate-100 dark:border-slate-800">
+                      Max {q.points} {q.points === 1 ? 'pt' : 'pts'}
+                    </span>
                   </div>
-                  <span className="flex-shrink-0 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Max {q.points} pt{q.points !== 1 ? 's' : ''}</span>
+
+                  {/* Student Answer Bubble */}
+                  <div className="flex items-start gap-2.5 sm:gap-3 bg-slate-50/70 dark:bg-slate-900/50 p-3.5 sm:p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                    <MessageSquareText className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Student Submission
+                      </span>
+                      <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed font-medium">
+                        {answer?.text_answer?.trim() || (
+                          <span className="italic text-slate-400 font-normal">No answer submitted by student</span>
+                        )}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Manual Points Input & Scoring Buttons */}
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                        Points Awarded:
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        max={q.points}
+                        value={awarded}
+                        onChange={(e) => handlePointsChange(q.id, e.target.value, q.points)}
+                        className="w-16 px-2 py-1.5 text-xs sm:text-sm font-mono font-bold text-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C]"
+                      />
+                      <span className="text-xs font-mono text-slate-400">/ {q.points}</span>
+                    </div>
+
+                    {/* Quick Mark Presets */}
+                    <div className="grid grid-cols-2 sm:flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setManualPoints(prev => ({ ...prev, [q.id]: q.points }))}
+                        className="px-3 py-1.5 rounded-xl border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 bg-emerald-50/60 dark:bg-emerald-950/40 text-xs font-bold transition active:scale-95 text-center"
+                      >
+                        Full Marks ({q.points})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setManualPoints(prev => ({ ...prev, [q.id]: 0 }))}
+                        className="px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 bg-rose-50/60 dark:bg-rose-950/40 text-xs font-bold transition active:scale-95 text-center"
+                      >
+                        Zero (0)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            // 2. Auto-graded Multiple Choice & True/False Card
+            const isCorrect = answer?.is_correct
+            const selectedOption = q.quiz_options?.find(o => o.id === answer?.selected_option_id)
+            const correctOption = q.quiz_options?.find(o => o.is_correct)
+
+            return (
+              <div 
+                key={q.id} 
+                className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-5 md:p-6 shadow-xs space-y-3 hover:border-[#003B5C]/30 dark:hover:border-blue-500/30 transition-all"
+              >
+                {/* Question Header & Score Pill */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2.5 sm:gap-3 min-w-0">
+                    <span className="font-mono font-bold text-xs bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-xl shrink-0 mt-0.5">
+                      Q{index + 1}
+                    </span>
+                    <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                      {q.question_text}
+                    </h2>
+                  </div>
+
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-black uppercase tracking-wider border shrink-0 ${
+                    isCorrect 
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300' 
+                      : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300'
+                  }`}>
+                    {isCorrect ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                    <span>{answer?.points_awarded ?? 0} / {q.points} Pts</span>
+                  </span>
                 </div>
 
-                <div className="flex items-start gap-2 mb-4 pl-0 sm:pl-9">
-                  <MessageSquareText className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-                  <p className="text-sm bg-gray-50 dark:bg-gray-700/50 border border-gray-100 dark:border-gray-700 rounded-lg p-3 text-gray-700 dark:text-gray-300 flex-1 whitespace-pre-wrap">
-                    {answer?.text_answer?.trim() || <span className="italic text-gray-400">No answer submitted</span>}
+                {/* Answer Comparisons */}
+                <div className="text-xs space-y-1.5 pl-0 sm:pl-9 pt-0.5">
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Student Answer: <span className="font-bold text-slate-900 dark:text-white">{selectedOption?.option_text || 'None selected'}</span>
                   </p>
-                </div>
-
-                <div className="flex items-center gap-3 pl-0 sm:pl-9">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Points awarded:</label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={q.points}
-                    value={awarded}
-                    onChange={(e) => handlePointsChange(q.id, e.target.value, q.points)}
-                    className="w-20 p-2 border border-gray-300 dark:border-gray-600 rounded-lg text-center text-gray-900 dark:text-white bg-white dark:bg-gray-700 focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                  <span className="text-sm text-gray-500 dark:text-gray-400">/ {q.points}</span>
-
-                  <button
-                    onClick={() => setManualPoints(prev => ({ ...prev, [q.id]: q.points }))}
-                    className="ml-auto text-xs font-medium px-3 py-1.5 rounded-lg border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors"
-                  >
-                    Full Marks
-                  </button>
-                  <button
-                    onClick={() => setManualPoints(prev => ({ ...prev, [q.id]: 0 }))}
-                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                  >
-                    Zero
-                  </button>
+                  {!isCorrect && (
+                    <p className="text-emerald-700 dark:text-emerald-400 font-semibold">
+                      Correct Answer: <span>{correctOption?.option_text || '---'}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             )
-          }
+          })}
+        </div>
 
-          // Auto-graded MCQ / True-False — read only
-          const isCorrect = answer?.is_correct
-          const selectedOption = q.quiz_options?.find(o => o.id === answer?.selected_option_id)
-          const correctOption = q.quiz_options?.find(o => o.is_correct)
-
-          return (
-            <div key={q.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 md:p-6">
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex items-start gap-3">
-                  <span className="font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-sm flex-shrink-0">Q{index + 1}</span>
-                  <p className="text-gray-900 dark:text-gray-100 font-medium">{q.question_text}</p>
-                </div>
-                <span className={`flex-shrink-0 flex items-center gap-1 text-xs font-bold whitespace-nowrap ${isCorrect ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {isCorrect ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                  {answer?.points_awarded ?? 0} / {q.points}
-                </span>
-              </div>
-              <div className="pl-0 sm:pl-9 text-sm space-y-1">
-                <p className="text-gray-600 dark:text-gray-400">
-                  Student answered: <span className="font-medium text-gray-900 dark:text-gray-100">{selectedOption?.option_text || '—'}</span>
-                </p>
-                {!isCorrect && (
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Correct answer: <span className="font-medium text-green-700 dark:text-green-400">{correctOption?.option_text || '—'}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-          )
-        })}
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg z-30">
-        <div className="container mx-auto px-4 md:px-6 py-4 max-w-3xl flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total Score</p>
-            <p className="text-xl font-bold text-gray-900 dark:text-white">{runningTotal} <span className="text-sm font-normal text-gray-400">/ {quiz.total_points}</span></p>
+      {/* Floating Bottom Action Bar (Safe for Mobile & Tablet) */}
+      <div className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200/80 dark:border-slate-800 shadow-xl">
+        <div className="max-w-4xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-3.5 flex items-center justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block truncate">
+              Computed Total Score
+            </span>
+            <div className="text-lg sm:text-2xl font-black font-mono text-[#003B5C] dark:text-blue-400 truncate">
+              {runningTotal} <span className="text-xs font-normal text-slate-400 font-sans">/ {quiz.total_points} Pts</span>
+            </div>
           </div>
+
           <button
+            type="button"
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 font-medium disabled:opacity-50 shadow-sm active:scale-95 transition-all"
+            className="inline-flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 bg-[#003B5C] hover:bg-[#002a42] text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs hover:shadow transition active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
           >
-            <Save className="w-4 h-4" />
-            {saving ? 'Saving...' : 'Save & Publish Grade'}
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+            ) : (
+              <Save className="w-4 h-4 text-amber-400" />
+            )}
+            <span>{saving ? 'Publishing...' : 'Save & Publish Grade'}</span>
           </button>
         </div>
       </div>
+
+    </div>
+  )
+}
+
+function GradeAttemptSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 flex flex-col font-sans">
+      <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="max-w-4xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-8 h-8 rounded-xl" />
+            <Skeleton className="h-6 w-44 rounded-md" />
+          </div>
+          <Skeleton className="h-6 w-24 rounded-full" />
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-6 space-y-4 flex-1">
+        <Skeleton className="h-16 w-full rounded-2xl" />
+        <Skeleton className="h-44 w-full rounded-2xl sm:rounded-3xl" />
+        <Skeleton className="h-44 w-full rounded-2xl sm:rounded-3xl" />
+        <Skeleton className="h-44 w-full rounded-2xl sm:rounded-3xl" />
+      </main>
     </div>
   )
 }

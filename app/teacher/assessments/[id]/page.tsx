@@ -1,13 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import BackButton from '@/components/ui/back-button'
-import { ArrowLeft, UploadCloud, Users, CheckCircle, Clock, RotateCcw, Trash2, Search, Filter } from 'lucide-react'
+import { 
+  ArrowLeft, 
+  UploadCloud, 
+  Users, 
+  CheckCircle2, 
+  Clock, 
+  RotateCcw, 
+  Trash2, 
+  Search, 
+  Filter, 
+  Edit3, 
+  ChevronRight, 
+  GraduationCap, 
+  BookOpen, 
+  AlertCircle,
+  X,
+  FileCheck
+} from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PortalFooter } from '@/components/PortalFooter'
 
 export default function QuizDetailsPage() {
   const params = useParams()
@@ -20,17 +38,17 @@ export default function QuizDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [reverting, setReverting] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null) // State for delete operation
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   // Filter States
   const [searchQuery, setSearchQuery] = useState('')
-  const [genderFilter, setGenderFilter] = useState('') // '' (All), 'Male', 'Female'
+  const [genderFilter, setGenderFilter] = useState('')
 
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true)
-        // Fetch Quiz
+        // 1. Fetch Quiz Details
         const { data: quizData, error: quizError } = await supabase
           .from('online_quizzes')
           .select(`
@@ -44,16 +62,17 @@ export default function QuizDetailsPage() {
         if (quizError) throw quizError
         setQuiz(quizData)
 
-        // Fetch Attempts
+        // 2. Fetch Attempts with Student Profile
         const { data: attemptsData, error: attemptsError } = await supabase
           .from('student_quiz_attempts')
           .select(`
             *,
             students (
-                first_name,
-                last_name,
-                middle_name,
-                gender
+              first_name,
+              last_name,
+              middle_name,
+              gender,
+              student_id
             )
           `)
           .eq('quiz_id', quizId)
@@ -71,397 +90,561 @@ export default function QuizDetailsPage() {
     }
 
     if (quizId) loadData()
-  }, [quizId])
+  }, [quizId, supabase])
 
   const handleSync = async () => {
-    if (!confirm('This will update the main gradebook with these scores. Existing scores for this assessment will be overwritten. Continue?')) {
-        return
+    if (!confirm('This will update the continuous gradebook with these scores. Existing marks for this assessment will be overwritten. Continue?')) {
+      return
     }
 
     try {
-        setSyncing(true)
-        const { error } = await supabase.rpc('sync_scores_to_gradebook', {
-            p_quiz_id: quizId
-        })
+      setSyncing(true)
+      const { error } = await supabase.rpc('sync_scores_to_gradebook', {
+        p_quiz_id: quizId
+      })
 
-        if (error) throw error
-
-        toast.success('Scores synced to gradebook successfully!')
+      if (error) throw error
+      toast.success('Scores pushed to gradebook successfully!')
     } catch (error: any) {
-        console.error('Sync error:', error)
-        toast.error(error.message || 'Failed to sync scores')
+      console.error('Sync error:', error)
+      toast.error(error.message || 'Failed to sync scores')
     } finally {
-        setSyncing(false)
+      setSyncing(false)
     }
   }
 
   const handleUnsync = async () => {
-    if (!confirm("This will remove this quiz's scores from the gradebook and restore what was there before. Continue?")) {
-        return
+    if (!confirm("This will remove this quiz's scores from the gradebook and restore prior scores. Continue?")) {
+      return
     }
 
     try {
-        setReverting(true)
-        const { data, error } = await supabase.rpc('unsync_scores_from_gradebook', {
-            p_quiz_id: quizId
-        })
+      setReverting(true)
+      const { data, error } = await supabase.rpc('unsync_scores_from_gradebook', {
+        p_quiz_id: quizId
+      })
 
-        if (error) throw error
+      if (error) throw error
 
-        if (data === false) {
-            toast('Nothing to revert — this quiz was never pushed to the gradebook.')
-        } else {
-            toast.success('Reverted. Gradebook restored to its previous state.')
-        }
+      if (data === false) {
+        toast('Nothing to revert — this quiz was never pushed to the gradebook.', { icon: 'ℹ️' })
+      } else {
+        toast.success('Reverted. Gradebook restored to previous state.')
+      }
     } catch (error: any) {
-        console.error('Unsync error:', error)
-        toast.error(error.message || 'Failed to revert scores')
+      console.error('Unsync error:', error)
+      toast.error(error.message || 'Failed to revert scores')
     } finally {
-        setReverting(false)
+      setReverting(false)
     }
   }
 
   const handleDeleteAttempt = async (attemptId: string) => {
-    if (!confirm('Are you sure you want to delete this attempt? This will allow the student to retake the assessment. This action cannot be undone.')) {
-        return
+    if (!confirm('Are you sure you want to reset this attempt? This will permanently delete submitted answers and allow the learner to retake.')) {
+      return
     }
 
     try {
-        setDeletingId(attemptId)
-        
-        // Delete the attempt (Cascades to answers)
-        const { error } = await supabase
-            .from('student_quiz_attempts')
-            .delete()
-            .eq('id', attemptId)
+      setDeletingId(attemptId)
+      const { error } = await supabase
+        .from('student_quiz_attempts')
+        .delete()
+        .eq('id', attemptId)
 
-        if (error) throw error
+      if (error) throw error
 
-        toast.success('Attempt deleted. Student can now retake.')
-        // Refresh local state
-        setAttempts(attempts.filter(a => a.id !== attemptId))
-
+      toast.success('Attempt reset. Student can now retake.')
+      setAttempts(prev => prev.filter(a => a.id !== attemptId))
     } catch (error: any) {
-        console.error('Delete error:', error)
-        toast.error('Failed to delete attempt')
+      console.error('Delete error:', error)
+      toast.error('Failed to reset attempt')
     } finally {
-        setDeletingId(null)
+      setDeletingId(null)
     }
   }
+
+  const filteredAttempts = useMemo(() => {
+    return attempts.filter((attempt) => {
+      const s = attempt.students
+      const fullName = `${s?.first_name || ''} ${s?.middle_name || ''} ${s?.last_name || ''} ${s?.student_id || ''}`.toLowerCase()
+      
+      if (searchQuery && !fullName.includes(searchQuery.toLowerCase())) {
+        return false
+      }
+
+      if (genderFilter && s?.gender?.toLowerCase() !== genderFilter.toLowerCase()) {
+        return false
+      }
+      
+      return true
+    })
+  }, [attempts, searchQuery, genderFilter])
+
+  const avgScore = useMemo(() => {
+    if (attempts.length === 0) return 0
+    const total = attempts.reduce((sum, a) => sum + (a.score || 0), 0)
+    return (total / attempts.length).toFixed(1)
+  }, [attempts])
+
+  const avgPercentage = useMemo(() => {
+    if (!quiz?.total_points || attempts.length === 0) return 0
+    return Math.round((Number(avgScore) / quiz.total_points) * 100)
+  }, [avgScore, quiz])
 
   if (loading) {
-      return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
-            <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
-                <div className="container mx-auto px-4 md:px-6 py-4">
-                    <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
-                        <div className="flex items-center space-x-4">
-                             <Skeleton className="h-8 w-8 rounded-full" />
-                             <div>
-                                 <Skeleton className="h-6 w-48 mb-2" />
-                                 <Skeleton className="h-4 w-32" />
-                             </div>
-                        </div>
-                        <div className="flex gap-2">
-                            <Skeleton className="h-10 w-20 rounded-lg" />
-                            <Skeleton className="h-10 w-32 rounded-lg" />
-                        </div>
-                    </div>
-                </div>
-            </header>
-            <main className="container mx-auto px-4 md:px-6 py-6 md:py-8">
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-                      {[1,2,3].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
-                 </div>
-                 <div className="space-y-4">
-                      <Skeleton className="h-10 w-48 mb-4" />
-                      {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-16 rounded-xl" />)}
-                 </div>
-            </main>
-        </div>
-      )
+    return <QuizDetailsSkeleton />
   }
 
-  if (!quiz) return <div className="p-8 text-center text-gray-500 dark:text-gray-400">Quiz not found</div>
-
-  // Filter Logic
-  const filteredAttempts = attempts.filter((attempt) => {
-    const s = attempt.students
-    const fullName = `${s.first_name || ''} ${s.last_name || ''} ${s.middle_name || ''}`.toLowerCase()
-    
-    // Search
-    if (searchQuery && !fullName.includes(searchQuery.toLowerCase())) {
-        return false
-    }
-
-    // Gender
-    if (genderFilter && s.gender?.toLowerCase() !== genderFilter.toLowerCase()) {
-        return false
-    }
-    
-    return true
-  })
-
-  const avgScore = attempts.length > 0 
-    ? (attempts.reduce((sum, a) => sum + (a.score || 0), 0) / attempts.length).toFixed(1)
-    : 0
+  if (!quiz) {
+    return (
+      <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 flex items-center justify-center p-4 font-sans">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 max-w-md w-full text-center border border-slate-200 dark:border-slate-700 shadow-sm space-y-3">
+          <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Assessment Not Found</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">The requested quiz record could not be located or has been archived.</p>
+          <BackButton href="/teacher/assessments" />
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20 transition-colors duration-200">
-      <header className="bg-white dark:bg-gray-800 shadow sticky top-0 z-20 border-b border-gray-200 dark:border-gray-700">
-        <div className="container mx-auto px-4 md:px-6 py-4">
-            <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center">
-            <div className="flex items-center space-x-4 min-w-0">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+      
+      {/* Sticky Top Header */}
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
+            
+            {/* Title & Metadata */}
+            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
               <BackButton href="/teacher/assessments" />
-              <div className="min-w-0 overflow-hidden">
-                <h1 className="text-lg md:text-xl font-bold text-gray-800 dark:text-gray-100 truncate leading-tight">{quiz.title}</h1>
-                <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{quiz.classes?.name} • {quiz.subjects?.name}</p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+                  <h1 className="text-base sm:text-lg md:text-xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                    {quiz.title}
+                  </h1>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  <span className="font-bold text-[#003B5C] dark:text-blue-400">{quiz.classes?.name}</span>
+                  <span>•</span>
+                  <span>{quiz.subjects?.name}</span>
+                  <span>•</span>
+                  <span>{quiz.total_points} Max Marks</span>
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
-                 <Link
-                    href={`/teacher/assessments/edit/${quizId}`}
-                    className="flex items-center justify-center px-2 sm:px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 text-xs sm:text-sm font-medium whitespace-nowrap transition-colors"
-                >
-                    Edit
-                </Link>
-                <button
-                    onClick={handleSync}
-                    disabled={syncing}
-                    className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 text-xs sm:text-sm font-medium disabled:opacity-50 whitespace-nowrap shadow-sm active:scale-95 transition-all"
-                >
-                    <UploadCloud className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{syncing ? 'Syncing...' : 'Push'}<span className="hidden sm:inline"> to Gradebook</span></span>
-                </button>
-                <button
-                    onClick={handleUnsync}
-                    disabled={reverting}
-                    className="flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-xs sm:text-sm font-medium disabled:opacity-50 whitespace-nowrap transition-all"
-                >
-                    <RotateCcw className="w-4 h-4 flex-shrink-0" />
-                    <span className="truncate">{reverting ? 'Reverting...' : 'Remove'}<span className="hidden sm:inline"> from Gradebook</span></span>
-                </button>
+
+            {/* Actions Cluster */}
+            <div className="grid grid-cols-3 sm:flex sm:items-center gap-1.5 sm:gap-2.5 w-full md:w-auto shrink-0">
+              <Link
+                href={`/teacher/assessments/edit/${quizId}`}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition active:scale-95 text-center shadow-2xs"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span>Edit</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleSync}
+                disabled={syncing}
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition active:scale-95 disabled:opacity-50 text-center cursor-pointer"
+                title="Overwrite gradebook with latest submitted scores"
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="truncate">{syncing ? 'Pushing...' : 'Push to Gradebook'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleUnsync}
+                disabled={reverting}
+                className="inline-flex items-center justify-center gap-1.5 px-3 py-2 border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl text-xs font-bold transition active:scale-95 disabled:opacity-50 text-center cursor-pointer shadow-2xs"
+                title="Remove quiz scores from main gradebook"
+              >
+                <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">{reverting ? 'Reverting...' : 'Unsync'}</span>
+              </button>
             </div>
+
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 md:px-6 py-6 md:py-8 h-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-            <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 transition-colors">
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex-shrink-0">
-                    <Users className="w-6 h-6" />
-                </div>
-                <div>
-                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Total Attempts</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{attempts.length}</p>
-                </div>
+      {/* Main Workspace */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
+        
+        {/* KPI Strip */}
+        <section className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3.5 md:gap-4">
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-between">
+            <div className="space-y-0.5 min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+                Total Submissions
+              </span>
+              <div className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-[#003B5C] dark:text-blue-400">
+                {attempts.length}
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Learners attempted</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 transition-colors">
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex-shrink-0">
-                    <CheckCircle className="w-6 h-6" />
-                </div>
-                <div>
-                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Average Score</p>
-                    <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">{avgScore} <span className="text-sm text-gray-400 dark:text-gray-500 font-normal">/ {quiz.total_points}</span></p>
-                </div>
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 flex items-center justify-center shrink-0 ml-1">
+              <Users className="w-5 h-5" />
             </div>
-             <div className="bg-white dark:bg-gray-800 p-4 md:p-5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 flex items-center gap-4 transition-colors">
-                <div className="p-3 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-full flex-shrink-0">
-                    <Clock className="w-6 h-6" />
-                </div>
-                <div>
-                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Status</p>
-                    <p className="text-lg md:text-xl font-bold capitalize text-gray-900 dark:text-white">{quiz.status}</p>
-                </div>
-            </div>
-        </div>
+          </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
-            <div className="px-4 md:px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h3 className="font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
-                    Student Results 
-                    {filteredAttempts.length !== attempts.length && (
-                        <span className="text-xs font-normal text-gray-500">
-                            (Showing {filteredAttempts.length} of {attempts.length})
-                        </span>
-                    )}
-                </h3>
-                
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <div className="relative w-full sm:w-auto">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                        <input 
-                            type="text" 
-                            placeholder="Search student..." 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-9 pr-3 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-48 transition-all"
-                        />
-                    </div>
-                    <div className="relative w-full sm:w-auto">
-                        <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                        <select
-                            value={genderFilter}
-                            onChange={(e) => setGenderFilter(e.target.value)}
-                            className="pl-9 pr-8 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer w-full sm:w-auto transition-all"
-                            style={{ backgroundImage: 'none' }}
-                        >
-                            <option value="">All Genders</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-between">
+            <div className="space-y-0.5 min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+                Class Average
+              </span>
+              <div className="text-xl sm:text-2xl md:text-3xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                {avgScore}
+                <span className="text-xs font-normal text-slate-400 font-sans ml-1">
+                  / {quiz.total_points} ({avgPercentage}%)
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Average score</p>
+            </div>
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300 flex items-center justify-center shrink-0 ml-1">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="col-span-2 sm:col-span-1 bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center justify-between">
+            <div className="space-y-0.5 min-w-0">
+              <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+                Publication Status
+              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold uppercase tracking-wider border ${
+                  quiz.status === 'published'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50'
+                    : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
+                }`}>
+                  {quiz.status}
+                </span>
+              </div>
+              <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
+                {quiz.duration_minutes ? `${quiz.duration_minutes} mins allowed` : 'Untimed'}
+              </p>
+            </div>
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300 flex items-center justify-center shrink-0 ml-1">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+        </section>
+
+        {/* Results Roster Section */}
+        <section className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+          
+          {/* Card Header & Filter Bar */}
+          <div className="p-3.5 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 bg-slate-50/50 dark:bg-slate-900/40">
+            <div className="space-y-0.5">
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+                <span>Student Submissions &amp; Grades</span>
+              </h2>
+              <p className="text-[11px] text-slate-400 font-mono">
+                Showing {filteredAttempts.length} of {attempts.length} attempts
+              </p>
+            </div>
+
+            {/* Search & Gender Filter Inputs */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full md:w-auto">
+              <div className="relative flex-1 sm:w-56">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search by name or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#003B5C] transition"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <div className="relative sm:w-36">
+                <Filter className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                <select
+                  value={genderFilter}
+                  onChange={(e) => setGenderFilter(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-[#003B5C] cursor-pointer appearance-none transition"
+                >
+                  <option value="">All Genders</option>
+                  <option value="Male">Male Only</option>
+                  <option value="Female">Female Only</option>
+                </select>
+                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <ChevronRight className="w-3.5 h-3.5 rotate-90" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Records Display */}
+          {attempts.length === 0 ? (
+            <div className="p-10 sm:p-16 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 flex items-center justify-center mx-auto shadow-inner">
+                <Users className="w-6 h-6 opacity-35" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">No Attempts Recorded</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  Students enrolled in this cohort have not submitted answers for this assessment yet.
+                </p>
+              </div>
+            </div>
+          ) : filteredAttempts.length === 0 ? (
+            <div className="p-8 sm:p-12 text-center space-y-2">
+              <p className="text-xs sm:text-sm font-semibold text-slate-500 dark:text-slate-400">
+                No students match your active filter criteria.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('')
+                  setGenderFilter('')
+                }}
+                className="text-xs font-bold text-[#003B5C] dark:text-blue-400 hover:underline"
+              >
+                Reset Search Filters
+              </button>
+            </div>
+          ) : (
+            <div>
+              {/* Mobile Card List (< sm screens) */}
+              <div className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800">
+                {filteredAttempts.map((attempt) => {
+                  const s = attempt.students
+                  const studentName = `${s?.last_name || ''} ${s?.first_name || ''} ${s?.middle_name || ''}`.trim() || 'Learner'
+                  const percentage = quiz.total_points > 0
+                    ? Math.round((attempt.score / quiz.total_points) * 100)
+                    : 0
+                  const isSubmitted = attempt.status === 'submitted'
+
+                  return (
+                    <div key={attempt.id} className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {studentName}
+                          </h4>
+                          <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 mt-0.5">
+                            <span>ID: {s?.student_id || '---'}</span>
+                            <span>•</span>
+                            <span>{s?.gender || '---'}</span>
+                          </div>
                         </div>
+
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border shrink-0 ${
+                          isSubmitted
+                            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300'
+                            : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300'
+                        }`}>
+                          {isSubmitted ? 'Needs Grading' : attempt.status}
+                        </span>
+                      </div>
+
+                      {/* Score & Progress Bar */}
+                      <div className="space-y-1.5 bg-slate-50/70 dark:bg-slate-900/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                        <div className="flex justify-between items-baseline text-xs">
+                          <span className="text-[11px] font-semibold text-slate-500">Score:</span>
+                          <span className="font-mono font-black text-slate-900 dark:text-white">
+                            {attempt.score} <span className="text-[10px] font-normal text-slate-400">/ {quiz.total_points} ({percentage}%)</span>
+                          </span>
+                        </div>
+                        <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              percentage >= 70 ? 'bg-emerald-500' : percentage >= 50 ? 'bg-[#003B5C]' : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Action Bar */}
+                      <div className="flex items-center justify-between gap-2 pt-1">
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {new Date(attempt.end_time || attempt.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+                          {isSubmitted ? (
+                            <Link
+                              href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
+                              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition active:scale-95 shadow-2xs inline-flex items-center gap-1"
+                            >
+                              <FileCheck className="w-3.5 h-3.5" />
+                              <span>Grade</span>
+                            </Link>
+                          ) : (
+                            <Link
+                              href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition active:scale-95 inline-flex items-center gap-1"
+                            >
+                              <span>Review</span>
+                            </Link>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAttempt(attempt.id)}
+                            disabled={deletingId === attempt.id}
+                            className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition active:scale-95 disabled:opacity-50"
+                            title="Reset attempt and allow retake"
+                          >
+                            <RotateCcw className={`w-4 h-4 ${deletingId === attempt.id ? 'animate-spin' : ''}`} />
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop Table View (≥ sm screens) */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-xs sm:text-sm text-left">
+                  <thead className="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200/80 dark:border-slate-700">
+                    <tr>
+                      <th className="px-4 sm:px-6 py-3.5">Learner Name &amp; ID</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center">Gender</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-mono">Raw Mark</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center font-mono">Percentage</th>
+                      <th className="px-3 sm:px-4 py-3.5 text-center">Status</th>
+                      <th className="px-4 py-3.5 font-mono text-slate-400 text-right">Submitted</th>
+                      <th className="px-4 sm:px-6 py-3.5 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
+                    {filteredAttempts.map((attempt) => {
+                      const s = attempt.students
+                      const studentName = `${s?.last_name || ''} ${s?.first_name || ''} ${s?.middle_name || ''}`.trim() || 'Learner'
+                      const percentage = quiz.total_points > 0 
+                        ? ((attempt.score / quiz.total_points) * 100).toFixed(1) 
+                        : '0'
+                      const isSubmitted = attempt.status === 'submitted'
+
+                      return (
+                        <tr key={attempt.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+                          <td className="px-4 sm:px-6 py-3.5">
+                            <div className="font-bold text-slate-900 dark:text-white">
+                              {studentName}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-mono">
+                              ID: {s?.student_id || '---'}
+                            </div>
+                          </td>
+
+                          <td className="px-3 sm:px-4 py-3.5 text-center text-slate-600 dark:text-slate-300 font-medium">
+                            {s?.gender || '---'}
+                          </td>
+
+                          <td className="px-3 sm:px-4 py-3.5 text-center font-mono font-black text-slate-900 dark:text-white text-sm">
+                            {attempt.score}
+                            <span className="text-[11px] font-normal text-slate-400 ml-1 font-sans">
+                              / {quiz.total_points}
+                            </span>
+                          </td>
+
+                          <td className="px-3 sm:px-4 py-3.5 text-center font-mono font-semibold text-slate-700 dark:text-slate-300">
+                            {percentage}%
+                          </td>
+
+                          <td className="px-3 sm:px-4 py-3.5 text-center">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${
+                              isSubmitted
+                                ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
+                                : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50'
+                            }`}>
+                              {isSubmitted ? 'Needs Grading' : attempt.status}
+                            </span>
+                          </td>
+
+                          <td className="px-4 py-3.5 text-right text-xs text-slate-500 dark:text-slate-400 font-mono">
+                            {new Date(attempt.end_time || attempt.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          </td>
+
+                          <td className="px-4 sm:px-6 py-3.5 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center justify-end gap-1.5">
+                              {isSubmitted ? (
+                                <Link
+                                  href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
+                                  className="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition active:scale-95 shadow-2xs"
+                                >
+                                  Grade
+                                </Link>
+                              ) : (
+                                <Link
+                                  href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
+                                  className="px-3 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition active:scale-95"
+                                >
+                                  Review
+                                </Link>
+                              )}
+
+                              <button 
+                                type="button"
+                                onClick={() => handleDeleteAttempt(attempt.id)}
+                                disabled={deletingId === attempt.id}
+                                className="p-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition active:scale-95 disabled:opacity-50"
+                                title="Reset attempt (Allow retake)"
+                              >
+                                <RotateCcw className={`w-3.5 h-3.5 ${deletingId === attempt.id ? 'animate-spin' : ''}`} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
-            {attempts.length === 0 ? (
-                <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    <div className="flex flex-col items-center justify-center">
-                       <Users className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-                       <p>No attempts recorded yet.</p>
-                    </div>
-                </div>
-            ) : filteredAttempts.length === 0 ? (
-                <div className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    <div className="flex flex-col items-center justify-center">
-                       <Search className="w-10 h-10 text-gray-300 dark:text-gray-600 mb-2" />
-                       <p>No students match your filter.</p>
-                    </div>
-                </div>
-            ) : (
-                <>
-                    {/* Mobile card list (below sm) */}
-                    <div className="sm:hidden divide-y divide-gray-100 dark:divide-gray-700">
-                        {filteredAttempts.map((attempt) => {
-                            const percentage = quiz.total_points > 0
-                                ? ((attempt.score / quiz.total_points) * 100).toFixed(1)
-                                : '0'
+          )}
 
-                            return (
-                                <div key={attempt.id} className="p-4 active:bg-gray-50 dark:active:bg-gray-700/50 transition-colors">
-                                    <div className="flex items-start justify-between gap-3 mb-2">
-                                        <div className="min-w-0">
-                                            <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                                                {attempt.students.last_name} {attempt.students.first_name} {attempt.students.middle_name}
-                                            </p>
-                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                                {attempt.students.gender || '-'} • {new Date(attempt.end_time || attempt.created_at).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeleteAttempt(attempt.id)}
-                                            disabled={deletingId === attempt.id}
-                                            className="flex-shrink-0 text-red-600 dark:text-red-400 p-2 -m-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50 transition-colors"
-                                            title="Reset Attempt (Allow Retake)"
-                                        >
-                                            {deletingId === attempt.id ? (
-                                                <span className="animate-spin text-xs">...</span>
-                                            ) : (
-                                                <RotateCcw className="w-5 h-5" />
-                                            )}
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div className="flex items-baseline gap-2">
-                                            <span className="text-lg font-bold text-gray-800 dark:text-gray-200">{attempt.score}</span>
-                                            <span className="text-xs text-gray-400 dark:text-gray-500">/ {quiz.total_points} ({percentage}%)</span>
-                                        </div>
-                                        {attempt.status === 'submitted' ? (
-                                            <Link
-                                                href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
-                                                className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300"
-                                            >
-                                                Needs Grading
-                                            </Link>
-                                        ) : (
-                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                                                {attempt.status}
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
+        </section>
 
-                    {/* Table (sm and up) */}
-                    <div className="hidden sm:block overflow-x-auto w-full">
-                        <table className="min-w-full text-sm text-left">
-                            <thead className="bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-medium uppercase text-xs tracking-wider">
-                                <tr>
-                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Student Name</th>
-                                    <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Gender</th>
-                                    <th className="hidden md:table-cell px-4 md:px-6 py-3 whitespace-nowrap">Submitted At</th>
-                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Score</th>
-                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Percentage</th>
-                                    <th className="px-4 md:px-6 py-3 whitespace-nowrap">Status</th>
-                                    <th className="px-4 md:px-6 py-3 text-right whitespace-nowrap">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                {filteredAttempts.map((attempt) => {
-                                    const percentage = quiz.total_points > 0 
-                                        ? ((attempt.score / quiz.total_points) * 100).toFixed(1) 
-                                        : '0'
-                                        
-                                    return (
-                                        <tr key={attempt.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                            <td className="px-4 md:px-6 py-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">
-                                                {attempt.students.last_name} {attempt.students.first_name} {attempt.students.middle_name}
-                                            </td>
-                                            <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                {attempt.students.gender || '-'}
-                                            </td>
-                                            <td className="hidden md:table-cell px-4 md:px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                {new Date(attempt.end_time || attempt.created_at).toLocaleString()}
-                                            </td>
-                                            <td className="px-4 md:px-6 py-3 font-semibold text-gray-800 dark:text-gray-200 whitespace-nowrap">
-                                                {attempt.score}
-                                            </td>
-                                             <td className="px-4 md:px-6 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                                                {percentage}%
-                                            </td>
-                                            <td className="px-4 md:px-6 py-3 whitespace-nowrap">
-                                                {attempt.status === 'submitted' ? (
-                                                    <Link
-                                                        href={`/teacher/assessments/${quizId}/grade/${attempt.id}`}
-                                                        className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors inline-block"
-                                                    >
-                                                        Needs Grading
-                                                    </Link>
-                                                ) : (
-                                                    <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300">
-                                                        {attempt.status}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-4 md:px-6 py-3 text-right whitespace-nowrap">
-                                                <button 
-                                                    onClick={() => handleDeleteAttempt(attempt.id)}
-                                                    disabled={deletingId === attempt.id}
-                                                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded disabled:opacity-50 transition-colors"
-                                                    title="Reset Attempt (Allow Retake)"
-                                                >
-                                                    {deletingId === attempt.id ? (
-                                                        <span className="animate-spin text-xs">...</span>
-                                                    ) : (
-                                                        <RotateCcw className="w-4 h-4" />
-                                                    )}
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                </>
-            )}
-        </div>
       </main>
+
+      <PortalFooter />
+    </div>
+  )
+}
+
+function QuizDetailsSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 flex flex-col font-sans">
+      <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-8 h-8 rounded-xl" />
+            <Skeleton className="h-6 w-48 rounded-md" />
+          </div>
+          <Skeleton className="h-8 w-44 rounded-xl hidden sm:block" />
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-5 sm:py-6 space-y-4 flex-1">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl" />
+          <Skeleton className="h-24 rounded-2xl col-span-2 sm:col-span-1" />
+        </div>
+        <Skeleton className="h-80 w-full rounded-2xl sm:rounded-3xl" />
+      </main>
+
+      <PortalFooter />
     </div>
   )
 }
