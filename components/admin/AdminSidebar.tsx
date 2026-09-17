@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { signOut, getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
@@ -16,7 +17,7 @@ import {
   FileText, 
   Settings, 
   BarChart3, 
-  Image, 
+  Image as ImageIcon, 
   Newspaper, 
   TrendingUp, 
   DollarSign, 
@@ -30,7 +31,6 @@ import {
   X,
   LogOut,
   Palette,
-  ShieldCheck,
   ChevronRight
 } from 'lucide-react'
 
@@ -76,7 +76,7 @@ const sidebarItems = [
       { href: '/admin/announcements', label: 'Announcements', icon: Bell },
       { href: '/admin/news', label: 'News & Updates', icon: Newspaper },
       { href: '/admin/events', label: 'School Calendar', icon: Calendar },
-      { href: '/admin/gallery', label: 'Media Gallery', icon: Image },
+      { href: '/admin/gallery', label: 'Media Gallery', icon: ImageIcon },
       { href: '/admin/complaints', label: 'Helpdesk & Complaints', icon: AlertCircle },
     ]
   },
@@ -155,14 +155,21 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Brand Header */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50 gap-2">
+        {/* Brand Header with Official School Crest */}
+        <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between shrink-0 bg-slate-50/50 dark:bg-slate-900/50 gap-2">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="w-9 h-9 rounded-xl bg-[#003B5C] text-white flex items-center justify-center font-bold shadow-sm ring-1 ring-white/20 shrink-0">
-              <ShieldCheck className="w-5 h-5 text-amber-400" />
+            <div className="w-10 h-10 rounded-full bg-white border border-amber-600/40 p-1 shadow-xs flex items-center justify-center shrink-0 overflow-hidden">
+              <Image
+                src="/school_crest.png"
+                alt="Biriwa Methodist 'C' Crest"
+                width={40}
+                height={40}
+                className="w-full h-full object-contain"
+                priority
+              />
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-xs font-black text-slate-900 dark:text-white tracking-tight leading-snug whitespace-nowrap">
+              <h2 className="text-xs font-black text-slate-900 dark:text-white tracking-tight leading-snug truncate">
                 Biriwa Methodist &apos;C&apos;
               </h2>
               <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">
@@ -185,7 +192,7 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
         <div className="flex-1 py-3 px-2.5 space-y-5 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {sidebarItems.map((group) => (
             <div key={group.group} className="space-y-1">
-              {/* Category Group Header with Indicator Dot & Hairline Divider */}
+              {/* Category Group Header with Indicator Dot & Divider */}
               <div className="flex items-center gap-2 px-2.5 pt-1.5 pb-1 select-none">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-amber-400 shrink-0" />
                 <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">

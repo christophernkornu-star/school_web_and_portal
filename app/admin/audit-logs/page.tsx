@@ -22,8 +22,17 @@ import {
   FileSpreadsheet,
   Calendar,
   CheckCircle2,
-  Layers
+  Layers,
+  FileText,
+  AlertCircle,
+  RefreshCw,
+  Plus,
+  Trash2,
+  ChevronRight,
+  ShieldCheck,
+  Loader2
 } from 'lucide-react'
+import { PortalFooter } from '@/components/PortalFooter'
 
 interface AuditProfile {
   full_name: string
@@ -47,8 +56,8 @@ const entityNameMap: Record<string, string> = {
   fee_payments: 'Fee Payments',
   scores: 'Student Scores',
   students: 'Student Profile',
-  student_attendance: 'Attendance',
-  student_remarks: 'Remarks',
+  student_attendance: 'Attendance Register',
+  student_remarks: 'Terminal Remarks',
 }
 
 export default function AuditLogsPage() {
@@ -173,11 +182,14 @@ export default function AuditLogsPage() {
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log: AuditLog) => {
+      const term = searchTerm.toLowerCase().trim()
       const matchesSearch =
-        (log.entity_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (entityNameMap[log.entity_name]?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (log.action?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        ((log.profiles?.full_name || 'System').toLowerCase().includes(searchTerm.toLowerCase()))
+        !term ||
+        (log.entity_name?.toLowerCase().includes(term)) ||
+        (entityNameMap[log.entity_name]?.toLowerCase().includes(term)) ||
+        (log.action?.toLowerCase().includes(term)) ||
+        (log.entity_id?.toLowerCase().includes(term)) ||
+        ((log.profiles?.full_name || 'System').toLowerCase().includes(term))
 
       const matchesAction = filterAction === 'ALL' || log.action === filterAction
 
@@ -190,331 +202,396 @@ export default function AuditLogsPage() {
   const totalDelete = useMemo(() => logs.filter(l => l.action === 'DELETE').length, [logs])
 
   return (
-    <div className="bg-gray-50/50 min-h-screen pb-24 font-sans">
-      <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-5 sm:space-y-8">
-        
-        {/* Header Section */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-7 md:p-8 rounded-2xl sm:rounded-3xl shadow-[0_2px_20px_-4px_rgba(0,0,0,0.05)] border border-gray-100 relative overflow-hidden">
-          <div className="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-indigo-50/70 to-transparent pointer-events-none"></div>
-          
-          <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 relative z-10">
-            <BackButton href="/admin/dashboard" className="shadow-sm shrink-0 mt-0.5 sm:mt-0" />
-            <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-gray-900 tracking-tight flex items-center gap-2">
-                <ShieldAlert className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600 shrink-0" />
-                <span>System Audit Logs</span>
-              </h1>
-              <p className="text-xs sm:text-sm md:text-base text-gray-500 font-medium mt-0.5 sm:mt-1">
-                Track security events, data adjustments, and critical record history
-              </p>
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+      
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            
+            {/* Title & Navigation */}
+            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+              <BackButton href="/admin/dashboard" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+                  <h1 className="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                    System Audit Trail
+                  </h1>
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  Real-time database mutation tracking, data security, and actor history
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2 self-start sm:self-auto text-xs sm:text-sm font-bold text-indigo-700 bg-indigo-50/90 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-indigo-100/60 shadow-sm relative z-10">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Live Monitoring
+            {/* Live Monitoring Badge */}
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200/70 dark:border-blue-900/50 self-start sm:self-auto shrink-0 shadow-2xs font-mono">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+              <span className="text-xs font-bold text-[#003B5C] dark:text-blue-300">
+                Live Audit Stream
+              </span>
+            </div>
+
           </div>
         </div>
+      </header>
 
-        {/* Sub Navigation Tabs */}
-        <div className="flex items-center gap-2 bg-white p-1.5 sm:p-2 rounded-xl sm:rounded-2xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 w-full sm:w-fit overflow-x-auto">
+      {/* Main Workspace */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-4 sm:space-y-6">
+        
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-800/90 p-1.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs w-full sm:w-fit overflow-x-auto">
           <Link
             href="/admin/audit-logs"
-            className="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-black rounded-lg sm:rounded-xl transition-all tracking-wide bg-indigo-600 text-white shadow-md whitespace-nowrap"
+            className="flex items-center justify-center gap-2 flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-xl transition-all bg-[#003B5C] text-white shadow-xs whitespace-nowrap"
           >
-            <ShieldAlert className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            All Events
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <span>All System Events</span>
           </Link>
           <Link
             href="/admin/audit-logs/finance"
-            className="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial px-3 sm:px-5 py-2 sm:py-2.5 text-xs font-black rounded-lg sm:rounded-xl transition-all tracking-wide text-gray-500 hover:text-gray-900 hover:bg-gray-100 whitespace-nowrap"
+            className="flex items-center justify-center gap-2 flex-1 sm:flex-initial px-4 py-2 text-xs font-bold rounded-xl transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-700/60 whitespace-nowrap"
           >
-            <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
-            Finance
+            <DollarSign className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+            <span>Financial Logs</span>
           </Link>
         </div>
 
-        {/* Quick Stats Grid: 2-col on phone, 4-col on tablet/desktop */}
-        <div className="grid gap-3 sm:gap-4 md:gap-5 grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Total Events" value={logs.length} icon={History} color="indigo" />
-          <StatCard title="Creations" value={totalInsert} icon={Database} color="emerald" />
-          <StatCard title="Modifications" value={totalUpdate} icon={UserCog} color="blue" />
-          <StatCard title="Deletions" value={totalDelete} icon={ShieldAlert} color="red" />
-        </div>
+        {/* Quick Statistics Strip */}
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
+          <StatCard title="Total Events" value={logs.length} icon={History} color="blue" />
+          <StatCard title="New Records" value={totalInsert} icon={Plus} color="emerald" />
+          <StatCard title="Modifications" value={totalUpdate} icon={RefreshCw} color="amber" />
+          <StatCard title="Deletions" value={totalDelete} icon={Trash2} color="rose" />
+        </section>
 
-        {/* Main Content Card */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.05)] border border-gray-100 flex flex-col min-h-[460px] overflow-hidden">
+        {/* Audit Log Table & Filtering Container */}
+        <section className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden flex flex-col">
           
-          {/* Responsive Filters */}
-          <div className="p-3.5 sm:p-5 md:p-6 border-b border-gray-100 flex flex-col sm:flex-row gap-3 justify-between sm:items-center bg-gray-50/60">
-            <div className="relative w-full sm:w-80 md:w-96">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          {/* Controls Bar: Search & Action Selector */}
+          <div className="p-3.5 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-slate-50/50 dark:bg-slate-900/40">
+            
+            <div className="relative flex-1 sm:max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input 
                 type="text" 
-                placeholder="Search entities, actors, actions..." 
-                className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all font-medium text-gray-900 shadow-sm"
+                placeholder="Search by entity, ID, user, or action..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-[#003B5C] transition"
               />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                  aria-label="Clear search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-            
-            <div className="flex items-center gap-1 p-1 bg-gray-200/60 rounded-xl overflow-x-auto w-full sm:w-auto">
+
+            {/* Action Segment Filter */}
+            <div className="flex items-center gap-1 p-1 bg-slate-200/70 dark:bg-slate-900/70 rounded-xl overflow-x-auto select-none shrink-0">
               {['ALL', 'INSERT', 'UPDATE', 'DELETE'].map(action => (
                 <button
                   key={action}
+                  type="button"
                   onClick={() => setFilterAction(action)}
-                  className={`flex-1 sm:flex-initial px-3 py-1.5 text-[10px] font-black rounded-lg transition-all tracking-wider whitespace-nowrap ${
+                  className={`flex-1 sm:flex-initial px-3 py-1.5 text-[10px] font-black rounded-lg transition-all tracking-wider whitespace-nowrap active:scale-95 ${
                     filterAction === action 
-                      ? 'bg-white text-indigo-700 shadow-sm' 
-                      : 'text-gray-600 hover:text-gray-900 bg-transparent'
+                      ? 'bg-white dark:bg-slate-800 text-[#003B5C] dark:text-blue-300 shadow-xs' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 bg-transparent'
                   }`}
                 >
                   {action}
                 </button>
               ))}
             </div>
+
           </div>
 
-          {/* Mobile & Tablet Card View (Screen Width < 768px) */}
-          <div className="md:hidden divide-y divide-gray-100">
+          {/* Mobile & Tablet Card Roster (< md screens) */}
+          <div className="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
             {loading ? (
-              <div className="p-12 text-center">
-                <div className="flex flex-col items-center justify-center space-y-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Loading events...</p>
-                </div>
+              <div className="p-12 text-center space-y-2">
+                <Loader2 className="w-7 h-7 text-[#003B5C] animate-spin mx-auto" />
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Decrypting events...</p>
               </div>
             ) : filteredLogs.length === 0 ? (
-              <div className="p-10 text-center">
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <History className="h-9 w-9 text-gray-300" />
-                  <p className="text-sm font-bold text-gray-600">No matching audit logs found</p>
-                  <p className="text-xs text-gray-400">Try changing your search terms or filters</p>
-                </div>
+              <div className="p-10 text-center space-y-2 text-slate-400">
+                <History className="w-8 h-8 mx-auto opacity-30" />
+                <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300">
+                  No matching audit logs found
+                </p>
+                <p className="text-[11px]">Try adjusting your search criteria or action filter.</p>
               </div>
             ) : (
-              filteredLogs.map(log => (
-                <div key={log.id} className="p-4 sm:p-5 active:bg-indigo-50/20 transition-colors">
-                  {/* Top Meta Row */}
-                  <div className="flex items-center justify-between gap-3 mb-2.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 border ${
-                        log.profiles?.role === 'admin' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-100 border-gray-200 text-gray-700'
-                      }`}>
-                        {log.profiles?.full_name ? log.profiles.full_name[0].toUpperCase() : 'S'}
+              filteredLogs.map(log => {
+                const actorName = log.profiles?.full_name || 'System Auto'
+                const actorInitial = actorName[0]?.toUpperCase() || 'S'
+                const entityDisplayName = entityNameMap[log.entity_name] || log.entity_name.replace(/_/g, ' ')
+
+                return (
+                  <div key={log.id} className="p-4 space-y-3 hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                    
+                    {/* Header Row: Actor & Action Badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 border ${
+                          log.profiles?.role === 'admin'
+                            ? 'bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 border-blue-200/60 dark:border-blue-900/50'
+                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                        }`}>
+                          {actorInitial}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            {actorName}
+                          </p>
+                          <p className="text-[10px] font-mono text-slate-400">
+                            {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm:ss')}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-gray-900 font-bold text-xs truncate">
-                          {log.profiles?.full_name || 'System Auto'}
+
+                      <ActionBadge action={log.action} />
+                    </div>
+
+                    {/* Entity Target Pill */}
+                    <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800">
+                      <EntityIcon entityName={log.entity_name} className="w-8 h-8" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 capitalize truncate">
+                          {entityDisplayName}
                         </p>
-                        <p className="text-[10px] text-gray-400 font-semibold tracking-wider">
-                          {format(new Date(log.created_at), 'dd MMM yyyy, HH:mm')}
+                        <p className="text-[10px] text-slate-400 font-mono truncate">
+                          ID: {log.entity_id}
                         </p>
                       </div>
                     </div>
-                    <ActionBadge action={log.action} />
-                  </div>
 
-                  {/* Entity Details Card */}
-                  <div className="flex items-center gap-2.5 my-2.5 bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
-                    <EntityIcon entityName={log.entity_name} className="w-8 h-8" />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-gray-800 truncate">
-                        {entityNameMap[log.entity_name] || log.entity_name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                      </p>
-                      <p className="text-[10px] text-gray-400 font-mono truncate">
-                        ID: {log.entity_id}
-                      </p>
+                    {/* Footer Row: Role & Payload Inspection Button */}
+                    <div className="flex items-center justify-between gap-2 pt-0.5">
+                      <span className="text-[10px] font-mono uppercase font-bold text-slate-400">
+                        Role: {log.profiles?.role || 'SYSTEM'}
+                      </span>
+
+                      <button 
+                        type="button"
+                        onClick={() => setSelectedLog(log)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#003B5C] dark:text-blue-300 text-xs font-bold rounded-xl shadow-2xs active:scale-95 transition-transform"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Inspect Payload</span>
+                      </button>
                     </div>
-                  </div>
 
-                  {/* Footer Row */}
-                  <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                      Role: {log.profiles?.role || 'SYSTEM'}
-                    </span>
-                    <button 
-                      onClick={() => setSelectedLog(log)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 text-indigo-700 text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-transform"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      Inspect Payload
-                    </button>
                   </div>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
 
-          {/* Desktop & Tablet-Landscape Table (Screen Width ≥ 768px) */}
+          {/* Desktop Table View (≥ md screens) */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[720px]">
-              <thead>
-                <tr className="bg-white border-b border-gray-100 text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                  <th className="p-4 lg:px-6 whitespace-nowrap">Timestamp</th>
-                  <th className="p-4 lg:px-6 whitespace-nowrap">Actor</th>
-                  <th className="p-4 lg:px-6 whitespace-nowrap">Action</th>
-                  <th className="p-4 lg:px-6 whitespace-nowrap">Target Entity</th>
-                  <th className="p-4 lg:px-6 whitespace-nowrap text-right">Payload</th>
+            <table className="w-full text-left border-collapse min-w-[760px] text-xs sm:text-sm">
+              <thead className="bg-slate-50/80 dark:bg-slate-900/60 border-b border-slate-200/80 dark:border-slate-700 text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                <tr>
+                  <th className="px-4 lg:px-6 py-3.5 whitespace-nowrap">Timestamp</th>
+                  <th className="px-4 lg:px-6 py-3.5 whitespace-nowrap">Actor &amp; Role</th>
+                  <th className="px-4 lg:px-6 py-3.5 whitespace-nowrap">Mutation Action</th>
+                  <th className="px-4 lg:px-6 py-3.5 whitespace-nowrap">Target Entity</th>
+                  <th className="px-4 lg:px-6 py-3.5 whitespace-nowrap text-right">Payload</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 text-sm font-medium text-gray-700">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
                 {loading ? (
                   <tr>
-                    <td colSpan={5} className="p-16 text-center">
-                      <div className="flex flex-col items-center justify-center space-y-3">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Decrypting Audit Trail...</p>
-                      </div>
+                    <td colSpan={5} className="p-16 text-center space-y-3">
+                      <Loader2 className="w-8 h-8 text-[#003B5C] animate-spin mx-auto" />
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Decoding audit sequence...</p>
                     </td>
                   </tr>
                 ) : filteredLogs.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-16 text-center">
-                      <div className="flex flex-col items-center justify-center space-y-2">
-                        <History className="h-9 w-9 text-gray-300" />
-                        <p className="text-sm font-bold text-gray-600">No matching audit logs found</p>
-                        <p className="text-xs text-gray-400">Mutations and administrative events will appear here.</p>
-                      </div>
+                    <td colSpan={5} className="p-16 text-center space-y-2">
+                      <History className="w-8 h-8 text-slate-300 mx-auto" />
+                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300">No matching audit events recorded</p>
+                      <p className="text-xs text-slate-400">Database changes will appear here automatically.</p>
                     </td>
                   </tr>
                 ) : (
-                  filteredLogs.map((log: AuditLog) => (
-                    <tr key={log.id} className="hover:bg-indigo-50/30 transition-colors group">
-                      <td className="p-4 lg:px-6 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <Clock className="w-4 h-4 text-gray-300 group-hover:text-indigo-500 transition-colors shrink-0" />
-                          <div className="flex flex-col">
-                            <span className="text-gray-900 font-bold text-xs">{format(new Date(log.created_at), 'MMM dd, yyyy')}</span>
-                            <span className="text-[10px] text-gray-400 font-semibold">{format(new Date(log.created_at), 'HH:mm:ss')}</span>
+                  filteredLogs.map((log: AuditLog) => {
+                    const actorName = log.profiles?.full_name || 'System Auto'
+                    const actorInitial = actorName[0]?.toUpperCase() || 'S'
+                    const entityDisplayName = entityNameMap[log.entity_name] || log.entity_name.replace(/_/g, ' ')
+
+                    return (
+                      <tr key={log.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors group">
+                        <td className="px-4 lg:px-6 py-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5 font-mono">
+                            <Clock className="w-4 h-4 text-slate-300 group-hover:text-[#003B5C] dark:group-hover:text-blue-400 transition-colors shrink-0" />
+                            <div>
+                              <p className="font-bold text-slate-900 dark:text-white text-xs">
+                                {format(new Date(log.created_at), 'MMM dd, yyyy')}
+                              </p>
+                              <p className="text-[10px] text-slate-400">
+                                {format(new Date(log.created_at), 'HH:mm:ss')}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 lg:px-6 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-black shrink-0 border ${
-                            log.profiles?.role === 'admin' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-100 border-gray-200 text-gray-700'
-                          }`}>
-                            {log.profiles?.full_name ? log.profiles.full_name[0].toUpperCase() : 'S'}
+                        </td>
+
+                        <td className="px-4 lg:px-6 py-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold shrink-0 border ${
+                              log.profiles?.role === 'admin'
+                                ? 'bg-[#003B5C]/10 text-[#003B5C] dark:bg-blue-500/20 dark:text-blue-300 border-blue-200/60 dark:border-blue-900/50'
+                                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                            }`}>
+                              {actorInitial}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-slate-900 dark:text-white font-bold text-xs truncate max-w-[150px]">
+                                {actorName}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono uppercase tracking-wider">
+                                {log.profiles?.role || 'SYSTEM'}
+                              </p>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-gray-900 font-bold text-xs truncate max-w-[140px]">
-                              {log.profiles?.full_name || 'System Auto'}
-                            </p>
-                            <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">{log.profiles?.role || 'SYSTEM'}</p>
+                        </td>
+
+                        <td className="px-4 lg:px-6 py-3.5 whitespace-nowrap">
+                          <ActionBadge action={log.action} />
+                        </td>
+
+                        <td className="px-4 lg:px-6 py-3.5 whitespace-nowrap">
+                          <div className="flex items-center gap-2.5">
+                            <EntityIcon entityName={log.entity_name} className="w-7 h-7" />
+                            <div>
+                              <p className="text-xs font-bold text-slate-900 dark:text-white capitalize">
+                                {entityDisplayName}
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-mono" title={log.entity_id}>
+                                ID: {log.entity_id ? `${log.entity_id.substring(0, 8)}...` : '---'}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="p-4 lg:px-6 whitespace-nowrap">
-                        <ActionBadge action={log.action} />
-                      </td>
-                      <td className="p-4 lg:px-6 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <EntityIcon entityName={log.entity_name} className="w-7 h-7" />
-                          <div>
-                            <p className="text-xs font-bold text-gray-900">
-                              {entityNameMap[log.entity_name] || log.entity_name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-mono cursor-help" title={log.entity_id}>
-                              id: {log.entity_id.substring(0, 8)}...
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-4 lg:px-6 whitespace-nowrap text-right">
-                        <button 
-                          onClick={() => setSelectedLog(log)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg transition-all shadow-sm group-hover:shadow"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          Inspect
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+
+                        <td className="px-4 lg:px-6 py-3.5 whitespace-nowrap text-right">
+                          <button 
+                            type="button"
+                            onClick={() => setSelectedLog(log)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-[#003B5C] dark:text-blue-300 text-xs font-bold rounded-xl shadow-2xs transition-all active:scale-95"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Inspect</span>
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>
           </div>
-        </div>
-      </div>
 
-      {/* Responsive Inspection Modal: Fullscreen on mobile, centered dialog on tablet & desktop */}
+        </section>
+
+      </main>
+
+      {/* Responsive Inspection Modal (Bottom Sheet on Mobile, Centered Dialog on Tablet/Desktop) */}
       {selectedLog && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-h-[92vh] sm:max-h-[85vh] sm:max-w-3xl md:max-w-4xl flex flex-col overflow-hidden border-t sm:border border-gray-100">
-            
+        <div 
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-150"
+          onClick={() => setSelectedLog(null)}
+        >
+          <div 
+            className="bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-h-[92vh] sm:max-h-[85vh] sm:max-w-3xl md:max-w-4xl flex flex-col overflow-hidden border-t sm:border border-slate-200 dark:border-slate-700"
+            onClick={e => e.stopPropagation()}
+          >
             {/* Modal Header */}
-            <div className="p-4 sm:p-6 bg-gray-50 border-b border-gray-100 flex items-start justify-between gap-3 shrink-0">
+            <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-100 dark:border-slate-700/80 flex items-start justify-between gap-3 shrink-0">
               <div className="flex flex-col gap-1.5 min-w-0">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <ActionBadge action={selectedLog.action} />
-                  <h3 className="text-base sm:text-lg md:text-xl font-black text-gray-900 tracking-tight">
-                    {entityNameMap[selectedLog.entity_name] || selectedLog.entity_name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                    {entityNameMap[selectedLog.entity_name] || selectedLog.entity_name.replace(/_/g, ' ')}
                   </h3>
                 </div>
                 
-                {/* Contextual Meta Badges */}
-                <div className="flex items-center gap-2 flex-wrap text-xs">
+                {/* Contextual Badges */}
+                <div className="flex items-center gap-2 flex-wrap text-xs pt-0.5">
                   {inspectedStudentName && (
-                    <span className="px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-800 font-bold border border-indigo-200/60 flex items-center gap-1">
-                      <User className="w-3 h-3 text-indigo-600" />
-                      {inspectedStudentName}
+                    <span className="px-2 py-0.5 rounded-lg bg-blue-50 text-[#003B5C] dark:bg-blue-950/40 dark:text-blue-300 font-bold border border-blue-200/60 dark:border-blue-900/50 flex items-center gap-1">
+                      <User className="w-3 h-3 text-[#003B5C] dark:text-blue-400" />
+                      <span>{inspectedStudentName}</span>
                     </span>
                   )}
                   {inspectedStudentClass && (
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 font-bold border border-emerald-200/60 flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 font-bold border border-emerald-200/60 dark:border-emerald-900/50 flex items-center gap-1">
                       <GraduationCap className="w-3 h-3 text-emerald-600" />
-                      {inspectedStudentClass}
+                      <span>{inspectedStudentClass}</span>
                     </span>
                   )}
                   {inspectedFeeType && (
-                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 font-bold border border-amber-200/60 flex items-center gap-1">
+                    <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold border border-amber-200/60 dark:border-amber-900/50 flex items-center gap-1">
                       <DollarSign className="w-3 h-3 text-amber-600" />
-                      {inspectedFeeType}
+                      <span>{inspectedFeeType}</span>
                     </span>
                   )}
                 </div>
               </div>
               
               <button 
+                type="button"
                 onClick={() => setSelectedLog(null)}
-                className="p-2 hover:bg-gray-200 rounded-full transition-colors text-gray-400 hover:text-gray-700 shrink-0"
+                className="p-1.5 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 shrink-0"
+                aria-label="Close dialog"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Modal Body: Two-column responsive JSON viewer */}
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1 bg-gray-50/50">
+            {/* Modal Body: Stacked on phone, Dual Column on tablet/desktop */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4 overscroll-contain">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* Previous State */}
-                <div className="flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-                  <div className="bg-rose-50/80 border-b border-rose-100 px-4 py-2.5 flex items-center gap-2">
-                    <History className="w-4 h-4 text-rose-600" />
-                    <h4 className="text-xs font-black text-rose-900 uppercase tracking-wider">Previous State</h4>
+                {/* Previous State Payload */}
+                <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+                  <div className="bg-rose-50/90 dark:bg-rose-950/40 border-b border-rose-100 dark:border-rose-900/50 px-3.5 py-2 flex items-center gap-2">
+                    <History className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <h4 className="text-[11px] font-black text-rose-900 dark:text-rose-200 uppercase tracking-wider">
+                      Previous Record State
+                    </h4>
                   </div>
-                  <div className="p-3 sm:p-4 bg-[#1e1e1e] overflow-auto max-h-[200px] sm:max-h-[320px]">
+                  <div className="p-3 sm:p-4 bg-slate-950 overflow-x-auto max-h-[220px] sm:max-h-[340px]">
                     <pre className="text-xs font-mono text-rose-300 leading-relaxed whitespace-pre-wrap break-all">
                       {selectedLog.old_data && Object.keys(selectedLog.old_data).length > 0 
                         ? JSON.stringify(selectedLog.old_data, null, 2) 
-                        : '// No previous record (INSERT operation)'}
+                        : '// No previous record (INSERT transaction)'}
                     </pre>
                   </div>
                 </div>
 
-                {/* New State */}
-                <div className="flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
-                  <div className="bg-emerald-50/80 border-b border-emerald-100 px-4 py-2.5 flex items-center gap-2">
-                    <Database className="w-4 h-4 text-emerald-600" />
-                    <h4 className="text-xs font-black text-emerald-900 uppercase tracking-wider">New Payload</h4>
+                {/* New Payload State */}
+                <div className="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs">
+                  <div className="bg-emerald-50/90 dark:bg-emerald-950/40 border-b border-emerald-100 dark:border-emerald-900/50 px-3.5 py-2 flex items-center gap-2">
+                    <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <h4 className="text-[11px] font-black text-emerald-900 dark:text-emerald-200 uppercase tracking-wider">
+                      Committed Payload
+                    </h4>
                   </div>
-                  <div className="p-3 sm:p-4 bg-[#1e1e1e] overflow-auto max-h-[200px] sm:max-h-[320px]">
+                  <div className="p-3 sm:p-4 bg-slate-950 overflow-x-auto max-h-[220px] sm:max-h-[340px]">
                     <pre className="text-xs font-mono text-emerald-300 leading-relaxed whitespace-pre-wrap break-all">
                       {selectedLog.new_data && Object.keys(selectedLog.new_data).length > 0 
                         ? JSON.stringify(selectedLog.new_data, null, 2) 
-                        : '// Record deleted (DELETE operation)'}
+                        : '// Record deleted (DELETE transaction)'}
                     </pre>
                   </div>
                 </div>
@@ -522,10 +599,10 @@ export default function AuditLogsPage() {
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="p-3.5 sm:px-6 bg-white border-t border-gray-100 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-1.5 text-[11px] font-semibold text-gray-500 shrink-0">
-              <span className="font-mono truncate max-w-full">
-                ID: {selectedLog.id}
+            {/* Modal Footer Metadata */}
+            <div className="p-3.5 sm:px-6 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-700/80 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400 shrink-0">
+              <span className="truncate max-w-full">
+                Transaction UUID: {selectedLog.id}
               </span>
               <span>
                 {format(new Date(selectedLog.created_at), 'dd MMM yyyy, HH:mm:ss')}
@@ -535,35 +612,35 @@ export default function AuditLogsPage() {
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <PortalFooter />
     </div>
   )
 }
 
-function StatCard({ title, value, icon: Icon, color }: any) {
-  const colorMap: Record<string, string> = {
-    indigo: 'bg-indigo-50 text-indigo-600',
-    emerald: 'bg-emerald-50 text-emerald-600',
-    blue: 'bg-blue-50 text-blue-600',
-    red: 'bg-red-50 text-red-600'
+function StatCard({ title, value, icon: Icon, color }: { title: string; value: number; icon: any; color: string }) {
+  const colorMap: Record<string, { bg: string; icon: string }> = {
+    blue: { bg: 'bg-blue-50 text-[#003B5C] dark:bg-blue-950/40 dark:text-blue-300', icon: 'text-[#003B5C] dark:text-blue-400' },
+    emerald: { bg: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300', icon: 'text-emerald-600 dark:text-emerald-400' },
+    amber: { bg: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300', icon: 'text-amber-600 dark:text-amber-400' },
+    rose: { bg: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300', icon: 'text-rose-600 dark:text-rose-400' }
   }
-  const bgClass = colorMap[color] || colorMap.indigo
+  const styling = colorMap[color] || colorMap.blue
 
   return (
-    <div className="bg-white p-3.5 sm:p-5 md:p-6 rounded-2xl sm:rounded-3xl shadow-[0_2px_15px_-3px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden flex flex-col justify-between h-full">
-      <div className="flex items-center justify-between gap-2 mb-2 sm:mb-3">
-        <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center shrink-0 ${bgClass}`}>
-          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
-        </div>
-        <span className="text-[10px] sm:text-xs font-bold text-gray-400 uppercase tracking-wider truncate">
+    <div className="bg-white dark:bg-slate-800/90 p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between h-full space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 truncate">
           {title}
         </span>
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${styling.bg}`}>
+          <Icon className="w-4 h-4" />
+        </div>
       </div>
-      <h3 
-        className="text-base sm:text-xl md:text-2xl font-black text-gray-900 truncate" 
-        title={String(value)}
-      >
+      <p className="text-lg sm:text-2xl font-black font-mono text-slate-900 dark:text-white truncate">
         {value}
-      </h3>
+      </p>
     </div>
   )
 }
@@ -576,11 +653,11 @@ function EntityIcon({ entityName, className }: { entityName: string; className?:
 
   return (
     <div className={`rounded-xl flex items-center justify-center shrink-0 ${
-      isFinance ? 'bg-amber-50 text-amber-600 border border-amber-200/70' :
-      isStudent ? 'bg-indigo-50 text-indigo-600 border border-indigo-200/70' :
-      isScore ? 'bg-purple-50 text-purple-600 border border-purple-200/70' :
-      isAttendance ? 'bg-emerald-50 text-emerald-600 border border-emerald-200/70' :
-      'bg-blue-50 text-blue-600 border border-blue-200/70'
+      isFinance ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200/70 dark:border-amber-900/50' :
+      isStudent ? 'bg-blue-50 text-[#003B5C] dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200/70 dark:border-blue-900/50' :
+      isScore ? 'bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200/70 dark:border-purple-900/50' :
+      isAttendance ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-900/50' :
+      'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
     } ${className || 'w-8 h-8'}`}>
       {isFinance ? <DollarSign className="w-4 h-4" /> :
        isStudent ? <User className="w-4 h-4" /> :
@@ -594,39 +671,24 @@ function EntityIcon({ entityName, className }: { entityName: string; className?:
 function ActionBadge({ action }: { action: string }) {
   if (action === 'INSERT') {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] sm:text-[10px] font-black bg-emerald-50 text-emerald-700 uppercase tracking-widest border border-emerald-200/50 shrink-0">
-        <PlusIcon /> INSERT
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 uppercase tracking-wider border border-emerald-200/80 dark:border-emerald-900/50 shrink-0">
+        <Plus className="w-3 h-3" />
+        <span>INSERT</span>
       </span>
     )
   }
   if (action === 'UPDATE') {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] sm:text-[10px] font-black bg-blue-50 text-blue-700 uppercase tracking-widest border border-blue-200/50 shrink-0">
-        <RefreshIcon /> UPDATE
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-blue-50 text-[#003B5C] dark:bg-blue-950/40 dark:text-blue-300 uppercase tracking-wider border border-blue-200/80 dark:border-blue-900/50 shrink-0">
+        <RefreshCw className="w-3 h-3" />
+        <span>UPDATE</span>
       </span>
     )
   }
   return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] sm:text-[10px] font-black bg-red-50 text-red-700 uppercase tracking-widest border border-red-200/50 shrink-0">
-      <DeleteIcon /> DELETE
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-[10px] font-black bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 uppercase tracking-wider border border-rose-200/80 dark:border-rose-900/50 shrink-0">
+      <Trash2 className="w-3 h-3" />
+      <span>DELETE</span>
     </span>
   )
 }
-
-const PlusIcon = () => (
-  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-  </svg>
-)
-
-const RefreshIcon = () => (
-  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-  </svg>
-)
-
-const DeleteIcon = () => (
-  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-)

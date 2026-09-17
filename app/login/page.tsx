@@ -14,7 +14,6 @@ import {
   EyeOff, 
   Loader2, 
   ArrowLeft,
-  GraduationCap,
   ChevronRight,
   ShieldCheck
 } from 'lucide-react'
@@ -98,7 +97,7 @@ export default function LoginPage() {
               {/* Brand & Crest */}
               <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group min-w-0">
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full p-1 sm:p-1.5 shadow-md ring-2 ring-[#003B5C]/20 group-hover:ring-[#003B5C]/40 transition-all flex items-center justify-center">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full p-1 sm:p-1.5 shadow-md ring-2 ring-[#003B5C]/20 group-hover:ring-[#003B5C]/40 transition-all flex items-center justify-center overflow-hidden">
                     <Image
                       src="/school_crest.png"
                       alt="Biriwa Methodist 'C' Crest"
@@ -167,13 +166,13 @@ export default function LoginPage() {
             <div className="fixed top-0 right-0 h-[100dvh] max-w-xs w-full bg-white dark:bg-slate-900 shadow-2xl flex flex-col justify-between border-l border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-right duration-250 z-[160]">
               <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-[#003B5C] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 dark:border-slate-700 p-1 flex items-center justify-center shrink-0 overflow-hidden">
                     <Image
                       src="/school_crest.png"
                       alt="Crest"
                       width={24}
                       height={24}
-                      className="object-contain"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                   <div className="min-w-0">
@@ -235,10 +234,17 @@ export default function LoginPage() {
           {/* Form Container Card */}
           <div className="bg-white dark:bg-slate-800/95 rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl border border-slate-200/80 dark:border-slate-700/80 p-5 sm:p-8 md:p-9 space-y-6 backdrop-blur-sm">
             
-            {/* Header / Brand Icon */}
+            {/* Header / School Crest Logo */}
             <div className="text-center space-y-2">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#003B5C]/10 dark:bg-blue-500/20 text-[#003B5C] dark:text-blue-300 font-bold mb-1 shadow-inner">
-                <GraduationCap className="w-6 h-6" />
+              <div className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-white dark:bg-slate-900 p-1.5 shadow-md border-2 border-amber-500/40 mb-1 mx-auto overflow-hidden">
+                <Image
+                  src="/school_crest.png"
+                  alt="Biriwa Methodist 'C' Logo"
+                  width={56}
+                  height={56}
+                  className="w-full h-full object-contain"
+                  priority
+                />
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                 Portal Login
@@ -345,7 +351,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 sm:py-3.5 px-4 bg-[#003B5C] hover:bg-[#002a42] text-white font-bold text-xs sm:text-sm rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-3 sm:py-3.5 px-4 bg-[#003B5C] hover:bg-[#002a42] text-white font-bold text-xs sm:text-sm rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? (
                   <>

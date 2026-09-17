@@ -4,16 +4,34 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  Settings as SettingsIcon, School, Bell, Lock, Globe, Calendar, 
-  TrendingUp, Archive, ChevronRight, Wrench, RefreshCw, KeyRound, 
-  UserX, Loader2, ShieldCheck, CheckCircle2, Sparkles, Building2,
-  Sliders
+  Settings as SettingsIcon, 
+  School, 
+  Bell, 
+  Lock, 
+  Globe, 
+  Calendar, 
+  TrendingUp, 
+  Archive, 
+  ChevronRight, 
+  Wrench, 
+  RefreshCw, 
+  KeyRound, 
+  UserX, 
+  Loader2, 
+  ShieldCheck, 
+  CheckCircle2, 
+  Sparkles, 
+  Building2,
+  Sliders,
+  AlertTriangle,
+  ArrowRight
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import BackButton from '@/components/ui/back-button'
 import { getCurrentUser } from '@/lib/auth'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
+import { PortalFooter } from '@/components/PortalFooter'
 
 interface OverviewState {
   schoolName: string
@@ -30,7 +48,7 @@ export default function SettingsPage() {
     schoolName: '',
     academicYear: '',
     currentTerm: '',
-    systemStatus: 'Active'
+    systemStatus: 'Operational'
   })
   const [fixingUsernames, setFixingUsernames] = useState(false)
   const [fixingPasswords, setFixingPasswords] = useState(false)
@@ -48,13 +66,13 @@ export default function SettingsPage() {
       const { data: schoolData } = await supabase
         .from('school_settings')
         .select('school_name')
-        .single() as { data: any }
+        .maybeSingle()
 
       // Load academic settings
       const { data: academicData } = await supabase
         .from('academic_settings')
         .select('current_academic_year, current_term')
-        .single() as { data: any }
+        .maybeSingle()
 
       setOverview({
         schoolName: schoolData?.school_name || "Biriwa Methodist 'C' Basic School",
@@ -69,7 +87,7 @@ export default function SettingsPage() {
   }, [router, supabase])
 
   async function handleFixUsernames() {
-    if (!confirm('This will regenerate usernames for ALL students based on the standard format (First 3 letters + Last 3 letters). Proceed?')) {
+    if (!confirm('This will regenerate usernames for ALL students based on the standard format (First 3 letters of first name + Last 3 letters of surname). Proceed?')) {
       return
     }
 
@@ -182,125 +200,136 @@ export default function SettingsPage() {
   ]
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-20 p-4 sm:p-6 lg:p-8 space-y-6">
-        <div className="max-w-7xl mx-auto space-y-6">
-          <Skeleton className="h-20 w-full rounded-2xl sm:rounded-3xl" />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24 rounded-2xl" />
-            ))}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <Skeleton key={i} className="h-44 rounded-2xl" />
-            ))}
-          </div>
-        </div>
-      </div>
-    )
+    return <SettingsSkeleton />
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900 pb-24 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+      
       {/* Sticky Header */}
-      <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200/80 dark:border-gray-800 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 sm:py-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 min-w-0">
-              <BackButton href="/admin/dashboard" className="shrink-0 mt-0.5 sm:mt-0 shadow-sm" />
+      <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3 sm:py-3.5">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
+            
+            <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+              <BackButton href="/admin/dashboard" />
               <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white flex items-center gap-2 truncate">
-                  <SettingsIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#003B5C] dark:text-blue-400 shrink-0" />
-                  <span>System Settings & Preferences</span>
-                </h1>
-                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium truncate">
-                  Configure school profiles, academic sessions, security, and administrative utilities
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+                  <h1 className="text-base sm:text-xl font-black text-slate-900 dark:text-white tracking-tight truncate">
+                    System Settings &amp; Preferences
+                  </h1>
+                </div>
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5">
+                  Institutional profiles, academic sessions, security, and administrative utilities
                 </p>
               </div>
             </div>
 
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/60 shrink-0">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <div className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-bold shrink-0 font-mono">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               <span>{overview.systemStatus}</span>
-            </span>
+            </div>
+
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-6 sm:space-y-8">
+      {/* Main Container */}
+      <main className="flex-1 max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 space-y-5 sm:space-y-7">
+        
         {/* Active Configuration Overview Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Institution</span>
-            <p className="text-xs sm:text-sm md:text-base font-bold text-gray-900 dark:text-white mt-1 line-clamp-1">
+        <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5 md:gap-4">
+          
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between space-y-1">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+              Institution
+            </span>
+            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate" title={overview.schoolName}>
               {overview.schoolName}
             </p>
+            <span className="text-[10px] text-slate-400 truncate">Official GES registered name</span>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Active Academic Year</span>
-            <p className="text-base sm:text-lg lg:text-xl font-black text-[#003B5C] dark:text-blue-400 mt-1">
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between space-y-1">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+              Academic Year
+            </span>
+            <p className="text-base sm:text-xl font-black font-mono text-[#003B5C] dark:text-blue-400 truncate">
               {overview.academicYear}
             </p>
+            <span className="text-[10px] text-slate-400 truncate">Active school year</span>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Active Term Session</span>
-            <p className="text-base sm:text-lg lg:text-xl font-black text-gray-900 dark:text-white mt-1">
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between space-y-1">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+              Active Term Session
+            </span>
+            <p className="text-base sm:text-xl font-black text-slate-900 dark:text-white truncate">
               {overview.currentTerm}
             </p>
+            <span className="text-[10px] text-slate-400 truncate">Current reporting term</span>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm flex flex-col justify-between">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-gray-400">Platform Status</span>
-            <p className="text-base sm:text-lg lg:text-xl font-black text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>{overview.systemStatus}</span>
-            </p>
+          <div className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col justify-between space-y-1">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400 block truncate">
+              Platform Status
+            </span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <p className="text-sm sm:text-base font-black text-emerald-600 dark:text-emerald-400 truncate">
+                {overview.systemStatus}
+              </p>
+            </div>
+            <span className="text-[10px] text-slate-400 truncate">Supabase DB connected</span>
           </div>
-        </div>
 
-        {/* Settings Modules Grid */}
+        </section>
+
+        {/* Configuration Modules Section */}
         <section className="space-y-3 sm:space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-2">
-              <Sliders className="w-4 h-4 text-[#003B5C] dark:text-blue-400" />
-              <span>Configuration Modules</span>
-            </h2>
-            <span className="text-xs text-gray-400 font-medium">{settingsSections.length} modules</span>
+          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
+              <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white">
+                Configuration Modules
+              </h2>
+            </div>
+            <span className="text-[11px] font-mono font-bold text-slate-400">
+              {settingsSections.length} Sections
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5 sm:gap-4 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-4.5">
             {settingsSections.map((section, index) => {
               const IconComponent = section.icon
               return (
                 <Link
                   key={index}
                   href={section.href}
-                  className="group bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-gray-200/80 dark:border-gray-700 shadow-sm hover:shadow-md hover:border-[#003B5C]/40 dark:hover:border-blue-500/40 hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
+                  className="group bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs hover:shadow-md hover:border-[#003B5C]/40 dark:hover:border-blue-500/40 hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className={`p-3 rounded-2xl border ${section.badgeColor} group-hover:scale-105 transition-transform shrink-0`}>
-                        <IconComponent className="w-5 h-5 sm:w-6 sm:h-6" />
+                      <div className={`p-2.5 sm:p-3 rounded-2xl border ${section.badgeColor} group-hover:scale-105 transition-transform shrink-0`}>
+                        <IconComponent className="w-5 h-5 sm:w-5 sm:h-5" />
                       </div>
-                      <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600 group-hover:text-[#003B5C] dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
+                      <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-[#003B5C] dark:group-hover:text-blue-400 group-hover:translate-x-1 transition-all" />
                     </div>
 
                     <div>
-                      <h3 className="font-bold text-sm sm:text-base text-gray-900 dark:text-white group-hover:text-[#003B5C] dark:group-hover:text-blue-400 transition-colors">
+                      <h3 className="font-bold text-xs sm:text-sm md:text-base text-slate-900 dark:text-white group-hover:text-[#003B5C] dark:group-hover:text-blue-400 transition-colors leading-snug">
                         {section.title}
                       </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-relaxed">
+                      <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-1 leading-relaxed">
                         {section.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="pt-3 mt-4 border-t border-gray-100 dark:border-gray-750 flex items-center justify-between text-xs font-bold text-[#003B5C] dark:text-blue-300">
-                    <span>Configure Settings</span>
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity">→</span>
+                  <div className="pt-3 mt-3.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] sm:text-xs font-bold text-[#003B5C] dark:text-blue-300">
+                    <span>Manage Settings</span>
+                    <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </Link>
               )
@@ -309,39 +338,40 @@ export default function SettingsPage() {
         </section>
 
         {/* System Maintenance & Data Utility Toolkit */}
-        <section className="bg-white dark:bg-gray-800 rounded-2xl sm:rounded-3xl shadow-sm border border-gray-200/80 dark:border-gray-700 p-4 sm:p-6 md:p-7 space-y-4 sm:space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-100 dark:border-gray-750 pb-3 sm:pb-4">
+        <section className="bg-white dark:bg-slate-800/90 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 p-4 sm:p-6 md:p-7 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3 sm:pb-4">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shrink-0">
+              <div className="p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 shrink-0">
                 <Wrench className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-white">
-                  Automated Maintenance Toolkit
+                <h2 className="text-xs sm:text-sm md:text-base font-black text-slate-900 dark:text-white">
+                  Automated Maintenance &amp; Sanity Toolkit
                 </h2>
-                <p className="text-[11px] sm:text-xs text-gray-400 font-medium">
-                  Run bulk batch scripts to sanitize student authentication, identifiers, and duplicate records
+                <p className="text-[11px] sm:text-xs text-slate-400 font-medium">
+                  Run bulk administrative scripts to sanitize student credentials, authentication, and duplicate records
                 </p>
               </div>
             </div>
 
-            <span className="self-start sm:self-auto text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-0.5 rounded-full border border-amber-200/60 dark:border-amber-900/40">
+            <span className="self-start sm:self-auto text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 px-2.5 py-1 rounded-xl border border-amber-200/60 dark:border-amber-900/40">
               Admin Exclusive
             </span>
           </div>
 
-          <div className="divide-y divide-gray-100 dark:divide-gray-750">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
+            
             {/* Tool 1: Regenerate Usernames */}
-            <div className="py-4 first:pt-1 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-              <div className="space-y-1 min-w-0">
+            <div className="py-4 first:pt-1 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <RefreshCw className="w-4 h-4 text-[#003B5C] dark:text-blue-400 shrink-0" />
-                  <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                  <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
                     Batch Regenerate Student Usernames
                   </h3>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-2xl">
-                  Re-indexes all student credentials to the canonical format: First 3 letters of first name + last 3 letters of surname (e.g. <span className="font-mono font-bold text-gray-700 dark:text-gray-300">formah</span>).
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
+                  Re-indexes all student credentials to the canonical format: First 3 letters of first name + last 3 letters of surname (e.g. <span className="font-mono font-bold text-slate-700 dark:text-slate-300">formah</span>).
                 </p>
               </div>
 
@@ -349,11 +379,11 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleFixUsernames}
                 disabled={fixingUsernames}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition active:scale-95 disabled:opacity-50 shrink-0"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#003B5C] hover:bg-[#002a42] text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 {fixingUsernames ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
                     <span>Processing...</span>
                   </>
                 ) : (
@@ -363,16 +393,16 @@ export default function SettingsPage() {
             </div>
 
             {/* Tool 2: Reset Passwords to DOB */}
-            <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-              <div className="space-y-1 min-w-0">
+            <div className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <KeyRound className="w-4 h-4 text-rose-500 shrink-0" />
-                  <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
-                    Reset Student Passwords to DOB
+                  <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
+                    Reset Student Passwords to Date of Birth
                   </h3>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-2xl">
-                  Resets passwords for all active learners to their Date of Birth in <span className="font-mono font-bold text-gray-700 dark:text-gray-300">DD-MM-YYYY</span> format. Helpful at the start of new sessions.
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
+                  Resets passwords for all active learners to their recorded Date of Birth in <span className="font-mono font-bold text-slate-700 dark:text-slate-300">DD-MM-YYYY</span> format. Helpful at the start of new academic terms.
                 </p>
               </div>
 
@@ -380,11 +410,11 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleFixPasswords}
                 disabled={fixingPasswords}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition active:scale-95 disabled:opacity-50 shrink-0"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 {fixingPasswords ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin text-white" />
                     <span>Resetting...</span>
                   </>
                 ) : (
@@ -394,16 +424,16 @@ export default function SettingsPage() {
             </div>
 
             {/* Tool 3: Deduplicate Records */}
-            <div className="py-4 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
-              <div className="space-y-1 min-w-0">
+            <div className="py-4 last:pb-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+              <div className="space-y-1 min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <UserX className="w-4 h-4 text-rose-500 shrink-0" />
-                  <h3 className="font-bold text-xs sm:text-sm text-gray-900 dark:text-white truncate">
+                  <UserX className="w-4 h-4 text-amber-500 shrink-0" />
+                  <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
                     Prune Duplicate Student Records
                   </h3>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-2xl">
-                  Scans the student database for identical names and birthdates, merging assessment links and retaining the full profile containing middle names.
+                <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
+                  Scans the student database for identical names and birthdates, merging assessment links and retaining the full profile containing complete middle names.
                 </p>
               </div>
 
@@ -411,11 +441,11 @@ export default function SettingsPage() {
                 type="button"
                 onClick={handleFixDuplicates}
                 disabled={fixingDuplicates}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 dark:bg-gray-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-300 rounded-xl text-xs sm:text-sm font-bold border border-rose-200 dark:border-rose-900/40 transition active:scale-95 disabled:opacity-50 shrink-0"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-[#003B5C] rounded-xl text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
               >
                 {fixingDuplicates ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-4 h-4 animate-spin text-[#003B5C]" />
                     <span>Scanning Database...</span>
                   </>
                 ) : (
@@ -423,9 +453,47 @@ export default function SettingsPage() {
                 )}
               </button>
             </div>
+
           </div>
         </section>
+
       </main>
+
+      {/* Footer */}
+      <PortalFooter />
+    </div>
+  )
+}
+
+function SettingsSkeleton() {
+  return (
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 flex flex-col font-sans">
+      <header className="sticky top-0 z-30 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-8 h-8 rounded-xl" />
+            <Skeleton className="h-6 w-48 rounded-md" />
+          </div>
+          <Skeleton className="h-8 w-28 rounded-xl hidden sm:block" />
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 py-6 space-y-6 flex-1">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-8 w-44 rounded-md" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <Skeleton key={i} className="h-44 rounded-2xl sm:rounded-3xl" />
+          ))}
+        </div>
+        <Skeleton className="h-56 w-full rounded-2xl sm:rounded-3xl" />
+      </main>
+
+      <PortalFooter />
     </div>
   )
 }
