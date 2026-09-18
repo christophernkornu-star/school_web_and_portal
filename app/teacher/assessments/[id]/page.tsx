@@ -25,7 +25,6 @@ import {
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { toast } from 'react-hot-toast'
 import { Skeleton } from '@/components/ui/skeleton'
-import { PortalFooter } from '@/components/PortalFooter'
 
 export default function QuizDetailsPage() {
   const params = useParams()
@@ -209,7 +208,7 @@ export default function QuizDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-100 flex flex-col transition-colors selection:bg-[#003B5C] selection:text-white pb-12">
       
       {/* Sticky Top Header */}
       <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs">
@@ -496,7 +495,7 @@ export default function QuizDetailsPage() {
                             </Link>
                           )}
 
-                          <button
+                          <button 
                             type="button"
                             onClick={() => handleDeleteAttempt(attempt.id)}
                             disabled={deletingId === attempt.id}
@@ -617,7 +616,6 @@ export default function QuizDetailsPage() {
 
       </main>
 
-      <PortalFooter />
     </div>
   )
 }
@@ -643,8 +641,6 @@ function QuizDetailsSkeleton() {
         </div>
         <Skeleton className="h-80 w-full rounded-2xl sm:rounded-3xl" />
       </main>
-
-      <PortalFooter />
     </div>
   )
 }
