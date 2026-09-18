@@ -30,12 +30,14 @@ export default function PerformanceChart({
   if (!data || data.length < 2) {
     return (
       <div className={`${className || "bg-white rounded-lg border border-gray-200 p-6"}`}>
-        <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4 mb-4">
-          <h3 className="text-xl font-bold flex items-center gap-2">
-            <span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>
-            {title}
-          </h3>
-        </div>
+        {title && (
+          <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4 mb-4">
+            <h3 className="text-xl font-bold flex items-center gap-2">
+              <span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>
+              {title}
+            </h3>
+          </div>
+        )}
         <div className="flex items-center justify-center min-h-[250px] text-gray-500 px-6 sm:px-10 py-8 text-center">
           <p className="max-w-md leading-relaxed">
             Performance trends will appear after 2 or more terms
@@ -47,12 +49,14 @@ export default function PerformanceChart({
 
   return (
     <div className={`${className || "bg-white rounded-lg border border-gray-200"}`}>
-      <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4 mb-4">
-        <h3 className="text-xl font-bold flex items-center gap-2">
-          <span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>
-          {title}
-        </h3>
-      </div>
+      {title && (
+        <div className="bg-gradient-to-r from-methodist-blue to-blue-800 text-white px-5 py-4 mb-4">
+          <h3 className="text-xl font-bold flex items-center gap-2">
+            <span className="w-1.5 h-6 bg-methodist-gold rounded-full"></span>
+            {title}
+          </h3>
+        </div>
+      )}
       <div className="px-6 pb-6">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={data} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>

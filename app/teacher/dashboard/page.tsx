@@ -529,7 +529,7 @@ export default function TeacherDashboard() {
                 </span>
               </div>
 
-              <div className="p-3 sm:p-5 [&_[class*='gradient']]:hidden [&_[class*='from-']]:hidden [&_div[style*='gradient']]:hidden [&_.h-1]:hidden [&_.h-1\\.5]:hidden [&_.h-2]:hidden">
+              <div className="p-3 sm:p-5">
                 <PerformanceChart 
                   data={performanceData}
                   title=""
