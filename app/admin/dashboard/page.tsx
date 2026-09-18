@@ -7,16 +7,17 @@ import useSWR from 'swr'
 import {
   Users,
   GraduationCap, 
-  Building2,
-  FileText,
-  Plus,
-  CalendarDays,
-  Activity,
-  Palette,
-  Calendar,
-  Clock,
-  ArrowRight,
-  ChevronRight
+  Building2, 
+  FileText, 
+  Plus, 
+  CalendarDays, 
+  Activity, 
+  Palette, 
+  Calendar, 
+  Clock, 
+  ArrowRight, 
+  ChevronRight,
+  Sparkles
 } from 'lucide-react'
 import { getSupabaseBrowserClient } from '@/lib/supabase-browser'
 import { useAdmin } from '@/components/providers/AdminContext'
@@ -246,12 +247,12 @@ export default function AdminDashboard() {
             
             {/* Quick Actions Panel */}
             <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
-              <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
-                <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-[#003B5C] text-white flex items-center justify-between">
+                <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
                   <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
                   <span>Administrative Operations</span>
                 </h2>
-                <span className="text-[11px] sm:text-xs text-slate-400 font-medium hidden sm:inline">Frequent Actions</span>
+                <span className="text-[11px] sm:text-xs text-blue-200 font-medium hidden sm:inline">Frequent Actions</span>
               </div>
               
               <div className="p-3.5 sm:p-5 md:p-6">
@@ -282,17 +283,17 @@ export default function AdminDashboard() {
 
             {/* Recent Admissions Activity */}
             <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden">
-              <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
+              <div className="px-4 sm:px-6 py-3.5 sm:py-4 bg-[#003B5C] text-white flex items-center justify-between">
                 <div>
-                  <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <span className="w-1.5 h-4 bg-[#003B5C] dark:bg-blue-400 rounded-full shrink-0" />
+                  <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                    <span className="w-1.5 h-4 bg-amber-400 rounded-full shrink-0" />
                     <span>Recent Learner Admissions</span>
                   </h2>
-                  <p className="text-[11px] text-slate-400 mt-0.5">Most recent registrations logged on system</p>
+                  <p className="text-[11px] text-blue-200 mt-0.5">Most recent registrations logged on system</p>
                 </div>
                 <Link 
                   href="/admin/students" 
-                  className="text-xs font-bold text-[#003B5C] dark:text-blue-400 hover:underline flex items-center gap-1 shrink-0 ml-2"
+                  className="text-xs font-bold text-amber-300 hover:text-white flex items-center gap-1 shrink-0 ml-2 transition-colors"
                 >
                   <span>View All</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -376,12 +377,12 @@ export default function AdminDashboard() {
 
             {/* Upcoming School Events */}
             <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden flex flex-col justify-between">
-              <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
-                <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4 text-amber-500 shrink-0" />
+              <div className="px-4 sm:px-5 py-3 sm:py-3.5 bg-[#003B5C] text-white flex items-center justify-between">
+                <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>Scheduled Events</span>
                 </h3>
-                <Link href="/admin/events" className="text-xs font-bold text-[#003B5C] dark:text-blue-400 hover:underline">
+                <Link href="/admin/events" className="text-xs font-bold text-amber-300 hover:text-white transition-colors">
                   Calendar
                 </Link>
               </div>
@@ -422,12 +423,12 @@ export default function AdminDashboard() {
 
             {/* School Sections Matrix */}
             <section className="bg-white dark:bg-slate-800/80 rounded-2xl sm:rounded-3xl shadow-xs border border-slate-200/80 dark:border-slate-700/80 overflow-hidden flex flex-col justify-between">
-              <div className="px-4 sm:px-5 py-3.5 sm:py-4 border-b border-slate-100 dark:border-slate-700/80 flex items-center justify-between">
-                <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                  <Palette className="w-4 h-4 text-[#003B5C] dark:text-blue-400 shrink-0" />
+              <div className="px-4 sm:px-5 py-3 sm:py-3.5 bg-[#003B5C] text-white flex items-center justify-between">
+                <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                  <Palette className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>Houses &amp; Sections</span>
                 </h3>
-                <Link href="/admin/sections" className="text-xs font-bold text-[#003B5C] dark:text-blue-400 hover:underline">
+                <Link href="/admin/sections" className="text-xs font-bold text-amber-300 hover:text-white transition-colors">
                   Manage
                 </Link>
               </div>
